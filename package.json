@@ -18,7 +18,8 @@
     "collect": "node server/scripts/collect.js",
     "exam": "node server/scripts/exam.js",
     "fixtures": "node server/scripts/fixtures.js",
-    "fake-race": "node server/scripts/fake-race.js"
+    "fake-race": "node server/scripts/fake-race.js",
+    "prompt:check": "node server/scripts/prompt-hash.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.137.0",

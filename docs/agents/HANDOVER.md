@@ -5,6 +5,7 @@ Living document. Owned by the **integrator** (whoever merges lane branches). Lan
 ## 1. Where we are
 
 - **GO given 2026-10-23 23:58 London.** Console: task **Research engineer of F1**, Training v1, **43 kept** of 57. Phase 1 is open; lanes may start their first task immediately after the read-in.
+- **Guards merged (00:40):** editing `lab/prompt.js` now fails `npm test` and blocks `npm start` (sha256 pin); `POST /api/collect` needs `{ confirm: "trained" }`. 47 tests.
 - **P1.T3 merged (00:32):** `POST /api/race/result` is final (see docs/agents/lanes/SERVER.md for the exact contract); `npm run fake-race` fakes a race result for UI work. 41 tests.
 - **Phase 0 is code-complete and live-verified.** `npm test` 36/36. The 50-call v1 collection ran at 23:33 London on the Friday budget: 50 scenarios, 43 valid plans, 7 parse errors (retried once each), 57 trained calls, 1 untrained smoke call. Mubit returned `mreq_…` ids on every call.
 - **Open for a human (Tanuj):** `/team create` on Discord with the repo URL; read console → Tasks (task name, kept examples, status line) into `docs/TASK_LOG.md`; confirm **Adapters** exists (PRD A1). Rotate the Mubit key after the hackathon (it was pasted in a chat).
