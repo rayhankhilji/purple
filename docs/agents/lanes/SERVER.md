@@ -1,8 +1,33 @@
 # Lane SERVER
 
+<<<<<<< HEAD
 Status: in_progress (P1.T3 + integrity guards). Owner: cloud session `session_01Tq3p158ophv4wuU2ibcJbj` (spawned by the integrator 2026-10-24 00:16 London). Branch: its own `claude/*` branch, PRs into `claude/amazing-planck-804i13`.
+=======
+Status: in_progress (P1.T3 done, PR open; next: task-integrity guards, P2.T3 server side, status widget plumbing). Owner: agent B (Claude, session_01Tq3p158ophv4wuU2ibcJbj). Branch: `claude/server-p1-race` (stacked branches `claude/server-p1-*` follow, one PR per task into `claude/amazing-planck-804i13`).
+>>>>>>> origin/claude/server-p1-race
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
+
+## Sessions
+
+### 2026-10-24 00:25 London — agent B (Claude) — P1.T3 (F-04 race result)
+- Status: done, PR open into `claude/amazing-planck-804i13` (branch `claude/server-p1-race`).
+- Files changed: `server/app.js` (route `POST /api/race/result` rewritten: `validateRaceResult`, `agreementPct`), `server/scripts/fake-race.js` (new), `test/server.test.js` (+5 tests), this file.
+- What the route now does (contract for GAME and UI lanes):
+  - Accepts exactly `{ experiment_id: string, seed: integer, cars: [2 × { role: "baseline"|"candidate", lap > 0, sectors: [3 numbers ≥ 0], vmax_kmh > 0, vmin_becketts_kmh > 0 (≤ vmax) }] }`. Any other shape → 400 `BAD_INPUT` whose message names the field (`cars[1].sectors must be an array of 3 non-negative numbers`). Unknown id → 404. Nothing is written on a 4xx.
+  - `measured` on the row: `{ baseline: {lap, sectors, vmax_kmh, vmin_becketts_kmh}, candidate: {…}, measured_delta, predicted_delta, measured_sector_deltas[3], agreement_pct, seed, at, label: "measured in race, seed N", supersedes }`. `agreement_pct = round(100·|measuredΔ − predictedΔ| / |predictedΔ|)` (0 = perfect); `null` when the evaluator predicted exactly 0.
+  - Status becomes `raced`, except an `overruled` or `promoted` experiment keeps that status (the engineer's verdict outranks the race) and gains `measured`.
+  - A second post for the same experiment appends a new ledger row with the same id; `store.readLedger()` returns the latest (`measured.supersedes` = previous `measured.at`).
+  - SSE `race` event = the full experiment row (plan, evaluation, scenario, measured), same as the response.
+- `node server/scripts/fake-race.js [--id X] [--seed 7] [--factor 1.2] [--noise 0.02] [--port 8787]`: posts a plausible seeded result for the newest ledger row to a running server (measured Δ = predicted Δ × factor ± noise; laps/sectors/vmax/vmin derived from the evaluation). UI lane: `MUBIT_MOCK=1 npm run dev`, press Run (or `curl -X POST :8787/api/plan`), then run the script to see the RACE card, `agreement_pct` and the SSE `race` event without the game.
+- Verify step run + output: `npm test` → 41/41 pass, 0 fail (1.6 s). `MUBIT_MOCK=1 PURPLE_PORT=8797 node server/index.js` + `POST /api/plan` + `POST /api/race/result {"seed":"3"}` → `{"ok":false,"error":{"code":"BAD_INPUT","message":"seed must be an integer"}}`; `node server/scripts/fake-race.js --port 8797 --seed 5` → `predicted Δ 0.143 s, measured Δ 0.183 s, agreement_pct 28, status raced`; `GET /api/ledger?limit=1` shows `raced 28 "measured in race, seed 5"`.
+- Decisions proposed (for the integrator to log in TASK_LOG):
+  - D-S1: `measured` carries extra fields beyond ARCH §4.7 (`vmax_kmh`, `vmin_becketts_kmh` per car, `measured_delta`, `predicted_delta`, `measured_sector_deltas`, `supersedes`, `label`); additive, §4.7 keys unchanged. F-04.AC3 (Becketts vmin ↑, Hangar vmax ↓) can be read straight off the row.
+  - D-S2: `agreement_pct` is `null` (not 0 or ∞) when `predicted_delta` is 0; UI should render "n/a".
+  - D-S3: racing an `overruled`/`promoted` experiment keeps that status; `measured` is added. ARCH §4.7 status enum unchanged otherwise.
+  - Proposed `package.json` script line (integrator): `"fake-race": "node server/scripts/fake-race.js"`.
+- Blockers / questions for Tanuj: none. GAME lane: please post `seed` as an integer and `sectors` as 3 numbers (best sectors may come from different laps; the server does not require them to sum to `lap`).
+- Next three actions: (1) task-integrity guards (prompt hash test + startup check, `/api/collect` confirm + cap, non-plan calls `trained:false` test); (2) P2.T3 server side (rule trimming, `R-xx` numbering by max id, `GET /api/rules?active=1`, SSE `rule`/`plan` tests); (3) `/api/status` widget fields (`last_console_read_at`, `prompt_hash`, `budget` by UTC day).
 
 ## Template for a session entry
 

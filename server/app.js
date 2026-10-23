@@ -175,15 +175,46 @@ function createApp(opts) {
     db.appendLedger(Object.assign({}, x, { status: "overruled", overrule })); setState({ last_plan: null });
     emit("rule", rule); emit("plan", Object.assign({}, x, { status: "overruled", overrule })); return ok(c, { rule });
   });
+  // ---- F-04 race result (ARCHITECTURE §4.7 measured block, §5). Posted by the lab page from the game's purple:result message.
+  // Payload: { experiment_id, seed, cars: [{ role: "baseline"|"candidate", lap, sectors: [s1,s2,s3], vmax_kmh, vmin_becketts_kmh }] }.
+  // A second post for the same experiment appends a new ledger row with the same id, which supersedes the first (store.readLedger dedupes).
+  const isNum = v => typeof v === "number" && Number.isFinite(v);
+  function validateRaceResult(b) {
+    const bad = m => { throw new ApiError("BAD_INPUT", m); };
+    if (typeof b.experiment_id !== "string" || !b.experiment_id) bad("experiment_id must be a non-empty string");
+    if (!Number.isInteger(b.seed)) bad("seed must be an integer");
+    if (!Array.isArray(b.cars)) bad("cars must be an array of 2 cars (baseline, candidate)");
+    if (b.cars.length !== 2) bad("cars must hold exactly 2 cars, got " + b.cars.length);
+    const out = {};
+    b.cars.forEach((k, i) => {
+      const at = "cars[" + i + "]";
+      if (!k || typeof k !== "object") bad(at + " must be an object");
+      if (k.role !== "baseline" && k.role !== "candidate") bad(at + ".role must be baseline or candidate");
+      if (out[k.role]) bad(at + ".role " + k.role + " appears twice");
+      if (!isNum(k.lap) || k.lap <= 0) bad(at + ".lap must be a positive number of seconds");
+      if (!Array.isArray(k.sectors) || k.sectors.length !== 3 || !k.sectors.every(s => isNum(s) && s >= 0)) bad(at + ".sectors must be an array of 3 non-negative numbers");
+      if (!isNum(k.vmax_kmh) || k.vmax_kmh <= 0) bad(at + ".vmax_kmh must be a positive number");
+      if (!isNum(k.vmin_becketts_kmh) || k.vmin_becketts_kmh <= 0) bad(at + ".vmin_becketts_kmh must be a positive number");
+      if (k.vmin_becketts_kmh > k.vmax_kmh) bad(at + ".vmin_becketts_kmh must not exceed vmax_kmh");
+      out[k.role] = { lap: +k.lap.toFixed(3), sectors: k.sectors.map(s => +s.toFixed(3)), vmax_kmh: +k.vmax_kmh.toFixed(1), vmin_becketts_kmh: +k.vmin_becketts_kmh.toFixed(1) };
+    });
+    if (!out.baseline) bad("cars must hold a baseline car"); if (!out.candidate) bad("cars must hold a candidate car");
+    return out;
+  }
+  // F-04.AC2: agreement_pct = 100·|measuredΔ − predictedΔ| / |predictedΔ| (0 = perfect agreement); null when the model predicted no change
+  const agreementPct = (measured, predicted) => isNum(predicted) && Math.abs(predicted) > 1e-6 ? Math.round(100 * Math.abs(measured - predicted) / Math.abs(predicted)) : null;
   app.post("/api/race/result", async c => {
-    const b = await body(c); const x = db.findExperiment(b.experiment_id); if (!x) throw new ApiError("NOT_FOUND", "no experiment " + b.experiment_id);
-    const cars = Array.isArray(b.cars) ? b.cars : []; const base = cars.find(k => k.role === "baseline"), cand = cars.find(k => k.role === "candidate");
-    if (!base || !cand || typeof base.lap !== "number" || typeof cand.lap !== "number") throw new ApiError("BAD_INPUT", "cars must hold baseline and candidate with lap numbers");
-    const predicted = x.evaluation && x.evaluation.delta_lap, measuredDelta = +(cand.lap - base.lap).toFixed(3);
-    const agreement_pct = predicted && Math.abs(predicted) > 1e-6 ? Math.round(100 * Math.abs(measuredDelta - predicted) / Math.abs(predicted)) : null;   // F-04.AC2 formula
-    const pick = k => ({ lap: k.lap, sectors: k.sectors || null, vmax_kmh: k.vmax_kmh, vmin_becketts_kmh: k.vmin_becketts_kmh });
-    const measured = { baseline: pick(base), candidate: pick(cand), measured_delta: measuredDelta, predicted_delta: predicted, agreement_pct, seed: b.seed, at: now(), label: "measured in race, seed " + b.seed };
-    const row = Object.assign({}, x, { status: x.status === "overruled" ? "overruled" : "raced", measured }); db.appendLedger(row); emit("race", row); return ok(c, row);
+    const b = await body(c); const cars = validateRaceResult(b);
+    const x = db.findExperiment(b.experiment_id); if (!x) throw new ApiError("NOT_FOUND", "no experiment " + b.experiment_id);
+    const predicted = x.evaluation && isNum(x.evaluation.delta_lap) ? x.evaluation.delta_lap : null, measuredDelta = +(cars.candidate.lap - cars.baseline.lap).toFixed(3);
+    const measured = {
+      baseline: cars.baseline, candidate: cars.candidate,
+      measured_delta: measuredDelta, predicted_delta: predicted, agreement_pct: agreementPct(measuredDelta, predicted),
+      measured_sector_deltas: cars.candidate.sectors.map((s, i) => +(s - cars.baseline.sectors[i]).toFixed(3)),
+      seed: b.seed, at: now(), label: "measured in race, seed " + b.seed, supersedes: x.measured ? x.measured.at : null,
+    };
+    const status = x.status === "overruled" || x.status === "promoted" ? x.status : "raced";   // the engineer's verdict outranks the race
+    const row = Object.assign({}, x, { status, measured }); db.appendLedger(row); emit("race", row); return ok(c, row);
   });
   app.get("/api/ledger", c => ok(c, db.readLedger({ limit: Math.min(500, parseInt(c.req.query("limit") || "50", 10) || 50) })));
   app.get("/api/experiments/:id", c => { const x = db.findExperiment(c.req.param("id")); if (!x) throw new ApiError("NOT_FOUND", "no experiment"); return ok(c, x); });

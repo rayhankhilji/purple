@@ -27,6 +27,14 @@ Multi-agent rule (decision 2026-10-23 23:20): lane agents write `docs/agents/lan
 
 Exit criteria: **all true at 23:58 London** (six verifies, task named from the prompt with 43 ≥ 25 kept examples, task name + model recorded here, prompt committed and tagged). Still owed by a human: `/team create` on Discord (P0.T0 verify).
 
+## Checklist (current phase: P1)
+
+- [ ] P1.T1 (F-04) `js/car.js` per-car `aero` (GAME lane, in progress)
+- [ ] P1.T2 (F-04) broadcast mode `?lab=1`, `purple:result` postMessage (GAME lane, in progress)
+- [x] P1.T3 (F-04) `POST /api/race/result` hardened, `agreement_pct`, SSE `race`, `npm run fake-race` (SERVER lane, merged 00:32 from PR #2; 41/41 tests)
+- [ ] P1.T4 watch v1 in **Adapters** (Tanuj screenshot → `status.json`); if Below target / Prompt only → `npm run collect -- --n 30` on the Saturday budget
+- [ ] P1.T5 `/checkin` #1 in #max by Sat 12:00 (Tanuj)
+
 ## Blockers
 
 | When | What | Owner | Resolution |
@@ -75,7 +83,14 @@ Exit criteria: **all true at 23:58 London** (six verifies, task named from the p
 - Tagged `v1-collected` at the collection commit. **Open:** console → Tasks read-out (name, kept examples, status line) by Tanuj; `/team create`.
 
 | 2026-10-23 23:50 | `validatePlanOutput` trims overlong `hypothesis`/`reject_if` to their limits (`trimmed` flag) instead of rejecting | 7/50 live answers overran by a few words; a same-input retry at temperature 0 repeats it; the decision fields are intact | Yes |
+| 2026-10-24 00:30 | D-S1 `measured` carries additive fields beyond ARCH §4.7 (per-car vmax/vmin, measured_delta, predicted_delta, measured_sector_deltas, supersedes, label) | F-04.AC3 readable off the row; §4.7 keys unchanged | Yes |
+| 2026-10-24 00:30 | D-S2 `agreement_pct` is `null` when the predicted delta is 0 (UI shows n/a) | The F-04.AC2 formula divides by it | Yes |
+| 2026-10-24 00:30 | D-S3 racing an `overruled`/`promoted` experiment keeps that status and gains `measured` | The engineer's verdict outranks the race | Yes |
 
 ### 2026-10-23 23:58 — console read-out (Tanuj, screenshot)
 - Overview: 57 total requests, median response 1.80 s, errors 0, adapters serving 0. Tasks: 1 task **Research engineer of F1**, status **Training** ("training v1"), examples **43 kept**, requests 57, models asked claude-haiku-4-5 100 %. Task rules: "Grouped: same instructions and tools", "Named from its instructions". Figures panel said "Figures unavailable" (console hiccup, details still shown).
 - P0 exit criteria pass → Phase 1 open. Integrator decision: integration branch `claude/amazing-planck-804i13`; lanes GAME, SERVER, EVAL spawned with GO; this session stays integrator.
+
+### 2026-10-24 00:32 — integrator — merged SERVER P1.T3 (PR #2, branch `claude/server-p1-race`)
+- `POST /api/race/result` validates every field (BAD_INPUT names it), writes the §4.7 measured block + agreement_pct + label, second post supersedes, SSE `race` carries the full row. `server/scripts/fake-race.js` (`npm run fake-race`) posts a seeded plausible result for the newest ledger row so the UI lane can work without the game. 41/41 tests after merge.
+- SERVER lane next: task-integrity guards, P2.T3 server side, `/api/status` widget fields.
