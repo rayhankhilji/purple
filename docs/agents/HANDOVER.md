@@ -5,6 +5,7 @@ Living document. Owned by the **integrator** (whoever merges lane branches). Lan
 ## 1. Where we are
 
 - **GO given 2026-10-23 23:58 London.** Console: task **Research engineer of F1**, Training v1, **43 kept** of 57. Phase 1 is open; lanes may start their first task immediately after the read-in.
+- **Demo experiment in the ledger (01:25):** id `01M5NHXH4RSEQ50VM955FK20B7`, rear wing +8°, seed 42, predicted +0.436 / measured +0.518, agreement 19 %. Use it for the RACE card and the deck. `/checkin` #1 text: `docs/checkins/checkin-1.md`.
 - **GAME merged (01:15): P1 critical path done.** `?lab=1` broadcast mode works headless: rear wing +8° predicted +0.436 s, measured +0.518 s (seed 42, agreement 19 %). URL contract: `index.html?lab=1&exp=<id>&seed=&laps=3&circuit=&baseline=<b64>&candidate=<b64>&mult_baseline=<b64>&mult_candidate=<b64>`; result message `{ type: "purple:result", experiment_id, seed, cars: [...] }`. `car.aero` is null unless supplied (D-G1).
 - **SERVER lane list complete (01:05):** overrule/rules hardened, `GET /api/rules?active=1`, status carries `prompt_hash`, `last_console_read_at`, `budget` per UTC day. 63 tests. Routes are now stable for the UI lane.
 - **Provider exam (00:55): verdicts 20/20, next-step 10/20.** Verdicts cannot differentiate v1/v2 (the prompt states the thresholds); the story is the *next experiment* the agent proposes. UI/DEMO: show both numbers as n/20; Try-models comparison is about next_parameter + direction.

@@ -33,7 +33,7 @@ Exit criteria: **all true at 23:58 London** (six verifies, task named from the p
 - [x] P1.T2 (F-04) broadcast mode `?lab=1&exp=&seed=&laps=&circuit=&baseline=&candidate=&mult_baseline=&mult_candidate=`, two neutral bots, TV camera, auto-start, `purple:result` postMessage (GAME, merged 01:15 from PR #8). **Headless race, seed 42, rear wing +8°: baseline 80.742 s / vmax 325.2 / Becketts 201.7; candidate 81.260 s / 315.8 / 211.5 → measured Δ +0.518 s vs predicted +0.436 s, agreement 19 % (target ≤ 25 %). Seeds 7 / 1234: Δ +0.515 / +0.696. T-F04-AC3 holds on every seed.**
 - [x] P1.T3 (F-04) `POST /api/race/result` hardened, `agreement_pct`, SSE `race`, `npm run fake-race` (SERVER lane, merged 00:32 from PR #2; 41/41 tests)
 - [ ] P1.T4 watch v1 in **Adapters** (Tanuj screenshot → `status.json`); if Below target / Prompt only → `npm run collect -- --n 30` on the Saturday budget
-- [ ] P1.T5 `/checkin` #1 in #max by Sat 12:00 (Tanuj)
+- [ ] P1.T5 `/checkin` #1 in #max by Sat 12:00 (Tanuj) — text drafted in `docs/checkins/checkin-1.md`
 
 ## Checklist (P2 items already landed)
 
@@ -132,3 +132,7 @@ Exit criteria: **all true at 23:58 London** (six verifies, task named from the p
 
 ### 2026-10-24 01:15 — integrator — merged GAME P1.T1 + P1.T2 (PR #7, #8; branch `claude/game-p1-aero-broadcast`)
 - **P1 exit sentence is true in the headless race:** "the candidate with +8° rear wing was predicted +0.436 s and measured +0.518 s" (seed 42, agreement 19 %). It is not yet in `ledger.jsonl`: that needs the UI's Race it → postMessage → `POST /api/race/result` path, or `npm run fake-race` for a stand-in. 65/65 tests. GAME's Playwright browser run (software GL) still finishing; numbers to follow in the lane file.
+
+### 2026-10-24 01:25 — integrator — the demo experiment is in the ledger (P1 exit criterion)
+- `POST /api/plan` with candidate rear wing +8°, seed 42, dry Silverstone (1 trained call) → experiment **01M5NHXH4RSEQ50VM955FK20B7**, agent said reject / next rear_wing_deg decrease 4. Then `POST /api/race/result` with GAME's headless race numbers for the same setups and seed 42 (baseline 80.742 / 24.683 / 25.771 / 30.268 / 325.2 / 201.7; candidate 81.260 / 24.927 / 25.950 / 30.377 / 315.8 / 211.5) → `measured_delta` +0.518, `predicted_delta` +0.436, **`agreement_pct` 19**, status raced, label "measured in race, seed 42". The ROADMAP P1 exit sentence is now literally true in `ledger.jsonl`. The browser-iframe path (UI Race it → postMessage) will append a superseding row when it runs.
+- `docs/checkins/checkin-1.md` drafted for Tanuj to paste into #max before 12:00 (two brackets to fill from the Adapters tab).
