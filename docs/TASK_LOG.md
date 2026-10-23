@@ -169,3 +169,6 @@ Exit criteria: **all true at 23:58 London** (six verifies, task named from the p
 - Froze `data/` into `docs/ledger-snapshot/2026-10-24T0215-after-v2/` (93 ledger rows, 120 calls). **The next integrator restores it first.**
 - Wrote `docs/agents/INTEGRATOR_PROMPT.md`; HANDOVER §1 rewritten as the live state (lane session ids, pending work, human items). Session 1's check-in trigger cancelled; lanes still address session 1 until the new integrator introduces itself.
 - CAR3D decisions D-C1..D-C4 are in docs/agents/lanes/CAR3D.md and still need copying into the Decisions table (next integrator).
+
+### 2026-10-24 02:35 — integrator session 1 — last merges before handover
+- SERVER PR #13: `npm run snapshot -- --label <x>` freezes data/ into docs/ledger-snapshot/<stamp>-<label>/ with README + counts.json (use it instead of the hand copy from now on). GAME PR #14: "How to film it" in docs/agents/lanes/GAME.md (Shot A baseline vs rear wing 28°, Shot B VER on the grid, settings, expected numbers). GAME's browser-run numbers land on that same lane file later. SERVER PR #10 closed on GitHub (merged by hand earlier).

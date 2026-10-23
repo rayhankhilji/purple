@@ -10,7 +10,7 @@ Living document. Owned by the **integrator** (whoever merges lane branches). Lan
 
 **Merged into the integration branch (71 tests):** SERVER #2 race result, #3 integrity guards, #5 overrule/rules, #6 status fields + promote-bias plumbing, #10 collect-dry; EVAL #4 exam.json + bias + TD-01, #9 try-sheet + dry run + canonical rng; GAME #7 car aero, #8 broadcast mode, #11 grid race; CAR3D #12 3D car view (`EI.labCar3D`, `EI.rebuildWings`, 10.8 ms wing swap). CORS on /api/* for the lab page.
 
-**Ledger:** runtime `data/` is gitignored; the frozen copy is `docs/ledger-snapshot/2026-10-24T0215-after-v2/` (93 ledger rows, 120 calls, R-01, status, state). Restore it first thing. Re-snapshot after any new rows.
+**Ledger:** `npm run snapshot -- --label <x>` (SERVER PR #13) freezes it properly; runtime `data/` is gitignored; the frozen copy is `docs/ledger-snapshot/2026-10-24T0215-after-v2/` (93 ledger rows, 120 calls, R-01, status, state). Restore it first thing. Re-snapshot after any new rows.
 
 **Lane sessions (message them with send_message; tell them the new integrator id first):**
 
