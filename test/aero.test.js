@@ -41,3 +41,15 @@ test("wind: blowing from the direction of travel is a headwind of wind_ms; from 
   }
   assert.equal(aero.headwind({ wind_ms: 0, wind_from_deg: 90 }, 1), 0);
 });
+test("P2.T6 describeViolation: one-line labels per rule id, numbers from RANGES, unknown ids unchanged", () => {
+  assert.equal(aero.describeViolation("REG-RW-MAX"), "Rear wing above 35° (regulation)");
+  assert.equal(aero.describeViolation("REG-FW-MIN"), "Front wing below 10° (regulation)");
+  assert.equal(aero.describeViolation("REG-RH-MIN"), "Ride height below 25 mm (regulation)");
+  assert.equal(aero.describeViolation("REG-BB-MAX"), "Brake bias above 62 % front (regulation)");
+  assert.equal(aero.describeViolation("REG-ERS"), "ERS deploy outside 0–1 (regulation)");
+  assert.equal(aero.describeViolation("TD-01"), "Technical directive TD-01: rear wing capped at 20°");
+  assert.equal(aero.describeViolation("R-99"), "R-99");
+  // every id violations() can emit has a label that is not just the id
+  const all = aero.KEYS.flatMap(k => (k === "ers_deploy" ? ["REG-ERS"] : [aero.RANGES[k].rule + "-MIN", aero.RANGES[k].rule + "-MAX"])).concat("TD-01");
+  for (const id of all) assert.notEqual(aero.describeViolation(id), id, id);
+});

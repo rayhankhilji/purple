@@ -4,7 +4,9 @@
   "private": true,
   "description": "PURPLE: an autonomous F1 research lab on Equation I, routed through Mubit",
   "license": "UNLICENSED",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "node server/dev.js",
     "start": "node server/index.js",
@@ -15,7 +17,10 @@
     "smoke": "node server/scripts/smoke.js",
     "collect": "node server/scripts/collect.js",
     "exam": "node server/scripts/exam.js",
-    "fixtures": "node server/scripts/fixtures.js"
+    "fixtures": "node server/scripts/fixtures.js",
+    "fake-race": "node server/scripts/fake-race.js",
+    "prompt:check": "node server/scripts/prompt-hash.js",
+    "exam:build": "node server/scenarios.js --build-exam data/exam.json --seed 2026"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.137.0",
