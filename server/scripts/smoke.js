@@ -2,15 +2,16 @@
 const path = require("path");
 require("dotenv").config({ path: process.env.PURPLE_ENV_FILE || path.join(__dirname, "..", ".env") });
 const { ulid } = require("ulid");
-const headless = require("../game-headless.js"), store = require("../store.js"), mubit = require("../mubit.js"), prompt = require("../../lab/prompt.js");
+const headless = require("../game-headless.js"), store = require("../store.js"), prompt = require("../../lab/prompt.js");
+const mubit = process.env.MUBIT_MOCK === "1" ? require("../../test/mocks/mubit.js") : require("../mubit.js");   // MUBIT_MOCK=1: the drill / the trained:false test, no network
 (async () => {
   const EI = headless.load(); const { aero, schema, evaluator } = EI;
-  const db = store.open(path.join(headless.ROOT, process.env.PURPLE_DATA_DIR || "data"));
+  const dataDir = process.env.PURPLE_DATA_DIR || "data"; const db = store.open(path.isAbsolute(dataDir) ? dataDir : path.join(headless.ROOT, dataDir));
   const circuit = "silverstone", conditions = { circuit, wet: false, wind_ms: 0, wind_from_deg: 0 }, baseline = aero.BASELINE, candidate = Object.assign({}, baseline, { rear_wing_deg: 28 });
   const evaluation = evaluator.evaluate(circuit, candidate, conditions, { baseline });
   const scenario = schema.buildScenario({ circuit, conditions, baseline, baselineEval: evaluation.baseline, candidate, evaluation, rules: [], history: [] });
   const userContent = schema.serializeScenario(scenario), session_id = "smoke-" + ulid();
-  console.log(`smoke: ${userContent.length} chars ≈ ${schema.approxTokens(userContent)} tokens, model ${prompt.MODEL}, untrained`);
+  console.log(`smoke: ${userContent.length} chars ≈ ${schema.approxTokens(userContent)} tokens, model ${prompt.MODEL}, untrained${mubit.CANNED ? " [MUBIT_MOCK]" : ""}`);
   try {
     const r = await mubit.callMubit({ userContent, sessionId: session_id, trained: false, kind: "smoke" });
     const v = schema.validatePlanOutput(r.text);

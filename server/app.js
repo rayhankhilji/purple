@@ -20,6 +20,8 @@ function createApp(opts) {
   const { aero, schema, evaluator, U } = EI;
   const dataDir = opts.dataDir || process.env.PURPLE_DATA_DIR || path.join(headless.ROOT, "data");
   const db = store.open(path.isAbsolute(dataDir) ? dataDir : path.join(headless.ROOT, dataDir));
+  // G-MUBIT-02 invariant: only real plan calls may train. Any other calls.jsonl row must say trained: false; a bug here would cost task integrity, so it throws.
+  const rawAppendCall = db.appendCall; db.appendCall = row => { if (row.kind !== "plan" && row.trained !== false) throw new Error("G-MUBIT-02: calls.jsonl row kind " + row.kind + " must have trained: false"); return rawAppendCall(row); };
   const mubit = opts.mubit || (process.env.MUBIT_MOCK === "1" ? require("../test/mocks/mubit.js") : require("./mubit.js"));
   const heartbeatMs = opts.heartbeatMs || 15000;
   const log = opts.log || ((...a) => console.log(...a));
@@ -235,7 +237,15 @@ function createApp(opts) {
     const s = setState(patch); emit("status", statusView()); return ok(c, s);
   });
   app.post("/api/exam/run", async c => ok(c, await runExam()));
-  app.post("/api/collect", async c => { const b = await body(c); return ok(c, await collect(Math.max(1, Math.min(200, parseInt(b.n, 10) || 10)), { with_rules: !!b.with_rules, seed: b.seed, circuit: b.circuit })); });
+  // trained calls spend the daily budget and shape the task: the caller must say so, and n is capped (the CLI `npm run collect` is the integrator's path)
+  const COLLECT_MAX_N = 60;
+  app.post("/api/collect", async c => {
+    const b = await body(c);
+    if (b.confirm !== "trained") throw new ApiError("BAD_INPUT", "confirm must be \"trained\": /api/collect sends TRAINED Mubit calls that spend the daily budget and become task examples");
+    if (!Number.isInteger(b.n) || b.n < 1) throw new ApiError("BAD_INPUT", "n must be an integer >= 1 (max " + COLLECT_MAX_N + ")");
+    if (b.n > COLLECT_MAX_N) throw new ApiError("BAD_INPUT", "n must be <= " + COLLECT_MAX_N + " per request (budget guard)");
+    return ok(c, await collect(b.n, { with_rules: !!b.with_rules, seed: b.seed, circuit: b.circuit }));
+  });
   return { app, emit, db, state, setState, runPlan, collect, runExam, statusView, EI };
 }
 module.exports = { createApp, ApiError, STATUS };

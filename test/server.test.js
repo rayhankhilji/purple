@@ -147,6 +147,36 @@ test("collect: n plan calls with random candidates, fresh session per call, stat
   const sessions = new Set(mock.inputs.map(i => i.sessionId)); assert.equal(sessions.size, 6);
   const st = (await json(app, "/api/status")).body.data; assert.equal(st.calls_trained, 6); assert.equal(st.experiments, 6);
 });
+test("POST /api/collect requires confirm: \"trained\" and caps n at 60 (trained calls spend budget)", async () => {
+  mock.reset(); const { app } = createApp({ dataDir: tmp(), mubit: mock, log: () => {} });
+  for (const b of [{ n: 2 }, { n: 2, confirm: "yes" }, { n: 2, confirm: true }]) { const r = await post(app, "/api/collect", b); assert.equal(r.status, 400); assert.equal(r.body.error.code, "BAD_INPUT"); assert.match(r.body.error.message, /confirm must be "trained"/); }
+  for (const n of [0, -1, 1.5, "2", undefined, 61, 200]) { const r = await post(app, "/api/collect", { n, confirm: "trained" }); assert.equal(r.status, 400, "n=" + n); assert.match(r.body.error.message, /^n must be/); }
+  assert.equal(mock.count(), 0);   // nothing was sent
+  const okr = await post(app, "/api/collect", { n: 2, confirm: "trained", seed: 42 }); assert.equal(okr.status, 200); assert.equal(okr.body.data.ok, 2); assert.equal(mock.count(), 2);
+});
+test("G-MUBIT-02 every calls.jsonl row written by a non-plan path (exam, smoke, illegal) has trained: false; the writer refuses otherwise", async () => {
+  mock.reset(); const dir = tmp(); const { app, db, runExam } = createApp({ dataDir: dir, mubit: mock, log: () => {} });
+  const x = (await post(app, "/api/plan", { scenario_overrides: { seed: 9 } })).body.data;   // one trained plan row
+  db.writeExam([{ id: "ex-1", scenario: x.scenario, truth: { verdict: "reject", next_parameter: "rear_wing_deg", direction: "decrease" } }, { id: "ex-2", scenario: x.scenario, truth: { verdict: "promote", next_parameter: "ride_height_mm", direction: "decrease" } }]);
+  const exam = await runExam(); assert.equal(exam.total, 2); assert.equal(exam.provider, 1);
+  assert.ok(mock.inputs.filter(i => i.kind === "exam").every(i => i.trained === false), "exam calls carry the untrained flag to the client");
+  await post(app, "/api/state", { td01: true }); await post(app, "/api/plan", { scenario_overrides: { candidate: Object.assign({}, x.candidate, { rear_wing_deg: 25 }) } });   // an illegal row
+  const smoke = spawnSync(process.execPath, [path.join(__dirname, "..", "server", "scripts", "smoke.js")], { env: Object.assign({}, process.env, { MUBIT_MOCK: "1", PURPLE_DATA_DIR: dir, PURPLE_ENV_FILE: "/nonexistent/.env" }), encoding: "utf8", timeout: 20000 });
+  assert.equal(smoke.status, 0, smoke.stderr); assert.match(smoke.stdout, /untrained \[MUBIT_MOCK\]/); assert.match(smoke.stdout, /x-middleware-request-id: mreq_/);
+  const calls = fs.readFileSync(path.join(dir, "calls.jsonl"), "utf8").trim().split("\n").map(JSON.parse);
+  assert.deepEqual(calls.map(c => c.kind).sort(), ["exam", "exam", "illegal", "plan", "smoke"]);
+  assert.ok(calls.filter(c => c.kind !== "plan").every(c => c.trained === false), JSON.stringify(calls.map(c => [c.kind, c.trained])));
+  assert.ok(calls.filter(c => c.kind === "plan").every(c => c.trained === true));
+  assert.throws(() => db.appendCall({ id: "bad", kind: "exam", trained: true }), /G-MUBIT-02/); assert.throws(() => db.appendCall({ id: "bad", kind: "smoke" }), /G-MUBIT-02/);
+  assert.equal(fs.readFileSync(path.join(dir, "calls.jsonl"), "utf8").trim().split("\n").length, 5);   // the refused rows were not written
+});
+test("server start logs the frozen prompt hash (G-MUBIT-01) and binds 127.0.0.1", async () => {
+  const { spawn } = require("child_process"); const env = Object.assign({}, process.env, { MUBIT_MOCK: "1", PURPLE_PORT: "0", PURPLE_DATA_DIR: tmp(), PURPLE_ENV_FILE: "/nonexistent/.env" });
+  const k = spawn(process.execPath, [path.join(__dirname, "..", "server", "index.js")], { env }); let out = "";
+  await new Promise((res, rej) => { const t = setTimeout(() => rej(new Error("no startup line: " + out)), 15000); k.stdout.on("data", d => { out += d; if (/PURPLE server http/.test(out)) { clearTimeout(t); res(); } }); k.on("exit", c => rej(new Error("exited " + c + ": " + out))); });
+  k.kill();
+  assert.match(out, /PURPLE prompt sha256 6c5be1a3f4ed0f5fb21226363fa3524404996558628bc8cba119677dfc37ce6a \(PROMPT_VERSION 1\)\n/); assert.doesNotMatch(out, /differs/); assert.match(out, /PURPLE server http:\/\/127\.0\.0\.1:\d+/);
+});
 test("server without MUBIT_API_KEY refuses to start (exit 1) when MUBIT_MOCK is unset", () => {
   const env = Object.assign({}, process.env); delete env.MUBIT_API_KEY; delete env.MUBIT_MOCK; env.PURPLE_ENV_FILE = "/nonexistent/.env";
   const r = spawnSync(process.execPath, [path.join(__dirname, "..", "server", "index.js")], { env, encoding: "utf8", timeout: 15000 });
