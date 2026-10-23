@@ -76,7 +76,7 @@ function createApp(opts) {
     const baseline = ov.baseline ? (() => { const v = schema.validateSetup(ov.baseline); if (!v.ok) throw new ApiError("BAD_INPUT", "baseline " + v.error); return v.value; })() : st.baseline;
     const td01 = !!st.td01;
     let candidate, candidate_source;
-    if (ov.candidate) { const v = schema.validateSetup(ov.candidate); if (!v.ok) throw new ApiError("BAD_INPUT", "candidate " + v.error); candidate = v.value; candidate_source = "supplied"; }
+    if (ov.candidate) { const v = schema.validateSetup(ov.candidate); if (!v.ok) throw new ApiError("BAD_INPUT", "candidate " + v.error); candidate = v.value; candidate_source = input.candidate_source || "supplied"; }
     else if (st.last_plan && !input.random) { candidate = schema.applyPlan(baseline, st.last_plan); candidate_source = "agent"; }
     else { candidate = scenarios.perturb(baseline, rng, { td01 }); candidate_source = "random"; }
     const mult = aero.toMultipliers(candidate, conditions, { td01 });
@@ -115,15 +115,22 @@ function createApp(opts) {
     return experiment;
   }
   // n random-candidate plan calls, concurrency 2 (G-MUBIT-05); illegal picks are retried with the next seed
+  // promote_bias (EVAL D-E1): share of candidates the generator draws from the evaluator's "promote" moves; 0 = the v1 generator exactly.
+  // Whether it applied to a draw is replayed here from the same seed: perturb()'s first rng() is the bias draw, and it only uses a
+  // promote move when that class is non-empty. Such rows get candidate_source "random-biased".
+  const biasApplied = (seed, bias, baseline, circuit, td01) => bias > 0 && U.rng(seed)() < bias && scenarios.movesByVerdict(evaluator, baseline, { circuit, wet: false, wind_ms: 0, wind_from_deg: 0 }, { td01 }).promote.length > 0;
   async function collect(n, o) {
     o = o || {}; const conc = Math.min(2, o.concurrency || 2), seed0 = Number.isInteger(o.seed) ? o.seed : Math.floor(Math.random() * 1e6);
-    const res = { sent: 0, ok: 0, parse_error: 0, mubit_error: 0, illegal_retries: 0, seeds: [] }; let next = 0;
+    const bias = o.promote_bias == null ? 0 : Number(o.promote_bias);
+    if (!Number.isFinite(bias) || bias < 0 || bias > 1) throw new ApiError("BAD_INPUT", "promote_bias must be a number between 0 and 1");
+    const res = { sent: 0, ok: 0, parse_error: 0, mubit_error: 0, illegal_retries: 0, promote_bias: bias, biased: 0, seeds: [] }; let next = 0;
     async function worker() {
       while (next < n) {
         const i = next++; let seed = seed0 * 1000 + i;
         for (let tries = 0; tries < 5; tries++) {
-          const rng = U.rng(seed); const g = scenarios.generate(rng, { circuit: o.circuit || "silverstone", baseline: state().baseline, td01: state().td01 });
-          try { res.sent++; await runPlan({ random: true, with_rules: !!o.with_rules, scenario_overrides: { seed, circuit: g.conditions.circuit, conditions: g.conditions, candidate: g.candidate } }); res.ok++; res.seeds.push(seed); break; }
+          const rng = U.rng(seed), st = state(), circuit = o.circuit || "silverstone"; const g = scenarios.generate(rng, { circuit, baseline: st.baseline, td01: st.td01, promote_bias: bias });
+          const biased = biasApplied(seed, bias, st.baseline, circuit, !!st.td01);
+          try { res.sent++; await runPlan({ random: true, with_rules: !!o.with_rules, candidate_source: biased ? "random-biased" : "random", scenario_overrides: { seed, circuit: g.conditions.circuit, conditions: g.conditions, candidate: g.candidate } }); res.ok++; if (biased) res.biased++; res.seeds.push(seed); break; }
           catch (e) {
             if (e.code === "ILLEGAL_SETUP") { res.sent--; res.illegal_retries++; seed += 7919; continue; }
             if (e.code === "PARSE_ERROR") res.parse_error++; else res.mubit_error++;
@@ -273,7 +280,7 @@ function createApp(opts) {
     if (b.confirm !== "trained") throw new ApiError("BAD_INPUT", "confirm must be \"trained\": /api/collect sends TRAINED Mubit calls that spend the daily budget and become task examples");
     if (!Number.isInteger(b.n) || b.n < 1) throw new ApiError("BAD_INPUT", "n must be an integer >= 1 (max " + COLLECT_MAX_N + ")");
     if (b.n > COLLECT_MAX_N) throw new ApiError("BAD_INPUT", "n must be <= " + COLLECT_MAX_N + " per request (budget guard)");
-    return ok(c, await collect(b.n, { with_rules: !!b.with_rules, seed: b.seed, circuit: b.circuit }));
+    return ok(c, await collect(b.n, { with_rules: !!b.with_rules, seed: b.seed, circuit: b.circuit, promote_bias: b.promote_bias }));
   });
   return { app, emit, db, state, setState, runPlan, collect, runExam, statusView, EI };
 }

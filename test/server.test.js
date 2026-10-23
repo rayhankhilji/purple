@@ -255,6 +255,30 @@ test("server start logs the frozen prompt hash (G-MUBIT-01) and binds 127.0.0.1"
   k.kill();
   assert.match(out, /PURPLE prompt sha256 6c5be1a3f4ed0f5fb21226363fa3524404996558628bc8cba119677dfc37ce6a \(PROMPT_VERSION 1\)\n/); assert.doesNotMatch(out, /differs/); assert.match(out, /PURPLE server http:\/\/127\.0\.0\.1:\d+/);
 });
+test("collect promote_bias: 0 keeps v1 candidates (source random); 1 draws only promote-class moves (random-biased); 0.3 matches the seeded replay", async () => {
+  const scenarios = require("../server/scenarios.js");
+  const run = async bias => { mock.reset(); const a = createApp({ dataDir: tmp(), mubit: mock, log: () => {} }); const res = await a.collect(8, { seed: 77, promote_bias: bias }); return { a, res, rows: a.db.readLedger().slice().reverse() }; };
+  const none = await run(undefined), zero = await run(0);
+  assert.equal(zero.res.promote_bias, 0); assert.equal(zero.res.biased, 0); assert.ok(zero.rows.every(r => r.candidate_source === "random"));
+  assert.deepEqual(zero.rows.map(r => r.candidate), none.rows.map(r => r.candidate));   // bias 0 == the v1 generator (same seeds, same candidates)
+  const one = await run(1); const promote = scenarios.movesByVerdict(one.a.EI.evaluator, one.a.EI.aero.BASELINE, { circuit: "silverstone", wet: false, wind_ms: 0, wind_from_deg: 0 }, { td01: false }).promote.map(m => JSON.stringify(m.candidate));
+  assert.equal(one.res.biased, 8); assert.ok(one.rows.every(r => r.candidate_source === "random-biased"));
+  assert.ok(one.rows.every(r => promote.includes(JSON.stringify(r.candidate))), "every biased candidate is a promote-class move");
+  const some = await run(0.3); const { U } = some.a.EI; const expect = some.res.seeds.filter(sd => U.rng(sd)() < 0.3).length;
+  assert.equal(some.res.biased, expect); assert.equal(some.rows.filter(r => r.candidate_source === "random-biased").length, expect);
+  for (const bad of [-0.1, 1.5, "x"]) await assert.rejects(() => zero.a.collect(1, { promote_bias: bad }), /promote_bias must be a number between 0 and 1/);
+});
+test("POST /api/collect accepts promote_bias (0..1) and rejects others; npm run collect -- --promote-bias prints it (mock, temp data dir)", async () => {
+  mock.reset(); const { app } = createApp({ dataDir: tmp(), mubit: mock, log: () => {} });
+  const r = await post(app, "/api/collect", { n: 3, confirm: "trained", seed: 5, promote_bias: 1 }); assert.equal(r.status, 200); assert.equal(r.body.data.promote_bias, 1); assert.equal(r.body.data.biased, 3);
+  const led = (await json(app, "/api/ledger")).body.data; assert.ok(led.every(x => x.candidate_source === "random-biased"));
+  const bad = await post(app, "/api/collect", { n: 1, confirm: "trained", promote_bias: 2 }); assert.equal(bad.status, 400); assert.match(bad.body.error.message, /promote_bias/);
+  const dir = tmp(), env = Object.assign({}, process.env, { MUBIT_MOCK: "1", PURPLE_DATA_DIR: dir, PURPLE_ENV_FILE: "/nonexistent/.env" }); delete env.MUBIT_API_KEY;
+  const cli = spawnSync(process.execPath, [path.join(__dirname, "..", "server", "scripts", "collect.js"), "--n", "4", "--seed", "3", "--promote-bias", "0.5"], { env, encoding: "utf8", timeout: 30000 });
+  assert.equal(cli.status, 0, cli.stderr); assert.match(cli.stdout, /collect: n=4 seed=3 circuit=silverstone with_rules=false promote_bias=0.5 concurrency=2/); assert.match(cli.stdout, /\[MUBIT_MOCK\]/); assert.match(cli.stdout, /promote-biased \d+/);
+  const rows = fs.readFileSync(path.join(dir, "ledger.jsonl"), "utf8").trim().split("\n").map(JSON.parse); assert.equal(rows.length, 4); assert.ok(rows.every(x => ["random", "random-biased"].includes(x.candidate_source)));
+  const badCli = spawnSync(process.execPath, [path.join(__dirname, "..", "server", "scripts", "collect.js"), "--n", "1", "--promote-bias", "3"], { env, encoding: "utf8", timeout: 30000 }); assert.equal(badCli.status, 1); assert.match(badCli.stderr, /--promote-bias must be/);
+});
 test("server without MUBIT_API_KEY refuses to start (exit 1) when MUBIT_MOCK is unset", () => {
   const env = Object.assign({}, process.env); delete env.MUBIT_API_KEY; delete env.MUBIT_MOCK; env.PURPLE_ENV_FILE = "/nonexistent/.env";
   const r = spawnSync(process.execPath, [path.join(__dirname, "..", "server", "index.js")], { env, encoding: "utf8", timeout: 15000 });
