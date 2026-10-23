@@ -1,8 +1,28 @@
 # Lane GAME
 
-Status: in_progress P1.T2 verify (code done, PRs open). Owner: agent A (Claude, session `session_019VA5sAvTHuQ3bGbWV5CX4M`). Branches: `claude/game-p1-aero` (P1.T1), `claude/game-p1-aero-broadcast` (P1.T1 + P1.T2, stacked).
+Status: in_progress (P3.T3 PR open; P1.T2 browser numbers pending). Owner: agent A (Claude, session `session_019VA5sAvTHuQ3bGbWV5CX4M`). Branches: `claude/game-p3-grid` (P3.T3); merged: `claude/game-p1-aero` (P1.T1), `claude/game-p1-aero-broadcast` (P1.T2).
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
+
+### 2026-10-24 02:35 London — agent A (Claude) — P3.T3 (F-10) grid race
+- Status: **done, verified headless + browser smoke** (PR from `claude/game-p3-grid` into `claude/amazing-planck-804i13`, branched after the P1 merge). `npm test` 65/65. The P1.T2 browser run (1 lap, software GL) is still finishing; its numbers come in a lane-file-only PR.
+- Files changed: `js/race.js`, `js/main.js`, this file.
+- What it does: `index.html?lab=1&mode=grid&exp=<id>&driver=<2026 code | number | surname>&candidate=<b64 setup>&mult_candidate=<b64 { df, cd, a0, b0 }>&seed=<n>&laps=2&circuit=silverstone[&round=<grid round>]`
+  - `js/race.js`: grid mode runs the normal `buildGrid` (22 real seats, season profiles, `difficulty: 'official'` = real 2026 pace, `grid: 'season'` = a real starting grid of this circuit, British GP round 9 at Silverstone). `labAeroFor(seat)`: the chosen driver's car gets `cfg.lab.candidate.aero` and becomes `race.labCar` (`car.role = 'candidate'`); every other car a neutral `{1,1,1,1}` so all 22 drive the aero-aware profile path in `ai.js`. `labFinishers()`: the candidate car's finish ends the race (then classification when every car has crossed or after 20 s), every car in race mode, the players in the shipped game.
+  - `js/main.js`: `LAB.mode` (`race` | `grid`), `driver`, `round`, `candidate`; laps default 2 in grid mode; `labGridRound()` finds the circuit's real grid in `EI.SEASON.grids`; TV camera follows `race.labCar`; a fixed caption `Cinematic · mixes car and driver · <driver> in the candidate car · reduced-order lap model` (G-HON-05, created in JS, no CSS/HTML edits); at the end `{ type: 'purple:grid', experiment_id, seed, circuit, laps, field, grid, driver: { code, name, team, grid_position }, position, best_lap, laps_done, finished, vmax_kmh, vmin_becketts_kmh, fastest_lap, setup, aero, label }` to `window.parent` (also `EI.labResult`). Baseline-vs-candidate mode (`?lab=1` without `mode=grid`) and the shipped game are unchanged.
+- Verify step run + output:
+  - **Headless (Node: race.js + car.js + ai.js + teams + season data, `driver=VER`, rear wing +8°, seed 42, 2 laps):** field 22, grid "2026 British GP starting grid", VER starts P7 with aero `{ df 1.144, cd 1.088, a0 0.9872, b0 1 }`, every other car neutral; finishes **P14**, best lap **91.215** (laps 99.828 / 91.215), all 22 classified at 196.5 s race time (9.5 s wall); fastest lap ANT 88.442. Runs 2 laps without input → ROADMAP P3.T3 verify holds.
+  - **Browser smoke (Playwright, headless Chromium, software GL, 400×225):** auto-start with no input, menu hidden, 1 camera (TV), 0 players, `race.lab.mode = grid`, field 22, grid "2026 British GP starting grid", `labCar` VER (redbull) grid P7 with the candidate aero, caption rendered, racing at t = 3.1 s (VER 123 km/h) when the smoke stopped; **0 page errors, 0 console errors**. Screenshot `grid_mid.png` in the session scratchpad.
+  - URL used: `http://127.0.0.1:8788/index.html?lab=1&mode=grid&exp=exp-test-grid&driver=VER&seed=42&laps=2&circuit=silverstone&candidate=eyJmcm9udF93aW5nX2RlZyI6MjUsInJlYXJfd2luZ19kZWciOjI4LCJyaWRlX2hlaWdodF9tbSI6MzUsImJyYWtlX2JpYXNfcGN0Ijo1NywiZXJzX2RlcGxveSI6MC41fQ==&mult_candidate=eyJkZiI6MS4xNDQsImNkIjoxLjA4OCwiYTAiOjAuOTg3MiwiYjAiOjF9`
+- Decisions proposed (for the integrator to log in TASK_LOG):
+  1. In grid mode every car carries an aero object (the field ×1), not `null`: `ai.js` caps aero-aware profiles at terminal speed, so a `null` field would be ~4 km/h quicker on the straights than the candidate for a reason that has nothing to do with the setup. The field's lap therefore differs slightly from the shipped game's — acceptable for a cinematic, labelled as such.
+  2. The race ends when the candidate car finishes (the cinematic subject), classification follows within 20 s. Message name `purple:grid` as the integrator specified; payload carries extras (`driver`, `field`, `grid`, `fastest_lap`, `label`) the server may ignore.
+  3. Real pace = `difficulty: 'official'`; the real grid = `grid: 'season'` with the circuit's round (`?round=` overrides). Unknown circuit → race.js picks a real grid by the seed.
+- Blockers / questions for Tanuj: none. FYI the on-screen caption wording is "Cinematic · mixes car and driver · … · reduced-order lap model"; tell me if the deck wants other words.
+- Next three actions:
+  1. Integrator merges `claude/game-p3-grid`; the UI lane adds a "Grid race (cinematic)" button that opens the URL above with the current candidate and a driver picker (2026 codes).
+  2. GAME: lane-file-only PR with the P1.T2 browser-run numbers when the 1-lap run lands.
+  3. GAME: review the UI lane's "Race it" iframe integration when pointed at it.
 
 ### 2026-10-24 01:40 London — agent A (Claude) — P1.T1 + P1.T2
 - Status: **P1.T1 done** (PR into `claude/amazing-planck-804i13` from `claude/game-p1-aero`). **P1.T2 done, verified headless + browser** (PR from `claude/game-p1-aero-broadcast`, stacked on T1: merge T1 first, its diff then shrinks to T2). `npm test` 36/36 on both. Next: P3.T3 grid race (F-10) when the integrator opens it.
