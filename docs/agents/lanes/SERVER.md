@@ -1,10 +1,31 @@
 # Lane SERVER
 
-Status: done for the assigned list; four stacked PRs open (#2 P1.T3, #3 guards, #5 P2.T3, status widget). Idle until merges or GAME/EVAL payloads land. Owner: agent B (Claude, session_01Tq3p158ophv4wuU2ibcJbj). Branches: `claude/server-p1-race` → `claude/server-p1-guards` → `claude/server-p1-rules` → `claude/server-p1-status` (stacked branches `claude/server-p1-*` follow, one PR per task into `claude/amazing-planck-804i13`).
+Status: in_progress — PRs #2, #3, #5, #6 merged; collect-dry + seed-mixing PR open (branch `claude/server-p1-dry`, from the integration branch, not stacked). GAME PR #8 payload reviewed (below). Next: T-F04-AC2 with a real post once #7/#8 merge. Owner: agent B (Claude, session_01Tq3p158ophv4wuU2ibcJbj). Branches: `claude/server-p1-race` → `claude/server-p1-guards` → `claude/server-p1-rules` → `claude/server-p1-status` (stacked branches `claude/server-p1-*` follow, one PR per task into `claude/amazing-planck-804i13`).
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
 
 ## Sessions
+
+### 2026-10-24 01:55 London — agent B (Claude) — collect-dry preview, seed mixing, GAME PR #8 payload review
+- Status: done, PR open into `claude/amazing-planck-804i13` (branch `claude/server-p1-dry`, cut from the integration branch after #6 merged; nothing stacked).
+- Files changed: `server/app.js` (`dryCollect`, `itemSeed`; `collect()` uses the mixed seed), `server/scripts/collect-dry.js` (new), `test/server.test.js` (+2), this file. `server/scenarios.js` untouched.
+- **Finding (needs a TASK_LOG line):** the game's `U.rng` is xorshift32 and its FIRST output is ~linear in the seed (`U.rng(2000..2039)()` all = 0.124; seed0 1 → 0.062, 3 → 0.186). `collect()` seeded items as `seed0*1000+i`, so every item of a run shared its first draw: **in v1 all 50 candidates moved the same first parameter (front wing)**, and with `promote_bias` the gate (the generator's first draw) would have been all-or-nothing per run (seed 2 → 100 % biased, seed 42 → 0 %). Fix: `itemSeed(seed0, i)` = murmur3 finaliser of `seed0*1000+i` (31-bit). Rows stay replayable from their own `seed` (test), v1 rows keep their recorded seeds. Future `--seed N` runs give different candidates than before (nothing recorded depends on that). EVAL's perturb()-level seed compatibility is unaffected.
+- `node server/scripts/collect-dry.js --n 40 --seed 2 --promote-bias 0.3 [--list]`: same seeds as `npm run collect`, no Mubit call, nothing written (verified: data dir stays empty; the CLI runs without a key or mock). Output for the planned v2 run:
+  ```
+  collect-dry: n=40 seed=2 circuit=silverstone promote_bias=0.3 (same seeds as npm run collect; no Mubit call, nothing written to …)
+  verdicts (truth rule, |Δ| 0.03 s): promote 11 (28 %), retest 7 (18 %), reject 22 (55 %)
+  delta_lap: min -0.175 s, max 0.62 s, mean 0.078 s; promote-biased draws 10; illegal retries 0
+  conditions: dry 24, wind 10, wet 6; parameters moved: ride_height_mm 20, ers_deploy 11, front_wing_deg 10, brake_bias_pct 10, rear_wing_deg 8
+  ```
+  Same seed, bias 0: promote 7 (18 %), retest 14, reject 19. Bias 0.3 with seeds 1 / 3 / 7: promote 16 / 16 / 17 of 40 (40–43 %), biased draws 16 / 14 / 15. EVAL's 37 % estimate holds; seed 2 is on the low side (11 promote) because only 10 of its 40 gates fire. If the integrator wants ≥ 15 promotes in v2, seed 1 or 3 does it; `--list` shows every row (seed, verdict, Δ, source, change, conditions) before spending.
+- **GAME PR #8 (`purple:result`) against `POST /api/race/result`:** the shape passes the validator as posted (`experiment_id, seed, cars[2]{ role, lap, sectors[3], vmax_kmh, vmin_becketts_kmh }`; the extra keys `type, circuit, laps`, per-car `laps[], laps_deleted, finished, setup, aero` are ignored; `seed = (cfg.seed || Date.now() & 0xffff) >>> 0` is an integer; `vmin` is from the best lap's window so `vmin ≤ vmax` holds). Two ways it **would** 400, both value-level, not shape-level:
+  1. `experiment_id` is `LAB.exp` from `?exp=`; without it the message carries `null` → 400 `experiment_id must be a non-empty string`. UI lane: put `&exp=<id>` on the "Race it" URL **and** fall back to the lab page's current experiment id when relaying (GAME decision 5 says the same).
+  2. A car with no completed lap / no telemetry sample posts `lap: null`, `vmax_kmh: null`, `vmin_becketts_kmh: null` or a `null` sector → 400 naming that field. Cannot happen in a finished 3-lap race; if a car never finishes the UI should show the 400 text rather than retry.
+  No change needed in GAME for the server contract. Headless numbers in their lane file (Δ +0.518 s vs predicted +0.436 → agreement ≈ 19 %) match what the route computes.
+- Verify step run + output: `npm test` → 67/67 pass. `collect-dry.js` with no `MUBIT_API_KEY` and no `MUBIT_MOCK` → exit 0, data dir untouched; `--n 0` → exit 1.
+- Decisions proposed: D-S12 per-item seed mixing in `collect()` (above); D-S13 `collect-dry` is the required step before any trained collection (`npm run collect:dry -- --n 40 --seed 2 --promote-bias 0.3`); proposed `package.json` line: `"collect:dry": "node server/scripts/collect-dry.js"`.
+- Blockers / questions for Tanuj: none.
+- Next three actions: (1) when #7/#8 merge: run the broadcast page in the browser against the mock server, post one real `purple:result`, record T-F04-AC2 here; (2) respond to review on the collect-dry PR; (3) exam dry-run (`MUBIT_MOCK=1`, temp data dir) against `data/exam.json` to confirm the `status.exam` write path (the live exam already ran from the integrator's side: 20/20).
 
 ### 2026-10-24 01:35 London — agent B (Claude) — promote_bias wiring for the v2 collection (integrator request, EVAL D-E1)
 - Status: done, on the status-widget PR #6 (branch `claude/server-p1-status`). Branches `claude/server-p1-rules` and `claude/server-p1-status` both merged with `origin/claude/amazing-planck-804i13` (no conflicts).

@@ -268,6 +268,33 @@ test("collect promote_bias: 0 keeps v1 candidates (source random); 1 draws only 
   assert.equal(some.res.biased, expect); assert.equal(some.rows.filter(r => r.candidate_source === "random-biased").length, expect);
   for (const bad of [-0.1, 1.5, "x"]) await assert.rejects(() => zero.a.collect(1, { promote_bias: bad }), /promote_bias must be a number between 0 and 1/);
 });
+test("collect seeds are mixed per item: the first rng draw differs across a run (xorshift32 first output is ~linear in the seed), rows stay replayable", async () => {
+  mock.reset(); const a = createApp({ dataDir: tmp(), mubit: mock, log: () => {} }); const { U } = a.EI;
+  const res = await a.collect(12, { seed: 2 }); const firsts = new Set(res.seeds.map(sd => U.rng(sd)().toFixed(2)));
+  assert.ok(firsts.size >= 8, "first draws collapsed: " + [...firsts].join(","));   // unmixed seeds 2000..2011 all gave 0.12
+  assert.equal(new Set(res.seeds).size, 12); assert.ok(res.seeds.every(sd => Number.isInteger(sd) && sd > 0 && sd < 2 ** 31));
+  const rows = a.db.readLedger(); const firstParams = new Set(rows.map(r => r.change.split(",")[0].split(" ")[0])); assert.ok(firstParams.size >= 3, "every candidate moved the same first parameter: " + [...firstParams]);
+  // a row is reproducible from its own seed: the same candidate and conditions come back
+  const r0 = rows[rows.length - 1]; const g = require("../server/scenarios.js").generate(U.rng(r0.seed), { circuit: "silverstone", baseline: a.EI.aero.BASELINE, td01: false }); assert.deepEqual(g.candidate, r0.candidate); assert.deepEqual(g.conditions, r0.conditions);
+});
+test("dryCollect / collect-dry.js: same seeds as collect, verdict mix from the truth rule, no Mubit call, nothing written", async () => {
+  mock.reset(); const dir = tmp(); const a = createApp({ dataDir: dir, mubit: mock, log: () => {} });
+  const dry = a.dryCollect(10, { seed: 42, promote_bias: 0.3 });
+  assert.equal(dry.items.length, 10); assert.equal(dry.verdicts.promote + dry.verdicts.retest + dry.verdicts.reject, 10); assert.equal(dry.conditions.dry + dry.conditions.wind + dry.conditions.wet, 10);
+  assert.ok(dry.delta_lap.min <= dry.delta_lap.mean && dry.delta_lap.mean <= dry.delta_lap.max); assert.ok(dry.items.every(it => ["promote", "retest", "reject"].includes(it.verdict) && typeof it.change === "string"));
+  assert.equal(dry.biased, dry.items.filter(it => it.candidate_source === "random-biased").length);
+  assert.equal(mock.count(), 0); assert.equal(fs.existsSync(path.join(dir, "ledger.jsonl")), false); assert.equal(fs.existsSync(path.join(dir, "calls.jsonl")), false);
+  // the real collect() with the same seed/bias produces the same candidates in the same order (the dry run is a faithful preview)
+  const real = await a.collect(10, { seed: 42, promote_bias: 0.3 }); const rows = a.db.readLedger().slice().reverse();
+  assert.deepEqual(rows.map(r => r.seed), dry.items.map(it => it.seed)); assert.deepEqual(rows.map(r => r.change), dry.items.map(it => it.change)); assert.deepEqual(rows.map(r => r.candidate_source), dry.items.map(it => it.candidate_source)); assert.equal(real.biased, dry.biased);
+  assert.deepEqual(rows.map(r => require("../server/scenarios.js").verdictOf(r.evaluation.delta_lap)), dry.items.map(it => it.verdict));
+  assert.equal(a.dryCollect(6, { seed: 42, promote_bias: 1 }).biased, 6); assert.throws(() => a.dryCollect(1, { promote_bias: 2 }), /promote_bias/); assert.throws(() => a.dryCollect(1, { circuit: "spa" }), /circuit/);
+  const dir2 = tmp(), env = Object.assign({}, process.env, { PURPLE_DATA_DIR: dir2, PURPLE_ENV_FILE: "/nonexistent/.env" }); delete env.MUBIT_API_KEY; delete env.MUBIT_MOCK;   // no key, no mock: the script must still run (no planner needed)
+  const cli = spawnSync(process.execPath, [path.join(__dirname, "..", "server", "scripts", "collect-dry.js"), "--n", "10", "--seed", "42", "--promote-bias", "0.3", "--list"], { env, encoding: "utf8", timeout: 30000 });
+  assert.equal(cli.status, 0, cli.stderr); assert.match(cli.stdout, /collect-dry: n=10 seed=42 circuit=silverstone promote_bias=0.3/); assert.match(cli.stdout, new RegExp("promote " + dry.verdicts.promote + " \\(")); assert.match(cli.stdout, /promote-biased draws \d+/); assert.equal((cli.stdout.match(/^  \d+ /gm) || []).length, 10);
+  assert.deepEqual(fs.readdirSync(dir2), []);
+  const bad = spawnSync(process.execPath, [path.join(__dirname, "..", "server", "scripts", "collect-dry.js"), "--n", "0"], { env, encoding: "utf8", timeout: 30000 }); assert.equal(bad.status, 1); assert.match(bad.stderr, /--n must be/);
+});
 test("POST /api/collect accepts promote_bias (0..1) and rejects others; npm run collect -- --promote-bias prints it (mock, temp data dir)", async () => {
   mock.reset(); const { app } = createApp({ dataDir: tmp(), mubit: mock, log: () => {} });
   const r = await post(app, "/api/collect", { n: 3, confirm: "trained", seed: 5, promote_bias: 1 }); assert.equal(r.status, 200); assert.equal(r.body.data.promote_bias, 1); assert.equal(r.body.data.biased, 3);
