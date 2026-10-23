@@ -1,0 +1,52 @@
+{
+  "lap": 80.8,
+  "sectors": [
+    25.094,
+    25.582,
+    30.125
+  ],
+  "vmax_kmh": 328.2,
+  "vmin_kmh": 212.5,
+  "vmin_lap_kmh": 68.1,
+  "terminal_kmh": 331.2,
+  "sector_vmax_kmh": [
+    324,
+    328.1,
+    328.2
+  ],
+  "straight_vmax_kmh": 327.6,
+  "legal": true,
+  "violations": [],
+  "multipliers": {
+    "df": 1,
+    "cd": 1,
+    "a0": 1,
+    "b0": 1,
+    "legal": true,
+    "violations": []
+  },
+  "delta_lap": 0,
+  "delta_sectors": [
+    0,
+    0,
+    0
+  ],
+  "baseline": {
+    "lap": 80.8,
+    "sectors": [
+      25.094,
+      25.582,
+      30.125
+    ],
+    "vmax_kmh": 328.2,
+    "vmin_kmh": 212.5,
+    "sector_vmax_kmh": [
+      324,
+      328.1,
+      328.2
+    ],
+    "straight_vmax_kmh": 327.6
+  },
+  "grip_scale": 1.137,
+  "model": "reduced-order lap model · calibrated to 2026 pole laps · aero map v1"
+}
