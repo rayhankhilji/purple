@@ -1,8 +1,32 @@
 # Lane GAME
 
-Status: in_progress (P3.T3 PR open; P1.T2 browser numbers pending). Owner: agent A (Claude, session `session_019VA5sAvTHuQ3bGbWV5CX4M`). Branches: `claude/game-p3-grid` (P3.T3); merged: `claude/game-p1-aero` (P1.T1), `claude/game-p1-aero-broadcast` (P1.T2).
+Status: in_progress (lane-file PR: filming notes + P1.T2 browser numbers pending). Owner: agent A (Claude, session `session_019VA5sAvTHuQ3bGbWV5CX4M`). Branch: `claude/game-lane-film`; merged: `claude/game-p1-aero` (P1.T1), `claude/game-p1-aero-broadcast` (P1.T2), `claude/game-p3-grid` (P3.T3).
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
+
+### 2026-10-24 02:55 London — agent A (Claude) — How to film it (for Tanuj's recording, P3.T4)
+
+Both modes run from the plain game page (`index.html`), full window, no lab page needed. Serve the repo (`npm run dev` or `npm run static`, both give `http://127.0.0.1:8788/`).
+
+**Before the first take (once per browser):** open `http://127.0.0.1:8788/index.html` normally, set **Graphics → High** in the menu (the choice is stored as `ei-quality`; the lab URLs skip the menu and start with the stored preset), optionally untick nothing else, then close the tab. Window 1920×1080 (F11 full screen), 60 Hz, cursor off the canvas. The lab URLs auto-start about a second after the loading screen; sound stays muted until a click (browser autoplay rule), so record with your own audio or click the canvas once as the lights come on. Physics is fixed-step at 120 Hz: a frame-rate dip changes nothing in the lap times.
+
+**Shot A — baseline vs candidate (F-04), seed 42, 3 laps, ≈ 4 min 20 s with the lights:**
+`http://127.0.0.1:8788/index.html?lab=1&exp=exp-test-rw8&seed=42&laps=3&circuit=silverstone&baseline=eyJmcm9udF93aW5nX2RlZyI6MjUsInJlYXJfd2luZ19kZWciOjIwLCJyaWRlX2hlaWdodF9tbSI6MzUsImJyYWtlX2JpYXNfcGN0Ijo1NywiZXJzX2RlcGxveSI6MC41fQ==&candidate=eyJmcm9udF93aW5nX2RlZyI6MjUsInJlYXJfd2luZ19kZWciOjI4LCJyaWRlX2hlaWdodF9tbSI6MzUsImJyYWtlX2JpYXNfcGN0Ijo1NywiZXJzX2RlcGxveSI6MC41fQ==&mult_baseline=eyJkZiI6MSwiY2QiOjEsImEwIjoxLCJiMCI6MX0=&mult_candidate=eyJkZiI6MS4xNDQsImNkIjoxLjA4OCwiYTAiOjAuOTg3MiwiYjAiOjF9`
+- Baseline = the regulation baseline (FW 25°, RW 20°, RH 35 mm, BB 57 %, ERS 0.5) in the blue Williams, candidate = rear wing **28°** (+8°) in the orange McLaren, 80 m behind on the grid. TV camera on the baseline; the McLaren crosses the same camera 2–3 s later. Timing tower top-left shows `BAS` / `CAN`, best and last laps, sector colours.
+- Expected numbers (headless, seed 42): baseline best **80.742 s**, candidate **81.260 s** (+0.518 s); top speed 325 vs 316 km/h; Maggotts–Becketts minimum 202 vs 212 km/h. The evaluator's prediction for the same change: +0.436 s.
+- Where the story is: **Becketts** (the candidate visibly faster through Maggotts–Becketts–Chapel, S2 → S3 boundary) and the **Hangar Straight** right after (the baseline pulls away; its top speed is higher). Lap 2 is the first clean flying lap for both; lap 1 is the standing start.
+- At the flag the results card shows the classification; the highlights reel auto-plays a few seconds later (switch it off with `localStorage.setItem('ei-hl-auto','0')` in the console if you want the card to stay). The result message is also logged to the console as `purple:result {...}`.
+- Other seeds (`&seed=7`, `&seed=1234`) change only the start-light hold and the bots' small seeded variation; measured Δ was +0.52 / +0.70 s on those two. Use them for extra b-roll; the demo number to quote is the one that lands in `ledger.jsonl` through the lab page.
+
+**Shot B — the cinematic close (F-10), Verstappen in the candidate car on the 2026 British GP grid, seed 42, 2 laps, ≈ 3 min 30 s:**
+`http://127.0.0.1:8788/index.html?lab=1&mode=grid&exp=exp-test-grid&driver=VER&seed=42&laps=2&circuit=silverstone&candidate=eyJmcm9udF93aW5nX2RlZyI6MjUsInJlYXJfd2luZ19kZWciOjI4LCJyaWRlX2hlaWdodF9tbSI6MzUsImJyYWtlX2JpYXNfcGN0Ijo1NywiZXJzX2RlcGxveSI6MC41fQ==&mult_candidate=eyJkZiI6MS4xNDQsImNkIjoxLjA4OCwiYTAiOjAuOTg3MiwiYjAiOjF9`
+- 22 cars, the real 2026 British GP starting grid, Official F1 pace. VER starts P7 in the Red Bull carrying the +8° rear wing; TV camera on him; caption bottom-left **"Cinematic · mixes car and driver · Max Verstappen in the candidate car · reduced-order lap model"** (keep it in frame: G-HON-05). Headless outcome at seed 42: P7 → **P14**, best lap 91.215 s (traffic).
+- Swap the driver with `&driver=NOR`, `HAM`, `ANT`, `LEC`, `PIA`, `RUS`, `HAD`, `ALO`, `SAI`, `ALB` … (any 2026 code, car number or surname). `&round=<n>` picks another real grid; omit it for Silverstone's own.
+- Best moments: lights out from the grid (the whole field in frame on the Hamilton Straight camera), lap 1 into Abbey/Village, and the Hangar Straight → Stowe pass attempts.
+
+**What the keys do in lab mode:** `Esc` / `P` pause (the pause card's Field list shows every bot's traits), `M` mute toggle, `F` performance readout. The camera is fixed to TV (`C` does nothing: there is no player). A page reload restarts the same race (same seed).
+
+**On-screen honesty:** the game never says CFD / wind tunnel / validated. The caption on Shot B and the lab page's model label ("reduced-order lap model · calibrated to 2026 pole laps · aero map v1") are the only model words that should appear in the film.
 
 ### 2026-10-24 02:35 London — agent A (Claude) — P3.T3 (F-10) grid race
 - Status: **done, verified headless + browser smoke** (PR from `claude/game-p3-grid` into `claude/amazing-planck-804i13`, branched after the P1 merge). `npm test` 65/65. The P1.T2 browser run (1 lap, software GL) is still finishing; its numbers come in a lane-file-only PR.
