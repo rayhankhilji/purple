@@ -8,6 +8,7 @@ const { ulid } = require("ulid");
 const headless = require("./game-headless.js");
 const store = require("./store.js");
 const scenarios = require("./scenarios.js");
+const { seededRng } = scenarios;   // the one canonical seeded rng (murmur3-mixed seed + 16 discards), shared with the generator's --dry-run
 const prompt = require("../lab/prompt.js");
 const promptHash = require("./scripts/prompt-hash.js");
 
@@ -16,9 +17,6 @@ class ApiError extends Error { constructor(code, message, extra) { super(message
 const now = () => new Date().toISOString();
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-// seeded rng for scenarios: the game's xorshift (U.rng) gives near-identical first draws for neighbouring integer seeds, so on top
-// of the per-item seed mixer (itemSeed, in collect) every rng is warmed by 16 draws before the generator uses it. Exported for tests.
-function seededRng(U, seed) { const rng = U.rng((seed >>> 0) || 1); for (let i = 0; i < 16; i++) rng(); return rng; }
 
 function createApp(opts) {
   opts = opts || {};
@@ -125,10 +123,6 @@ function createApp(opts) {
   // promote_bias (EVAL D-E1): share of candidates the generator draws from the evaluator's "promote" moves; 0 = the v1 generator exactly.
   // Whether it applied to a draw is replayed here from the same seed: perturb()'s first rng() is the bias draw, and it only uses a
   // promote move when that class is non-empty. Such rows get candidate_source "random-biased".
-  // per-item seed for a collect run. The game's U.rng is xorshift32 whose FIRST output is ~linear in the seed (seed 2000..2039 all start
-  // at 0.124), so seed0*1000+i gave every item of a run the same first draw: in v1 every candidate's first parameter was the same, and with
-  // promote_bias the gate would be all-or-nothing per run. A 32-bit mixer (murmur3 finaliser) spreads them; the row's `seed` stays replayable.
-  const itemSeed = (seed0, i) => { let h = (Math.imul(seed0, 1000) + i) >>> 0; h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b) >>> 0; h ^= h >>> 13; h = Math.imul(h, 0xc2b2ae35) >>> 0; h ^= h >>> 16; return (h >>> 1) || 1; };   // 31-bit, never 0
   const biasApplied = (seed, bias, baseline, circuit, td01) => bias > 0 && seededRng(U, seed)() < bias && scenarios.movesByVerdict(evaluator, baseline, { circuit, wet: false, wind_ms: 0, wind_from_deg: 0 }, { td01 }).promote.length > 0;
   async function collect(n, o) {
     o = o || {}; const conc = Math.min(2, o.concurrency || 2), seed0 = Number.isInteger(o.seed) ? o.seed : Math.floor(Math.random() * 1e6);
@@ -137,7 +131,7 @@ function createApp(opts) {
     const res = { sent: 0, ok: 0, parse_error: 0, mubit_error: 0, illegal_retries: 0, promote_bias: bias, biased: 0, seeds: [] }; let next = 0;
     async function worker() {
       while (next < n) {
-        const i = next++; let seed = itemSeed(seed0, i);
+        const i = next++; let seed = seed0 * 1000 + i;
         for (let tries = 0; tries < 5; tries++) {
           const rng = seededRng(U, seed), st = state(), circuit = o.circuit || "silverstone"; const g = scenarios.generate(rng, { circuit, baseline: st.baseline, td01: st.td01, promote_bias: bias });
           const biased = biasApplied(seed, bias, st.baseline, circuit, !!st.td01);
@@ -164,7 +158,7 @@ function createApp(opts) {
     const st = state(), td01 = !!st.td01, baseline = st.baseline;
     const res = { n, seed: seed0, circuit, promote_bias: bias, biased: 0, illegal_retries: 0, verdicts: { promote: 0, retest: 0, reject: 0 }, conditions: { dry: 0, wind: 0, wet: 0 }, parameters: {}, delta_lap: { min: Infinity, max: -Infinity, mean: 0 }, items: [] };
     for (let i = 0; i < n; i++) {
-      let seed = itemSeed(seed0, i), g, mult;
+      let seed = seed0 * 1000 + i, g, mult;
       for (let tries = 0; tries < 5; tries++) {
         g = scenarios.generate(seededRng(U, seed), { circuit, baseline, td01, promote_bias: bias }); mult = aero.toMultipliers(g.candidate, g.conditions, { td01 });
         if (mult.legal) break; res.illegal_retries++; seed += 7919; g = null;
