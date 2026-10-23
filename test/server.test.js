@@ -275,7 +275,7 @@ test("collect seeds are mixed per item: the first rng draw differs across a run 
   assert.equal(new Set(res.seeds).size, 12); assert.ok(res.seeds.every(sd => Number.isInteger(sd) && sd > 0 && sd < 2 ** 31));
   const rows = a.db.readLedger(); const firstParams = new Set(rows.map(r => r.change.split(",")[0].split(" ")[0])); assert.ok(firstParams.size >= 3, "every candidate moved the same first parameter: " + [...firstParams]);
   // a row is reproducible from its own seed: the same candidate and conditions come back
-  const r0 = rows[rows.length - 1]; const g = require("../server/scenarios.js").generate(U.rng(r0.seed), { circuit: "silverstone", baseline: a.EI.aero.BASELINE, td01: false }); assert.deepEqual(g.candidate, r0.candidate); assert.deepEqual(g.conditions, r0.conditions);
+  const r0 = rows[rows.length - 1]; const { seededRng } = require("../server/app.js"); const g = require("../server/scenarios.js").generate(seededRng(U, r0.seed), { circuit: "silverstone", baseline: a.EI.aero.BASELINE, td01: false }); assert.deepEqual(g.candidate, r0.candidate); assert.deepEqual(g.conditions, r0.conditions);
 });
 test("dryCollect / collect-dry.js: same seeds as collect, verdict mix from the truth rule, no Mubit call, nothing written", async () => {
   mock.reset(); const dir = tmp(); const a = createApp({ dataDir: dir, mubit: mock, log: () => {} });

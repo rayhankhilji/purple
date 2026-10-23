@@ -33,7 +33,7 @@ function createApp(opts) {
   const log = opts.log || ((...a) => console.log(...a));
   const app = new Hono();
   // the lab page is served by the static server on :8788 and talks to this API on :8787 (ARCHITECTURE §12); same host, other port
-  app.use("/api/*", cors({ origin: o => (/^https?://(127.0.0.1|localhost)(:d+)?$/.test(o || "") ? o : null), allowHeaders: ["content-type", "x-client-id"], allowMethods: ["GET", "POST", "OPTIONS"] }));
+  app.use("/api/*", cors({ origin: o => (/^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(o || "") ? o : null), allowHeaders: ["content-type", "x-client-id"], allowMethods: ["GET", "POST", "OPTIONS"] }));
   const ok = (c, data, status) => c.json({ ok: true, data }, status || 200);
   const fail = (c, code, message, extra) => c.json({ ok: false, error: Object.assign({ code, message }, extra || {}) }, STATUS[code] || 500);
   app.onError((e, c) => { if (e instanceof ApiError) return fail(c, e.code, e.message, e.extra); console.error("unhandled", e); return fail(c, "INTERNAL", String(e && e.message || e)); });
