@@ -19,9 +19,12 @@ window.EI = window.EI || {};
       const b64 = (k) => { const v = q.get(k); if (!v) return null; try { return JSON.parse(atob(v.replace(/-/g, '+').replace(/_/g, '/'))); } catch (e) { console.warn('PURPLE: bad ?' + k, e); return null; } };
       // multipliers: anything missing or not a positive number is x1 (both cars always carry an aero object, so both drive the same profile path in ai.js)
       const mult = (k) => { const m = b64(k) || {}; const n = (x) => (typeof x === 'number' && isFinite(x) && x > 0 ? x : 1); return { df: n(m.df), cd: n(m.cd), a0: n(m.a0), b0: n(m.b0) }; };
+      const mode = q.get('mode') === 'grid' ? 'grid' : 'race';   // grid: F-10 (P3.T3), the candidate with a real driver on the 2026 grid
+      const candidate = { role: 'candidate', setup: b64('candidate'), aero: mult('mult_candidate') };
       return {
-        exp: q.get('exp') || null, seed: q.get('seed') != null ? (parseInt(q.get('seed'), 10) >>> 0) : undefined, laps: Math.max(1, parseInt(q.get('laps'), 10) || 3), circuit: q.get('circuit') || 'silverstone',
-        cars: [{ role: 'baseline', setup: b64('baseline'), aero: mult('mult_baseline') }, { role: 'candidate', setup: b64('candidate'), aero: mult('mult_candidate') }],
+        mode, exp: q.get('exp') || null, seed: q.get('seed') != null ? (parseInt(q.get('seed'), 10) >>> 0) : undefined, laps: Math.max(1, parseInt(q.get('laps'), 10) || (mode === 'grid' ? 2 : 3)), circuit: q.get('circuit') || 'silverstone',
+        driver: q.get('driver') || null, round: q.get('round') || null, candidate,
+        cars: mode === 'grid' ? null : [{ role: 'baseline', setup: b64('baseline'), aero: mult('mult_baseline') }, candidate],
       };
     } catch (e) { console.warn('PURPLE: bad lab URL', e); return null; }
   })();
@@ -425,7 +428,7 @@ window.EI = window.EI || {};
   function startRace(cfg) {
     endRace(); cfg.envMap = envMap;
     race = new EI.Race(track, cfg);
-    views = cfg.lab ? [race.cars[0]] : race.players;   // PURPLE: broadcast mode follows the first lab car (no players)
+    views = cfg.lab ? [race.labCar || race.cars[0]] : race.players;   // PURPLE: broadcast mode follows the candidate car (grid mode) or the baseline car (no players)
     if (EI.Replay) EI.Replay.attach(race);   // post-race highlights: records the race (js/replay.js)
     for (const c of race.cars) scene.add(c.group);
     viewports = views.map((car, k) => EI.HUD.makeViewport(k, car, views.length));
@@ -451,6 +454,11 @@ window.EI = window.EI || {};
   // auto-start once the scene is built: no players, the two lab cars, skill 100 (the neutral driver), the TV camera from the first frame
   function labStart() {
     if (!LAB || race) return;
+    if (LAB.mode === 'grid') {   // F-10: the full 2026 grid at real pace (Official F1), a real starting grid of this circuit, the candidate aero on the chosen driver's car
+      startRace({ players: [], bots: 22, laps: LAB.laps, difficulty: 'official', grid: 'season', gridRound: labGridRound(), assist: 'full', seed: LAB.seed, envMap, lab: LAB });
+      const c = race && race.labCar; labCaption('Cinematic · mixes car and driver' + (c ? ' · ' + c.driver.name + ' in the candidate car' : ' · no driver matched ?driver=') + ' · reduced-order lap model');
+      return;
+    }
     startRace({ players: [], bots: 0, laps: LAB.laps, difficulty: 100, grid: 'front', assist: 'full', seed: LAB.seed, envMap, lab: LAB });
   }
   // telemetry, once per physics step (120 Hz): per car and lap, the top speed and the minimum speed through the reference corner
@@ -479,6 +487,36 @@ window.EI = window.EI || {};
     });
     const msg = { type: 'purple:result', experiment_id: LAB.exp, seed: race.seed, circuit: track.data.id, laps: race.laps, cars };
     EI.labResult = msg; console.log('purple:result ' + JSON.stringify(msg));
+    try { window.parent.postMessage(msg, '*'); } catch (e) { console.warn('PURPLE: postMessage failed', e); }
+  }
+  // ---------------------------------------------------------------- PURPLE (F-10, P3.T3): grid mode ?lab=1&mode=grid&driver=<code>
+  // The candidate car with a real 2026 driver profile on the full 2026 grid (a real starting grid of this circuit), TV camera on that
+  // car, auto-start, LAB.laps (2) laps; at the end { type: 'purple:grid', experiment_id, seed, position, best_lap, … } goes to the parent.
+  // Labelled on screen: it mixes car and driver (G-HON-05), so it is a cinematic, not a measurement.
+  function labGridRound() {
+    if (LAB.round) return LAB.round;
+    const G = (EI.SEASON && EI.SEASON.grids) || []; const nm = String(track.name || '').toLowerCase();
+    const g = G.find(x => String(x.circuit || '').toLowerCase() === nm) || G.find(x => String(x.name || '').toLowerCase().indexOf(nm) >= 0);
+    return g ? g.round : undefined;   // unknown circuit: race.js picks a real grid by the seed
+  }
+  function labCaption(text) {
+    let el = document.getElementById('lab-caption');
+    if (!el) { el = document.createElement('div'); el.id = 'lab-caption'; el.style.cssText = 'position:fixed;left:12px;bottom:10px;z-index:30;font:600 11px/1.4 system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:rgba(10,12,18,.72);padding:5px 9px;border-radius:4px;pointer-events:none'; document.body.appendChild(el); }
+    el.textContent = text;
+  }
+  function labPostGrid() {
+    const car = race.labCar; const r1 = (x) => +x.toFixed(1), r3 = (x) => +x.toFixed(3);
+    const rows = race.results(); const row = car ? rows.find(r => r.car === car) : null; const position = row ? rows.indexOf(row) + 1 : null;
+    const T = (car && car.labTel) || {}; const all = Object.keys(T).reduce((a, n) => ({ vmax: Math.max(a.vmax, T[n].vmax), vmin: Math.min(a.vmin, T[n].vmin) }), { vmax: 0, vmin: Infinity });
+    const msg = {
+      type: 'purple:grid', experiment_id: LAB.exp, seed: race.seed, circuit: track.data.id, laps: race.laps, field: race.cars.length, grid: race.gridInfo ? race.gridInfo.label : null,
+      driver: car ? { code: car.driver.code, name: car.driver.name, team: car.team.id, grid_position: car.gridPos } : null,
+      position, best_lap: car && car.bestLap > 0 ? r3(car.bestLap) : null, laps_done: car ? car.laps.map(r3) : [], finished: !!(car && car.finished),
+      vmax_kmh: all.vmax > 0 ? r1(all.vmax) : null, vmin_becketts_kmh: isFinite(all.vmin) ? r1(all.vmin) : null,
+      fastest_lap: race.fastest.car ? { code: race.fastest.car.driver.code, time: r3(race.fastest.time) } : null,
+      setup: LAB.candidate.setup, aero: LAB.candidate.aero, label: 'cinematic — mixes car and driver',
+    };
+    EI.labResult = msg; console.log('purple:grid ' + JSON.stringify(msg));
     try { window.parent.postMessage(msg, '*'); } catch (e) { console.warn('PURPLE: postMessage failed', e); }
   }
   function endRace() {
@@ -981,7 +1019,7 @@ window.EI = window.EI || {};
     if (PF) PF.to('cam'); views.forEach((car, k) => { if (k === 0 && EI.debug.freeCam) { const f = EI.debug.freeCam; cameras[0].position.set(f.pos[0], f.pos[1], f.pos[2]); cameras[0].lookAt(f.look[0], f.look[1], f.look[2]); cameras[0].fov = f.fov || 50; cameras[0].updateProjectionMatrix(); } else placeCamera(cameras[k], car, k, false, dt); if (k === hudK) { if (PF) PF.push('hud'); viewports[k].update(race, 0.05); updateTags(k, cameras[k], viewports[k]); drawWheelScreen(car, race.deltaBest(car)); if (PF) PF.pop(); } if (engines[k]) { const idleBlip = !race.started ? (Math.sin(performance.now() * 0.004 + k) > 0.6 ? 0.5 : 0.08) : 0; EI.Audio.setEngine(engines[k], race.started ? car.rpm : 0.15 + idleBlip * 0.8, race.started ? car.throttle : idleBlip, paused ? 0 : (CAM_MODES[camModes[k]] === 'cockpit' ? 1.3 : 1), car.gear); } });
     if (hudDue) hudT = 0; if (PF) PF.to('hud');
     for (const vp of viewports) if (vp.keyChip) { const on = !race.started || race.time < 4; if (on !== vp.keyChipOn) { vp.keyChipOn = on; vp.keyChip.classList.toggle('show', on); } }
-    if (race.over && !resultsShown && race.classified) { resultsShown = true; if (race.lab) labPostResult(); EI.HUD.showResults(race); if (race.players.length > 1) markResultPlayers(); if (EI.Replay) EI.Replay.onResults(race); }
+    if (race.over && !resultsShown && race.classified) { resultsShown = true; if (race.lab) (race.lab.mode === 'grid' ? labPostGrid : labPostResult)(); EI.HUD.showResults(race); if (race.players.length > 1) markResultPlayers(); if (EI.Replay) EI.Replay.onResults(race); }
     const split = cameras.length > 1; if (PF) PF.to('scenery');
     if (!split) {
       if (splitShadow) { renderer.shadowMap.autoUpdate = splitShadow.auto; splitShadow = null; }
