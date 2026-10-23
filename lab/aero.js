@@ -101,7 +101,19 @@
     return w;
   }
 
-  const api = { RANGES, KEYS, BASELINE, SENS, BOTTOMING, BIAS, BALANCE, WET, CLAMP, TD01_RW_MAX, REF_CORNER, REF_STRAIGHT, violations, toMultipliers, terminalSpeed, headwind, bearingOfHeading, windField };
+  // ---- one-line human labels for rule IDs (F-09, the UI's violation badge). Numbers come from RANGES so the label and the check
+  // can never disagree; unknown IDs come back unchanged.
+  const LABELS = { front_wing_deg: ["Front wing", "°"], rear_wing_deg: ["Rear wing", "°"], ride_height_mm: ["Ride height", " mm"], brake_bias_pct: ["Brake bias", " % front"] };
+  function describeViolation(id) {
+    if (id === "TD-01") return "Technical directive TD-01: rear wing capped at " + TD01_RW_MAX + "°";
+    if (id === "REG-ERS") return "ERS deploy outside " + RANGES.ers_deploy.min + "–" + RANGES.ers_deploy.max + " (regulation)";
+    const m = /^(REG-[A-Z]+)-(MIN|MAX)$/.exec(id || ""); if (!m) return String(id);
+    const k = KEYS.find(key => RANGES[key].rule === m[1]); if (!k || !LABELS[k]) return String(id);
+    const [name, unit] = LABELS[k], r = RANGES[k];
+    return m[2] === "MIN" ? name + " below " + r.min + unit + " (regulation)" : name + " above " + r.max + unit + " (regulation)";
+  }
+
+  const api = { RANGES, KEYS, BASELINE, SENS, BOTTOMING, BIAS, BALANCE, WET, CLAMP, TD01_RW_MAX, REF_CORNER, REF_STRAIGHT, violations, toMultipliers, terminalSpeed, headwind, bearingOfHeading, windField, describeViolation };
   const root = typeof window !== "undefined" ? window : globalThis;
   root.EI = root.EI || {}; root.EI.aero = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;

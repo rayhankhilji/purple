@@ -1,0 +1,1165 @@
+[
+  {
+    "id": "exam-rw8",
+    "scenario": {
+      "objective": "min lap",
+      "circuit": "silverstone",
+      "conditions": {
+        "wet": false,
+        "wind_ms": 0
+      },
+      "baseline": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 20,
+        "ride_height_mm": 35,
+        "brake_bias_pct": 57,
+        "ers_deploy": 0.5,
+        "lap": 80.8,
+        "sectors": [
+          25.094,
+          25.582,
+          30.125
+        ],
+        "vmax_kmh": 328
+      },
+      "candidate": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 28,
+        "ride_height_mm": 35,
+        "brake_bias_pct": 57,
+        "ers_deploy": 0.5
+      },
+      "result": {
+        "delta_lap": 0.436,
+        "delta_sectors": [
+          0.207,
+          0.118,
+          0.11
+        ],
+        "vmax_kmh": 320,
+        "vmin_kmh": 224,
+        "legal": true
+      },
+      "rules": [],
+      "history": []
+    },
+    "truth": {
+      "verdict": "reject",
+      "next_parameter": "rear_wing_deg",
+      "direction": "decrease"
+    },
+    "meta": {
+      "tag": "demo: rear wing +8°",
+      "change": "rear_wing_deg +8",
+      "delta_lap": 0.436,
+      "best_step_delta": -0.057,
+      "margin": 0.036,
+      "chars": 495
+    }
+  },
+  {
+    "id": "exam-02",
+    "scenario": {
+      "objective": "min lap",
+      "circuit": "silverstone",
+      "conditions": {
+        "wet": false,
+        "wind_ms": 10,
+        "wind_from_deg": 208
+      },
+      "baseline": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 20,
+        "ride_height_mm": 35,
+        "brake_bias_pct": 57,
+        "ers_deploy": 0.5,
+        "lap": 80.83,
+        "sectors": [
+          24.709,
+          25.553,
+          30.568
+        ],
+        "vmax_kmh": 331
+      },
+      "candidate": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 18,
+        "ride_height_mm": 35,
+        "brake_bias_pct": 58,
+        "ers_deploy": 0.5
+      },
+      "result": {
+        "delta_lap": -0.015,
+        "delta_sectors": [
+          -0.028,
+          -0.016,
+          0.029
+        ],
+        "vmax_kmh": 334,
+        "vmin_kmh": 209,
+        "legal": true
+      },
+      "rules": [],
+      "history": []
+    },
+    "truth": {
+      "verdict": "retest",
+      "next_parameter": "ride_height_mm",
+      "direction": "decrease"
+    },
+    "meta": {
+      "tag": "headwind 10 m/s on Hangar Straight",
+      "change": "rear_wing_deg -2, brake_bias_pct +1",
+      "delta_lap": -0.015,
+      "best_step_delta": -0.032,
+      "margin": 0.023,
+      "chars": 521
+    }
+  },
+  {
+    "id": "exam-03",
+    "scenario": {
+      "objective": "min lap",
+      "circuit": "silverstone",
+      "conditions": {
+        "wet": false,
+        "wind_ms": 8,
+        "wind_from_deg": 28
+      },
+      "baseline": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 20,
+        "ride_height_mm": 35,
+        "brake_bias_pct": 57,
+        "ers_deploy": 0.5,
+        "lap": 81.191,
+        "sectors": [
+          25.465,
+          25.745,
+          29.981
+        ],
+        "vmax_kmh": 331
+      },
+      "candidate": {
+        "front_wing_deg": 20,
+        "rear_wing_deg": 12,
+        "ride_height_mm": 35,
+        "brake_bias_pct": 57,
+        "ers_deploy": 0.5
+      },
+      "result": {
+        "delta_lap": 0.037,
+        "delta_sectors": [
+          -0.105,
+          -0.085,
+          0.227
+        ],
+        "vmax_kmh": 344,
+        "vmin_kmh": 199,
+        "legal": true
+      },
+      "rules": [],
+      "history": []
+    },
+    "truth": {
+      "verdict": "reject",
+      "next_parameter": "ride_height_mm",
+      "direction": "decrease"
+    },
+    "meta": {
+      "tag": "tailwind 8 m/s on Hangar Straight",
+      "change": "front_wing_deg -5, rear_wing_deg -8",
+      "delta_lap": 0.037,
+      "best_step_delta": -0.041,
+      "margin": 0.033,
+      "chars": 519
+    }
+  },
+  {
+    "id": "exam-04",
+    "scenario": {
+      "objective": "min lap",
+      "circuit": "silverstone",
+      "conditions": {
+        "wet": false,
+        "wind_ms": 6,
+        "wind_from_deg": 298
+      },
+      "baseline": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 20,
+        "ride_height_mm": 35,
+        "brake_bias_pct": 57,
+        "ers_deploy": 0.5,
+        "lap": 80.881,
+        "sectors": [
+          25.203,
+          25.415,
+          30.263
+        ],
+        "vmax_kmh": 331
+      },
+      "candidate": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 22,
+        "ride_height_mm": 35,
+        "brake_bias_pct": 58,
+        "ers_deploy": 0.5
+      },
+      "result": {
+        "delta_lap": 0.105,
+        "delta_sectors": [
+          0.053,
+          0.032,
+          0.02
+        ],
+        "vmax_kmh": 329,
+        "vmin_kmh": 215,
+        "legal": true
+      },
+      "rules": [],
+      "history": []
+    },
+    "truth": {
+      "verdict": "reject",
+      "next_parameter": "rear_wing_deg",
+      "direction": "decrease"
+    },
+    "meta": {
+      "tag": "crosswind 6 m/s on Hangar Straight",
+      "change": "rear_wing_deg +2, brake_bias_pct +1",
+      "delta_lap": 0.105,
+      "best_step_delta": -0.058,
+      "margin": 0.038,
+      "chars": 517
+    }
+  },
+  {
+    "id": "exam-05",
+    "scenario": {
+      "objective": "min lap",
+      "circuit": "silverstone",
+      "conditions": {
+        "wet": true,
+        "wind_ms": 0
+      },
+      "baseline": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 20,
+        "ride_height_mm": 35,
+        "brake_bias_pct": 57,
+        "ers_deploy": 0.5,
+        "lap": 83.854,
+        "sectors": [
+          25.837,
+          26.421,
+          31.596
+        ],
+        "vmax_kmh": 328
+      },
+      "candidate": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 25,
+        "ride_height_mm": 27,
+        "brake_bias_pct": 57,
+        "ers_deploy": 0.5
+      },
+      "result": {
+        "delta_lap": 0.071,
+        "delta_sectors": [
+          0.05,
+          0.091,
+          -0.07
+        ],
+        "vmax_kmh": 323,
+        "vmin_kmh": 190,
+        "legal": true
+      },
+      "rules": [],
+      "history": []
+    },
+    "truth": {
+      "verdict": "reject",
+      "next_parameter": "ride_height_mm",
+      "direction": "increase"
+    },
+    "meta": {
+      "tag": "wet",
+      "change": "rear_wing_deg +5, ride_height_mm -8",
+      "delta_lap": 0.071,
+      "best_step_delta": -0.104,
+      "margin": 0.043,
+      "chars": 496
+    }
+  },
+  {
+    "id": "exam-06",
+    "scenario": {
+      "objective": "min lap",
+      "circuit": "silverstone",
+      "conditions": {
+        "wet": true,
+        "wind_ms": 0
+      },
+      "baseline": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 20,
+        "ride_height_mm": 35,
+        "brake_bias_pct": 57,
+        "ers_deploy": 0.5,
+        "lap": 83.854,
+        "sectors": [
+          25.837,
+          26.421,
+          31.596
+        ],
+        "vmax_kmh": 328
+      },
+      "candidate": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 18,
+        "ride_height_mm": 43,
+        "brake_bias_pct": 57,
+        "ers_deploy": 0.5
+      },
+      "result": {
+        "delta_lap": 0.657,
+        "delta_sectors": [
+          0.17,
+          0.167,
+          0.32
+        ],
+        "vmax_kmh": 330,
+        "vmin_kmh": 181,
+        "legal": true
+      },
+      "rules": [],
+      "history": []
+    },
+    "truth": {
+      "verdict": "reject",
+      "next_parameter": "rear_wing_deg",
+      "direction": "increase"
+    },
+    "meta": {
+      "tag": "wet",
+      "change": "rear_wing_deg -2, ride_height_mm +8",
+      "delta_lap": 0.657,
+      "best_step_delta": -0.115,
+      "margin": 0.052,
+      "chars": 495
+    }
+  },
+  {
+    "id": "exam-07",
+    "scenario": {
+      "objective": "min lap",
+      "circuit": "monza",
+      "conditions": {
+        "wet": false,
+        "wind_ms": 0
+      },
+      "baseline": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 20,
+        "ride_height_mm": 35,
+        "brake_bias_pct": 57,
+        "ers_deploy": 0.5,
+        "lap": 76.65,
+        "sectors": [
+          28.158,
+          25.948,
+          22.544
+        ],
+        "vmax_kmh": 331
+      },
+      "candidate": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 16,
+        "ride_height_mm": 35,
+        "brake_bias_pct": 57,
+        "ers_deploy": 0.5
+      },
+      "result": {
+        "delta_lap": -0.23,
+        "delta_sectors": [
+          -0.148,
+          0.041,
+          -0.122
+        ],
+        "vmax_kmh": 336,
+        "vmin_kmh": 171,
+        "legal": true
+      },
+      "rules": [],
+      "history": []
+    },
+    "truth": {
+      "verdict": "promote",
+      "next_parameter": "rear_wing_deg",
+      "direction": "decrease"
+    },
+    "meta": {
+      "tag": "monza: rear wing −4°",
+      "change": "rear_wing_deg -4",
+      "delta_lap": -0.23,
+      "best_step_delta": -0.045,
+      "margin": 0.019,
+      "chars": 493
+    }
+  },
+  {
+    "id": "exam-08",
+    "scenario": {
+      "objective": "min lap",
+      "circuit": "monza",
+      "conditions": {
+        "wet": false,
+        "wind_ms": 0
+      },
+      "baseline": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 20,
+        "ride_height_mm": 35,
+        "brake_bias_pct": 57,
+        "ers_deploy": 0.5,
+        "lap": 76.65,
+        "sectors": [
+          28.158,
+          25.948,
+          22.544
+        ],
+        "vmax_kmh": 331
+      },
+      "candidate": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 28,
+        "ride_height_mm": 35,
+        "brake_bias_pct": 57,
+        "ers_deploy": 0.5
+      },
+      "result": {
+        "delta_lap": 0.757,
+        "delta_sectors": [
+          0.328,
+          0.046,
+          0.382
+        ],
+        "vmax_kmh": 322,
+        "vmin_kmh": 180,
+        "legal": true
+      },
+      "rules": [],
+      "history": []
+    },
+    "truth": {
+      "verdict": "reject",
+      "next_parameter": "rear_wing_deg",
+      "direction": "decrease"
+    },
+    "meta": {
+      "tag": "monza: rear wing +8°",
+      "change": "rear_wing_deg +8",
+      "delta_lap": 0.757,
+      "best_step_delta": -0.103,
+      "margin": 0.084,
+      "chars": 491
+    }
+  },
+  {
+    "id": "exam-09",
+    "scenario": {
+      "objective": "min lap",
+      "circuit": "silverstone",
+      "conditions": {
+        "wet": false,
+        "wind_ms": 0
+      },
+      "baseline": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 20,
+        "ride_height_mm": 35,
+        "brake_bias_pct": 57,
+        "ers_deploy": 0.5,
+        "lap": 80.8,
+        "sectors": [
+          25.094,
+          25.582,
+          30.125
+        ],
+        "vmax_kmh": 328
+      },
+      "candidate": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 16,
+        "ride_height_mm": 27,
+        "brake_bias_pct": 57,
+        "ers_deploy": 0.5
+      },
+      "result": {
+        "delta_lap": 0.112,
+        "delta_sectors": [
+          -0.039,
+          0.027,
+          0.123
+        ],
+        "vmax_kmh": 333,
+        "vmin_kmh": 206,
+        "legal": true
+      },
+      "rules": [],
+      "history": []
+    },
+    "truth": {
+      "verdict": "reject",
+      "next_parameter": "ride_height_mm",
+      "direction": "increase"
+    },
+    "meta": {
+      "tag": "filler",
+      "change": "rear_wing_deg -4, ride_height_mm -8",
+      "delta_lap": 0.112,
+      "best_step_delta": -0.091,
+      "margin": 0.081,
+      "chars": 497
+    }
+  },
+  {
+    "id": "exam-10",
+    "scenario": {
+      "objective": "min lap",
+      "circuit": "silverstone",
+      "conditions": {
+        "wet": false,
+        "wind_ms": 0
+      },
+      "baseline": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 20,
+        "ride_height_mm": 35,
+        "brake_bias_pct": 57,
+        "ers_deploy": 0.5,
+        "lap": 80.8,
+        "sectors": [
+          25.094,
+          25.582,
+          30.125
+        ],
+        "vmax_kmh": 328
+      },
+      "candidate": {
+        "front_wing_deg": 28,
+        "rear_wing_deg": 20,
+        "ride_height_mm": 43,
+        "brake_bias_pct": 57,
+        "ers_deploy": 0.5
+      },
+      "result": {
+        "delta_lap": 0.26,
+        "delta_sectors": [
+          0.057,
+          0.088,
+          0.115
+        ],
+        "vmax_kmh": 327,
+        "vmin_kmh": 210,
+        "legal": true
+      },
+      "rules": [],
+      "history": []
+    },
+    "truth": {
+      "verdict": "reject",
+      "next_parameter": "ride_height_mm",
+      "direction": "decrease"
+    },
+    "meta": {
+      "tag": "filler",
+      "change": "front_wing_deg +3, ride_height_mm +8",
+      "delta_lap": 0.26,
+      "best_step_delta": -0.029,
+      "margin": 0.021,
+      "chars": 495
+    }
+  },
+  {
+    "id": "exam-11",
+    "scenario": {
+      "objective": "min lap",
+      "circuit": "silverstone",
+      "conditions": {
+        "wet": false,
+        "wind_ms": 0
+      },
+      "baseline": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 20,
+        "ride_height_mm": 35,
+        "brake_bias_pct": 57,
+        "ers_deploy": 0.5,
+        "lap": 80.8,
+        "sectors": [
+          25.094,
+          25.582,
+          30.125
+        ],
+        "vmax_kmh": 328
+      },
+      "candidate": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 14,
+        "ride_height_mm": 31,
+        "brake_bias_pct": 57,
+        "ers_deploy": 0.5
+      },
+      "result": {
+        "delta_lap": -0.084,
+        "delta_sectors": [
+          -0.104,
+          -0.058,
+          0.077
+        ],
+        "vmax_kmh": 335,
+        "vmin_kmh": 205,
+        "legal": true
+      },
+      "rules": [],
+      "history": []
+    },
+    "truth": {
+      "verdict": "promote",
+      "next_parameter": "ride_height_mm",
+      "direction": "decrease"
+    },
+    "meta": {
+      "tag": "filler",
+      "change": "rear_wing_deg -6, ride_height_mm -4",
+      "delta_lap": -0.084,
+      "best_step_delta": -0.04,
+      "margin": 0.009,
+      "chars": 499
+    }
+  },
+  {
+    "id": "exam-12",
+    "scenario": {
+      "objective": "min lap",
+      "circuit": "silverstone",
+      "conditions": {
+        "wet": false,
+        "wind_ms": 0
+      },
+      "baseline": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 20,
+        "ride_height_mm": 35,
+        "brake_bias_pct": 57,
+        "ers_deploy": 0.5,
+        "lap": 80.8,
+        "sectors": [
+          25.094,
+          25.582,
+          30.125
+        ],
+        "vmax_kmh": 328
+      },
+      "candidate": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 20,
+        "ride_height_mm": 32,
+        "brake_bias_pct": 57,
+        "ers_deploy": 0.3
+      },
+      "result": {
+        "delta_lap": -0.078,
+        "delta_sectors": [
+          -0.01,
+          -0.027,
+          -0.042
+        ],
+        "vmax_kmh": 328,
+        "vmin_kmh": 214,
+        "legal": true
+      },
+      "rules": [],
+      "history": []
+    },
+    "truth": {
+      "verdict": "promote",
+      "next_parameter": "ride_height_mm",
+      "direction": "decrease"
+    },
+    "meta": {
+      "tag": "filler",
+      "change": "ride_height_mm -3, ers_deploy -0.2",
+      "delta_lap": -0.078,
+      "best_step_delta": -0.022,
+      "margin": 0.009,
+      "chars": 499
+    }
+  },
+  {
+    "id": "exam-13",
+    "scenario": {
+      "objective": "min lap",
+      "circuit": "silverstone",
+      "conditions": {
+        "wet": false,
+        "wind_ms": 0
+      },
+      "baseline": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 20,
+        "ride_height_mm": 35,
+        "brake_bias_pct": 57,
+        "ers_deploy": 0.5,
+        "lap": 80.8,
+        "sectors": [
+          25.094,
+          25.582,
+          30.125
+        ],
+        "vmax_kmh": 328
+      },
+      "candidate": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 20,
+        "ride_height_mm": 31,
+        "brake_bias_pct": 54,
+        "ers_deploy": 0.5
+      },
+      "result": {
+        "delta_lap": -0.092,
+        "delta_sectors": [
+          -0.009,
+          -0.034,
+          -0.049
+        ],
+        "vmax_kmh": 328,
+        "vmin_kmh": 214,
+        "legal": true
+      },
+      "rules": [],
+      "history": []
+    },
+    "truth": {
+      "verdict": "promote",
+      "next_parameter": "ride_height_mm",
+      "direction": "decrease"
+    },
+    "meta": {
+      "tag": "filler",
+      "change": "ride_height_mm -4, brake_bias_pct -3",
+      "delta_lap": -0.092,
+      "best_step_delta": -0.02,
+      "margin": 0.003,
+      "chars": 500
+    }
+  },
+  {
+    "id": "exam-14",
+    "scenario": {
+      "objective": "min lap",
+      "circuit": "silverstone",
+      "conditions": {
+        "wet": false,
+        "wind_ms": 0
+      },
+      "baseline": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 20,
+        "ride_height_mm": 35,
+        "brake_bias_pct": 57,
+        "ers_deploy": 0.5,
+        "lap": 80.8,
+        "sectors": [
+          25.094,
+          25.582,
+          30.125
+        ],
+        "vmax_kmh": 328
+      },
+      "candidate": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 16,
+        "ride_height_mm": 35,
+        "brake_bias_pct": 57,
+        "ers_deploy": 0.5
+      },
+      "result": {
+        "delta_lap": 0.011,
+        "delta_sectors": [
+          -0.07,
+          -0.015,
+          0.096
+        ],
+        "vmax_kmh": 333,
+        "vmin_kmh": 206,
+        "legal": true
+      },
+      "rules": [],
+      "history": []
+    },
+    "truth": {
+      "verdict": "retest",
+      "next_parameter": "ride_height_mm",
+      "direction": "decrease"
+    },
+    "meta": {
+      "tag": "filler",
+      "change": "rear_wing_deg -4",
+      "delta_lap": 0.011,
+      "best_step_delta": -0.037,
+      "margin": 0.025,
+      "chars": 497
+    }
+  },
+  {
+    "id": "exam-15",
+    "scenario": {
+      "objective": "min lap",
+      "circuit": "silverstone",
+      "conditions": {
+        "wet": false,
+        "wind_ms": 0
+      },
+      "baseline": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 20,
+        "ride_height_mm": 35,
+        "brake_bias_pct": 57,
+        "ers_deploy": 0.5,
+        "lap": 80.8,
+        "sectors": [
+          25.094,
+          25.582,
+          30.125
+        ],
+        "vmax_kmh": 328
+      },
+      "candidate": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 20,
+        "ride_height_mm": 35,
+        "brake_bias_pct": 54,
+        "ers_deploy": 0.2
+      },
+      "result": {
+        "delta_lap": 0.009,
+        "delta_sectors": [
+          0.004,
+          0,
+          0.004
+        ],
+        "vmax_kmh": 328,
+        "vmin_kmh": 213,
+        "legal": true
+      },
+      "rules": [],
+      "history": []
+    },
+    "truth": {
+      "verdict": "retest",
+      "next_parameter": "ride_height_mm",
+      "direction": "decrease"
+    },
+    "meta": {
+      "tag": "filler",
+      "change": "brake_bias_pct -3, ers_deploy -0.3",
+      "delta_lap": 0.009,
+      "best_step_delta": -0.026,
+      "margin": 0.013,
+      "chars": 492
+    }
+  },
+  {
+    "id": "exam-16",
+    "scenario": {
+      "objective": "min lap",
+      "circuit": "silverstone",
+      "conditions": {
+        "wet": false,
+        "wind_ms": 0
+      },
+      "baseline": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 20,
+        "ride_height_mm": 35,
+        "brake_bias_pct": 57,
+        "ers_deploy": 0.5,
+        "lap": 80.8,
+        "sectors": [
+          25.094,
+          25.582,
+          30.125
+        ],
+        "vmax_kmh": 328
+      },
+      "candidate": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 17,
+        "ride_height_mm": 35,
+        "brake_bias_pct": 57,
+        "ers_deploy": 0.2
+      },
+      "result": {
+        "delta_lap": -0.001,
+        "delta_sectors": [
+          -0.057,
+          -0.012,
+          0.067
+        ],
+        "vmax_kmh": 331,
+        "vmin_kmh": 208,
+        "legal": true
+      },
+      "rules": [],
+      "history": []
+    },
+    "truth": {
+      "verdict": "retest",
+      "next_parameter": "ride_height_mm",
+      "direction": "decrease"
+    },
+    "meta": {
+      "tag": "filler",
+      "change": "rear_wing_deg -3, ers_deploy -0.3",
+      "delta_lap": -0.001,
+      "best_step_delta": -0.032,
+      "margin": 0.023,
+      "chars": 499
+    }
+  },
+  {
+    "id": "exam-17",
+    "scenario": {
+      "objective": "min lap",
+      "circuit": "silverstone",
+      "conditions": {
+        "wet": false,
+        "wind_ms": 0
+      },
+      "baseline": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 20,
+        "ride_height_mm": 35,
+        "brake_bias_pct": 57,
+        "ers_deploy": 0.5,
+        "lap": 80.8,
+        "sectors": [
+          25.094,
+          25.582,
+          30.125
+        ],
+        "vmax_kmh": 328
+      },
+      "candidate": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 20,
+        "ride_height_mm": 43,
+        "brake_bias_pct": 57,
+        "ers_deploy": 0.7
+      },
+      "result": {
+        "delta_lap": 0.235,
+        "delta_sectors": [
+          0.027,
+          0.071,
+          0.136
+        ],
+        "vmax_kmh": 328,
+        "vmin_kmh": 209,
+        "legal": true
+      },
+      "rules": [],
+      "history": []
+    },
+    "truth": {
+      "verdict": "reject",
+      "next_parameter": "ride_height_mm",
+      "direction": "decrease"
+    },
+    "meta": {
+      "tag": "filler",
+      "change": "ride_height_mm +8, ers_deploy +0.2",
+      "delta_lap": 0.235,
+      "best_step_delta": -0.032,
+      "margin": 0.032,
+      "chars": 496
+    }
+  },
+  {
+    "id": "exam-18",
+    "scenario": {
+      "objective": "min lap",
+      "circuit": "silverstone",
+      "conditions": {
+        "wet": false,
+        "wind_ms": 0
+      },
+      "baseline": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 20,
+        "ride_height_mm": 35,
+        "brake_bias_pct": 57,
+        "ers_deploy": 0.5,
+        "lap": 80.8,
+        "sectors": [
+          25.094,
+          25.582,
+          30.125
+        ],
+        "vmax_kmh": 328
+      },
+      "candidate": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 20,
+        "ride_height_mm": 41,
+        "brake_bias_pct": 57,
+        "ers_deploy": 0.5
+      },
+      "result": {
+        "delta_lap": 0.171,
+        "delta_sectors": [
+          0.02,
+          0.053,
+          0.097
+        ],
+        "vmax_kmh": 328,
+        "vmin_kmh": 210,
+        "legal": true
+      },
+      "rules": [],
+      "history": []
+    },
+    "truth": {
+      "verdict": "reject",
+      "next_parameter": "ride_height_mm",
+      "direction": "decrease"
+    },
+    "meta": {
+      "tag": "filler",
+      "change": "ride_height_mm +6",
+      "delta_lap": 0.171,
+      "best_step_delta": -0.032,
+      "margin": 0.032,
+      "chars": 495
+    }
+  },
+  {
+    "id": "exam-19",
+    "scenario": {
+      "objective": "min lap",
+      "circuit": "silverstone",
+      "conditions": {
+        "wet": false,
+        "wind_ms": 0
+      },
+      "baseline": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 20,
+        "ride_height_mm": 35,
+        "brake_bias_pct": 57,
+        "ers_deploy": 0.5,
+        "lap": 80.8,
+        "sectors": [
+          25.094,
+          25.582,
+          30.125
+        ],
+        "vmax_kmh": 328
+      },
+      "candidate": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 24,
+        "ride_height_mm": 35,
+        "brake_bias_pct": 59,
+        "ers_deploy": 0.5
+      },
+      "result": {
+        "delta_lap": 0.214,
+        "delta_sectors": [
+          0.105,
+          0.059,
+          0.049
+        ],
+        "vmax_kmh": 324,
+        "vmin_kmh": 218,
+        "legal": true
+      },
+      "rules": [],
+      "history": []
+    },
+    "truth": {
+      "verdict": "reject",
+      "next_parameter": "rear_wing_deg",
+      "direction": "decrease"
+    },
+    "meta": {
+      "tag": "filler",
+      "change": "rear_wing_deg +4, brake_bias_pct +2",
+      "delta_lap": 0.214,
+      "best_step_delta": -0.057,
+      "margin": 0.037,
+      "chars": 496
+    }
+  },
+  {
+    "id": "exam-20",
+    "scenario": {
+      "objective": "min lap",
+      "circuit": "silverstone",
+      "conditions": {
+        "wet": false,
+        "wind_ms": 0
+      },
+      "baseline": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 20,
+        "ride_height_mm": 35,
+        "brake_bias_pct": 57,
+        "ers_deploy": 0.5,
+        "lap": 80.8,
+        "sectors": [
+          25.094,
+          25.582,
+          30.125
+        ],
+        "vmax_kmh": 328
+      },
+      "candidate": {
+        "front_wing_deg": 25,
+        "rear_wing_deg": 17,
+        "ride_height_mm": 35,
+        "brake_bias_pct": 57,
+        "ers_deploy": 0.5
+      },
+      "result": {
+        "delta_lap": -0.001,
+        "delta_sectors": [
+          -0.057,
+          -0.012,
+          0.067
+        ],
+        "vmax_kmh": 331,
+        "vmin_kmh": 208,
+        "legal": true
+      },
+      "rules": [],
+      "history": []
+    },
+    "truth": {
+      "verdict": "retest",
+      "next_parameter": "ride_height_mm",
+      "direction": "decrease"
+    },
+    "meta": {
+      "tag": "filler",
+      "change": "rear_wing_deg -3",
+      "delta_lap": -0.001,
+      "best_step_delta": -0.032,
+      "margin": 0.023,
+      "chars": 499
+    }
+  }
+]

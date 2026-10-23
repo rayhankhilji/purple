@@ -27,6 +27,19 @@ Multi-agent rule (decision 2026-10-23 23:20): lane agents write `docs/agents/lan
 
 Exit criteria: **all true at 23:58 London** (six verifies, task named from the prompt with 43 ≥ 25 kept examples, task name + model recorded here, prompt committed and tagged). Still owed by a human: `/team create` on Discord (P0.T0 verify).
 
+## Checklist (current phase: P1)
+
+- [ ] P1.T1 (F-04) `js/car.js` per-car `aero` (GAME lane, in progress)
+- [ ] P1.T2 (F-04) broadcast mode `?lab=1`, `purple:result` postMessage (GAME lane, in progress)
+- [x] P1.T3 (F-04) `POST /api/race/result` hardened, `agreement_pct`, SSE `race`, `npm run fake-race` (SERVER lane, merged 00:32 from PR #2; 41/41 tests)
+- [ ] P1.T4 watch v1 in **Adapters** (Tanuj screenshot → `status.json`); if Below target / Prompt only → `npm run collect -- --n 30` on the Saturday budget
+- [ ] P1.T5 `/checkin` #1 in #max by Sat 12:00 (Tanuj)
+
+## Checklist (P2 items already landed)
+
+- [x] P2.T5 data + F-08.AC1: `data/exam.json` (20 scenarios), `npm run exam:build`; **`npm run exam` on the provider (untrained, 00:55): verdicts 20/20, next-parameter+direction 10/20** → widget `exam.provider = 20`, `exam.provider_param = 10`.
+- [x] P2.T6 model side: TD-01 + wind/wet semantics verified, `aero.describeViolation` (EVAL). UI side (sliders, toggles) still open.
+
 ## Blockers
 
 | When | What | Owner | Resolution |
@@ -75,7 +88,30 @@ Exit criteria: **all true at 23:58 London** (six verifies, task named from the p
 - Tagged `v1-collected` at the collection commit. **Open:** console → Tasks read-out (name, kept examples, status line) by Tanuj; `/team create`.
 
 | 2026-10-23 23:50 | `validatePlanOutput` trims overlong `hypothesis`/`reject_if` to their limits (`trimmed` flag) instead of rejecting | 7/50 live answers overran by a few words; a same-input retry at temperature 0 repeats it; the decision fields are intact | Yes |
+| 2026-10-24 00:30 | D-S1 `measured` carries additive fields beyond ARCH §4.7 (per-car vmax/vmin, measured_delta, predicted_delta, measured_sector_deltas, supersedes, label) | F-04.AC3 readable off the row; §4.7 keys unchanged | Yes |
+| 2026-10-24 00:30 | D-S2 `agreement_pct` is `null` when the predicted delta is 0 (UI shows n/a) | The F-04.AC2 formula divides by it | Yes |
+| 2026-10-24 00:30 | D-S3 racing an `overruled`/`promoted` experiment keeps that status and gains `measured` | The engineer's verdict outranks the race | Yes |
+| 2026-10-24 00:40 | D-S4 `POST /api/collect` requires `confirm: "trained"` and caps n at 60; the CLI `npm run collect` is unchanged | Trained calls spend budget and shape the task | Yes |
+| 2026-10-24 00:40 | D-S5 a changed `lab/prompt.js` fails `npm test` (sha256 pin 6c5be1a3…ce6a) and blocks `npm start` unless `PURPLE_ALLOW_PROMPT_CHANGE=1` after a logged decision | G-MUBIT-01 enforced by machine, not memory | Yes |
+| 2026-10-24 00:50 | D-E1 `MIX.promote_bias` in the generator (default 0, v1 seeds byte-identical); **v2 collection runs with 0.3** (every faster move at Silverstone lowers ride height: 97 of 948 menu moves) | v1 never saw a correct promote (0 of 50) | Yes |
+| 2026-10-24 00:50 | D-E2 exam truth: tie-break + ≥ 0.003 s margin filter for filler items; 20 items = 4 promote / 5 retest / 11 reject, 3 wind, 2 wet, 2 Monza; `exam-rw8` truth reject/rear_wing_deg/decrease | ARCH §4.10; rebuild with `npm run exam:build` | Yes |
+| 2026-10-24 00:50 | D-E3 TD-01 constrains candidates; a grandfathered baseline above the cap is still evaluated; a baseline outside the regulation throws instead of NaN deltas | F-09 semantics | Yes |
+| 2026-10-24 00:50 | D-E4 `aero.describeViolation(id)` is the UI's label source; numbers come from `RANGES` | label and check cannot disagree | Yes |
 
 ### 2026-10-23 23:58 — console read-out (Tanuj, screenshot)
 - Overview: 57 total requests, median response 1.80 s, errors 0, adapters serving 0. Tasks: 1 task **Research engineer of F1**, status **Training** ("training v1"), examples **43 kept**, requests 57, models asked claude-haiku-4-5 100 %. Task rules: "Grouped: same instructions and tools", "Named from its instructions". Figures panel said "Figures unavailable" (console hiccup, details still shown).
 - P0 exit criteria pass → Phase 1 open. Integrator decision: integration branch `claude/amazing-planck-804i13`; lanes GAME, SERVER, EVAL spawned with GO; this session stays integrator.
+
+### 2026-10-24 00:32 — integrator — merged SERVER P1.T3 (PR #2, branch `claude/server-p1-race`)
+- `POST /api/race/result` validates every field (BAD_INPUT names it), writes the §4.7 measured block + agreement_pct + label, second post supersedes, SSE `race` carries the full row. `server/scripts/fake-race.js` (`npm run fake-race`) posts a seeded plausible result for the newest ledger row so the UI lane can work without the game. 41/41 tests after merge.
+- SERVER lane next: task-integrity guards, P2.T3 server side, `/api/status` widget fields.
+
+### 2026-10-24 00:40 — integrator — merged SERVER task-integrity guards (PR #3, branch `claude/server-p1-guards`)
+- `test/prompt-frozen.test.js` pins the prompt hash; `server/index.js` logs it and refuses a changed prompt; `npm run prompt:check`; `/api/collect` needs `confirm: "trained"`, n ≤ 60; `store.appendCall` throws on any non-plan row without `trained: false`. 47/47 tests after merge; real-env startup prints the hash. SERVER next: P2.T3 server side, `/api/status` widget fields.
+
+### 2026-10-24 00:50 — integrator — merged EVAL P2.T5 + P2.T6 (PR #4, branch `claude/eval-p2-exam`)
+- `buildExam` + CLI, `data/exam.json` committed (20 items), generator `promote_bias` (opt-in), TD-01/conditions tests, `describeViolation`. 58/58 tests after merge. Asked SERVER to wire `--promote-bias` into `collect.js`/`app.js collect()`. Lane files: restored GAME.md status line to the original so the GAME lane's PR merges cleanly (integrator no longer edits lane files).
+
+### 2026-10-24 00:55 — integrator — provider exam (20 untrained calls, `npm run exam`)
+- **Verdicts 20/20. Next experiment (parameter + direction) 10/20.** Latency 1.7–2.8 s, all `mreq_` ids in calls.jsonl with `trained: false`. `status.json.exam = { provider: 20, total: 20, provider_param: 10 }`.
+- **Strategic finding for the demo and deck:** the frozen prompt states the verdict thresholds, so the provider (and therefore v1) already gets every verdict right; PRD F-05.AC3's "v2 reject / v1 promote on rear wing +8°" will not materialise on the verdict. The learnable, correctable part is the **next experiment**: today the agent proposes front-wing moves 39 times out of 43 and is right half the time. The pit-wall rule ("Weigh straight-line drag against corner gain; judge on full-lap delta.") and the promote-biased v2 collection target exactly that. Score and show the exam as two numbers, verdict n/20 and next-step n/20 (G-HON-06: with n, never %), and make the Try-models comparison (P3.T1) about the next step. DEMO lane to pick this up; demo-script 1:30–2:05 needs rewording.
