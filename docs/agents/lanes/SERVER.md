@@ -1,10 +1,21 @@
 # Lane SERVER
 
-Status: in_progress (P1.T3 done, PR open; next: task-integrity guards, P2.T3 server side, status widget plumbing). Owner: agent B (Claude, session_01Tq3p158ophv4wuU2ibcJbj). Branch: `claude/server-p1-race` (stacked branches `claude/server-p1-*` follow, one PR per task into `claude/amazing-planck-804i13`).
+Status: in_progress (P1.T3 PR #2 open, guards PR open; next: P2.T3 server side, status widget plumbing). Owner: agent B (Claude, session_01Tq3p158ophv4wuU2ibcJbj). Branches: `claude/server-p1-race` → `claude/server-p1-guards` (stacked branches `claude/server-p1-*` follow, one PR per task into `claude/amazing-planck-804i13`).
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
 
 ## Sessions
+
+### 2026-10-24 00:50 London — agent B (Claude) — task-integrity guards (EVAL_GUARDRAILS G-MUBIT-01..05)
+- Status: done, PR open into `claude/amazing-planck-804i13` (branch `claude/server-p1-guards`, stacked on `claude/server-p1-race`; merge PR #2 first).
+- Files changed: `server/scripts/prompt-hash.js` (new: pins sha256 `6c5be1a3…ce6a` + PROMPT_VERSION "1"; module + CLI), `server/index.js` (logs the hash at start; refuses to start on a mismatch unless `PURPLE_ALLOW_PROMPT_CHANGE=1`), `server/app.js` (`POST /api/collect` requires `{ confirm: "trained" }`, integer `1 ≤ n ≤ 60`; `db.appendCall` throws on any non-plan row without `trained: false`), `server/scripts/smoke.js` (`MUBIT_MOCK=1` uses the mock; absolute `PURPLE_DATA_DIR` honoured), `test/prompt-frozen.test.js` (new), `test/server.test.js` (+3 tests), this file.
+- Verify step run + output: `npm test` → 47/47 pass. `node server/scripts/prompt-hash.js` → `… == frozen task key, OK` exit 0. Temporary comment appended to a prompt copy: server prints `!! differs from the frozen task key` and exits 1; with `PURPLE_ALLOW_PROMPT_CHANGE=1` it starts with a WARNING line; `lab/prompt.js` restored (`git checkout`), hash back to `6c5be1a3…`. `POST /api/collect {"n":3}` → 400 `confirm must be "trained"…`; `{"n":99,"confirm":"trained"}` → 400 `n must be <= 60 per request (budget guard)`.
+- Decisions proposed (for the integrator to log in TASK_LOG):
+  - D-S4: `POST /api/collect` contract tightened (ARCH §5): body must carry `confirm: "trained"`, `n` ≤ 60. The CLI `npm run collect` calls `collect()` directly and is unchanged (integrator's path).
+  - D-S5: a changed `lab/prompt.js` now fails `npm test` and blocks `npm start`; the only override is `PURPLE_ALLOW_PROMPT_CHANGE=1` after a logged decision (then update the constant in `server/scripts/prompt-hash.js` and `test/prompt-frozen.test.js`).
+  - Proposed `package.json` line: `"prompt:check": "node server/scripts/prompt-hash.js"`.
+- Blockers / questions for Tanuj: none.
+- Next three actions: (1) P2.T3 server side (rule trimming, `R-xx` by max id, `GET /api/rules?active=1`, SSE `rule`/`plan` tests); (2) `/api/status` widget fields; (3) review GAME lane's P1.T2 postMessage payload against the contract in the P1.T3 entry when it lands.
 
 ### 2026-10-24 00:25 London — agent B (Claude) — P1.T3 (F-04 race result)
 - Status: done, PR open into `claude/amazing-planck-804i13` (branch `claude/server-p1-race`).
