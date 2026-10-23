@@ -115,3 +115,39 @@ test("generator: promote_bias 1 draws only candidates the evaluator rates faster
   assert.equal(share(1, 60), 1); const mid = share(0.5, 200); assert.ok(mid > 0.4 && mid < 0.8, "share " + mid); assert.ok(share(0, 200) < 0.2);
   const m = scenarios.movesByVerdict(evaluator, B, DRY); assert.ok(m.promote.length > 50 && m.promote.every(r => r.delta_lap < -0.03 && r.candidate.ride_height_mm < 35), "every faster menu move at Silverstone lowers the ride height");
 });
+
+// ---- Monza reference windows (circuit switch, F-09): the fixture and REF_CORNER / REF_STRAIGHT make sense there
+test("monza: REF_CORNER vmin is a true corner minimum at the Lesmos; REF_STRAIGHT is the Rettifilo at one bearing; rear wing moves vmax/vmin the right way", () => {
+  const t = evaluator.trackFor("monza"), cal = evaluator.calibrate(t, "monza"), ref = aero.REF_CORNER.monza, str = aero.REF_STRAIGHT.monza;
+  const prof = EI.buildSpeedProfile(t, (EI.AI_CAL && EI.AI_CAL.DEC_REF) || 0.92, cal.grip, EI.CAR.VMAX + 6, 1, 0, aero.toMultipliers(B, MONZA), null);
+  let imin = Math.round(ref.s0 / t.ds); for (let i = imin; i <= Math.round(ref.s1 / t.ds); i++) if (prof[i] < prof[imin]) imin = i;
+  const sMin = imin * t.ds, lesmo = EI.TRACKS.monza.corners.filter(c => /Lesmo/.test(c.name)).map(c => c.s);
+  assert.ok(lesmo.length === 2 && lesmo.every(s => s >= ref.s0 && s <= ref.s1), "both Lesmos inside the window " + lesmo);
+  assert.ok(sMin > ref.s0 + 50 && sMin < ref.s1 - 50, "minimum " + sMin.toFixed(0) + " is interior to the window, not clipped at an edge");
+  assert.ok(Math.abs(sMin - lesmo[1]) < 80, "minimum at Lesmo 2 (" + lesmo[1] + "), got " + sMin.toFixed(0));
+  const b = s => aero.bearingOfHeading(t.heading[Math.round(s / t.ds)]), dAng = (x, y) => Math.abs(((x - y + 540) % 360) - 180); assert.ok(dAng(b(str.s0 + 50), b(str.s1 - 50)) < 10, "the straight window is straight: " + b(str.s0 + 50) + " vs " + b(str.s1 - 50));
+  assert.ok(EI.TRACKS.monza.corners.some(c => c.name === str.name && c.s >= str.s0 - 1 && c.s <= str.s1));
+  const e = evaluator.evaluate("monza", rw(5), MONZA);
+  assert.ok(e.straight_vmax_kmh > 300 && e.straight_vmax_kmh < e.baseline.straight_vmax_kmh && e.vmin_kmh > e.baseline.vmin_kmh, JSON.stringify([e.straight_vmax_kmh, e.baseline.straight_vmax_kmh, e.vmin_kmh, e.baseline.vmin_kmh]));
+  const fx = JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures", "baseline.monza.json"), "utf8")); assert.equal(fx.lap, 76.65); assert.ok(Math.abs(fx.vmin_kmh - e.baseline.vmin_kmh) < 0.2 && Math.abs(fx.straight_vmax_kmh - e.baseline.straight_vmax_kmh) < 0.2);
+});
+test("P3.T1 prep: hardestItems keeps exam-rw8 first and ranks by distance to the ±0.03 thresholds; trySheet carries each user message verbatim; dryRun mirrors collect()", () => {
+  const hard = scenarios.hardestItems(exam, 8); assert.equal(hard.length, 8); assert.equal(hard[0].id, "exam-rw8"); assert.equal(new Set(hard.map(x => x.id)).size, 8);
+  const d = it => Math.min(Math.abs(it.meta.delta_lap + 0.03), Math.abs(it.meta.delta_lap - 0.03)); for (let i = 2; i < hard.length; i++) assert.ok(d(hard[i - 1]) <= d(hard[i]) + 1e-9);
+  const md = scenarios.trySheet(exam, { k: 8 }); for (const it of hard) assert.ok(md.includes(schema.serializeScenario(it.scenario)), it.id); assert.match(md, /\| provider \| v1 \| v2 \|/);
+  const r = scenarios.dryRun(evaluator, { n: 6, seed: 2, promote_bias: 0, rng: EI.U.rng }); assert.equal(r.rows.length, 6); assert.equal(r.rows[0].seed, 2000);
+  const g = scenarios.generate(EI.U.rng(2003), { circuit: "silverstone" }); assert.equal(r.rows[3].change, schema.describeChange(B, g.candidate)); assert.deepEqual(r.rows[3].conditions, g.conditions);
+  assert.deepEqual(scenarios.dryRun(evaluator, { n: 6, seed: 2, promote_bias: 0.3, rng: EI.U.rng }).summary.n, 6);
+});
+
+test("generator: the collection's consecutive seeds are degenerate without warm-up (v1 moved the front wing on 50/50 draws); promote_bias > 0 warms the rng and spreads the picks", () => {
+  const moved = g => aero.KEYS.filter(k => g.candidate[k] !== B[k]);
+  const v1 = []; for (let s = 1000; s < 1050; s++) v1.push(moved(scenarios.generate(EI.U.rng(s), { circuit: "silverstone" })));
+  assert.equal(v1.filter(m => m.includes("front_wing_deg")).length, 50, "v1 seeds: every candidate touched the front wing");
+  const first = {}; for (let s = 2000; s < 2040; s++) for (const k of moved(scenarios.generate(EI.U.rng(s), { circuit: "silverstone", promote_bias: 0.3, evaluator }))) first[k] = (first[k] || 0) + 1;
+  assert.ok(Object.keys(first).length >= 4, "warm draws spread over parameters: " + JSON.stringify(first));
+  const r = scenarios.dryRun(evaluator, { n: 40, seed: 2, promote_bias: 0.3, rng: EI.U.rng }).summary;
+  assert.ok(r.promote >= 8 && r.promote <= 24 && r.reject >= 10, "v2 dry run mix " + JSON.stringify(r));
+  const w = []; for (let s = 2000; s < 2040; s++) w.push(moved(scenarios.generate(EI.U.rng(s), { circuit: "silverstone", warm: true })));
+  assert.ok(w.filter(m => m.includes("front_wing_deg")).length < 30, "warm: true alone also breaks the degeneracy");
+});
