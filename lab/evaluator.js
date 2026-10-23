@@ -72,7 +72,11 @@
     const baseline = opts.baseline || aero.BASELINE;
     const cand = evaluateOne(circuit, setup, conditions, opts);
     if (!cand.legal) return { legal: false, violations: cand.violations, lap: null, sectors: null, delta_lap: null, delta_sectors: null, model: MODEL_LABEL };
-    const base = evaluateOne(circuit, baseline, conditions, opts);
+    // the baseline is what the car already runs: a directive (TD-01) constrains candidates, so a grandfathered baseline still gets its
+    // lap (evaluated without the directive). A baseline outside the regulation itself is a caller error, never a silent NaN.
+    let base = evaluateOne(circuit, baseline, conditions, opts);
+    if (!base.legal && opts.td01) base = evaluateOne(circuit, baseline, conditions, Object.assign({}, opts, { td01: false }));
+    if (!base.legal) throw new Error("evaluator: baseline is illegal (" + base.violations.join(", ") + ")");
     const out = Object.assign({}, cand, {
       delta_lap: r3(cand.lap - base.lap),
       delta_sectors: cand.sectors.map((s, i) => r3(s - base.sectors[i])),
