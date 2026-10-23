@@ -130,9 +130,9 @@ body.has-banner .lab { height: calc(100% - 40px - 41px); }
 .main-empty .inner .h { color: var(--text); margin-bottom: 6px; }
 
 /* ---- conditions bar (P2.T6) */
-.cond { display: flex; align-items: center; gap: 16px; padding: 8px 16px; flex: 0 0 auto; flex-wrap: wrap; }
+.cond { display: flex; align-items: center; gap: 12px; padding: 8px 14px; flex: 0 0 auto; flex-wrap: wrap; font-size: 12px; }
 .cond .f { display: flex; align-items: center; gap: 8px; }
-.cond input[type=range] { width: 110px; accent-color: var(--purple); }
+.cond input[type=range] { width: 84px; accent-color: var(--purple); }
 .cond select { background: #1a1a20; border: 1px solid var(--line); border-radius: var(--r); padding: 3px 6px; }
 .dial { position: relative; width: 26px; height: 26px; border: 1px solid var(--line); border-radius: 50%; }
 .dial::before { content: ""; position: absolute; left: 50%; top: 50%; width: 2px; height: 11px; margin-left: -1px; margin-top: -11px; background: var(--purple); transform-origin: 50% 100%; transform: rotate(var(--deg, 0deg)); transition: transform var(--t-stage) var(--ease); }
@@ -219,3 +219,7 @@ body.has-banner .lab { height: calc(100% - 40px - 41px); }
   .main { min-height: 420px; }
   .trace { min-height: 240px; }
 }
+
+/* conditions bar while a POST /api/state is in flight */
+.cond.busy { opacity: .7; }
+.cond input:disabled { opacity: .35; }

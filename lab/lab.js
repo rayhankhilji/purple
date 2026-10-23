@@ -415,6 +415,37 @@
     catch (e) { e.retry = () => toggleRule(id, active); S.err.learn = e; banner(e); renderAll(); }
   }
 
+  // ---- ConditionsBar (P2.T6, F-09): wind 0–12 m/s + from-direction, wet, circuit, TD-01 → POST /api/state; GET /api/state on load
+  const COMPASS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+  const compass = deg => COMPASS[Math.round((((deg % 360) + 360) % 360) / 45) % 8];
+  function syncConditions() {
+    const st = S.state || {}, c = st.conditions || {};
+    const f = $("#conditions"); if (!f) return;
+    $("#windMs").value = c.wind_ms || 0; $("#windMsV").textContent = (c.wind_ms || 0) + " m/s";
+    $("#windFrom").value = c.wind_from_deg || 0; $("#windFromV").textContent = (c.wind_from_deg || 0) + "° " + compass(c.wind_from_deg || 0);
+    $("#windDial").style.setProperty("--deg", (c.wind_from_deg || 0) + "deg");
+    $("#wet").checked = !!c.wet; $("#circuit").value = c.circuit || "silverstone"; $("#td01").checked = !!st.td01;
+    $("#windFrom").disabled = !(c.wind_ms > 0);
+    $("#condSrc").textContent = "conditions · " + (c.circuit || "silverstone") + (c.wet ? " · wet" : " · dry") + (c.wind_ms ? " · " + c.wind_ms + " m/s from " + (c.wind_from_deg || 0) + "°" : " · no wind") + (st.td01 ? " · TD-01" : "") + " · /api/state";
+  }
+  async function postState(patch) {
+    const f = $("#conditions"); f.classList.add("busy");
+    try { S.state = await api("POST", "/api/state", patch); clearBanner(); }
+    catch (e) { banner(e); }
+    finally { f.classList.remove("busy"); syncConditions(); renderHeader(); renderMain(); }
+  }
+  function wireConditions() {
+    const f = $("#conditions"); if (!f) return;
+    f.addEventListener("submit", ev => ev.preventDefault());
+    $("#windMs").addEventListener("input", ev => { $("#windMsV").textContent = ev.target.value + " m/s"; $("#windFrom").disabled = !(+ev.target.value > 0); });
+    $("#windMs").addEventListener("change", ev => postState({ conditions: { wind_ms: +ev.target.value } }));
+    $("#windFrom").addEventListener("input", ev => { $("#windFromV").textContent = ev.target.value + "° " + compass(+ev.target.value); $("#windDial").style.setProperty("--deg", ev.target.value + "deg"); });
+    $("#windFrom").addEventListener("change", ev => postState({ conditions: { wind_from_deg: +ev.target.value } }));
+    $("#wet").addEventListener("change", ev => postState({ conditions: { wet: ev.target.checked } }));
+    $("#circuit").addEventListener("change", ev => postState({ conditions: { circuit: ev.target.value } }));
+    $("#td01").addEventListener("change", ev => postState({ td01: ev.target.checked }));
+  }
+
   // ---- header badges from /api/state
   function renderHeader() {
     const st = S.state || {}, c = st.conditions || {};
@@ -422,11 +453,11 @@
     $("#circuitBadge").textContent = (c.circuit || "silverstone") + " · min lap" + (c.wet ? " · wet" : "") + (c.wind_ms ? " · wind " + c.wind_ms + " m/s from " + (c.wind_from_deg || 0) + "°" : "");
   }
 
-  function renderAll() { renderHeader(); renderDesign(); renderEvaluate(); renderRace(); renderLearn(); renderMain(); renderLedger(); }
+  function renderAll() { renderHeader(); syncConditions(); renderDesign(); renderEvaluate(); renderRace(); renderLearn(); renderMain(); renderLedger(); }
 
   // ---- load: empty states first (F-06.AC1), then the stream and the four GETs; the first failure names its endpoint in the banner
   async function init() {
-    renderWidget(false); renderAll();
+    renderWidget(false); wireConditions(); renderAll();
     connectStream();
     const got = await Promise.allSettled([api("GET", "/api/status"), api("GET", "/api/state"), api("GET", "/api/ledger?limit=50"), api("GET", "/api/rules")]);
     const [status, state, ledger, rules] = got.map(r => (r.status === "fulfilled" ? r.value : null));
@@ -439,5 +470,5 @@
   }
   init();
 
-  EI.lab = { run: runPlan, raceIt, cancelRace, promote, overrule, postRaceResult, refresh: () => Promise.all([refreshLedger(), refreshRules()]), state: S, API };
+  EI.lab = { run: runPlan, raceIt, cancelRace, promote, overrule, postRaceResult, setState: postState, refresh: () => Promise.all([refreshLedger(), refreshRules()]), state: S, API };
 })();

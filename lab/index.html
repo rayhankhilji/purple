@@ -30,6 +30,16 @@
       <article class="card is-empty" id="card-learn" data-stage="learn"><div class="head"><span class="stage-name">Learn</span><span class="state">empty</span></div><div class="body"></div><div class="foot"></div></article>
     </div>
 
+    <form class="panel cond" id="conditions" aria-label="conditions" autocomplete="off">
+      <span class="label">Conditions</span>
+      <label class="f" for="windMs">wind <input type="range" id="windMs" min="0" max="12" step="1" value="0"><span class="num" id="windMsV">0 m/s</span></label>
+      <label class="f" for="windFrom">from <span class="dial" id="windDial" aria-hidden="true"></span><input type="range" id="windFrom" min="0" max="345" step="15" value="0"><span class="num" id="windFromV">0° N</span></label>
+      <label class="switch" title="wet track"><input type="checkbox" id="wet"><span class="tk"></span><span>wet</span></label>
+      <label class="f" for="circuit">circuit <select id="circuit"><option value="silverstone">silverstone</option><option value="monza">monza</option></select></label>
+      <label class="switch td" title="technical directive TD-01: rear wing capped at 20°"><input type="checkbox" id="td01"><span class="tk"></span><span>TD-01</span></label>
+      <span class="src" id="condSrc">conditions · from /api/state</span>
+    </form>
+
     <div class="panel main" id="main">
       <div id="car3d"></div>
       <div class="main-empty" id="mainEmpty"><div class="inner"><div class="h">3D car view</div>The candidate's wing angles and ride height render here from Equation I's procedural car (lab/car3d.js, CAR3D lane). The setup table below carries the numbers meanwhile.</div></div>
