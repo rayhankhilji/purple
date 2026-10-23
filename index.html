@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Equation I</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23e10600'/%3E%3Ctext x='32' y='44' font-family='Arial Black,Arial' font-weight='900' font-size='34' text-anchor='middle' fill='white'%3EEI%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/fonts/fonts.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+  <canvas id="gl"></canvas>
+
+  <!-- Per-player viewports (HUD overlays) -->
+  <div id="viewports"></div>
+
+  <!-- Shared race overlays -->
+  <div id="lights" class="hidden">
+    <div class="light-col"><span></span><span></span></div>
+    <div class="light-col"><span></span><span></span></div>
+    <div class="light-col"><span></span><span></span></div>
+    <div class="light-col"><span></span><span></span></div>
+    <div class="light-col"><span></span><span></span></div>
+  </div>
+  <div id="banner" class="hidden"></div>
+  <div id="toasts"></div>
+  <div id="pitui"></div>
+
+  <!-- Touch controls (shown on touch devices, single player) -->
+  <div id="touch" class="hidden">
+    <div class="tc-row"><button data-k="up">&#8593;</button></div>
+    <div class="tc-row"><button data-k="left">&#8592;</button><button data-k="down">&#8595;</button><button data-k="right">&#8594;</button></div>
+    <div class="tc-side"><button data-k="drs">AERO</button><button data-k="ers">ERS</button></div>
+  </div>
+
+  <!-- Main menu -->
+  <div id="menu" class="overlay">
+    <div class="menu-shell">
+      <header class="menu-top">
+        <div class="wordmark">
+          <div class="wm-mark"></div>
+          <div class="wm-text">
+            <h1>EQUATION&nbsp;<em>I</em></h1>
+            <div class="subtitle">Grand Prix racing &middot; World Championship</div>
+          </div>
+        </div>
+        <div class="meta" id="menu-meta"><b>Round 1</b> &middot; British Grand Prix<br>Silverstone Circuit &middot; Race day</div>
+      </header>
+
+      <div class="menu-grid">
+        <section>
+          <h2>Circuit</h2>
+          <div class="track-card panel">
+            <div class="track-map"><canvas id="track-preview" width="392" height="392"></canvas></div>
+            <div class="track-info">
+              <div class="track-kicker" id="track-kicker">United Kingdom</div>
+              <div class="track-name" id="track-name">Silverstone</div>
+              <div class="track-meta" id="track-meta">Northamptonshire &middot; clockwise &middot; 3 sectors</div>
+              <div class="track-stats">
+                <div><b id="track-km">5.881</b><span>km</span></div>
+                <div><b id="track-turns">18</b><span>turns</span></div>
+                <div><b id="track-drs">2</b><span>DRS zones</span></div>
+              </div>
+              <label class="field track-select"><span class="fl">Circuit</span>
+                <select id="opt-track"></select>
+              </label>
+              <div class="track-legend"><span><i style="background:#ff3b2d"></i>S1</span><span><i style="background:#3d8dff"></i>S2</span><span><i style="background:#ffd23f"></i>S3</span><span><i style="background:#f4f6f9"></i>Straight mode</span></div>
+            </div>
+          </div>
+          <h2>Race settings</h2>
+          <div class="settings">
+            <label class="field wide"><span class="fl">Laps</span><input type="range" id="opt-laps" min="1" max="15" value="3"><output id="out-laps">3</output></label>
+            <label class="field wide"><span class="fl">Bots</span><input type="range" id="opt-bots" min="0" max="21" value="9"><output id="out-bots">9</output></label>
+            <label class="field"><span class="fl">Bot skill</span>
+              <select id="opt-diff">
+                <option value="veryeasy">Very easy</option>
+                <option value="easy">Easy</option>
+                <option value="average" selected>Average</option>
+                <option value="above">Above average</option>
+                <option value="hard">Hard</option>
+                <option value="veryhard">Very hard</option>
+                <option value="official">Official F1 (real 2026 pace)</option>
+                <option value="ultra">Ultra (frontier)</option>
+              </select>
+            </label>
+            <label class="field"><span class="fl">Grid</span>
+              <select id="opt-grid">
+                <option value="season" selected>2026 grid (a real race)</option>
+                <option value="quali">Qualifying order</option>
+                <option value="front">Players at the front</option>
+                <option value="back">Players at the back</option>
+                <option value="random">Random</option>
+              </select>
+            </label>
+            <label class="field"><span class="fl">Assists</span>
+              <select id="opt-assist">
+                <option value="full" selected>Full (steer + ABS + TC)</option>
+                <option value="medium">Medium (ABS + TC)</option>
+                <option value="none">None</option>
+              </select>
+            </label>
+            <label class="field"><span class="fl">Graphics</span>
+              <select id="opt-quality">
+                <option value="low" selected>Low (fastest)</option>
+                <option value="medium">Medium</option>
+                <option value="high">High (bloom + FXAA)</option>
+              </select>
+            </label>
+            <label class="field"><span class="fl">Resolution</span>
+              <select id="opt-res" title="3D resolution. Auto keeps the frame rate up (and the controls direct) by easing off anti-aliasing, then resolution, only when needed">
+                <option value="auto" selected>Auto (smooth)</option>
+                <option value="native">Native (1x, sharpened)</option>
+                <option value="100">100% (sharpest)</option>
+                <option value="85">85%</option>
+                <option value="70">70%</option>
+                <option value="50">50% (fastest)</option>
+              </select>
+            </label>
+            <label class="field"><span class="fl">Display</span>
+              <select id="opt-sync" title="Low latency draws each frame straight to the screen (least input delay; some systems may show tearing). VSync waits for the screen refresh (no tearing, a frame more delay). Applies when the page reloads.">
+                <option value="low" selected>Low latency</option>
+                <option value="vsync">VSync (no tearing)</option>
+              </select>
+            </label>
+            <label class="field"><span class="fl">Perf overlay</span>
+              <select id="opt-perf" title="Frame rate, frame time (average and 1% high), CPU / GPU time per frame and input-to-frame delay. F toggles it in a race.">
+                <option value="off" selected>Off</option>
+                <option value="on">On (F)</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <section>
+          <h2>Drivers</h2>
+          <label class="field"><span class="fl">Players</span>
+            <select id="opt-players">
+              <option value="1" selected>1 player</option>
+              <option value="2">2 players (split screen)</option>
+            </select>
+          </label>
+          <label class="field hidden" id="split-field"><span class="fl">Split</span>
+            <select id="opt-split">
+              <option value="auto" selected>Auto (top / bottom on a laptop)</option>
+              <option value="tb">Top / bottom</option>
+              <option value="sbs">Side by side</option>
+            </select>
+          </label>
+          <div class="player-setup panel" id="p1-setup">
+            <div class="ps-head"><div class="ps-title">Player 1</div><div class="keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> &middot; <kbd>L.Shift</kbd>DRS &middot; <kbd>Space</kbd>ERS &middot; <kbd>C</kbd>camera</div></div>
+            <label class="field name"><span class="fl">Name</span><input type="text" id="p1-name" maxlength="14" value="YOU" placeholder="Name"></label>
+            <label class="field"><span class="fl">Team</span><select id="p1-team"></select></label>
+            <label class="field" title="The seat you take: you replace this driver (and start from their slot on a 2026 grid)"><span class="fl">Seat</span><select id="p1-seat"></select></label>
+            <label class="field"><span class="fl">Tyre</span>
+              <select id="p1-tyre">
+                <option value="soft">Soft (grip, wears)</option>
+                <option value="medium" selected>Medium</option>
+                <option value="hard">Hard (durable)</option>
+              </select>
+            </label>
+            <div class="livery-wrap"><canvas class="livery-preview" id="p1-preview" width="440" height="150"></canvas></div>
+          </div>
+          <div class="player-setup panel hidden" id="p2-setup">
+            <div class="ps-head"><div class="ps-title">Player 2</div><div class="keys"><kbd>&#8593;</kbd><kbd>&#8592;</kbd><kbd>&#8595;</kbd><kbd>&#8594;</kbd> &middot; <kbd>R.Shift</kbd>DRS &middot; <kbd>Enter</kbd>ERS &middot; <kbd>/</kbd>camera</div></div>
+            <label class="field name"><span class="fl">Name</span><input type="text" id="p2-name" maxlength="14" value="RIVAL" placeholder="Name"></label>
+            <label class="field"><span class="fl">Team</span><select id="p2-team"></select></label>
+            <label class="field" title="The seat you take: you replace this driver (and start from their slot on a 2026 grid)"><span class="fl">Seat</span><select id="p2-seat"></select></label>
+            <label class="field"><span class="fl">Tyre</span>
+              <select id="p2-tyre">
+                <option value="soft">Soft (grip, wears)</option>
+                <option value="medium" selected>Medium</option>
+                <option value="hard">Hard (durable)</option>
+              </select>
+            </label>
+            <div class="livery-wrap"><canvas class="livery-preview" id="p2-preview" width="440" height="150"></canvas></div>
+          </div>
+          <div class="hint">
+            <b>How to race</b><br>Accelerate, brake before the corner, turn in smoothly and stay inside the white lines &mdash; cutting a corner deletes the lap time, and a cut that gains a place must be given back. 2026 active aero: in the straight-mode zones (the green stretches on the minimap) hold Shift (two players: P1 Left Shift, P2 Right Shift; gamepad A) to open the rear wing for top speed; it closes when you brake or the zone ends. Cross the detection line within 1.0&nbsp;s of the car ahead and you get <i>Overtake</i>: extra ERS energy for the next lap. ERS gives a power boost and recharges under braking. Pit with P (pit lane limit 80&nbsp;km/h, 60 at Monaco). Hold until the five red lights go out &mdash; a jump start costs 5 seconds.
+          </div>
+        </section>
+      </div>
+
+      <footer class="menu-actions">
+        <button id="btn-start" class="primary">START RACE</button>
+        <button id="btn-controls" class="ctl-btn" title="Keyboard and gamepad controls (H)">CONTROLS</button>
+        <div class="keys-hint">
+          <span><kbd>H</kbd>controls</span><span><kbd>Esc</kbd>pause</span><span><kbd>M</kbd>mute</span><span><kbd>C</kbd><kbd>/</kbd>camera: chase, cockpit, TV</span>
+        </div>
+        <div class="partners" aria-label="Race partners">
+          <span class="partners-label">Race partners</span>
+          <a class="partner lumi" href="https://www.trylumi.co" target="_blank" rel="noopener" title="Lumi: trylumi.co"><span class="pchip lumi"><img src="assets/brand/lumi-logo.png" alt="" width="20" height="20"><b>lumi</b></span><span class="ptag">Learn anything. Actually understand it.</span></a>
+          <a class="partner intake" href="https://www.intake.ink" target="_blank" rel="noopener" title="Intake: intake.ink"><span class="pchip intake"><img src="assets/brand/intake-icon.svg" alt="" width="16" height="16"><b>intake</b></span><span class="ptag">Win your degree <b>apprenticeship.</b></span></a>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div id="controls" class="overlay hidden" role="dialog" aria-label="Controls">
+    <div class="menu-card ctl-card">
+      <div class="ctl-top"><h1>Controls</h1><button id="btn-controls-close" class="ctl-close" aria-label="Close">&times;</button></div>
+      <div class="subtitle">One player can drive with either key set. In split screen, player 1 uses the left side of the keyboard and player 2 the right.</div>
+      <div class="ctl-grid">
+        <div class="ctl-col p1"><div class="ctl-h"><span class="ctl-pl">P1</span>Player 1</div>
+          <div class="ctl-row"><span>Throttle / brake</span><span><kbd>W</kbd><kbd>S</kbd></span></div>
+          <div class="ctl-row"><span>Steer</span><span><kbd>A</kbd><kbd>D</kbd></span></div>
+          <div class="ctl-row"><span>DRS (open in a zone)</span><span><kbd>L.Shift</kbd></span></div>
+          <div class="ctl-row"><span>ERS overtake boost</span><span><kbd>Space</kbd></span></div>
+          <div class="ctl-row"><span>Camera</span><span><kbd>C</kbd></span></div>
+          <div class="ctl-row"><span>Pit request</span><span><kbd>P</kbd></span></div>
+          <div class="ctl-row"><span>Tyres soft / med / hard</span><span><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd></span></div>
+        </div>
+        <div class="ctl-col p2"><div class="ctl-h"><span class="ctl-pl">P2</span>Player 2</div>
+          <div class="ctl-row"><span>Throttle / brake</span><span><kbd>&#8593;</kbd><kbd>&#8595;</kbd></span></div>
+          <div class="ctl-row"><span>Steer</span><span><kbd>&#8592;</kbd><kbd>&#8594;</kbd></span></div>
+          <div class="ctl-row"><span>DRS (open in a zone)</span><span><kbd>R.Shift</kbd> or <kbd>.</kbd></span></div>
+          <div class="ctl-row"><span>ERS overtake boost</span><span><kbd>Enter</kbd> or <kbd>R.Ctrl</kbd></span></div>
+          <div class="ctl-row"><span>Camera</span><span><kbd>/</kbd></span></div>
+          <div class="ctl-row"><span>Pit request</span><span><kbd>Backspace</kbd></span></div>
+          <div class="ctl-row"><span>Tyres soft / med / hard</span><span><kbd>8</kbd><kbd>9</kbd><kbd>0</kbd></span></div>
+        </div>
+        <div class="ctl-col pad"><div class="ctl-h"><span class="ctl-pl">&#127918;</span>Gamepad</div>
+          <div class="ctl-row"><span>Throttle / brake</span><span><kbd>RT</kbd><kbd>LT</kbd></span></div>
+          <div class="ctl-row"><span>Steer</span><span><kbd>Left stick</kbd></span></div>
+          <div class="ctl-row"><span>Straight mode</span><span><kbd>A</kbd></span></div>
+          <div class="ctl-row"><span>ERS</span><span><kbd>B</kbd> / <kbd>X</kbd></span></div>
+          <div class="ctl-row"><span>Camera</span><span><kbd>Y</kbd></span></div>
+          <div class="ctl-row"><span>Pit request</span><span><kbd>RB</kbd></span></div>
+          <div class="ctl-row"><span>Pause</span><span><kbd>Start</kbd></span></div>
+        </div>
+      </div>
+      <div class="ctl-foot">
+        <span><kbd>Esc</kbd> pause</span><span><kbd>M</kbd> mute</span><span><kbd>R</kbd> restart (one player; in split screen from the pause menu)</span><span><kbd>H</kbd> this screen</span>
+        <span class="ctl-note">Two pads: the first connected is player 1. Some laptop keyboards can't register many keys at once, so a pad for one player helps.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pause -->
+  <div id="pause" class="overlay hidden">
+    <div class="pause-wrap">
+    <div class="menu-card small-card">
+      <h1>Paused</h1>
+      <div class="subtitle">Race suspended</div>
+      <button id="btn-resume" class="primary">Resume</button>
+      <button id="btn-restart">Restart race</button>
+      <button id="btn-quit">Back to menu</button>
+      <label class="field pause-res"><span class="fl">Resolution</span>
+        <select id="pause-res">
+          <option value="auto">Auto (smooth)</option><option value="native">Native (1x, sharpened)</option><option value="100">100% (sharpest)</option><option value="85">85%</option><option value="70">70%</option><option value="50">50% (fastest)</option>
+        </select>
+      </label>
+      <div class="keys-hint"><span><kbd>Esc</kbd>resume</span><span><kbd>M</kbd>mute</span><span><kbd>R</kbd>restart</span><span><kbd>F</kbd>perf</span></div>
+      <div class="partners partners-sm" aria-label="Race partners"><span class="partners-label">Race partners</span><a class="partner" href="https://www.trylumi.co" target="_blank" rel="noopener" title="trylumi.co"><span class="pchip lumi"><img src="assets/brand/lumi-logo.png" alt="" width="20" height="20"><b>lumi</b></span></a><a class="partner" href="https://www.intake.ink" target="_blank" rel="noopener" title="intake.ink"><span class="pchip intake"><img src="assets/brand/intake-icon.svg" alt="" width="16" height="16"><b>intake</b></span></a></div>
+      <div id="controls-card" style="text-align:left;font-size:12px;line-height:1.7;margin-top:10px;border-top:1px solid rgba(255,255,255,0.1);padding-top:8px;color:#cfd6e0">
+        <div style="display:grid;grid-template-columns:auto 1fr 1fr;gap:2px 14px;font-variant-numeric:tabular-nums">
+          <b></b><b style="color:#fff">PLAYER 1</b><b style="color:#fff">PLAYER 2</b>
+          <span>Drive</span><span>W A S D</span><span>Arrow keys</span>
+          <span>Straight mode</span><span>Left Shift</span><span>Right Shift</span>
+          <span>ERS boost</span><span>Left Ctrl / Space</span><span>Enter</span>
+          <span>Camera</span><span>C</span><span>/</span>
+          <span>Pit request</span><span>P</span><span>Backspace</span>
+          <span>Tyres S / M / H</span><span>1 / 2 / 3</span><span>8 / 9 / 0</span>
+        </div>
+      </div>
+    </div>
+    <div class="menu-card field-card">
+      <div class="fd-top"><h2>Field</h2><span class="fd-key">Driver styles this race &middot; each trait 0.01&ndash;1.00 &middot; hover a column for what it does</span></div>
+      <div id="pause-field" class="fd-table"></div>
+    </div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div id="results" class="overlay hidden">
+    <div class="menu-card results-card">
+      <div class="results-head">
+        <div>
+          <h1>Race result</h1>
+          <div class="subtitle" id="results-sub"></div>
+        </div>
+        <div class="flag"></div>
+      </div>
+      <div class="results-body">
+        <div class="results-scroll"><table id="results-table"></table></div>
+        <div class="menu-actions">
+          <button id="btn-again" class="primary">Race again</button>
+          <button id="btn-menu">Menu</button>
+          <div class="partners partners-sm" aria-label="Race partners"><span class="partners-label">Race partners</span><a class="partner" href="https://www.trylumi.co" target="_blank" rel="noopener" title="trylumi.co"><span class="pchip lumi"><img src="assets/brand/lumi-logo.png" alt="" width="20" height="20"><b>lumi</b></span><span class="ptag">Revise like you race</span></a><a class="partner" href="https://www.intake.ink" target="_blank" rel="noopener" title="intake.ink"><span class="pchip intake"><img src="assets/brand/intake-icon.svg" alt="" width="16" height="16"><b>intake</b></span><span class="ptag">Apprenticeships open now</span></a></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="loading" class="overlay f1-load"><div class="loader"><img class="f1-logo" src="assets/brand/f1/f1-logo.svg" alt="Formula 1" width="240" height="60"><div class="f1-kicker">FIA Formula One World Championship &middot; 2026</div><div class="f1-event" id="loader-event">British Grand Prix</div><div class="f1-venue" id="loader-venue">Silverstone Circuit</div><div class="loader-bar"><i></i></div><div class="loader-text">Building Silverstone</div><div class="loader-partners"><span>Race partners</span><span class="pchip lumi"><img src="assets/brand/lumi-logo.png" alt="" width="20" height="20"><b>lumi</b></span><i>·</i><span class="pchip intake"><img src="assets/brand/intake-icon.svg" alt="" width="16" height="16"><b>intake</b></span></div></div></div>
+</div>
+
+<script src="vendor/three.min.js"></script>
+<script src="vendor/GLTFLoader.js"></script>
+<script src="vendor/EffectComposer.js"></script>
+<script src="vendor/RenderPass.js"></script>
+<script src="vendor/ShaderPass.js"></script>
+<script src="vendor/CopyShader.js"></script>
+<script src="vendor/LuminosityHighPassShader.js"></script>
+<script src="vendor/UnrealBloomPass.js"></script>
+<script src="vendor/FXAAShader.js"></script>
+<script src="vendor/Sky.js"></script>
+<script src="js/data/silverstone.js"></script>
+<script src="js/data/monaco.js"></script>
+<script src="js/data/abudhabi.js"></script>
+<script src="js/data/monza.js"></script>
+<script src="js/data/spa.js"></script>
+<script src="js/data/cota.js"></script>
+<script src="js/data/mexico.js"></script>
+<script src="js/util.js"></script>
+<script src="js/data/season2026.js"></script>
+<script src="js/data/racepace2026.js"></script>
+<script src="js/ads.js"></script>
+<script src="js/teams.js"></script>
+<script src="js/liveries.js"></script>
+<script src="js/liveries/mercedes.js"></script>
+<script src="js/liveries/ferrari.js"></script>
+<script src="js/liveries/mclaren.js"></script>
+<script src="js/liveries/redbull.js"></script>
+<script src="js/liveries/racingbulls.js"></script>
+<script src="js/liveries/alpine.js"></script>
+<script src="js/liveries/haas.js"></script>
+<script src="js/liveries/audi.js"></script>
+<script src="js/liveries/williams.js"></script>
+<script src="js/liveries/astonmartin.js"></script>
+<script src="js/liveries/cadillac.js"></script>
+<script src="js/liveries/lumi.js"></script>
+<script src="js/liveries/intake.js"></script>
+<script src="js/track.js"></script>
+<script src="js/scenery.js"></script>
+<script src="js/data/silverstone_env.js"></script>
+<script src="js/data/monaco_env.js"></script>
+<script src="js/data/abudhabi_env.js"></script>
+<script src="js/data/monza_env.js"></script>
+<script src="js/data/monza_stitch.js"></script>
+<script src="js/data/monza_dress.js"></script>
+<script src="js/data/spa_env.js"></script>
+<script src="js/data/spa_stitch.js"></script>
+<script src="js/data/spa_dress.js"></script>
+<script src="js/data/cota_env.js"></script>
+<script src="js/data/cota_stitch.js"></script>
+<script src="js/data/cota_dress.js"></script>
+<script src="js/data/mexico_env.js"></script>
+<script src="js/data/mexico_stitch.js"></script>
+<script src="js/data/mexico_dress.js"></script>
+<script src="js/env.js"></script>
+<script src="js/env_venue.js"></script>
+<script src="js/env_park.js"></script>
+<script src="js/env_forest.js"></script>
+<script src="js/env_city.js"></script>
+<script src="js/env_street.js"></script>
+<script src="js/street_kit.js"></script>
+<script src="js/night.js"></script>
+<script src="js/env_yas_tex.js"></script>
+<script src="js/env_yas.js"></script>
+<script src="js/env_yas_city.js"></script>
+<script src="js/env_yas_arch.js"></script>
+<script src="js/env_yas_fan.js"></script>
+<script src="js/env_monza_osm.js"></script>
+<script src="js/env_monza.js"></script>
+<script src="js/env_monza_stands.js"></script>
+<script src="js/env_monza_park.js"></script>
+<script src="js/env_spa.js"></script>
+<script src="js/env_spa_stands.js"></script>
+<script src="js/env_spa_infra.js"></script>
+<script src="js/env_cota.js"></script>
+<script src="js/env_cota_stands.js"></script>
+<script src="js/env_cota_infra.js"></script>
+<script src="js/env_mexico.js"></script>
+<script src="js/env_mexico_stands.js"></script>
+<script src="js/env_mexico_infra.js"></script>
+<script src="js/env_silverstone.js"></script>
+<script src="js/data/silverstone_dress.js"></script>
+<script src="js/env_silverstone_dress.js"></script>
+<script src="js/env_veg.js"></script>
+<script src="js/env_spa_forest.js"></script>
+<script src="js/env_cota_veg.js"></script>
+<script src="js/env_mexico_veg.js"></script>
+<script src="js/env_monaco_landmarks.js"></script>
+<script src="js/env_abudhabi.js"></script>
+<script src="js/env_monza_up.js"></script>
+<script src="js/canopy.js"></script>
+<script src="js/infra.js"></script>
+<script src="js/particles.js"></script>
+<script src="js/carmodel.js"></script>
+<script src="js/carglb.js"></script>
+<script src="js/car.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/input.js"></script>
+<script src="js/hud.js"></script>
+<script src="js/race.js"></script>
+<script src="js/replay.js"></script>
+<script src="js/pit.js"></script>
+<script src="js/perfhud.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
