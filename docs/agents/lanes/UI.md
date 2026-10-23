@@ -1,10 +1,19 @@
 # Lane UI
 
-Status: done P2.T1 (PR open into `claude/amazing-planck-804i13`, branch `claude/ui-p2-panel`); P2.T6 UI side next on `claude/ui-p2-conditions` (stacked). Owner: agent D (Claude, session `session_01LerQvr7T9YvRQxL76EErVH`). Blocker for a real browser: the API needs CORS for `http://127.0.0.1:8788` (proposal below, SERVER lane one-liner).
+Status: done P2.T1 (branch `claude/ui-p2-panel`) and P2.T6 UI side (branch `claude/ui-p2-conditions`, stacked on it); both PRs open into `claude/amazing-planck-804i13`, merge panel first. Next: re-verify in a normal Chromium once CORS lands, P3.T2 polish. Owner: agent D (Claude, session `session_01LerQvr7T9YvRQxL76EErVH`). Blocker for a real browser: the API needs CORS for `http://127.0.0.1:8788` (proposal below, SERVER lane one-liner).
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1 (`lab/index.html`, `lab/lab.js`, `lab/lab.css`, this file). Update this file at the end of every session (dated section on top; keep older ones).
 
 ## Sessions
+
+### 2026-10-24 02:05 London — agent D (Claude) — P2.T6 UI side (F-09 ConditionsBar + TD-01 toggle)
+- Status: done, stacked on P2.T1 (branch `claude/ui-p2-conditions`; merge `claude/ui-p2-panel` first). `npm test` 58/58. No Mubit calls.
+- Files changed: `lab/index.html` (the `#conditions` form between the rail and the main area), `lab/lab.js` (section "ConditionsBar": `syncConditions`, `postState`, `wireConditions`; `EI.lab.setState`), `lab/lab.css` (`.cond`, `.dial`, `.switch`), `docs/agents/lanes/ui-screens/*.png` refreshed + `12-conditions-td01.png`, this file.
+- What it does: wind `<input type=range>` 0–12 m/s (step 1) with live readout; from-direction range 0–345° (step 15) driving a small compass dial needle and a "225° SW" readout (disabled while wind is 0); wet switch; circuit `<select>` silverstone/monza; TD-01 switch (amber). Every `change` → `POST /api/state { conditions: {…} }` or `{ td01 }`; the response replaces `S.state`, so the header badge (`TD-01 active · rear wing ≤ 20°`), the circuit/weather badge, the bar's own source line and the setup table (rear-wing legal range 5–20° + TD-01 badge) all follow. `GET /api/state` on load (already in P2.T1). All controls are native inputs with labels; switches keep the checkbox focusable.
+- Verify step run + output (same Playwright run as P2.T1, fresh data dir): wind 8, from 225, wet, TD-01 → `GET /api/state` = `{"conditions":{"circuit":"silverstone","wet":true,"wind_ms":8,"wind_from_deg":225},"td01":true}`; header `silverstone · min lap · wet · wind 8 m/s from 225°` + `TD-01 active · rear wing ≤ 20°`; bar `conditions · silverstone · wet · 8 m/s from 225° · TD-01 · /api/state` → `ui-screens/12-conditions-td01.png`. T-F09-AC1 UI: with TD-01 on, `EI.lab.run({ candidate: { …rear_wing_deg: 25 } })` → DESIGN `ILLEGAL_SETUP · POST /api/plan`, badge `TD-01`, label "Technical directive TD-01: rear wing capped at 20°" (`09-td01-violation.png`); toggling TD-01 off hides the badge again. Console: nothing new.
+- Decisions proposed: D-U6: `wind_from_deg` is quantised to 15° steps in the UI (the evaluator takes any degree; 24 stops are enough for the demo and keep the dial readable). Reversible.
+- Blockers / questions for Tanuj: none beyond D-U1 (CORS). Note for the demo: the wind/wet controls change the *next* plan's conditions; the current card keeps the conditions it was evaluated under (shown in the ledger row's title).
+- Next three actions: (1) once SERVER's CORS line merges, run the whole flow in a normal Chromium and refresh the screenshots; (2) when CAR3D lands, check the hero camera + setup-table overlay do not fight for the bottom-left corner; (3) P3.T2 polish (real `mreq_` ids in the trace, 3D hero shot, DESIGN_SYSTEM §8 checklist).
 
 ### 2026-10-24 01:40 London — agent D (Claude) — P2.T1 (F-06 side panel, ledger, trace stream, widget, buttons)
 - Status: done. `npm test` 58/58 (no tests added, none broken). No Mubit calls made (`MUBIT_MOCK=1` throughout; `npm run collect` never run); `lab/prompt.js` untouched.
