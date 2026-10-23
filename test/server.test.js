@@ -183,9 +183,9 @@ test("race/result: a second post for the same experiment supersedes the first (a
   const x = (await post(app, "/api/plan", { scenario_overrides: { seed: 9 } })).body.data;
   const a = (await post(app, "/api/race/result", { experiment_id: x.id, seed: 1, cars: raceCars(x, 1.2) })).body.data;
   const b = (await post(app, "/api/race/result", { experiment_id: x.id, seed: 2, cars: raceCars(x, 1.5) })).body.data;
-  assert.equal(b.measured.supersedes, a.measured.at); assert.equal(b.measured.label, "measured in race, seed 2"); assert.equal(b.measured.agreement_pct, 50);
+  assert.equal(b.measured.supersedes, a.measured.at); assert.equal(b.measured.label, "measured in race, seed 2"); assert.ok(Math.abs(b.measured.agreement_pct - 50) <= 1, "agreement " + b.measured.agreement_pct);   // ±1: laps are rounded to 3 dp
   const raw = fs.readFileSync(path.join(dir, "ledger.jsonl"), "utf8").trim().split("\n").map(JSON.parse); assert.equal(raw.length, 3); assert.ok(raw.every(r => r.id === x.id));
-  const led = (await json(app, "/api/ledger")).body.data; assert.equal(led.length, 1); assert.equal(led[0].measured.seed, 2); assert.equal(led[0].measured.agreement_pct, 50);
+  const led = (await json(app, "/api/ledger")).body.data; assert.equal(led.length, 1); assert.equal(led[0].measured.seed, 2); assert.ok(Math.abs(led[0].measured.agreement_pct - 50) <= 1);
 });
 test("race/result: every field is validated with a BAD_INPUT message naming the field; unknown experiment -> 404", async () => {
   mock.reset(); const { app } = createApp({ dataDir: tmp(), mubit: mock, log: () => {} });
@@ -264,7 +264,7 @@ test("collect promote_bias: 0 keeps v1 candidates (source random); 1 draws only 
   const one = await run(1); const promote = scenarios.movesByVerdict(one.a.EI.evaluator, one.a.EI.aero.BASELINE, { circuit: "silverstone", wet: false, wind_ms: 0, wind_from_deg: 0 }, { td01: false }).promote.map(m => JSON.stringify(m.candidate));
   assert.equal(one.res.biased, 8); assert.ok(one.rows.every(r => r.candidate_source === "random-biased"));
   assert.ok(one.rows.every(r => promote.includes(JSON.stringify(r.candidate))), "every biased candidate is a promote-class move");
-  const some = await run(0.3); const { U } = some.a.EI; const expect = some.res.seeds.filter(sd => U.rng(sd)() < 0.3).length;
+  const some = await run(0.3); const { U } = some.a.EI; const { seededRng } = require("../server/app.js"); const expect = some.res.seeds.filter(sd => seededRng(U, sd)() < 0.3).length;
   assert.equal(some.res.biased, expect); assert.equal(some.rows.filter(r => r.candidate_source === "random-biased").length, expect);
   for (const bad of [-0.1, 1.5, "x"]) await assert.rejects(() => zero.a.collect(1, { promote_bias: bad }), /promote_bias must be a number between 0 and 1/);
 });
