@@ -19,7 +19,7 @@ Living document. Owned by the **integrator** (whoever merges lane branches). Lan
 | GAME | `session_019VA5sAvTHuQ3bGbWV5CX4M` | P1.T1/T2 + P3.T3 merged. Next: browser-run numbers (lane-file PR), filming notes, review UI's Race-it iframe |
 | SERVER | `session_01Tq3p158ophv4wuU2ibcJbj` | all routes done. Next: `server/scripts/snapshot.js` (ledger freeze), review `lab/lab.js` fetches when UI's PR lands |
 | EVAL | `session_01Ma6U13odw1SA1vFhepRj8u` | exam, sheet, rng done. Next: `--score` for hand-entered Try-models answers, `docs/try-models/README.md` |
-| UI | `session_01LerQvr7T9YvRQxL76EErVH` | **building P2.T1 side panel (critical path); CORS landed; no PR yet.** Then P2.T6 conditions bar |
+| UI | `session_01LerQvr7T9YvRQxL76EErVH` | **P2.T1 + P2.T6 merged (PR #16/#17).** Lab page at http://127.0.0.1:8788/lab/ with `npm run dev`. Next: re-verify in a real browser against the merged CORS/CAR3D/GAME, then P3.T2 polish. Decisions D-U1..D-U4 in its lane file still to copy into TASK_LOG; SERVER to review lab.js fetches |
 | CAR3D | `session_01DoxHh5Ynx2BDWZsPvLCyDR` | P2.T2 merged (PR #12). Next: P3.T2 hero polish once UI's container size is known; D-C1..D-C4 in its lane file still to copy into TASK_LOG |
 | DEMO | `session_01UAY6ykh3dQkf9GfJoZ9BTy` | rewriting demo-script.md, deck sources, shot list (no PR yet). Has the corrected story (next-experiment, PRNG finding) |
 

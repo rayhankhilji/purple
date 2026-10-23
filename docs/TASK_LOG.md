@@ -175,3 +175,6 @@ Exit criteria: **all true at 23:58 London** (six verifies, task named from the p
 
 ### 2026-10-24 02:42 — integrator session 1 — PR #15 deferred
 - EVAL PR #15 (scorer + Try-models README) conflicts with the integration branch (stale base); merge aborted, EVAL asked to sync. Next integrator merges it and adds `exam:score`. Noted for SERVER: POST /api/status is a shallow merge (exam sub-object replaced); make it deep.
+
+### 2026-10-24 02:45 — integrator session 1 — merged UI PR #16 + #17 (P2.T1 side panel, P2.T6 conditions bar)
+- lab/index.html, lab.js, lab.css: four StageCards with all states, TraceStream on SSE, MubitWidget (exam n/20 verdicts · n/20 next-step, console edit form), LedgerTable, Run / Race it / Promote / Overrule / rule toggles, ConditionsBar + TD-01 badge, car3d guarded. Screenshots in docs/agents/lanes/ui-screens/. Tests still 73/73 (UI adds none). **P2 exit (full loop clickable without a terminal) is now testable: `npm run dev` → http://127.0.0.1:8788/lab/.** Next integrator: copy D-U1..D-U4 into Decisions; ask SERVER to review lab.js against the envelope; ask UI to re-verify with CORS (already on the branch), the real 3D car and the real Race-it iframe.
