@@ -47,6 +47,61 @@ test("T-F05-AC1 POST /api/overrule -> rule in rules.json; the next /api/plan sce
   // toggling the rule off removes it from the next scenario
   await post(app, "/api/rules/R-01", { active: false }); const third = (await post(app, "/api/plan", { scenario_overrides: { seed: 7 } })).body.data; assert.deepEqual(third.scenario.rules, []);
 });
+test("P2.T3 overrule: rule text is whitespace-collapsed and cut at 160 chars; fields validated; response carries rule + experiment", async () => {
+  mock.reset(); const dir = tmp(); const { app } = createApp({ dataDir: dir, mubit: mock, log: () => {} });
+  const x = (await post(app, "/api/plan", { scenario_overrides: { seed: 5 } })).body.data;
+  const long = "  Never   trade\n\tmore than 2 km/h of Hangar top speed for Becketts load; " + "judge on the full lap. ".repeat(12);
+  const o = await post(app, "/api/overrule", { experiment_id: x.id, verdict: "reject", reason: long, by: "  Tanuj " });
+  assert.equal(o.status, 200); const rule = o.body.data.rule;
+  assert.ok(rule.text.length <= 160 && rule.text.length >= 150, rule.text.length); assert.doesNotMatch(rule.text, /\s\s|\n|\t/); assert.doesNotMatch(rule.text, /\s$/); assert.match(rule.text, /^Never trade more than 2 km\/h/);
+  assert.equal(o.body.data.experiment.id, x.id); assert.equal(o.body.data.experiment.status, "overruled"); assert.equal(o.body.data.experiment.overrule.by, "Tanuj"); assert.equal(o.body.data.experiment.overrule.reason, rule.text);
+  for (const b of [{ verdict: "reject", reason: "x" }, { experiment_id: x.id, verdict: "maybe", reason: "x" }, { experiment_id: x.id, verdict: "reject", reason: "   \n " }, { experiment_id: x.id, verdict: "reject" }]) { const r = await post(app, "/api/overrule", b); assert.equal(r.status, 400, JSON.stringify(b)); assert.equal(r.body.error.code, "BAD_INPUT"); }
+  assert.equal((await post(app, "/api/overrule", { experiment_id: "01NOPE", verdict: "reject", reason: "x" })).status, 404);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(dir, "rules.json"), "utf8")).length, 1);
+});
+test("P2.T3 R-xx numbering = max existing id + 1: survives a deleted rule, a toggled rule and hand-edited ids", async () => {
+  mock.reset(); const dir = tmp(); const { app, db } = createApp({ dataDir: dir, mubit: mock, log: () => {} });
+  const x = (await post(app, "/api/plan", { scenario_overrides: { seed: 5 } })).body.data;
+  const add = async t => (await post(app, "/api/overrule", { experiment_id: x.id, verdict: "reject", reason: t })).body.data.rule.id;
+  assert.equal(await add("one"), "R-01"); assert.equal(await add("two"), "R-02"); assert.equal(await add("three"), "R-03");
+  db.writeRules(db.readRules().filter(r => r.id !== "R-02"));   // someone deleted R-02 by hand
+  assert.equal(await add("four"), "R-04");
+  await post(app, "/api/rules/R-04", { active: false }); assert.equal(await add("five"), "R-05");
+  db.writeRules(db.readRules().filter(r => r.id === "R-01").concat([{ id: "weird", text: "legacy", active: true }]));   // only R-01 + a malformed id remain
+  assert.equal(await add("six"), "R-02");
+  db.writeRules([]); assert.equal(await add("seven"), "R-01");
+  assert.equal(new Set(db.readRules().map(r => r.id)).size, db.readRules().length);
+});
+test("P2.T3 GET /api/rules?active=1|0 filters; POST /api/rules/:id toggles with a boolean, 404 unknown, 400 non-boolean", async () => {
+  mock.reset(); const { app } = createApp({ dataDir: tmp(), mubit: mock, log: () => {} });
+  const x = (await post(app, "/api/plan", { scenario_overrides: { seed: 5 } })).body.data;
+  for (const t of ["a", "b", "c"]) await post(app, "/api/overrule", { experiment_id: x.id, verdict: "retest", reason: t });
+  const t = await post(app, "/api/rules/R-02", { active: false }); assert.equal(t.status, 200); assert.equal(t.body.data.active, false); assert.equal(t.body.data.id, "R-02"); assert.equal(t.body.data.text, "b"); assert.ok(t.body.data.updated_at);
+  assert.deepEqual((await json(app, "/api/rules")).body.data.map(r => r.id), ["R-01", "R-02", "R-03"]);
+  assert.deepEqual((await json(app, "/api/rules?active=1")).body.data.map(r => r.id), ["R-01", "R-03"]);
+  assert.deepEqual((await json(app, "/api/rules?active=true")).body.data.map(r => r.id), ["R-01", "R-03"]);
+  assert.deepEqual((await json(app, "/api/rules?active=0")).body.data.map(r => r.id), ["R-02"]);
+  assert.equal((await json(app, "/api/rules?active=maybe")).status, 400);
+  assert.equal((await post(app, "/api/rules/R-02", { active: true })).body.data.active, true); assert.equal((await json(app, "/api/rules?active=0")).body.data.length, 0);
+  assert.equal((await post(app, "/api/rules/R-09", { active: true })).status, 404);
+  const bad = await post(app, "/api/rules/R-01", { active: "no" }); assert.equal(bad.status, 400); assert.match(bad.body.error.message, /active must be a boolean/); assert.equal((await json(app, "/api/rules/")).status, 404);
+  // the next scenario carries exactly the active rules, in id order
+  const y = (await post(app, "/api/plan", { scenario_overrides: { seed: 6 } })).body.data; assert.deepEqual(y.scenario.rules, ["a", "b", "c"]); assert.deepEqual(y.rules_applied, ["R-01", "R-02", "R-03"]);
+});
+test("P2.T3 SSE: /api/plan emits plan; overrule emits rule then plan (status overruled); toggle emits rule; promote emits plan (status promoted)", async () => {
+  mock.reset(); const { app } = createApp({ dataDir: tmp(), mubit: mock, log: () => {}, heartbeatMs: 50 });
+  const sse = await sseUntil(app, /event: plan[\s\S]*event: rule[\s\S]*event: plan[\s\S]*event: rule[\s\S]*event: plan/, 20);
+  const x = (await post(app, "/api/plan", { scenario_overrides: { seed: 5 } })).body.data;
+  await post(app, "/api/overrule", { experiment_id: x.id, verdict: "reject", reason: "judge on the full lap" });
+  await post(app, "/api/rules/R-01", { active: false });
+  await post(app, "/api/promote", { experiment_id: x.id });
+  const buf = await sse.read(); const plans = sseEvent(buf, "plan"), rules = sseEvent(buf, "rule");
+  assert.equal(plans.length, 3); assert.deepEqual(plans.map(p => p.status), ["planned", "overruled", "promoted"]); assert.ok(plans.every(p => p.id === x.id && p.plan && p.evaluation && p.scenario));
+  assert.equal(plans[1].overrule.rule_id, "R-01"); assert.equal(plans[1].overrule.reason, "judge on the full lap");
+  assert.equal(rules.length, 2); assert.deepEqual(rules.map(r => [r.id, r.active, r.text]), [["R-01", true, "judge on the full lap"], ["R-01", false, "judge on the full lap"]]); assert.equal(rules[0].from_experiment, x.id);
+  const order = buf.split("\n\n").map(ch => (/event: (\w+)/.exec(ch) || [])[1]).filter(e => e && e !== "ping");
+  assert.deepEqual(order, ["status", "plan", "rule", "plan", "rule", "plan"]);
+});
 test("POST /api/evaluate: pure, illegal -> 422 ILLEGAL_SETUP, bad input -> 400", async () => {
   mock.reset(); const { app, EI } = createApp({ dataDir: tmp(), mubit: mock });
   const okr = await post(app, "/api/evaluate", { setup: Object.assign({}, EI.aero.BASELINE, { rear_wing_deg: 28 }), conditions: { circuit: "silverstone" } }); assert.equal(okr.status, 200); assert.ok(okr.body.data.delta_lap > 0);

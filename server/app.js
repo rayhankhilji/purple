@@ -168,14 +168,21 @@ function createApp(opts) {
     setState({ baseline: x.candidate, last_plan: null }); db.appendLedger(Object.assign({}, x, { status: "promoted", promoted_at: now() }));
     emit("plan", Object.assign({}, x, { status: "promoted" })); return ok(c, { baseline: x.candidate });
   });
+  // ---- F-05 correction loop, server side (ARCHITECTURE §4.8, §5). Rule text = the reason, whitespace-collapsed, ≤ 160 chars.
+  const RULE_TEXT_MAX = 160;
+  const ruleText = v => String(v == null ? "" : v).replace(/\s+/g, " ").trim().slice(0, RULE_TEXT_MAX).trim();
+  // R-xx = max existing number + 1, so a hand-deleted or toggled rule never makes two rules share an id
+  const nextRuleId = rules => "R-" + String(rules.reduce((m, r) => { const n = /^R-(\d+)$/.exec(r && r.id || ""); return n ? Math.max(m, parseInt(n[1], 10)) : m; }, 0) + 1).padStart(2, "0");
   app.post("/api/overrule", async c => {
-    const b = await body(c); const x = db.findExperiment(b.experiment_id); if (!x) throw new ApiError("NOT_FOUND", "no experiment " + b.experiment_id);
+    const b = await body(c);
+    if (typeof b.experiment_id !== "string" || !b.experiment_id) throw new ApiError("BAD_INPUT", "experiment_id must be a non-empty string");
+    const x = db.findExperiment(b.experiment_id); if (!x) throw new ApiError("NOT_FOUND", "no experiment " + b.experiment_id);
     if (!["promote", "reject", "retest"].includes(b.verdict)) throw new ApiError("BAD_INPUT", "verdict must be promote|reject|retest");
-    const reason = String(b.reason || "").trim(); if (!reason) throw new ApiError("BAD_INPUT", "reason is required");
-    const rules = db.readRules(); const rule = { id: "R-" + String(rules.length + 1).padStart(2, "0"), text: reason.slice(0, 160), created_at: now(), from_experiment: x.id, active: true }; rules.push(rule); db.writeRules(rules);
-    const overrule = { verdict: b.verdict, reason, rule_id: rule.id, by: b.by || "engineer", at: now() };
-    db.appendLedger(Object.assign({}, x, { status: "overruled", overrule })); setState({ last_plan: null });
-    emit("rule", rule); emit("plan", Object.assign({}, x, { status: "overruled", overrule })); return ok(c, { rule });
+    const reason = ruleText(b.reason); if (!reason) throw new ApiError("BAD_INPUT", "reason is required (non-empty text, becomes the rule)");
+    const rules = db.readRules(); const rule = { id: nextRuleId(rules), text: reason, created_at: now(), from_experiment: x.id, active: true }; rules.push(rule); db.writeRules(rules);
+    const overrule = { verdict: b.verdict, reason, rule_id: rule.id, by: ruleText(b.by) || "engineer", at: now() };
+    const row = Object.assign({}, x, { status: "overruled", overrule }); db.appendLedger(row); setState({ last_plan: null });
+    emit("rule", rule); emit("plan", row); return ok(c, { rule, experiment: row });
   });
   // ---- F-04 race result (ARCHITECTURE §4.7 measured block, §5). Posted by the lab page from the game's purple:result message.
   // Payload: { experiment_id, seed, cars: [{ role: "baseline"|"candidate", lap, sectors: [s1,s2,s3], vmax_kmh, vmin_becketts_kmh }] }.
@@ -220,10 +227,16 @@ function createApp(opts) {
   });
   app.get("/api/ledger", c => ok(c, db.readLedger({ limit: Math.min(500, parseInt(c.req.query("limit") || "50", 10) || 50) })));
   app.get("/api/experiments/:id", c => { const x = db.findExperiment(c.req.param("id")); if (!x) throw new ApiError("NOT_FOUND", "no experiment"); return ok(c, x); });
-  app.get("/api/rules", c => ok(c, db.readRules()));
-  app.post("/api/rules/:id", async c => {
+  app.get("/api/rules", c => {   // ?active=1 -> active rules only (what the next scenario will carry); ?active=0 -> inactive only
+    const q = c.req.query("active"), rules = db.readRules();
+    if (q == null || q === "") return ok(c, rules);
+    if (!["1", "0", "true", "false"].includes(q)) throw new ApiError("BAD_INPUT", "active must be 1 or 0");
+    const want = q === "1" || q === "true"; return ok(c, rules.filter(r => !!r.active === want));
+  });
+  app.post("/api/rules/:id", async c => {   // toggle (the technical-directive demo); the rule keeps its id and text
     const b = await body(c); const rules = db.readRules(); const r = rules.find(x => x.id === c.req.param("id")); if (!r) throw new ApiError("NOT_FOUND", "no rule " + c.req.param("id"));
-    r.active = !!b.active; db.writeRules(rules); emit("rule", r); return ok(c, r);
+    if (typeof b.active !== "boolean") throw new ApiError("BAD_INPUT", "active must be a boolean");
+    r.active = b.active; r.updated_at = now(); db.writeRules(rules); emit("rule", r); return ok(c, r);
   });
   app.get("/api/status", c => ok(c, statusView()));
   app.post("/api/status", async c => { const b = await body(c); const s = Object.assign(db.readStatus(), b, { updated_at: now() }); db.writeStatus(s); emit("status", statusView()); return ok(c, statusView()); });

@@ -1,10 +1,22 @@
 # Lane SERVER
 
-Status: in_progress (P1.T3 PR #2 open, guards PR open; next: P2.T3 server side, status widget plumbing). Owner: agent B (Claude, session_01Tq3p158ophv4wuU2ibcJbj). Branches: `claude/server-p1-race` → `claude/server-p1-guards` (stacked branches `claude/server-p1-*` follow, one PR per task into `claude/amazing-planck-804i13`).
+Status: in_progress (PRs #2 P1.T3, #3 guards, P2.T3 server side open; next: status widget plumbing). Owner: agent B (Claude, session_01Tq3p158ophv4wuU2ibcJbj). Branches: `claude/server-p1-race` → `claude/server-p1-guards` → `claude/server-p1-rules` (stacked branches `claude/server-p1-*` follow, one PR per task into `claude/amazing-planck-804i13`).
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
 
 ## Sessions
+
+### 2026-10-24 01:10 London — agent B (Claude) — P2.T3 server side (F-05 correction loop)
+- Status: done, PR open into `claude/amazing-planck-804i13` (branch `claude/server-p1-rules`, stacked on `claude/server-p1-guards`; merge #2, #3 first).
+- Files changed: `server/app.js` (overrule + rules routes), `test/server.test.js` (+4 tests), this file.
+- Contract for the UI lane:
+  - `POST /api/overrule { experiment_id, verdict, reason, by? }` → `{ rule, experiment }` (experiment = the overruled row; `experiment` is additive to ARCH §5's `{ rule }`). Rule text = reason with whitespace collapsed, cut at 160 chars, trimmed. 400 names the bad field; 404 unknown experiment. SSE: `rule` (the new rule) then `plan` (the row with `status: "overruled"`).
+  - Rule ids: `R-xx` = max existing number + 1 (a deleted or hand-edited `rules.json` never produces a duplicate id).
+  - `GET /api/rules?active=1` → active rules only (exactly what the next scenario carries, in id order); `?active=0` → inactive; no query → all. `POST /api/rules/:id { active: boolean }` → the rule (`updated_at` set), emits SSE `rule`; non-boolean → 400 `active must be a boolean`.
+- Verify step run + output: `npm test` → 51/51 pass. Mock server + curl: overrule with `"  Judge   on the\n full lap.  "` → rule `R-01` text `Judge on the full lap.`, experiment `overruled`; second overrule → `R-02`; toggle `R-01` off → `GET /api/rules?active=1` → `['R-02']`; `{"active":"x"}` → 400 `active must be a boolean`.
+- Decisions proposed (for the integrator to log in TASK_LOG): D-S6: `/api/overrule` returns `{ rule, experiment }` (additive); D-S7: `POST /api/rules/:id` requires a boolean `active` (was `!!active`); D-S8: `GET /api/rules?active=1|0` added (additive to ARCH §5).
+- Blockers / questions for Tanuj: none.
+- Next three actions: (1) `/api/status` widget fields (`last_console_read_at`, `prompt_hash`, `budget` by UTC day) + tests; (2) review the GAME lane's P1.T2 payload against the P1.T3 contract when it lands; (3) P2.T5 `npm run exam` wiring once EVAL ships `data/exam.json` (route and CLI already exist; verify n/20 output and the status write).
 
 ### 2026-10-24 00:50 London — agent B (Claude) — task-integrity guards (EVAL_GUARDRAILS G-MUBIT-01..05)
 - Status: done, PR open into `claude/amazing-planck-804i13` (branch `claude/server-p1-guards`, stacked on `claude/server-p1-race`; merge PR #2 first).
