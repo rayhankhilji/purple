@@ -7,12 +7,12 @@ Multi-agent rule (decision 2026-10-23 23:20): lane agents write `docs/agents/lan
 
 | Field | Value |
 |---|---|
-| Current phase | P0 — Examples flowing (code complete, tests green; waiting on the console read-out for the exit criteria) |
-| Mubit task name | "You are the research engineer of an F1 setup lab…" (first words of the prompt; confirm the exact label in console → Tasks) |
+| Current phase | **P1 — The car is real** (P0 exit criteria passed 2026-10-23 23:58 London) |
+| Mubit task name | **Research engineer of F1** (console label; prompt "You are the research engineer of an F1 setup lab"; "Grouped: same instructions and tools") |
 | Model | `claude-haiku-4-5` (served by Mubit as `claude-haiku-4-5-20251001`; PRD A3 fallback not needed) |
 | Prompt | `lab/prompt.js` PROMPT_VERSION 1, 851 chars ≈ 210 tokens; scenario inputs 120–180 tokens |
-| Kept examples | (read from console → Tasks after the v1 collection; see Session log) |
-| Adapter version / result | none yet |
+| Kept examples | **43 kept** of 57 requests (console → Tasks, 23:58 London) |
+| Adapter version / result | **training v1** (status Training; Adapters tab visible = PRD A1 holds; Adapters serving 0) |
 | Next deadline | Sat 01:00 London — Friday UTC training budget rolls; then P1 (Sat 01:00 → 12:00), `/checkin` #1 by Sat 12:00 |
 
 ## Checklist (current phase: P0)
@@ -23,16 +23,16 @@ Multi-agent rule (decision 2026-10-23 23:20): lane agents write `docs/agents/lan
 - [x] P0.T3 `lab/aero.js`; `buildSpeedProfile` takes `aero`/`wind`; `profileFor` key; `EI.buildSpeedProfile` exported; T-F01-AC1..3 green
 - [x] P0.T4 `server/game-headless.js`, `lab/evaluator.js`; baseline Silverstone = 80.800 s (calibrated), T-F02-AC1..3 green
 - [x] P0.T5 server routes + `server/mubit.js` + JSONL writers; T-F03-AC1, AC3, T-F05-AC1, T-F09-AC1 green (36/36 tests)
-- [x] P0.T6 scenario generator, `npm run collect -- --n 50` ran live (43 ok / 7 parse_error / 57 trained calls), tag `v1-collected`. **Open: console ≥ 25 kept examples (Tanuj reads the console)**
+- [x] P0.T6 scenario generator, `npm run collect -- --n 50` ran live (43 ok / 7 parse_error / 57 trained calls); console: 43 kept examples, task Training v1; tag `v1-collected` (local; tag pushes are refused by the agent credential, Tanuj pushes it or it rides the PR)
 
-Exit criteria status: six verifies pass in code; the console read-out (task name, kept examples) and the tag are the open items.
+Exit criteria: **all true at 23:58 London** (six verifies, task named from the prompt with 43 ≥ 25 kept examples, task name + model recorded here, prompt committed and tagged). Still owed by a human: `/team create` on Discord (P0.T0 verify).
 
 ## Blockers
 
 | When | What | Owner | Resolution |
 |---|---|---|---|
 | 2026-10-23 23:05 | Mubit key is not visible to the first cloud session (env vars reach only new sessions); key was pasted in chat instead | Tanuj | Key lives in `server/.env` (gitignored) on the build machine. **Rotate it in console → Mubit keys after the hackathon.** |
-| 2026-10-23 23:10 | `/team create` (Discord) and the console Tasks read-out need a human | Tanuj | Do both; paste the Tasks status line verbatim into the Session log |
+| 2026-10-23 23:10 | `/team create` (Discord) needs a human | Tanuj | Console read-out done 23:58 (43 kept, Training v1). Discord team still open |
 
 ## Decisions
 
@@ -75,3 +75,7 @@ Exit criteria status: six verifies pass in code; the console read-out (task name
 - Tagged `v1-collected` at the collection commit. **Open:** console → Tasks read-out (name, kept examples, status line) by Tanuj; `/team create`.
 
 | 2026-10-23 23:50 | `validatePlanOutput` trims overlong `hypothesis`/`reject_if` to their limits (`trimmed` flag) instead of rejecting | 7/50 live answers overran by a few words; a same-input retry at temperature 0 repeats it; the decision fields are intact | Yes |
+
+### 2026-10-23 23:58 — console read-out (Tanuj, screenshot)
+- Overview: 57 total requests, median response 1.80 s, errors 0, adapters serving 0. Tasks: 1 task **Research engineer of F1**, status **Training** ("training v1"), examples **43 kept**, requests 57, models asked claude-haiku-4-5 100 %. Task rules: "Grouped: same instructions and tools", "Named from its instructions". Figures panel said "Figures unavailable" (console hiccup, details still shown).
+- P0 exit criteria pass → Phase 1 open. Integrator decision: integration branch `claude/amazing-planck-804i13`; lanes GAME, SERVER, EVAL spawned with GO; this session stays integrator.
