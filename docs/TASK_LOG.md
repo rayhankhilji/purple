@@ -7,13 +7,13 @@ Multi-agent rule (decision 2026-10-23 23:20): lane agents write `docs/agents/lan
 
 | Field | Value |
 |---|---|
-| Current phase | **P1 — The car is real** (P0 exit criteria passed 2026-10-23 23:58 London) |
+| Current phase | **P2 — The lab you can watch** (P1 exit criteria met 01:25: demo experiment raced in the ledger, 19 % agreement; v1 training). P1.T4/T5 remain human items |
 | Mubit task name | **Research engineer of F1** (console label; prompt "You are the research engineer of an F1 setup lab"; "Grouped: same instructions and tools") |
 | Model | `claude-haiku-4-5` (served by Mubit as `claude-haiku-4-5-20251001`; PRD A3 fallback not needed) |
 | Prompt | `lab/prompt.js` PROMPT_VERSION 1, 851 chars ≈ 210 tokens; scenario inputs 120–180 tokens |
-| Kept examples | **43 kept** of 57 requests (console → Tasks, 23:58 London) |
-| Adapter version / result | **training v1** (status Training; Adapters tab visible = PRD A1 holds; Adapters serving 0) |
-| Next deadline | Sat 01:00 London — Friday UTC training budget rolls; then P1 (Sat 01:00 → 12:00), `/checkin` #1 by Sat 12:00 |
+| Kept examples | 43 kept of 57 requests at 23:58 (v1); 99 trained calls sent in total after v2 at 01:50 (console count pending) |
+| Adapter version / result | v1 training since 23:58; v2 examples collected 01:50 (40 scenarios, rule R-01, promote-biased) |
+| Next deadline | `/checkin` #1 by Sat 12:00 (text in docs/checkins/checkin-1.md); `/checkin` #2 12:00–18:00; `/submit` by Sat 23:59 |
 
 ## Checklist (current phase: P0)
 
@@ -142,3 +142,9 @@ Exit criteria: **all true at 23:58 London** (six verifies, task named from the p
 - **Finding:** the v1 collection's candidates were 94 % front-wing moves (50 of 53 ledger rows touch `front_wing_deg`), not by design: `U.rng(seed)` (the game's xorshift) gives the same first draw (≈ 0.124) for consecutive seeds, and `collect()` used `seed0·1000 + i`. So the agent's "front-wing fixation" in v1 is partly the data it was shown; the clean measure of its next-step quality is the exam (10/20). Fixed with `seededRng` (mixed seed + 16-draw warm-up) in `server/app.js` for both `/api/plan` random candidates and `collect()`. Dry run through the real path, 40 @ promote_bias 0.3, seed 2: truth mix promote 14 / retest 12 / reject 14; parameters bb 14 / rh 15 / ers 10 / fw 9 / rw 8; conditions dry 27 / wet 8 / wind 5; 8 rows promote-biased. Tests 65/65 after updating two SERVER tests (agreement tolerance ±1 for 3-dp rounding; bias replay uses `seededRng`).
 - **Rule R-01** created via `POST /api/overrule` on the demo experiment: "Weigh straight-line drag against corner gain; judge on full-lap delta." (active). The UI demo will re-enact the overrule live; the rule is already in every scenario.
 - **v2 collection started 01:47 London on the Saturday UTC budget:** `npm run collect -- --n 40 --with-rules --promote-bias 0.3 --seed 2` (log in the integrator's scratchpad; result appended below when done).
+
+### 2026-10-24 01:50 — integrator — v2 collection done (Saturday UTC budget)
+- `npm run collect -- --n 40 --with-rules --promote-bias 0.3 --seed 2` → 40 sent, 39 ok, 1 parse_error, 0 Mubit errors, 8 promote-biased, 40.4 s. **calls.jsonl: 120 rows, 99 trained** (57 v1 + 1 demo + 41 v2). Every v2 scenario carried rule R-01.
+- Evaluator truth of the 40: promote 14 / retest 12 / reject 14. Agent verdicts: promote 14 / retest 10 / reject 15, agreeing with the truth on 38 of 39. Agent next_parameter: ride_height 13, rear_wing 11, front_wing 7, brake_bias 6, ers 2 (v1: front_wing 39 of 43). Candidates spanned all five parameters.
+- Tagged `v2-collected` locally on this commit (tag pushes are refused for the agent credential; Tanuj pushes it from a laptop or it rides PR #1). **Open: console → Tasks kept-examples count (expect ≈ 80) and Adapters for v2 (Tanuj).**
+- Status: v1 training since 23:58; v2 examples in. Remaining P2: UI (P2.T1/T6), 3D car (P2.T2), live overrule re-enactment (P2.T4 UI side), `/checkin` #2.
