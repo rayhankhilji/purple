@@ -37,7 +37,7 @@ Exit criteria: **all true at 23:58 London** (six verifies, task named from the p
 
 ## Checklist (P2 items already landed)
 
-- [x] P2.T5 data: `data/exam.json` (20 scenarios, truth from the evaluator), `npm run exam:build` (EVAL, merged 00:50 from PR #4). `npm run exam` on the provider: see Session log.
+- [x] P2.T5 data + F-08.AC1: `data/exam.json` (20 scenarios), `npm run exam:build`; **`npm run exam` on the provider (untrained, 00:55): verdicts 20/20, next-parameter+direction 10/20** → widget `exam.provider = 20`, `exam.provider_param = 10`.
 - [x] P2.T6 model side: TD-01 + wind/wet semantics verified, `aero.describeViolation` (EVAL). UI side (sliders, toggles) still open.
 
 ## Blockers
@@ -111,3 +111,7 @@ Exit criteria: **all true at 23:58 London** (six verifies, task named from the p
 
 ### 2026-10-24 00:50 — integrator — merged EVAL P2.T5 + P2.T6 (PR #4, branch `claude/eval-p2-exam`)
 - `buildExam` + CLI, `data/exam.json` committed (20 items), generator `promote_bias` (opt-in), TD-01/conditions tests, `describeViolation`. 58/58 tests after merge. Asked SERVER to wire `--promote-bias` into `collect.js`/`app.js collect()`. Lane files: restored GAME.md status line to the original so the GAME lane's PR merges cleanly (integrator no longer edits lane files).
+
+### 2026-10-24 00:55 — integrator — provider exam (20 untrained calls, `npm run exam`)
+- **Verdicts 20/20. Next experiment (parameter + direction) 10/20.** Latency 1.7–2.8 s, all `mreq_` ids in calls.jsonl with `trained: false`. `status.json.exam = { provider: 20, total: 20, provider_param: 10 }`.
+- **Strategic finding for the demo and deck:** the frozen prompt states the verdict thresholds, so the provider (and therefore v1) already gets every verdict right; PRD F-05.AC3's "v2 reject / v1 promote on rear wing +8°" will not materialise on the verdict. The learnable, correctable part is the **next experiment**: today the agent proposes front-wing moves 39 times out of 43 and is right half the time. The pit-wall rule ("Weigh straight-line drag against corner gain; judge on full-lap delta.") and the promote-biased v2 collection target exactly that. Score and show the exam as two numbers, verdict n/20 and next-step n/20 (G-HON-06: with n, never %), and make the Try-models comparison (P3.T1) about the next step. DEMO lane to pick this up; demo-script 1:30–2:05 needs rewording.
