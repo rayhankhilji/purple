@@ -5,6 +5,7 @@ window.EI = window.EI || {};
   const L = 5.6, W = 2.0, WB = 3.6, VMAX = 92, PM = 900, CD = PM / (VMAX * VMAX * VMAX), WHEEL_R = 0.36;
   const GEARS = [0.16, 0.26, 0.37, 0.49, 0.61, 0.74, 0.88, 1.06].map(f => f * VMAX);
   const GRIP = { a0: 28, a1: 0.006, cap: 56 }, BRAKE = { b0: 34, b1: 0.004, cap: 52 };
+  const AERO_NEUTRAL = Object.freeze({ df: 1, cd: 1, a0: 1, b0: 1 });   // PURPLE (F-04): per-car aero multipliers; x1 = the shipped car
   const ASSIST = { full: { steerHelp: true, abs: true, tc: true }, medium: { steerHelp: false, abs: true, tc: true }, none: { steerHelp: false, abs: false, tc: false } };
 
   // ---------------------------------------------------------------- geometry helpers
@@ -125,6 +126,10 @@ window.EI = window.EI || {};
       this.id = opts.id; this.team = opts.team; this.driver = opts.driver; this.name = opts.name || opts.driver.name; this.num = opts.num || opts.driver.num;
       this.isPlayer = !!opts.isPlayer; this.playerIndex = opts.playerIndex; this.tyre = EI.TYRES[opts.tyre || 'medium']; this.tyreKey = opts.tyre || 'medium';
       this.assist = ASSIST[opts.assist || 'full']; this.skill = opts.skill || 0.9; this.color = this.team.primary; this.envMap = opts.envMap;
+      // PURPLE (F-04, ARCHITECTURE §8/§9): per-car aero multipliers, opt-in. Neutral = all 1 (every line below is then byte-identical to the shipped game):
+      // cd scales the drag term, df the speed-squared part of the lateral and braking limits (GRIP.a1 / BRAKE.b1), a0 / b0 the constant parts.
+      // null when not supplied (ai.js builds the unchanged shipped profile for a car without aero; a neutral object would still cap it at terminal speed).
+      this.aero = opts.aero || null;
       this.x = 0; this.y = 0; this.z = 0; this.heading = 0; this.v = 0; this.vLat = 0; this.steer = 0; this.yaw = 0; this.aLong = 0; this.aLat = 0; this.gear = 1; this.rpm = 0.1; this.gradeNow = 0;
       this.throttle = 0; this.brake = 0; this.drsOpen = false; this.drsEligible = false; this.drsZone = -1; this.inDrsZone = -1; this.ers = 1; this.ersActive = false; this.wear = 0; this.slipstream = 0;
       this.surface = 'asphalt'; this.offTrack = 0; this.hit = 0; this.wallHit = 0; this.trk = { i: -1, s: 0, lat: 0, along: 0, dist: 0 };
@@ -194,8 +199,9 @@ window.EI = window.EI || {};
       this.inDrsZone = -1; track.drs.forEach((z, zi) => { if (z.end >= z.start ? (pr.s >= z.start && pr.s <= z.end) : (pr.s >= z.start || pr.s <= z.end)) this.inDrsZone = zi; });   // a zone may wrap the start line
       this.drsOpen = !!inp.drs && this.inDrsZone >= 0 && this.drsEligible && this.drsZone === this.inDrsZone && this.brake < 0.1 && v > 25;
       const dragMul = (this.drsOpen ? 0.74 : 1) * (1 - 0.3 * this.slipstream);
-      const aDrag = CD * v * av * dragMul + surfDrag * U.sign(v) * Math.min(1, av / 2);
-      let aBrk = 0; if (this.brake > 0) { const bmax = Math.min(BRAKE.cap, BRAKE.b0 + BRAKE.b1 * v * v) * Math.max(0.3, mu); aBrk = this.brake * bmax * U.sign(v) * Math.min(1, av / 1.5); }
+      const A = this.aero || AERO_NEUTRAL;
+      const aDrag = CD * A.cd * v * av * dragMul + surfDrag * U.sign(v) * Math.min(1, av / 2);
+      let aBrk = 0; if (this.brake > 0) { const bmax = Math.min(BRAKE.cap, BRAKE.b0 * A.b0 + BRAKE.b1 * A.df * v * v) * Math.max(0.3, mu); aBrk = this.brake * bmax * U.sign(v) * Math.min(1, av / 1.5); }
       const aRoll = surfRoll * U.sign(v) * Math.min(1, av / 1.5);
       const grade = track.grade[i]; this.gradeNow = grade;
       this.aLong = aEng - aDrag - aBrk - aRoll - 9.81 * grade;
@@ -211,7 +217,7 @@ window.EI = window.EI || {};
       const ai = !this.isPlayer; const rate = (ai ? 4 : 1) * (returning ? 2.0 : 1.0) * (1.6 + 14 / (1 + av / 12));
       const want = this.steer + (steerTarget - this.steer) * (1 - Math.exp(-dt * (ai ? 30 : 9)));
       this.steer += U.clamp(want - this.steer, -rate * dt, rate * dt);
-      let aLatMax = mu * Math.min(GRIP.cap, GRIP.a0 + GRIP.a1 * v * v);
+      let aLatMax = mu * Math.min(GRIP.cap, GRIP.a0 * A.a0 + GRIP.a1 * A.df * v * v);
       if (!this.assist.abs && this.brake > 0.92 && av > 8) aLatMax *= 0.45;
       // steering lock: the original curve, plus extra lock only at hairpin speeds (below ~60 km/h; Monaco's Grand Hotel hairpin
       // needs an ~8 m turning radius). Above that the original value is the larger one, so the car drives exactly as before.
