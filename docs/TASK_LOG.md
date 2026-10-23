@@ -102,6 +102,7 @@ Exit criteria: **all true at 23:58 London** (six verifies, task named from the p
 | 2026-10-24 00:50 | D-E4 `aero.describeViolation(id)` is the UI's label source; numbers come from `RANGES` | label and check cannot disagree | Yes |
 | 2026-10-24 01:05 | Decisions proposed (for the integrator to log in TASK_LOG): D-S9: budget counters are per UTC calendar day of `calls.jsonl` rows (matches ROADMAP "00:00 UTC = 01:00 London"); D-S10: `last_console_read_at` is stamped server-side on any console-field update (add | SERVER lane, merged PR #5/#6 | Yes |
 | 2026-10-24 01:05 | Decisions proposed (for the integrator to log in TASK_LOG): D-S6: `/api/overrule` returns `{ rule, experiment }` (additive); D-S7: `POST /api/rules/:id` requires a boolean `active` (was `!!active`); D-S8: `GET /api/rules?active=1/0` added (additive to ARCH §5) | SERVER lane, merged PR #5/#6 | Yes |
+| 2026-10-24 01:10 | D-S11 ledger `candidate_source` = "random-biased" when the candidate came from the promote class; `npm run collect -- --promote-bias 0.3` and `POST /api/collect { promote_bias }` wired; bias 0 reproduces v1 exactly | v2 collection command is final | Yes |
 
 ### 2026-10-23 23:58 — console read-out (Tanuj, screenshot)
 - Overview: 57 total requests, median response 1.80 s, errors 0, adapters serving 0. Tasks: 1 task **Research engineer of F1**, status **Training** ("training v1"), examples **43 kept**, requests 57, models asked claude-haiku-4-5 100 %. Task rules: "Grouped: same instructions and tools", "Named from its instructions". Figures panel said "Figures unavailable" (console hiccup, details still shown).
@@ -123,3 +124,5 @@ Exit criteria: **all true at 23:58 London** (six verifies, task named from the p
 
 ### 2026-10-24 01:05 — integrator — merged SERVER PR #5 (P2.T3 server side) and PR #6 (status widget fields)
 - 63/63 tests after both. Live status view: kept 43, exam provider 20/20 verdicts · 10/20 next-step, budget 57 trained / 21 untrained on the Friday UTC day, prompt hash 6c5be1a3. SERVER lane next: `--promote-bias` plumbing for the v2 collection, then review of GAME's P1.T2 payload.
+
+### 2026-10-24 01:10 — integrator — merged SERVER promote-bias plumbing (PR #6 update). 65/65 tests. **v2 collection command (Saturday budget, after the demo correction P2.T4):** `npm run collect -- --n 40 --with-rules --promote-bias 0.3`.
