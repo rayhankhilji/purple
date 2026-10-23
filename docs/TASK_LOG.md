@@ -29,8 +29,8 @@ Exit criteria: **all true at 23:58 London** (six verifies, task named from the p
 
 ## Checklist (current phase: P1)
 
-- [ ] P1.T1 (F-04) `js/car.js` per-car `aero` (GAME lane, in progress)
-- [ ] P1.T2 (F-04) broadcast mode `?lab=1`, `purple:result` postMessage (GAME lane, in progress)
+- [x] P1.T1 (F-04) `js/car.js` per-car `aero` (GAME, merged 01:15 from PR #7)
+- [x] P1.T2 (F-04) broadcast mode `?lab=1&exp=&seed=&laps=&circuit=&baseline=&candidate=&mult_baseline=&mult_candidate=`, two neutral bots, TV camera, auto-start, `purple:result` postMessage (GAME, merged 01:15 from PR #8). **Headless race, seed 42, rear wing +8°: baseline 80.742 s / vmax 325.2 / Becketts 201.7; candidate 81.260 s / 315.8 / 211.5 → measured Δ +0.518 s vs predicted +0.436 s, agreement 19 % (target ≤ 25 %). Seeds 7 / 1234: Δ +0.515 / +0.696. T-F04-AC3 holds on every seed.**
 - [x] P1.T3 (F-04) `POST /api/race/result` hardened, `agreement_pct`, SSE `race`, `npm run fake-race` (SERVER lane, merged 00:32 from PR #2; 41/41 tests)
 - [ ] P1.T4 watch v1 in **Adapters** (Tanuj screenshot → `status.json`); if Below target / Prompt only → `npm run collect -- --n 30` on the Saturday budget
 - [ ] P1.T5 `/checkin` #1 in #max by Sat 12:00 (Tanuj)
@@ -103,6 +103,9 @@ Exit criteria: **all true at 23:58 London** (six verifies, task named from the p
 | 2026-10-24 01:05 | Decisions proposed (for the integrator to log in TASK_LOG): D-S9: budget counters are per UTC calendar day of `calls.jsonl` rows (matches ROADMAP "00:00 UTC = 01:00 London"); D-S10: `last_console_read_at` is stamped server-side on any console-field update (add | SERVER lane, merged PR #5/#6 | Yes |
 | 2026-10-24 01:05 | Decisions proposed (for the integrator to log in TASK_LOG): D-S6: `/api/overrule` returns `{ rule, experiment }` (additive); D-S7: `POST /api/rules/:id` requires a boolean `active` (was `!!active`); D-S8: `GET /api/rules?active=1/0` added (additive to ARCH §5) | SERVER lane, merged PR #5/#6 | Yes |
 | 2026-10-24 01:10 | D-S11 ledger `candidate_source` = "random-biased" when the candidate came from the promote class; `npm run collect -- --promote-bias 0.3` and `POST /api/collect { promote_bias }` wired; bias 0 reproduces v1 exactly | v2 collection command is final | Yes |
+| 2026-10-24 01:15 | D-G1 `car.aero` is `null` unless supplied (ARCH §9 said `opts.aero || {1,1,1,1}`) | js/ai.js treats any aero object as aero-on and caps at terminal speed; a neutral object moved every shipped bot's lap 83.242 → 83.333 s. Null keeps the game byte-identical | Yes |
+| 2026-10-24 01:15 | D-G2 Becketts telemetry window = s 3,600–4,200 m (ARCH §9 said 2,850–3,250, which is Woodcote–National Pits); matches `aero.REF_CORNER` | Corner table in js/data/silverstone.js | Yes |
+| 2026-10-24 01:15 | ARCH §6 step 7 URL gains `exp=` (experiment id) and `mult_baseline`/`mult_candidate` (precomputed multipliers; the game page does not load lab/aero.js) | The result must carry the experiment id back | Yes |
 
 ### 2026-10-23 23:58 — console read-out (Tanuj, screenshot)
 - Overview: 57 total requests, median response 1.80 s, errors 0, adapters serving 0. Tasks: 1 task **Research engineer of F1**, status **Training** ("training v1"), examples **43 kept**, requests 57, models asked claude-haiku-4-5 100 %. Task rules: "Grouped: same instructions and tools", "Named from its instructions". Figures panel said "Figures unavailable" (console hiccup, details still shown).
@@ -126,3 +129,6 @@ Exit criteria: **all true at 23:58 London** (six verifies, task named from the p
 - 63/63 tests after both. Live status view: kept 43, exam provider 20/20 verdicts · 10/20 next-step, budget 57 trained / 21 untrained on the Friday UTC day, prompt hash 6c5be1a3. SERVER lane next: `--promote-bias` plumbing for the v2 collection, then review of GAME's P1.T2 payload.
 
 ### 2026-10-24 01:10 — integrator — merged SERVER promote-bias plumbing (PR #6 update). 65/65 tests. **v2 collection command (Saturday budget, after the demo correction P2.T4):** `npm run collect -- --n 40 --with-rules --promote-bias 0.3`.
+
+### 2026-10-24 01:15 — integrator — merged GAME P1.T1 + P1.T2 (PR #7, #8; branch `claude/game-p1-aero-broadcast`)
+- **P1 exit sentence is true in the headless race:** "the candidate with +8° rear wing was predicted +0.436 s and measured +0.518 s" (seed 42, agreement 19 %). It is not yet in `ledger.jsonl`: that needs the UI's Race it → postMessage → `POST /api/race/result` path, or `npm run fake-race` for a stand-in. 65/65 tests. GAME's Playwright browser run (software GL) still finishing; numbers to follow in the lane file.

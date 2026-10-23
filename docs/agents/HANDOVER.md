@@ -5,6 +5,7 @@ Living document. Owned by the **integrator** (whoever merges lane branches). Lan
 ## 1. Where we are
 
 - **GO given 2026-10-23 23:58 London.** Console: task **Research engineer of F1**, Training v1, **43 kept** of 57. Phase 1 is open; lanes may start their first task immediately after the read-in.
+- **GAME merged (01:15): P1 critical path done.** `?lab=1` broadcast mode works headless: rear wing +8° predicted +0.436 s, measured +0.518 s (seed 42, agreement 19 %). URL contract: `index.html?lab=1&exp=<id>&seed=&laps=3&circuit=&baseline=<b64>&candidate=<b64>&mult_baseline=<b64>&mult_candidate=<b64>`; result message `{ type: "purple:result", experiment_id, seed, cars: [...] }`. `car.aero` is null unless supplied (D-G1).
 - **SERVER lane list complete (01:05):** overrule/rules hardened, `GET /api/rules?active=1`, status carries `prompt_hash`, `last_console_read_at`, `budget` per UTC day. 63 tests. Routes are now stable for the UI lane.
 - **Provider exam (00:55): verdicts 20/20, next-step 10/20.** Verdicts cannot differentiate v1/v2 (the prompt states the thresholds); the story is the *next experiment* the agent proposes. UI/DEMO: show both numbers as n/20; Try-models comparison is about next_parameter + direction.
 - **Exam + generator bias merged (00:50):** `data/exam.json` (20 items, truth from the evaluator), `npm run exam:build`; generator `promote_bias` (use 0.3 for v2); `aero.describeViolation(id)` for UI labels. 58 tests.
@@ -41,7 +42,8 @@ curl -s localhost:8787/api/status | jq .   # widget data; /api/ledger, /api/rule
 |---|---|---|
 | `index.html`, `js/`, `css/`, `vendor/`, `assets/` | Equation I, the game. Touch only files named in ARCHITECTURE §9 | GAME |
 | `js/ai.js` | **done**: `buildSpeedProfile(track, dec, grip, ceil, mode, chi, aero, wind)`, `profileFor` keyed on aero+wind, `profileLap(prof, ds, vcap)`, exports `EI.buildSpeedProfile/profileLap/profileFor/LIMIT_LAP/AI_CAL`; AIDriver passes `car.aero` | GAME |
-| `js/car.js`, `js/race.js`, `js/main.js`, `js/carmodel.js` | **P1/P2 hooks still to do** (ARCH §9 rows) | GAME / CAR3D |
+| `js/car.js`, `js/race.js`, `js/main.js` | **done**: per-car `aero` (null = shipped car), `?lab=1` broadcast mode, `purple:result` | GAME |
+| `js/carmodel.js`, `lab/car3d.js` | P2.T2 in progress (CAR3D lane) | CAR3D |
 | `lab/prompt.js` | FROZEN task key (prompt, model, max_tokens). Never edit | — |
 | `lab/aero.js` | aero map, legality, wind field, REF_CORNER/REF_STRAIGHT; every model number lives here | EVAL |
 | `lab/schema.js` | validators, `applyPlan`, scenario builder/serialiser, `describeChange` | EVAL |
