@@ -16,6 +16,7 @@ window.EI = window.EI || {};
   const TOW_LEN = 50, TOW_MAX = 0.6;   // wake length (m) and strength right behind (car.js: x0.3 = 18% less drag) - f1-DRIVING, see the slipstream block
   const NOSE = 2.7, LOOP = 20, HYST = 1.0, OT_GAP = 1.0, OT_ENERGY = 0.5, OFF_W = 1.1, TL_DEBOUNCE = 0.12, TL_REJOIN = 0.35, GIVE_BACK_T = 15, MANDATORY_LAPS = 3;
   const LAB_GAP = 10;   // PURPLE (F-04): grid slots between the lab cars (10 x 8 m = 80 m, beyond the tow)
+  const LAB_NEUTRAL = Object.freeze({ df: 1, cd: 1, a0: 1, b0: 1 });   // PURPLE (F-10): the grid-mode field's aero (x1)
 
   class Race {
     constructor(track, cfg) {
@@ -83,8 +84,9 @@ window.EI = window.EI || {};
       });
       for (let i = 0; i < nb; i++) {
         const e = pool[i];
-        const car = new EI.Car({ id: id++, team: e.team, driver: e.driver, tyre: 'medium', assist: 'full', skill: e.team.skill, envMap: cfg.envMap });
+        const car = new EI.Car({ id: id++, team: e.team, driver: e.driver, tyre: 'medium', assist: 'full', skill: e.team.skill, envMap: cfg.envMap, aero: this.lab ? this.labAeroFor(e) : undefined });   // PURPLE: aero only in the lab's grid mode
         car.seat = e; this.cars.push(car);
+        if (this.lab && car.aero && car.aero !== LAB_NEUTRAL) { car.role = 'candidate'; this.labCar = car; }
         // personality: seeded from the race seed and the seat, so the same seed always gives the same field; teammates
         // never share an archetype
         const mate = this.ais.find(a => a.car.team === e.team);
@@ -140,6 +142,18 @@ window.EI = window.EI || {};
       });
       this.placeGrid(this.cars.slice(), LAB_GAP);
     }
+    // PURPLE (F-10, P3.T3): grid mode. cfg.lab = { mode: 'grid', driver: <2026 code | number | surname>, candidate: { aero } }: the normal 2026 grid
+    // (buildGrid, every real driver with the season profile) and the chosen driver's car carries the candidate aero; every other car a neutral
+    // aero object, so all 22 drive the same (aero-aware) profile path in ai.js. "Cinematic: mixes car and driver" (the caption is main.js's).
+    labAeroFor(seat) {
+      const L = this.lab, d = seat.driver || {}; if (!L || L.mode !== 'grid') return undefined;
+      const want = String(L.driver || '').trim().toLowerCase(); if (!want) return LAB_NEUTRAL;
+      const last = String(d.name || '').split(' ').pop().toLowerCase();
+      const hit = want === String(d.code || '').toLowerCase() || want === String(d.num) || want === last;
+      return hit && L.candidate && L.candidate.aero ? L.candidate.aero : LAB_NEUTRAL;
+    }
+    // the cars whose finishing ends the race: the players (the shipped game); in the lab every car (race mode) or the candidate car (grid mode)
+    labFinishers() { return this.lab ? (this.labCar ? [this.labCar] : this.cars) : this.players; }
     aiFor(car) { return this.ais.find(a => a.car === car); }
 
     // ------------------------------------------------------------------ start procedure
@@ -226,7 +240,7 @@ window.EI = window.EI || {};
       this.stewards(dt);
       this.updatePositions();
       // ---- race end
-      if ((this.lab ? this.cars : this.players).every(p => p.finished)) {   // PURPLE: no players in the lab, the race is over when both bots have finished
+      if (this.labFinishers().every(p => p.finished)) {   // PURPLE: no players in the lab: both bots (race mode) or the candidate car (grid mode) end the race
         if (!this.over) { this.over = true; this.overT = 0; this.emit('over'); }
       }
       if (this.over) { this.overT += dt; if (!this.classified && (this.cars.every(c => c.finished) || this.overT > 20)) { this.classified = true; this.emit('classified'); } }
