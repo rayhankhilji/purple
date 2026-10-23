@@ -1,6 +1,6 @@
 # Lane CAR3D
 
-Status: done P2.T2 (PR open into `claude/amazing-planck-804i13`); next P3.T2 hero polish. Owner: agent F (session `session_01DoxHh5Ynx2BDWZsPvLCyDR`). Branch: `claude/car3d-p2-wings`.
+Status: P2.T2 merged (PR #12); P3.T2 hero polish part 1 in PR (aspect-adaptive hero), part 2 waits for the UI lane's panel. Owner: agent F (session `session_01DoxHh5Ynx2BDWZsPvLCyDR`). Branch: `claude/car3d-p3-hero`.
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
 
@@ -21,6 +21,18 @@ EI.labCar3D.dispose()                                      // stops the rAF loop
 `setup` is the ARCHITECTURE §4.1 object; missing fields mean the baseline (25 / 20 / 35). The container receives a `car3d:setup` CustomEvent (`detail: { ms, total, setup }`) on every `setSetup`. Idle motion is a slow sway (±0.22 rad over 26 s) about the hero azimuth, so the rear wing never leaves frame; `prefers-reduced-motion` turns it off and makes `hero()` instant. The view renders only while the camera moves or something changed. The shadow map is rendered once per `setSetup`, not per frame.
 
 Game side (`js/carmodel.js`, opt-in): `EI.CarModel.build(car, setup?)`, `EI.CarModel.wingGeometry(setup?, elementsOnly?)`, `EI.CarModel.rebuildWings(modelOrGroup, setup)` (returns ms), `EI.CarModel.SETUP_BASE / SETUP_K`; aliases `EI.carModel(opts, setup)` and `EI.rebuildWings(target, setup)` as ARCHITECTURE §9 names them. `build()` now also returns `wingMesh`, `bodyY0`, `setup`, and the group carries `userData.carModel`. With no setup every geometry is byte-identical to before (hash check below).
+
+### 2026-10-24 01:05 London — agent F (Claude, session `session_01DoxHh5Ynx2BDWZsPvLCyDR`) — P3.T2 (hero shot, part 1)
+- Status: in_progress; this part in PR from `claude/car3d-p3-hero`. Part 2 (final framing against the real lab panel) waits for the UI lane (`lab/index.html` does not exist yet; UI.md unclaimed at 01:00).
+- Files changed: `lab/car3d.js` only (+ screenshots `car3d-screens/hero-rw8-{wide,square,tall}.png`, this file). Contract unchanged.
+- What changed: the hero distance now fits the frame. `HERO.radius` 7.4 holds for frames at least 1.5:1 wide; narrower frames pull the camera back by `refAspect / aspect` so the car's full length stays in view (`fitRadius`). `hero()`, the reduced-motion jump, mount and resize all use it; the hero target moved back to x = −0.45 and azim 0.68 so the rear wing sits nearer the centre.
+- Verify (Playwright, SwiftShader, rear wing 28° with the baseline ghost): wide 1280×800 → aspect 1.97, radius 7.4; square 640×720 → 1.25, radius 8.9; tall 420×760 → 0.89, radius 12.5. 0 console errors in all three; car fully in frame in each (screenshots). `npm test` 71 pass, 0 fail.
+- Decisions proposed: none new (D-C1..D-C4 stand).
+- Blockers / questions for Tanuj: none. Dependency: UI lane's `#car3d` panel size and aspect for the final hero framing; also please confirm in the lab page that `EI.Ads.BRAND_DIR` is set from `lab/` (see the contract section).
+- Next three actions:
+  1. When `lab/index.html` lands: open it, check the hero at the real panel size, adjust `HERO` once, screenshot for DESIGN_SYSTEM §8.
+  2. Optional 200 ms ride-height translate ease (geometry swap stays instant).
+  3. Hand the test page to QA for a GPU timing (`setSetup` ms on the demo laptop).
 
 ### 2026-10-24 00:45 London — agent F (Claude, session `session_01DoxHh5Ynx2BDWZsPvLCyDR`) — P2.T2 (F-07)
 - Status: done; PR into `claude/amazing-planck-804i13` from `claude/car3d-p2-wings`.
