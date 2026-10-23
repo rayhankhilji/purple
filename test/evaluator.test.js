@@ -135,19 +135,25 @@ test("P3.T1 prep: hardestItems keeps exam-rw8 first and ranks by distance to the
   const hard = scenarios.hardestItems(exam, 8); assert.equal(hard.length, 8); assert.equal(hard[0].id, "exam-rw8"); assert.equal(new Set(hard.map(x => x.id)).size, 8);
   const d = it => Math.min(Math.abs(it.meta.delta_lap + 0.03), Math.abs(it.meta.delta_lap - 0.03)); for (let i = 2; i < hard.length; i++) assert.ok(d(hard[i - 1]) <= d(hard[i]) + 1e-9);
   const md = scenarios.trySheet(exam, { k: 8 }); for (const it of hard) assert.ok(md.includes(schema.serializeScenario(it.scenario)), it.id); assert.match(md, /\| provider \| v1 \| v2 \|/);
-  const r = scenarios.dryRun(evaluator, { n: 6, seed: 2, promote_bias: 0, rng: EI.U.rng }); assert.equal(r.rows.length, 6); assert.equal(r.rows[0].seed, 2000);
-  const g = scenarios.generate(EI.U.rng(2003), { circuit: "silverstone" }); assert.equal(r.rows[3].change, schema.describeChange(B, g.candidate)); assert.deepEqual(r.rows[3].conditions, g.conditions);
-  assert.deepEqual(scenarios.dryRun(evaluator, { n: 6, seed: 2, promote_bias: 0.3, rng: EI.U.rng }).summary.n, 6);
+  const r = scenarios.dryRun(evaluator, { n: 6, seed: 2, promote_bias: 0, U: EI.U }); assert.equal(r.rows.length, 6); assert.equal(r.rows[0].seed, 2000);
+  const g = scenarios.generate(scenarios.seededRng(EI.U, 2003), { circuit: "silverstone" }); assert.equal(r.rows[3].change, schema.describeChange(B, g.candidate)); assert.deepEqual(r.rows[3].conditions, g.conditions);
+  assert.equal(scenarios.dryRun(evaluator, { n: 6, seed: 2, promote_bias: 0.3, U: EI.U }).summary.n, 6);
+  assert.match(scenarios.trySheet(exam, { k: 8 }), /94 % of the 50 candidates moved the front wing/);
 });
 
-test("generator: the collection's consecutive seeds are degenerate without warm-up (v1 moved the front wing on 50/50 draws); promote_bias > 0 warms the rng and spreads the picks", () => {
+test("generator: raw consecutive seeds are degenerate (v1 moved the front wing on 50/50 draws); seededRng (as app.js) spreads the picks and keeps the bias draw first", () => {
   const moved = g => aero.KEYS.filter(k => g.candidate[k] !== B[k]);
   const v1 = []; for (let s = 1000; s < 1050; s++) v1.push(moved(scenarios.generate(EI.U.rng(s), { circuit: "silverstone" })));
   assert.equal(v1.filter(m => m.includes("front_wing_deg")).length, 50, "v1 seeds: every candidate touched the front wing");
-  const first = {}; for (let s = 2000; s < 2040; s++) for (const k of moved(scenarios.generate(EI.U.rng(s), { circuit: "silverstone", promote_bias: 0.3, evaluator }))) first[k] = (first[k] || 0) + 1;
-  assert.ok(Object.keys(first).length >= 4, "warm draws spread over parameters: " + JSON.stringify(first));
-  const r = scenarios.dryRun(evaluator, { n: 40, seed: 2, promote_bias: 0.3, rng: EI.U.rng }).summary;
-  assert.ok(r.promote >= 8 && r.promote <= 24 && r.reject >= 10, "v2 dry run mix " + JSON.stringify(r));
-  const w = []; for (let s = 2000; s < 2040; s++) w.push(moved(scenarios.generate(EI.U.rng(s), { circuit: "silverstone", warm: true })));
-  assert.ok(w.filter(m => m.includes("front_wing_deg")).length < 30, "warm: true alone also breaks the degeneracy");
+  const raw = []; for (let s = 2000; s < 2010; s++) raw.push(EI.U.rng(s)()); assert.ok(raw.every(u => Math.abs(u - 0.124) < 0.002), "raw first draws ≈ 0.124: " + raw.map(u => u.toFixed(3)));
+  const mixed = []; for (let s = 2000; s < 2040; s++) mixed.push(scenarios.seededRng(EI.U, s)()); assert.ok(mixed.filter(u => u < 0.3).length >= 6 && mixed.filter(u => u < 0.3).length <= 20 && mixed.some(u => u > 0.8), "seededRng first draws are spread: " + mixed.length);
+  const first = {}; for (let s = 2000; s < 2040; s++) for (const k of moved(scenarios.generate(scenarios.seededRng(EI.U, s), { circuit: "silverstone", promote_bias: 0.3, evaluator }))) first[k] = (first[k] || 0) + 1;
+  assert.ok(Object.keys(first).length >= 4 && first.front_wing_deg < 30, "mixed seeds spread over parameters: " + JSON.stringify(first));
+  const r = scenarios.dryRun(evaluator, { n: 40, seed: 2, promote_bias: 0.3, U: EI.U }).summary;
+  assert.ok(r.promote >= 8 && r.promote <= 24 && r.reject >= 8, "v2 dry run mix " + JSON.stringify(r));
+  // the bias draw is perturb's FIRST rng() (app.js replays it from the same seed to label candidate_source): with a coin that always
+  // lands the candidate is a promote move; with one that never lands it is the plain v1 draw of the remaining sequence
+  const always = () => 0, never = (() => { let i = 0; return () => (i++ === 0 ? 0.999 : 0.5); })();
+  assert.ok(scenarios.movesByVerdict(evaluator, B, DRY).promote.some(m => schema.describeChange(B, m.candidate) === schema.describeChange(B, scenarios.perturb(B, always, { promote_bias: 0.3, evaluator, circuit: "silverstone" }))));
+  assert.deepEqual(aero.violations(scenarios.perturb(B, never, { promote_bias: 0.3, evaluator, circuit: "silverstone" })), []);
 });
