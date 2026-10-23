@@ -4,6 +4,7 @@ Living document. Owned by the **integrator** (whoever merges lane branches). Lan
 
 ## 1. Where we are
 
+- **Gate:** Phase 1 work starts only when the integrator posts GO (after Tanuj confirms ≥ 25 kept examples in console → Tasks). Prepared lane sessions read in, run tests, write "ready" in their lane file and wait.
 - **Phase 0 is code-complete and live-verified.** `npm test` 36/36. The 50-call v1 collection ran at 23:33 London on the Friday budget: 50 scenarios, 43 valid plans, 7 parse errors (retried once each), 57 trained calls, 1 untrained smoke call. Mubit returned `mreq_…` ids on every call.
 - **Open for a human (Tanuj):** `/team create` on Discord with the repo URL; read console → Tasks (task name, kept examples, status line) into `docs/TASK_LOG.md`; confirm **Adapters** exists (PRD A1). Rotate the Mubit key after the hackathon (it was pasted in a chat).
 - **Next phase: P1 (Sat 01:00 → 12:00).** The game races baseline vs candidate with per-car aero, posts results back, `/checkin` #1 by 12:00. Lanes and owners: `docs/agents/PARALLEL_PLAN.md`.
@@ -63,7 +64,7 @@ curl -s localhost:8787/api/status | jq .   # widget data; /api/ledger, /api/rule
 ## 6. Handover protocol (every session, last 10 minutes)
 
 1. `npm test` green, or say exactly what is red and why.
-2. Commit with the task id in the message; push your branch; open a PR to `main` titled with the task id.
+2. Commit with the task id in the message; push your branch; open a PR into `claude/amazing-planck-804i13` (the integration branch) titled with the task id.
 3. Update **your lane file** `docs/agents/lanes/<lane>.md`: status, what changed (files), verify step run and its output, decisions proposed, blockers, the next three actions. Keep the previous entries; add a dated section on top.
-4. If you are the integrator: merge PRs in the order in PARALLEL_PLAN §4, re-run `npm test`, update `docs/TASK_LOG.md` (checklist, decisions, session log) and this file's §1, push `main`.
+4. If you are the integrator: merge PRs in the order in PARALLEL_PLAN §4, re-run `npm test`, update `docs/TASK_LOG.md` (checklist, decisions, session log) and this file's §1, push the integration branch; open/refresh the PR to `main` at each tag.
 5. Tell Tanuj in one message: what shipped, what is blocked on a human, what the next agent should pick up.

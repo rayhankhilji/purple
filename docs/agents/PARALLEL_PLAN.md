@@ -27,7 +27,7 @@ Spare agents: pair one with UI (lab.css only) and one with GAME as reviewer. Do 
 
 ## 3. Branches and PRs
 
-- Base: `main`. Session 1's work is on `claude/amazing-planck-804i13`; the integrator merges it to `main` first (fast-forward), then everyone branches from `main`.
+- Base (decision 2026-10-23 23:55): **`claude/amazing-planck-804i13` is the integration branch for the hackathon.** Lane sessions branch from it and open PRs *into it*; the integrator merges there and pushes. Agent credentials can only push `claude/*` branches, so `main` is updated by one PR from the integration branch (Tanuj clicks merge) at each tag: `v1-collected`, `v2-collected`, `submitted`.
 - Branch name = whatever the platform assigned; PR title = task id + what (`P1.T2: broadcast mode ?lab=1 with purple:result`).
 - Small PRs, one task each. `npm test` green on every PR. No force-push on shared branches.
 
