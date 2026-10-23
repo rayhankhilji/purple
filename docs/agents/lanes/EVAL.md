@@ -1,10 +1,32 @@
 # Lane EVAL
 
-Status: done P2.T5 + P2.T6 (PR open into `claude/amazing-planck-804i13`); next: `exam:build` script line + `--promote-bias` flag for the SERVER lane, v2 collection decision. Owner: agent C (session `session_01Ma6U13odw1SA1vFhepRj8u`). Branch: `claude/eval-p2-exam`.
+Status: done P2.T5, P2.T6, P3.T1 prep (PR open into `claude/amazing-planck-804i13`); next: idle until v2 is trained (Try models sheet ready in `docs/try-models/sheet.md`). Owner: agent C (session `session_01Ma6U13odw1SA1vFhepRj8u`). Branch: `claude/eval-p2-exam`.
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
 
-### 2026-10-24 00:40 London — agent C (EVAL) — P2.T5 exam.json + generator promote bias, P2.T6 TD-01/conditions semantics
+##### 2026-10-24 01:30 London — agent C (EVAL) — P3.T1 prep (Try-models sheet), v2 dry run, Monza check; rng warm-up finding
+- Status: done; `npm test` 61/61. Branch `claude/eval-p2-trysheet` (from the integration branch after PR #4 merged). No Mubit calls; `lab/prompt.js` and aero constants untouched (label still "aero map v1"; `data/exam.json` unchanged, still in sync).
+- Files changed: `server/scenarios.js` (hardestItems, trySheet, dryRun, RNG_WARM warm-up, CLIs `--try-sheet`, `--dry-run`), `docs/try-models/sheet.md` (new; path granted to EVAL by the integrator), `test/evaluator.test.js` (+3), this file.
+- Verify step run + output:
+  - `node server/scenarios.js --try-sheet docs/try-models/sheet.md` → `exam-rw8, exam-03, exam-02, exam-14, exam-15, exam-16, exam-20, exam-05` (8 items: the demo premise + the 7 whose `delta_lap` is closest to the ±0.03 thresholds; five are retests at Δ −0.015 … +0.011, two rejects at +0.037 / +0.071). Per item the sheet carries the exact user-message JSON (`serializeScenario`, tested verbatim), the truth, and blank provider / v1 / v2 rows. Regenerate with the same command if `data/exam.json` is rebuilt.
+  - `node server/scenarios.js --dry-run --n 40 --seed 2 --promote-bias 0.3` (collection seeds 2000–2039, evaluator only, no Mubit) → **promote 13 / retest 10 / reject 17**; dry 30, wind 9, wet 1; Δ −0.122 … +0.343; longest input 522 chars. Parameters touched: ride height 27, rear wing 7, front wing 6, brake bias/ERS the rest. Rows:
+```
+
+```
+  - `npm test` → `# tests 61 / # pass 61 / # fail 0`.
+- **Finding (affects how v1 should be read, and v2): the collection's seeds are degenerate without a warm-up.** `U.rng(seed)` is xorshift32; for every seed in the collection's range (seed0·1000+i ≈ 1,000–50,000) its FIRST output is ≈ 0.12, so the generator's first `pick(rng, KEYS)` always lands on index 0 = `front_wing_deg`. Replaying v1's seeds 1000–1049: **50 of 50 candidates moved the front wing** (20 of them a second parameter too), which is why v1 saw Δ −0.028 … +0.323 and 0 promotes, and why the model answered `front_wing` 39/43 times: it learned on front-wing experiments. One burn-in draw already makes the next output uniform across consecutive seeds (measured: deciles 39/39/39/36/39/39/44/39/40/46 over 400 seeds). Fix shipped: `perturb` burns `RNG_WARM = 8` draws when `promote_bias > 0` (or `opts.warm`); at bias 0 nothing changes, so v1 seeds, the exam and all earlier tests reproduce byte-for-byte. Without the warm-up the bias coin landed on every seed (first dry run: 40/40 promote), so **the v2 collection must run with promote_bias > 0 (0.3 as decided) or `warm: true`**; the dry run above is what v2 will send.
+- Monza check (circuit switch, F-09): fixture `baseline.monza.json` lap 76.650, sectors 28.158 / 25.948 / 22.544, vmax 330.7, Lesmo vmin 174.2, straight vmax 328.1, grip 1.125, all reproduced. `REF_CORNER.monza` 2,150–2,700 m holds Lesmo 1 (2,185) and Lesmo 2 (2,550); the window's minimum is at s 2,580 (Lesmo 2 apex, 174 km/h) with the edges at 277 / 246 km/h, so it is a true corner minimum, not a clipped edge. `REF_STRAIGHT.monza` 5,300–5,790 m is the Rettifilo Tribune before the line at a constant bearing 3–6°; the lap's absolute peak (330.7 km/h) is at s 528 on the same straight after the line (braking for the Variante at 600), outside the window by design (the window ends before the braking point; same at Silverstone: peak at s 5,053, window to 5,000). Rear wing +5 at Monza: straight vmax 328.1 → 322.8, Lesmo vmin 174.2 → 177.5, Δ +0.458. No constant changed; a test now guards all of this.
+- Decisions proposed (for TASK_LOG):
+  1. Hardness ranking for Try models = distance of `delta_lap` from the nearest ±0.03 threshold, tie-break by next-move margin, `exam-rw8` always first. Reversible (`--k`, rebuild).
+  2. `RNG_WARM = 8` burn-in draws in `perturb` when `promote_bias > 0` or `opts.warm`; bias 0 unchanged. Reversible. Record the v1 degeneracy (front wing on 50/50) as a known property of the v1 example set.
+- Proposed lines for other lanes: `package.json` `"exam:sheet": "node server/scenarios.js --try-sheet docs/try-models/sheet.md"` and `"collect:dry": "node server/scenarios.js --dry-run --n 40 --seed 2 --promote-bias 0.3"` (integrator); SERVER's `--promote-bias` wiring needs nothing else (`generate()` warms itself when the bias is on).
+- Blockers / questions for Tanuj: none. FYI only: the v1 adapter was trained on front-wing-only experiments (above); the deck's honesty slide can say v1 = 43 front-wing experiments, v2 = mixed moves with promotes and the pit-wall rule.
+- Next three actions:
+  1. Integrator merges this PR; run `npm run exam` result → widget; Tanuj uses `docs/try-models/sheet.md` once v2 is trained (P3.T1).
+  2. EVAL: if the UI wants it, `evaluator.evaluate` can return `violation_labels` via `aero.describeViolation` (one line); `MIX.retest_bias` if the team wants more retest examples (the dry run already shows 10/40 at bias 0.3, so probably not needed).
+  3. EVAL: after v2 training, re-run `--dry-run` with the new baseline if a promote changed it (`--baseline` flag is a 3-line addition if asked).
+
+# 2026-10-24 00:40 London — agent C (EVAL) — P2.T5 exam.json + generator promote bias, P2.T6 TD-01/conditions semantics
 - Status: done (both tasks), `npm test` 47/47 green. No Mubit calls were made; `lab/prompt.js` untouched; no aero constant changed (label stays "aero map v1", fixtures untouched).
 - Files changed: `server/scenarios.js` (buildExam, truthFor, movesByVerdict, menuMoves, MIX.promote_bias, CLI), `data/exam.json` (new, committed, seed 2026), `lab/aero.js` (describeViolation), `lab/evaluator.js` (TD-01 grandfathered-baseline rule), `test/aero.test.js` (+1), `test/evaluator.test.js` (+10), this file.
 - Verify step run + output:
