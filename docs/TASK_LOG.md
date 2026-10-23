@@ -1,33 +1,38 @@
 # PURPLE — Task Log
 
-Version 1.0 · Started 2026-10-23 22:45 London · Update after every task. This file is the team's memory across sessions.
+Version 1.1 · Started 2026-10-23 22:45 London · Update after every task. This file is the team's memory across sessions.
+Multi-agent rule (decision 2026-10-23 23:20): lane agents write `docs/agents/lanes/<lane>.md`; only the integrator edits this file and `docs/agents/HANDOVER.md` when merging. See `docs/agents/PARALLEL_PLAN.md`.
 
 ## Status
 
 | Field | Value |
 |---|---|
-| Current phase | P0 — Examples flowing |
-| Mubit task name | (fill after the first real call; it is the first words of the prompt) |
-| Model | claude-haiku-4-5 (PRD A3 fallback: gpt-6-luna) |
-| Kept examples | 0 |
-| Adapter version / result | none |
-| Next deadline | Sat 01:00 London — Friday UTC training budget rolls |
+| Current phase | P0 — Examples flowing (code complete, tests green; waiting on the console read-out for the exit criteria) |
+| Mubit task name | "You are the research engineer of an F1 setup lab…" (first words of the prompt; confirm the exact label in console → Tasks) |
+| Model | `claude-haiku-4-5` (served by Mubit as `claude-haiku-4-5-20251001`; PRD A3 fallback not needed) |
+| Prompt | `lab/prompt.js` PROMPT_VERSION 1, 851 chars ≈ 210 tokens; scenario inputs 120–180 tokens |
+| Kept examples | (read from console → Tasks after the v1 collection; see Session log) |
+| Adapter version / result | none yet |
+| Next deadline | Sat 01:00 London — Friday UTC training budget rolls; then P1 (Sat 01:00 → 12:00), `/checkin` #1 by Sat 12:00 |
 
 ## Checklist (current phase: P0)
 
-- [ ] P0.T0 Repo `purple`, Equation I imported, `/team create`, README disclosure
-- [ ] P0.T1 `package.json`, `npm ci`, `npm run smoke` prints `mreq_` ID
-- [ ] P0.T2 `lab/prompt.js` frozen (PROMPT_VERSION 1), `lab/schema.js`, schema tests green
-- [ ] P0.T3 `lab/aero.js`; `buildSpeedProfile` takes `aero`/`wind`; `profileFor` key; `EI.buildSpeedProfile` exported
-- [ ] P0.T4 `server/game-headless.js`, `lab/evaluator.js`; baseline Silverstone within ±1.0 s of 80.8
-- [ ] P0.T5 server routes + `server/mubit.js` + JSONL writers; T-F03-AC1
-- [ ] P0.T6 scenario generator; `npm run collect -- --n 50`; console ≥ 25 kept examples; tag `v1-collected`
+- [x] P0.T0 Repo `purple`, Equation I imported (commit a711399), README disclosure. **`/team create` on Discord: Tanuj, not done by an agent.**
+- [x] P0.T1 `package.json` pinned, `npm ci` clean, `npm run smoke` prints `mreq_` (live: `mreq_01a16ad3ef007011968f90d4c2fe5b7e`, 2,464 ms, 432/135 tokens, untrained)
+- [x] P0.T2 `lab/prompt.js` frozen (PROMPT_VERSION 1), `lab/schema.js`, schema tests green
+- [x] P0.T3 `lab/aero.js`; `buildSpeedProfile` takes `aero`/`wind`; `profileFor` key; `EI.buildSpeedProfile` exported; T-F01-AC1..3 green
+- [x] P0.T4 `server/game-headless.js`, `lab/evaluator.js`; baseline Silverstone = 80.800 s (calibrated), T-F02-AC1..3 green
+- [x] P0.T5 server routes + `server/mubit.js` + JSONL writers; T-F03-AC1, AC3, T-F05-AC1, T-F09-AC1 green (36/36 tests)
+- [x] P0.T6 scenario generator, `npm run collect -- --n 50` ran live (43 ok / 7 parse_error / 57 trained calls), tag `v1-collected`. **Open: console ≥ 25 kept examples (Tanuj reads the console)**
+
+Exit criteria status: six verifies pass in code; the console read-out (task name, kept examples) and the tag are the open items.
 
 ## Blockers
 
 | When | What | Owner | Resolution |
 |---|---|---|---|
-| — | none yet | — | — |
+| 2026-10-23 23:05 | Mubit key is not visible to the first cloud session (env vars reach only new sessions); key was pasted in chat instead | Tanuj | Key lives in `server/.env` (gitignored) on the build machine. **Rotate it in console → Mubit keys after the hackathon.** |
+| 2026-10-23 23:10 | `/team create` (Discord) and the console Tasks read-out need a human | Tanuj | Do both; paste the Tasks status line verbatim into the Session log |
 
 ## Decisions
 
@@ -37,6 +42,17 @@ Version 1.0 · Started 2026-10-23 22:45 London · Update after every task. This 
 | 2026-10-23 22:30 | Five setup parameters, Silverstone + Monza only | 24-hour scope | Yes |
 | 2026-10-23 22:30 | No Blender; the game's procedural car is the 3D model | It already has wing `aoa` parameters | Yes |
 | 2026-10-23 22:30 | Corrections = pit-wall rules in the task input (+ console if offered); honest "rule-conditioned learning" | Eldar: no corrections API; adapters graded vs provider | Yes |
+| 2026-10-23 22:55 | Build docs live in `docs/`; the game's own README moved to `docs/equation-i/` | Root README must open with the disclosure line | Yes |
+| 2026-10-23 23:12 | Headless loader uses the real `vendor/three.min.js` r128 in Node, not a THREE stub (ARCH §2 said stub) | It loads cleanly; the evaluator then sees byte-identical track geometry to the browser. No DOM is defined (the Anthropic SDK refuses "browser-like" processes) | Yes |
+| 2026-10-23 23:14 | Evaluator calibration: solve the corner-grip scale per track so the neutral car laps `LIMIT_LAP` exactly (80.8 Silverstone → grip 1.137; 76.65 Monza → 1.125) | The profile lap at the game's C_LIMIT is a few % off the sim lap; "calibrated to 2026 pole laps" is then literally true and T-F02-AC1 is a regression guard via fixtures | Yes (`npm run fixtures` + a line here) |
+| 2026-10-23 23:14 | `vmin_kmh` = minimum speed in the Maggotts–Becketts complex (s 3,600–4,200 m), `vmin_lap_kmh` = whole-lap minimum | The slowest corner is steering-lock limited and does not respond to wing; F-04.AC3 measures Becketts anyway. Monza: Lesmo 1–2 | Yes |
+| 2026-10-23 23:14 | Sectors = the game's `track.sectors` (thirds of length in the track frame), attributed S/F-aligned as `race.js` times them; Hangar Straight is in S3 | ARCH §4.4 says sectors from `track.sectors`; Silverstone data has no real sector lines | Yes |
+| 2026-10-23 23:15 | Aero in the lap model only scales a0/a1/b0/b1/cd; GRIP.cap / BRAKE.cap are not scaled | Measured: wing already moves vmax and Becketts vmin the right way; caps are tyre limits | Yes |
+| 2026-10-23 23:16 | `validatePlanOutput` tolerates a single ```json fence; prose is still rejected | Haiku returns a fenced object (seen in the live smoke); a fence is not prose; parse_error rate would otherwise be 100 % | Yes |
+| 2026-10-23 23:18 | Additive route `GET/POST /api/state` (baseline, conditions, td01, reset_plan) and `data/state.json` | The UI and TD-01 demo need to set conditions; not in ARCH §5 | Yes |
+| 2026-10-23 23:18 | `@anthropic-ai/sdk` 0.137.0 (latest 0.x per ARCH), `dotenv` 16.6.1 (17+ prints a banner on stdout) | Stack says pinned; the stdout log line format is a standard | Yes |
+| 2026-10-23 23:20 | Multi-agent protocol: lanes with exclusive file ownership; lane agents own `docs/agents/lanes/<lane>.md`; integrator owns TASK_LOG + HANDOVER | 10 agents cannot all edit one log without conflicts | Yes |
+
 
 ## Session log
 
@@ -44,3 +60,18 @@ Version 1.0 · Started 2026-10-23 22:45 London · Update after every task. This 
 - Build docs written (PRD, ARCHITECTURE, INSTRUCTIONS, ROADMAP, TESTING_GUIDE, EVAL_GUARDRAILS, DESIGN_SYSTEM).
 - Equation I inspected: `buildSpeedProfile` lap model, per-driver traits, procedural car, 7 circuits, seeded races, replay recorder.
 - Next: P0.T0.
+
+### 2026-10-23 22:50 → 23:35 — session 1 (Claude, branch `claude/amazing-planck-804i13`): P0.T0 → P0.T6 code
+- P0.T0: Equation I imported as one commit (314 files), docs under `docs/`, README disclosure, `.gitignore` for `server/.env` and `data/*`.
+- Key check: one untrained curl through Mubit → HTTP 200, `mreq_01a16ac42b11783384f4009410fb706f`, model `claude-haiku-4-5-20251001`. A3 holds.
+- P0.T1–T5 built and committed with task IDs; `npm test` 36/36 green in < 1 s.
+- Evaluator numbers (Silverstone, dry): baseline 80.800 s, sectors 25.094 / 25.582 / 30.125, vmax 328.2, terminal 331.2, Becketts vmin 212.5 km/h.
+  Rear wing +8°: +0.436 s, vmax 320.3, vmin 223.5 (demo premise holds). Monza rear wing +8°: +0.757 s. 10 m/s headwind on Hangar: S3 vmax 328 → 318. Wet: 83.854 s.
+  Baseline is near the rear-wing optimum (−4° = +0.011 s); lower ride height 30–34 mm and small front-wing moves are where "promote" lives.
+- Live smoke (`npm run smoke`): `mreq_01a16ad3ef007011968f90d4c2fe5b7e`, 2,464 ms, verdict reject, untrained. Scenario 495 chars ≈ 124 tokens.
+- P0.T6: generator + `npm run collect` written; live run of 50 started 23:33 London with `--seed 1` (result below).
+- **P0.T6 live result (23:33–23:34 London, Friday budget):** `npm run collect -- --n 50 --seed 1` → 50 sent, 43 ok, 7 parse_error, 0 Mubit errors, 0 illegal retries, 57.5 s at concurrency 2. `calls.jsonl`: 58 rows, 57 trained (50 + 7 retries), 1 untrained smoke; 51 unique session ids. Latency p50 1.9 s, p95 4.2 s; inputs 432–524 tokens including the system prompt (scenario ≈ 125–215). Mix: 37 dry / 11 wind / 2 wet. Verdicts: 40 reject, 3 retest, 0 promote (no random candidate beat the baseline by > 0.03 s; range −0.028 … +0.323 s). `next_parameter`: front_wing 39, rear_wing 4.
+- All 7 parse errors were `hypothesis` > 160 or `reject_if` > 80 chars (the model's slips); fixed by trimming instead of rejecting (Decision 23:50). Mubit recorded those calls regardless.
+- Tagged `v1-collected` at the collection commit. **Open:** console → Tasks read-out (name, kept examples, status line) by Tanuj; `/team create`.
+
+| 2026-10-23 23:50 | `validatePlanOutput` trims overlong `hypothesis`/`reject_if` to their limits (`trimmed` flag) instead of rejecting | 7/50 live answers overran by a few words; a same-input retry at temperature 0 repeats it; the decision fields are intact | Yes |

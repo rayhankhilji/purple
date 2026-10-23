@@ -47,9 +47,14 @@
     if (!magnitudeOk(obj.next_parameter, obj.magnitude)) return fail("magnitude", "must be > 0, within the parameter's range, in its step (" + RANGES[obj.next_parameter].step + ")");
     const e = obj.expected_sector_effect;
     if (!Array.isArray(e) || e.length !== 3 || !e.every(x => typeof x === "number" && isFinite(x))) return fail("expected_sector_effect", "must be 3 finite numbers");
-    if (typeof obj.hypothesis !== "string" || obj.hypothesis.length > LIMITS.hypothesis) return fail("hypothesis", "string, max " + LIMITS.hypothesis + " chars");
-    if (typeof obj.reject_if !== "string" || obj.reject_if.length > LIMITS.reject_if) return fail("reject_if", "string, max " + LIMITS.reject_if + " chars");
-    return { ok: true, value: { verdict: obj.verdict, next_parameter: obj.next_parameter, direction: obj.direction, magnitude: obj.magnitude, expected_sector_effect: e.map(x => +x.toFixed(3)), hypothesis: obj.hypothesis, reject_if: obj.reject_if } };
+    if (typeof obj.hypothesis !== "string") return fail("hypothesis", "must be a string");
+    if (typeof obj.reject_if !== "string") return fail("reject_if", "must be a string");
+    // overlong strings are trimmed, not rejected (decision 2026-10-23 23:50): 7/50 live answers overran by a few words and a same-input
+    // retry at temperature 0 returns the same text; the decision fields (verdict, parameter, direction, magnitude) are what matter
+    const trimmed = [];
+    const cut = (k, max) => { const v = obj[k]; if (v.length <= max) return v; trimmed.push(k); return v.slice(0, max - 1).trimEnd() + "…"; };
+    const value = { verdict: obj.verdict, next_parameter: obj.next_parameter, direction: obj.direction, magnitude: obj.magnitude, expected_sector_effect: e.map(x => +x.toFixed(3)), hypothesis: cut("hypothesis", LIMITS.hypothesis), reject_if: cut("reject_if", LIMITS.reject_if) };
+    return trimmed.length ? { ok: true, value, trimmed } : { ok: true, value };
   }
 
   // apply a plan to a setup: the next candidate (clamped to the legal range so the generator never proposes the impossible)

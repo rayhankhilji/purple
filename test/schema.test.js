@@ -20,11 +20,11 @@ test("magnitude out of range or off-step -> rejected", () => {
   assert.equal(schema.validatePlanOutput(Object.assign({}, good, { next_parameter: "ers_deploy", magnitude: 0.2 })).ok, true);
   assert.equal(schema.validatePlanOutput(Object.assign({}, good, { next_parameter: "ers_deploy", magnitude: 0.25 })).field, "magnitude");
 });
-test("extra prose before JSON -> rejected; unexpected key -> rejected; long strings -> rejected", () => {
+test("extra prose before JSON -> rejected; unexpected key -> rejected; long strings -> trimmed to the limit", () => {
   const v = schema.validatePlanOutput("Here is my answer: " + JSON.stringify(good)); assert.equal(v.ok, false); assert.equal(v.field, "json");
   assert.equal(schema.validatePlanOutput(Object.assign({}, good, { note: 1 })).field, "note");
-  assert.equal(schema.validatePlanOutput(Object.assign({}, good, { hypothesis: "x".repeat(161) })).field, "hypothesis");
-  assert.equal(schema.validatePlanOutput(Object.assign({}, good, { reject_if: "x".repeat(81) })).field, "reject_if");
+  const long = schema.validatePlanOutput(Object.assign({}, good, { hypothesis: "x".repeat(161), reject_if: "y".repeat(81) })); assert.equal(long.ok, true); assert.deepEqual(long.trimmed, ["hypothesis", "reject_if"]);
+  assert.equal(long.value.hypothesis.length, 160); assert.equal(long.value.reject_if.length, 80); assert.equal(schema.validatePlanOutput(Object.assign({}, good, { hypothesis: 5 })).field, "hypothesis");
 });
 test("validateSetup: shape and types", () => {
   assert.equal(schema.validateSetup(aero.BASELINE).ok, true);
