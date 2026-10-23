@@ -100,7 +100,40 @@ window.EI = window.EI || {};
   ];
 
   // ---------------------------------------------------------------- build
-  function build(car) {
+  // ---------------------------------------------------------------- setup -> geometry (PURPLE F-07, ARCHITECTURE §9; opt-in)
+  // Setup is the lab's { front_wing_deg, rear_wing_deg, ride_height_mm, ... } (ARCHITECTURE §4.1). Baseline 25 / 20 / 35 mm is the
+  // shipped car exactly: every delta below is 0 (or x1) when the field is missing, so build(car) with no setup is unchanged.
+  const SETUP_BASE = { front_wing_deg: 25, rear_wing_deg: 20, ride_height_mm: 35 };
+  const SETUP_K = { rearAoaPerDeg: 0.012, frontAoaPerDeg: 0.03, rideM_PerMm: 0.001 };   // rad per deg of rear wing; relative per deg of front wing; m per mm
+  const num = (v) => (typeof v === 'number' && isFinite(v) ? v : null);
+  function setupDeltas(setup) {
+    const rw = setup && num(setup.rear_wing_deg), fw = setup && num(setup.front_wing_deg), rh = setup && num(setup.ride_height_mm);
+    return { dRear: rw == null ? 0 : SETUP_K.rearAoaPerDeg * (rw - SETUP_BASE.rear_wing_deg), kFront: fw == null ? 1 : 1 + SETUP_K.frontAoaPerDeg * (fw - SETUP_BASE.front_wing_deg), dRide: rh == null ? 0 : SETUP_K.rideM_PerMm * (rh - SETUP_BASE.ride_height_mm) };
+  }
+  // front wing: 4 elements with upward-curved tips + rear wing main plane, beam wing, swan necks, rear endplates - one painted mesh.
+  // elementsOnly: just the parts the setup moves (the four front elements and the rear main plane), for the lab's baseline ghost
+  function wingGeometry(setup, elementsOnly) {
+    const d = setupDeltas(setup);
+    const fw = (chord, x, y, aoa, t, flapGapAtNose) => wing(-1.0, 1.0, (z) => { const a = Math.abs(z); const lift = 0.1 * a * a; const nose = flapGapAtNose && a < 0.22 ? 0.06 : 0; return { x, y: y + lift + nose, chord: chord * (1 - 0.15 * a), aoa: aoa * d.kFront * (1 - 0.3 * a), t: t }; }, 32);
+    const wings = [fw(0.42, 3.15, 0.09, 0.08, 0.035, false), fw(0.3, 2.82, 0.17, 0.26, 0.03, true), fw(0.22, 2.6, 0.26, 0.42, 0.025, true), fw(0.16, 2.43, 0.33, 0.55, 0.02, true)];
+    wings.push(wing(-0.5, 0.5, (z) => ({ x: -2.3, y: 0.72, chord: 0.4, aoa: 0.16 + d.dRear, t: 0.04 }), 16));   // rear main plane
+    if (elementsOnly) return merge(wings);
+    wings.push(wing(-0.5, 0.5, (z) => ({ x: -2.25, y: 0.4, chord: 0.2, aoa: 0.25, t: 0.025 }), 12)); wings.push(wing(-0.5, 0.5, (z) => ({ x: -2.4, y: 0.33, chord: 0.18, aoa: 0.2, t: 0.02 }), 12));
+    for (const s of [1, -1]) wings.push(strut([-1.75, 0.55, s * 0.08], [-2.35, 0.8, s * 0.08], 0.05, 0.03)); // swan necks
+    for (const s of [1, -1]) wings.push(plate([[-2.92, 0.5], [-2.3, 0.5], [-2.22, 0.78], [-2.35, 1.0], [-2.92, 1.02], [-2.98, 0.75]], 0.018, s * 0.51, true));
+    return boxProjectUV(merge(wings));
+  }
+  // swap the wing mesh's geometry in place and move the body for ride height (F-07.AC1: < 200 ms, no car rebuild).
+  // target = the object build() returned, or its group. Returns the elapsed ms.
+  function rebuildWings(target, setup) {
+    const t0 = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+    const m = target && target.isGroup ? target.userData.carModel : target; if (!m || !m.wingMesh) throw new Error('rebuildWings: not a CarModel');
+    const old = m.wingMesh.geometry; m.wingMesh.geometry = wingGeometry(setup); if (old) old.dispose();
+    m.body.position.y = m.bodyY0 + setupDeltas(setup).dRide; m.setup = setup || null;
+    return (typeof performance !== 'undefined' ? performance.now() : Date.now()) - t0;
+  }
+
+  function build(car, setup) {
     textures();
     const g = new THREE.Group(); const body = new THREE.Group(); g.add(body);
     const tex = EI.paintLivery(car.team, car.num, car.isPlayer ? car.name : null, car.driver);
@@ -116,6 +149,7 @@ window.EI = window.EI || {};
     painted.push(box(1.3, 0.3, 0.02, -1.4, 0.74, 0));                       // shark fin
     for (const s of [1, -1]) painted.push(box(0.32, 0.25, 0.04, 2.78, 0.3, s * 0.2));   // nose to wing pylons
     const paintedGeo = boxProjectUV(merge(painted)); const bodyMesh = new THREE.Mesh(paintedGeo, paint); bodyMesh.castShadow = true; body.add(bodyMesh);
+    if (setup) body.position.y += setupDeltas(setup).dRide;   // ride height: wheels stay on the road, the sprung car moves (0 with no setup)
 
     // ---- sidepod inlets (dark recesses) and cockpit opening
     for (const s of [1, -1]) { const inlet = new THREE.Mesh(loft([{ x: 0.4, w: 0.24, h: 0.34, y0: 0.19, n: 3.4 }, { x: 0.2, w: 0.2, h: 0.28, y0: 0.22, n: 3.4 }], s * 0.63, 20), matte); body.add(inlet); }
@@ -155,13 +189,8 @@ window.EI = window.EI || {};
     const carbonMesh = new THREE.Mesh(merge(carbonParts), carbon); carbonMesh.castShadow = true; body.add(carbonMesh);
 
     // ---- front wing: 4 elements with upward-curved tips (painted) + rear wing main plane, beam wing (painted)
-    const fw = (chord, x, y, aoa, t, flapGapAtNose) => wing(-1.0, 1.0, (z) => { const a = Math.abs(z); const lift = 0.1 * a * a; const nose = flapGapAtNose && a < 0.22 ? 0.06 : 0; return { x, y: y + lift + nose, chord: chord * (1 - 0.15 * a), aoa: aoa * (1 - 0.3 * a), t: t }; }, 32);
-    const wings = [fw(0.42, 3.15, 0.09, 0.08, 0.035, false), fw(0.3, 2.82, 0.17, 0.26, 0.03, true), fw(0.22, 2.6, 0.26, 0.42, 0.025, true), fw(0.16, 2.43, 0.33, 0.55, 0.02, true)];
-    wings.push(wing(-0.5, 0.5, (z) => ({ x: -2.3, y: 0.72, chord: 0.4, aoa: 0.16, t: 0.04 }), 16));
-    wings.push(wing(-0.5, 0.5, (z) => ({ x: -2.25, y: 0.4, chord: 0.2, aoa: 0.25, t: 0.025 }), 12)); wings.push(wing(-0.5, 0.5, (z) => ({ x: -2.4, y: 0.33, chord: 0.18, aoa: 0.2, t: 0.02 }), 12));
-    for (const s of [1, -1]) wings.push(strut([-1.75, 0.55, s * 0.08], [-2.35, 0.8, s * 0.08], 0.05, 0.03)); // swan necks
-    for (const s of [1, -1]) wings.push(plate([[-2.92, 0.5], [-2.3, 0.5], [-2.22, 0.78], [-2.35, 1.0], [-2.92, 1.02], [-2.98, 0.75]], 0.018, s * 0.51, true));
-    const wingMesh = new THREE.Mesh(boxProjectUV(merge(wings)), paint); wingMesh.castShadow = true; body.add(wingMesh);
+    // (geometry comes from wingGeometry(setup) so the lab can swap it in place; with no setup it is the shipped car, unchanged)
+    const wingMesh = new THREE.Mesh(wingGeometry(setup), paint); wingMesh.castShadow = true; body.add(wingMesh);
     // DRS flap: pivot at the trailing edge, up between the endplate tops; closed it sits steep above the main plane's trailing edge,
     // open the leading edge lifts ~55 degrees so a slot of daylight shows between the two elements (FLAP_CLOSED / FLAP_OPEN)
     const flapGeo = wing(-0.49, 0.49, (z) => ({ x: 0.26, y: 0.0, chord: 0.26, aoa: 0.0, t: 0.028 }), 12); flapGeo.translate(-2.87, 0.99, 0); boxProjectUV(flapGeo); flapGeo.translate(2.87, -0.99, 0);   // livery mapped where the flap sits, like the main plane
@@ -213,7 +242,9 @@ window.EI = window.EI || {};
     // contact shadow
     const sc = document.createElement('canvas'); sc.width = 128; sc.height = 64; const sctx = sc.getContext('2d'); const grd = sctx.createRadialGradient(64, 32, 4, 64, 32, 60); grd.addColorStop(0, 'rgba(0,0,0,0.6)'); grd.addColorStop(0.6, 'rgba(0,0,0,0.3)'); grd.addColorStop(1, 'rgba(0,0,0,0)'); sctx.fillStyle = grd; sctx.fillRect(0, 0, 128, 64);
     const blob = new THREE.Mesh(new THREE.PlaneGeometry(6.2, 3.0), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(sc), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3 })); blob.rotation.x = -Math.PI / 2; blob.position.set(-0.1, 0.03, 0); g.add(blob);
-    return { group: g, body, wheels, frontPivots, flap, helmet, bodyMat: paint, flapClosed: FLAP_CLOSED, flapOpen: FLAP_OPEN };
+    const model = { group: g, body, wheels, frontPivots, flap, helmet, bodyMat: paint, flapClosed: FLAP_CLOSED, flapOpen: FLAP_OPEN, wingMesh, bodyY0: setup ? body.position.y - setupDeltas(setup).dRide : body.position.y, setup: setup || null };
+    g.userData.carModel = model;   // so rebuildWings(group, setup) can find the wing mesh
+    return model;
   }
 
   function sidewallTexture(color) {
@@ -225,5 +256,8 @@ window.EI = window.EI || {};
     for (let i = 0; i < 6; i++) { ctx.fillText('EIRELLI', 85 + i * 170, 40); ctx.save(); ctx.translate(85 + i * 170, 216); ctx.scale(-1, 1); ctx.fillText('EIRELLI', 0, 0); ctx.restore(); }
     const t = new THREE.CanvasTexture(c); t.wrapS = THREE.RepeatWrapping; t.anisotropy = 8; t.encoding = THREE.sRGBEncoding; return t;
   }
-  EI.CarModel = { build, WHEEL_R };
+  EI.CarModel = { build, WHEEL_R, wingGeometry, rebuildWings, SETUP_BASE, SETUP_K };
+  // PURPLE lab entry points (ARCHITECTURE §9): the game never calls these
+  EI.carModel = (opts, setup) => build(opts, setup);
+  EI.rebuildWings = rebuildWings;
 })();
