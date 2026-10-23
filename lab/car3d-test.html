@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PURPLE · car3d test (T-F07-AC1)</title>
+<link rel="icon" href="data:,">
+<style>
+  :root { --bg: #0a0a0c; --panel: #121216; --line: #26262c; --text: #e8e8ec; --muted: #8a8a94; --purple: #b26cff; --green: #4ade80; --red: #f0506e; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  body { display: grid; grid-template-rows: auto 1fr auto; height: 100vh; }
+  header { display: flex; gap: 8px; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--panel); flex-wrap: wrap; }
+  header b { color: var(--muted); font-weight: 600; margin-right: 6px; }
+  button { background: #1a1a20; color: var(--text); border: 1px solid var(--line); border-radius: 4px; padding: 6px 10px; font: inherit; cursor: pointer; }
+  button:hover { border-color: var(--purple); } button[aria-pressed="true"] { border-color: var(--purple); background: #3a2460; }
+  #car3d { min-height: 0; position: relative; }
+  footer { padding: 8px 14px; border-top: 1px solid var(--line); background: var(--panel); color: var(--muted); max-height: 28vh; overflow: auto; white-space: pre-wrap; }
+  .ok { color: var(--green); } .bad { color: var(--red); } .label { margin-left: auto; color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <b>car3d</b>
+  <button id="b-base" data-setup="baseline" aria-pressed="true">baseline</button>
+  <button id="b-rw8" data-setup="rw8">rear wing +8 (28°)</button>
+  <button id="b-rh28" data-setup="rh28">ride height 28</button>
+  <button id="b-rw30" data-setup="rw30">AC1: rear wing 30°</button>
+  <button id="b-hero" title="camera: hero">hero</button>
+  <button id="b-ghost" title="toggle baseline ghost">ghost</button>
+  <span class="label" id="status">reduced-order lap model · calibrated to 2026 pole laps · aero map v1</span>
+</header>
+<div id="car3d"></div>
+<footer id="log">log: setSetup(…) timings appear here (T-F07-AC1 needs &lt; 200 ms)</footer>
+
+<!-- the game's scripts, in index.html order, only those the car model needs; then the lab view -->
+<script src="../vendor/three.min.js"></script>
+<script src="../js/util.js"></script>
+<script src="../js/data/season2026.js"></script>
+<script src="../js/ads.js"></script>
+<script>// the game resolves its brand artwork relative to the page; from lab/ that is one level up
+  if (EI.Ads) { EI.Ads.BRAND_DIR = '../assets/brand/'; EI.Ads.PARTNER_DIR = EI.Ads.BRAND_DIR + 'partners/'; }</script>
+<script src="../js/teams.js"></script>
+<script src="../js/liveries.js"></script>
+<script src="../js/liveries/mercedes.js"></script>
+<script src="../js/liveries/ferrari.js"></script>
+<script src="../js/liveries/mclaren.js"></script>
+<script src="../js/liveries/redbull.js"></script>
+<script src="../js/liveries/racingbulls.js"></script>
+<script src="../js/liveries/alpine.js"></script>
+<script src="../js/liveries/haas.js"></script>
+<script src="../js/liveries/audi.js"></script>
+<script src="../js/liveries/williams.js"></script>
+<script src="../js/liveries/astonmartin.js"></script>
+<script src="../js/liveries/cadillac.js"></script>
+<script src="../js/liveries/lumi.js"></script>
+<script src="../js/liveries/intake.js"></script>
+<script src="../js/carmodel.js"></script>
+<script src="../js/carglb.js"></script>
+<script src="car3d.js"></script>
+<script>
+(function () {
+  const BASE = { front_wing_deg: 25, rear_wing_deg: 20, ride_height_mm: 35, brake_bias_pct: 57, ers_deploy: 0.5 };
+  const SETUPS = {
+    baseline: BASE,
+    rw8: Object.assign({}, BASE, { rear_wing_deg: 28 }),
+    rh28: Object.assign({}, BASE, { ride_height_mm: 28 }),
+    rw30: Object.assign({}, BASE, { rear_wing_deg: 30 }),
+  };
+  const log = document.getElementById('log'), $ = (id) => document.getElementById(id);
+  const line = (msg, cls) => { const d = document.createElement('div'); if (cls) d.className = cls; d.textContent = msg; log.prepend(d); console.log('[car3d-test] ' + msg); };
+  const q = new URLSearchParams(location.search);
+  const start = () => {
+    EI.labCar3D.mount($('car3d'), { team: q.get('team') || 'lumi', orbit: q.get('orbit') !== '0' });
+    EI.labCar3D.setBaseline(BASE);
+    line('mounted · reduced motion: ' + EI.labCar3D.reducedMotion() + ' · dpr ' + Math.min(devicePixelRatio, 2));
+    window.__car3dReady = true;
+  };
+  (EI.Ads && EI.Ads.ready ? EI.Ads.ready() : Promise.resolve()).then(start);
+
+  // setSetup timed from the outside too (performance.now around the call), as T-F07-AC1 asks
+  window.applySetup = function (key) {
+    const setup = SETUPS[key]; const t0 = performance.now();
+    const r = EI.labCar3D.setSetup(setup);
+    const ms = performance.now() - t0;
+    document.querySelectorAll('button[data-setup]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.setup === key)));
+    line(key + ' · rear_wing ' + setup.rear_wing_deg + '° · ride ' + setup.ride_height_mm + ' mm · rebuildWings ' + r.ms.toFixed(1) + ' ms · setSetup ' + ms.toFixed(1) + ' ms · rear aoa ' + (EI.labCar3D.rearAoa() * 180 / Math.PI).toFixed(1) + '°', ms < 200 ? 'ok' : 'bad');
+    return { ms, inner: r.ms };
+  };
+  document.querySelectorAll('button[data-setup]').forEach((b) => b.addEventListener('click', () => applySetup(b.dataset.setup)));
+  $('b-hero').addEventListener('click', () => EI.labCar3D.hero());
+  $('b-ghost').addEventListener('click', () => { const v = EI.labCar3D.view(); v.opts.ghost = !v.opts.ghost; EI.labCar3D.setBaseline(v.baseline); line('ghost ' + (v.opts.ghost ? 'on' : 'off')); });
+})();
+</script>
+</body>
+</html>
