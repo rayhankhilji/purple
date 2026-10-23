@@ -1,10 +1,6 @@
 # Lane SERVER
 
-<<<<<<< HEAD
-Status: in_progress (P1.T3 + integrity guards). Owner: cloud session `session_01Tq3p158ophv4wuU2ibcJbj` (spawned by the integrator 2026-10-24 00:16 London). Branch: its own `claude/*` branch, PRs into `claude/amazing-planck-804i13`.
-=======
 Status: in_progress (P1.T3 done, PR open; next: task-integrity guards, P2.T3 server side, status widget plumbing). Owner: agent B (Claude, session_01Tq3p158ophv4wuU2ibcJbj). Branch: `claude/server-p1-race` (stacked branches `claude/server-p1-*` follow, one PR per task into `claude/amazing-planck-804i13`).
->>>>>>> origin/claude/server-p1-race
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
 
