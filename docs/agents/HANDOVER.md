@@ -7,6 +7,7 @@ Living document. Owned by the **integrator** (whoever merges lane branches). Lan
 - **GO given 2026-10-23 23:58 London.** Console: task **Research engineer of F1**, Training v1, **43 kept** of 57. Phase 1 is open; lanes may start their first task immediately after the read-in.
 - **Phase 0 is code-complete and live-verified.** `npm test` 36/36. The 50-call v1 collection ran at 23:33 London on the Friday budget: 50 scenarios, 43 valid plans, 7 parse errors (retried once each), 57 trained calls, 1 untrained smoke call. Mubit returned `mreq_…` ids on every call.
 - **Open for a human (Tanuj):** `/team create` on Discord with the repo URL; read console → Tasks (task name, kept examples, status line) into `docs/TASK_LOG.md`; confirm **Adapters** exists (PRD A1). Rotate the Mubit key after the hackathon (it was pasted in a chat).
+- **Lanes running (spawned 00:16 London):** GAME `session_019VA5sAvTHuQ3bGbWV5CX4M` (P1.T1/T2), SERVER `session_01Tq3p158ophv4wuU2ibcJbj` (P1.T3 + guards), EVAL `session_01Ma6U13odw1SA1vFhepRj8u` (P2.T5 exam + generator bias). Integrator = session 1 `session_01U2tgEhT5Kgr4kE9kJ4Psw4`. PR to main: https://github.com/rayhankhilji/purple/pull/1.
 - **Next phase: P1 (Sat 01:00 → 12:00).** The game races baseline vs candidate with per-car aero, posts results back, `/checkin` #1 by 12:00. Lanes and owners: `docs/agents/PARALLEL_PLAN.md`.
 - Hard dates: `/checkin` #1 by Sat 12:00 · #2 Sat 12:00–18:00 · `/submit` MP4 ≤ 3 min + PDF by **Sat 23:59** · freeze Sun 05:00 · expo Sun 10:30.
 
