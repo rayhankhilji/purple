@@ -8,6 +8,7 @@ const headless = require("./game-headless.js");
 const store = require("./store.js");
 const scenarios = require("./scenarios.js");
 const prompt = require("../lab/prompt.js");
+const promptHash = require("./scripts/prompt-hash.js");
 
 const STATUS = { BAD_INPUT: 400, ILLEGAL_SETUP: 422, MUBIT_ERROR: 502, PARSE_ERROR: 502, NOT_FOUND: 404, INTERNAL: 500 };
 class ApiError extends Error { constructor(code, message, extra) { super(message); this.code = code; this.extra = extra || {}; } }
@@ -46,10 +47,20 @@ function createApp(opts) {
   const DEFAULT_STATE = { baseline: aero.BASELINE, conditions: { circuit: "silverstone", wet: false, wind_ms: 0, wind_from_deg: 0 }, td01: false, last_plan: null };
   const state = () => db.readState(DEFAULT_STATE);
   const setState = patch => db.writeState(Object.assign(state(), patch));
+  // the status widget (F-06). Console values are entered by hand via POST /api/status; the rest is computed here.
+  // budget: Mubit's daily budget rolls at 00:00 UTC (01:00 London), so "today" is the UTC calendar day of each calls.jsonl row.
+  const CONSOLE_FIELDS = ["task_name", "kept_examples", "adapter_version", "test_result", "exam"];
+  const PROMPT_HASH = promptHash.check().hash;
+  const utcDay = iso => (iso || "").slice(0, 10);
+  function budgetView(calls, at) {
+    const day = utcDay(at), next = new Date(day + "T00:00:00Z"); next.setUTCDate(next.getUTCDate() + 1);
+    const today = calls.filter(x => x.kind !== "illegal" && utcDay(x.created_at) === day);   // illegal rows never reached Mubit
+    return { day_utc: day, trained_today_utc: today.filter(x => x.trained === true).length, untrained_today_utc: today.filter(x => x.trained !== true).length, resets_at: next.toISOString(), boundary: "00:00 UTC = 01:00 London" };
+  }
   function statusView() {
     const s = db.readStatus(), calls = db.readCalls();
-    return Object.assign({ task_name: prompt.TASK_NAME_HINT + "…", kept_examples: 0, adapter_version: null, test_result: null, exam: { provider: null, v1: null, v2: null }, updated_at: null }, s,
-      { model: prompt.MODEL, prompt_version: prompt.PROMPT_VERSION, calls_total: calls.length, calls_trained: calls.filter(x => x.trained).length, experiments: db.readLedger().length });
+    return Object.assign({ task_name: prompt.TASK_NAME_HINT + "…", kept_examples: 0, adapter_version: null, test_result: null, exam: { provider: null, v1: null, v2: null }, updated_at: null, last_console_read_at: null }, s,
+      { model: prompt.MODEL, prompt_version: prompt.PROMPT_VERSION, prompt_hash: PROMPT_HASH, calls_total: calls.length, calls_trained: calls.filter(x => x.trained).length, experiments: db.readLedger().length, budget: budgetView(calls, now()) });
   }
 
   // ---- one experiment (ARCHITECTURE §6). input: { scenario_overrides: { circuit, conditions, candidate, baseline, seed }, with_rules, random }
@@ -239,7 +250,12 @@ function createApp(opts) {
     r.active = b.active; r.updated_at = now(); db.writeRules(rules); emit("rule", r); return ok(c, r);
   });
   app.get("/api/status", c => ok(c, statusView()));
-  app.post("/api/status", async c => { const b = await body(c); const s = Object.assign(db.readStatus(), b, { updated_at: now() }); db.writeStatus(s); emit("status", statusView()); return ok(c, statusView()); });
+  app.post("/api/status", async c => {   // partial update; a body that carries console values stamps last_console_read_at (or pass it explicitly)
+    const b = await body(c); const patch = {}; for (const k of Object.keys(b)) if (!["budget", "prompt_hash", "model", "prompt_version", "calls_total", "calls_trained", "experiments"].includes(k)) patch[k] = b[k];
+    if (b.last_console_read_at != null && (typeof b.last_console_read_at !== "string" || Number.isNaN(Date.parse(b.last_console_read_at)))) throw new ApiError("BAD_INPUT", "last_console_read_at must be an ISO 8601 string");
+    if (b.last_console_read_at == null && CONSOLE_FIELDS.some(k => k in b)) patch.last_console_read_at = now();
+    const s = Object.assign(db.readStatus(), patch, { updated_at: now() }); db.writeStatus(s); emit("status", statusView()); return ok(c, statusView());
+  });
   app.get("/api/state", c => ok(c, state()));
   app.post("/api/state", async c => {   // additive (TASK_LOG decision): conditions, TD-01 and baseline edits for the UI and the directive demo
     const b = await body(c); const patch = {};
