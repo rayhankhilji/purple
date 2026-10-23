@@ -163,3 +163,9 @@ Exit criteria: **all true at 23:58 London** (six verifies, task named from the p
 ### 2026-10-24 02:15 — integrator — merged EVAL PR #9 update and GAME PR #11; one seeded rng
 - app.js now imports `scenarios.seededRng`; `itemSeed` removed; SERVER's re-based PR #10 branch is superseded by the integration branch (same semantics). 71/71 tests. v2 rows replay exactly with the canonical helper (checked against the ledger).
 - GAME's P1.T2 browser-run numbers still pending (software GL, very slow); headless numbers stand.
+
+### 2026-10-24 02:25 — integrator session 1 — handover
+- Merged CAR3D PR #12 (3D car view; T-F07-AC1 10.8 ms; game default geometry hash-identical). 71/71.
+- Froze `data/` into `docs/ledger-snapshot/2026-10-24T0215-after-v2/` (93 ledger rows, 120 calls). **The next integrator restores it first.**
+- Wrote `docs/agents/INTEGRATOR_PROMPT.md`; HANDOVER §1 rewritten as the live state (lane session ids, pending work, human items). Session 1's check-in trigger cancelled; lanes still address session 1 until the new integrator introduces itself.
+- CAR3D decisions D-C1..D-C4 are in docs/agents/lanes/CAR3D.md and still need copying into the Decisions table (next integrator).
