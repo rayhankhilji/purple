@@ -35,6 +35,10 @@ Exit criteria: **all true at 23:58 London** (six verifies, task named from the p
 - [ ] P1.T4 watch v1 in **Adapters** (Tanuj screenshot → `status.json`); if Below target / Prompt only → `npm run collect -- --n 30` on the Saturday budget
 - [ ] P1.T5 `/checkin` #1 in #max by Sat 12:00 (Tanuj) — text drafted in `docs/checkins/checkin-1.md`
 
+## Checklist (P3 items already landed)
+
+- [x] P3.T3 (F-10) grid race: `index.html?lab=1&mode=grid&exp=&driver=<2026 code>&candidate=&mult_candidate=&seed=&laps=2&circuit=silverstone`, candidate car with a real 2026 driver on the 22-car Official-pace grid, on-screen caption "Cinematic · mixes car and driver · …" (G-HON-05), posts `purple:grid` (GAME, merged 02:15 from PR #11; headless: VER rear wing +8°, seed 42, P7 → P14, best 91.215 s, 2 laps, 22 classified)
+
 ## Checklist (P2 items already landed)
 
 - [x] P2.T3 server side: `POST /api/overrule` hardened (text collapsed/cut at 160, R-xx by max id, response { rule, experiment }, SSE rule then plan), `GET /api/rules?active=1`, boolean toggle (SERVER, merged 01:05 from PR #5). UI side open.
@@ -110,6 +114,7 @@ Exit criteria: **all true at 23:58 London** (six verifies, task named from the p
 | 2026-10-24 02:00 | D-E5 Try-models sheet ranks the 8 hardest exam items by margin to the verdict thresholds, exam-rw8 always included (`npm run exam:sheet` → docs/try-models/sheet.md) | P3.T1 needs paste-ready inputs | Yes |
 | 2026-10-24 02:00 | D-E6 `perturb` burns 8 rng draws when promote_bias > 0 (RNG_WARM); plus D-S12 per-item seed mixer `itemSeed` in `collect()`/`dryCollect()`; plus the integrator's 16-draw `seededRng` on every seeded rng. Three layers against the same xorshift first-draw defect; v2 rows replay from their own seed only with all three | Belt and braces; all v2 rows were produced before D-E6/D-S12 landed, so replaying a v2 row needs commit 2c23957's code (noted, not needed) | Yes |
 | 2026-10-24 02:00 | CORS: `app.use("/api/*", cors({ origin: 127.0.0.1/localhost on any port }))` with `x-client-id` allowed | The lab page (:8788) could not call the API (:8787) in a real browser; found by the UI lane | Yes |
+| 2026-10-24 02:15 | **Canonical seeded rng = `scenarios.seededRng(U, seed)`** (murmur3-finaliser mix + 16 discards); app.js imports it, its local copy and the `itemSeed` mixer are gone; per-item seed = seed0·1000 + i. It is byte-identical to the code the v2 collection ran on, so every v2 row replays exactly from its own seed | Three lanes fixed the same defect three ways; one copy, and v2 reproducibility | Yes |
 
 ### 2026-10-23 23:58 — console read-out (Tanuj, screenshot)
 - Overview: 57 total requests, median response 1.80 s, errors 0, adapters serving 0. Tasks: 1 task **Research engineer of F1**, status **Training** ("training v1"), examples **43 kept**, requests 57, models asked claude-haiku-4-5 100 %. Task rules: "Grouped: same instructions and tools", "Named from its instructions". Figures panel said "Figures unavailable" (console hiccup, details still shown).
@@ -154,3 +159,16 @@ Exit criteria: **all true at 23:58 London** (six verifies, task named from the p
 
 ### 2026-10-24 02:00 — integrator — merged EVAL PR #9 (try-sheet, dry run, Monza) and SERVER PR #10 (collect-dry, per-item seed mixer); CORS fix
 - Resolved the app.js overlap by keeping both the per-item `itemSeed` mixer and the 16-draw warm-up (`seededRng`) on every seeded rng, so `npm run collect:dry` previews exactly what `collect()` sends. Added CORS for the lab page with a test. `npm run exam:sheet`, `npm run collect:dry` in package.json. 69/69 tests. SERVER's payload review of GAME PR #8: passes the validator as posted; UI must put `&exp=<id>` on the Race-it URL.
+
+### 2026-10-24 02:15 — integrator — merged EVAL PR #9 update and GAME PR #11; one seeded rng
+- app.js now imports `scenarios.seededRng`; `itemSeed` removed; SERVER's re-based PR #10 branch is superseded by the integration branch (same semantics). 71/71 tests. v2 rows replay exactly with the canonical helper (checked against the ledger).
+- GAME's P1.T2 browser-run numbers still pending (software GL, very slow); headless numbers stand.
+
+### 2026-10-24 02:25 — integrator session 1 — handover
+- Merged CAR3D PR #12 (3D car view; T-F07-AC1 10.8 ms; game default geometry hash-identical). 71/71.
+- Froze `data/` into `docs/ledger-snapshot/2026-10-24T0215-after-v2/` (93 ledger rows, 120 calls). **The next integrator restores it first.**
+- Wrote `docs/agents/INTEGRATOR_PROMPT.md`; HANDOVER §1 rewritten as the live state (lane session ids, pending work, human items). Session 1's check-in trigger cancelled; lanes still address session 1 until the new integrator introduces itself.
+- CAR3D decisions D-C1..D-C4 are in docs/agents/lanes/CAR3D.md and still need copying into the Decisions table (next integrator).
+
+### 2026-10-24 02:35 — integrator session 1 — last merges before handover
+- SERVER PR #13: `npm run snapshot -- --label <x>` freezes data/ into docs/ledger-snapshot/<stamp>-<label>/ with README + counts.json (use it instead of the hand copy from now on). GAME PR #14: "How to film it" in docs/agents/lanes/GAME.md (Shot A baseline vs rear wing 28°, Shot B VER on the grid, settings, expected numbers). GAME's browser-run numbers land on that same lane file later. SERVER PR #10 closed on GitHub (merged by hand earlier).

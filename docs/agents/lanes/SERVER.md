@@ -1,10 +1,19 @@
 # Lane SERVER
 
-Status: in_progress — PRs #2, #3, #5, #6 merged; collect-dry + seed-mixing PR open (branch `claude/server-p1-dry`, from the integration branch, not stacked). GAME PR #8 payload reviewed (below). Next: T-F04-AC2 with a real post once #7/#8 merge. Owner: agent B (Claude, session_01Tq3p158ophv4wuU2ibcJbj). Branches: `claude/server-p1-race` → `claude/server-p1-guards` → `claude/server-p1-rules` → `claude/server-p1-status` (stacked branches `claude/server-p1-*` follow, one PR per task into `claude/amazing-planck-804i13`).
+Status: in_progress — PRs #2, #3, #5, #6, #10 merged; snapshot PR open (branch `claude/server-p3-snapshot`, from the integration branch). Waiting for the UI lane PR to review `lab/lab.js` fetches against the envelope. Owner: agent B (Claude, session_01Tq3p158ophv4wuU2ibcJbj). Branches: `claude/server-p1-race` → `claude/server-p1-guards` → `claude/server-p1-rules` → `claude/server-p1-status` (stacked branches `claude/server-p1-*` follow, one PR per task into `claude/amazing-planck-804i13`).
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
 
 ## Sessions
+
+### 2026-10-24 02:30 London — agent B (Claude) — P3.T6 prep: `server/scripts/snapshot.js` (freeze step); PR #10 closed as merged by hand
+- Status: done, PR open into `claude/amazing-planck-804i13` (branch `claude/server-p3-snapshot`, cut from the integration branch at 103d066). PR #10 was merged by the integrator by hand (9cea07d, keeping both `itemSeed` and the rng warm-up); I closed the GitHub PR and dropped my two later commits on that branch (they would have undone the integrator's resolution). My 02:10 entry below describes a state that never reached the integration branch; D-S12 as logged by the integrator (both fixes) is the truth.
+- Files changed: `server/scripts/snapshot.js` (new), `test/snapshot.test.js` (new, +2), this file. No snapshot directory is committed here: the integrator runs it at the freeze.
+- `node server/scripts/snapshot.js [--label freeze] [--out docs/ledger-snapshot] [--data data]` → `docs/ledger-snapshot/<YYYY-MM-DD_HH-MM-SSZ>[-label]/` with byte-for-byte copies of `ledger.jsonl`, `calls.jsonl`, `rules.json`, `status.json`, `exam.json`, `state.json` (missing ones listed, not an error), `README.md` (files + sha256; experiments deduped by id and by status; raced / with agreement_pct / overruled / parse errors; unique session ids and `mreq_` ids; calls by kind with trained/untrained; rules total/active; exam items; console values from status.json; git commit; prompt hash; evaluator label) and `counts.json` (the same numbers as JSON for the deck). Refuses to overwrite an existing directory; never writes to `data/`; torn ledger lines are skipped and counted.
+- Verify step run + output: `npm test` → 73/73 pass. CLI on a scratch data dir: `snapshot …/2026-10-23_23-49-14Z-demo: 4 files copied (missing: status.json, exam.json); 1 experiments, 1 calls (1 trained), 2 rules, 0 exam items. README.md + counts.json written.` README renders the tables and the counts; a second run into the same stamp → exit 1 `refusing to overwrite`.
+- Decisions proposed: D-S14 snapshot layout as above; proposed `package.json` line: `"snapshot": "node server/scripts/snapshot.js"`. Freeze command for P3.T6: `npm run snapshot -- --label freeze` then commit `docs/ledger-snapshot/`.
+- Blockers / questions for Tanuj: none.
+- Next three actions: (1) review `lab/lab.js` fetches against the envelope and error codes when the UI PR appears (integrator will ping); (2) respond to review on this PR; (3) T-F04-AC2 with a real browser post once UI's Race-it URL carries `exp`.
 
 ### 2026-10-24 01:55 London — agent B (Claude) — collect-dry preview, seed mixing, GAME PR #8 payload review
 - Status: done, PR open into `claude/amazing-planck-804i13` (branch `claude/server-p1-dry`, cut from the integration branch after #6 merged; nothing stacked).
