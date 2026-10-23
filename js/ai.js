@@ -262,6 +262,10 @@ window.EI = window.EI || {};
   // grip = corner-grip scale (1 = the car's lateral limit); ceil = top of the profile. The forward pass is generous (ERS, tow) so
   // the profile never holds a car back on a corner exit: the car's own power and traction set the exit, at full throttle.
   const CEIL = () => EI.CAR.VMAX * 1.35;
+  // PURPLE (opt-in, ARCHITECTURE §8/§9): per-setup aero multipliers { df, cd, a0, b0 } and a per-sample headwind array (m/s, +
+  // = headwind, with a .key string for caching). Without them every number below is the game's own.
+  const AERO_NEUTRAL = { df: 1, cd: 1, a0: 1, b0: 1 };
+  const aeroKey = (a, w) => (a || w ? ':' + (a ? [a.df, a.cd, a.a0, a.b0].map(x => Math.round(x * 1000)).join(',') : '1') + ':' + ((w && w.key) || '') : '');
   // highest speed at which the steering lock still reaches curvature k (car.js: dMax falls with speed; full assist) - f1-DRIVING
   const LOCKF = 0.88;
   function lockSpeed(k) {
@@ -270,20 +274,26 @@ window.EI = window.EI || {};
     return lo;
   }
   // chi = corner character: grip x (1 + chi) in fast corners (base speed > ~60 m/s), x (1 - chi) in slow ones (< ~28 m/s)
-  function buildSpeedProfile(track, dec, grip, ceil, mode, chi) {
+  function buildSpeedProfile(track, dec, grip, ceil, mode, chi, aero, wind) {
     if (typeof raceLine === 'function') raceLine(track); // full-width minimum-curvature line (f1-DRIVING's half), once per track
     dec = dec || 0.88; grip = grip || 1; ceil = ceil || CEIL();
     const n = track.n, ds = track.ds;
     const vmax = new Float32Array(n);
     const G = EI.CAR.GRIP, B = EI.CAR.BRAKE, PM = EI.CAR.PM, CD = EI.CAR.CD;
+    // PURPLE aero (ARCHITECTURE §8 physics mapping): CD·cd, GRIP.a1·df, BRAKE.b1·df, GRIP.a0·a0, BRAKE.b0·b0; all x1 by default
+    const A = aero || AERO_NEUTRAL, aeroOn = !!(aero || wind);
+    const a0 = G.a0 * A.a0, a1 = G.a1 * A.df, b0 = B.b0 * A.b0, b1 = B.b1 * A.df, cd = CD * A.cd;
+    const wAt = i => (wind ? wind[i] || 0 : 0);
+    // terminal speed against the local headwind w: PM / v = cd (v + w) |v + w|  (Newton from the still-air root VMAX·cd^-1/3)
+    const vTerm = w => { let v = Math.cbrt(PM / cd); for (let it = 0; it < 6; it++) { const va = v + w, fv = PM / v - cd * va * Math.abs(va), d = -PM / (v * v) - 2 * cd * Math.abs(va); v -= fv / d; } return v; };
     const gCap = C_LIMIT[trackOf(track)] || C_LIMIT_DEFAULT;   // a car's strong corners never go beyond the car's limit
-    const vAt = (k, g) => { let v = Math.sqrt(g * G.cap / k); if (k > g * G.a1) v = Math.min(v, Math.sqrt(g * G.a0 / (k - g * G.a1))); return v; };
+    const vAt = (k, g) => { let v = Math.sqrt(g * G.cap / k); if (k > g * a1) v = Math.min(v, Math.sqrt(g * a0 / (k - g * a1))); return v; };
     for (let i = 0; i < n; i++) {
       const k = Math.abs(track.lineK[i]) + 1e-6;
       let v = vAt(k, grip);
       if (chi) { const w = U.smoothstep(28, 60, vAt(k, 1)); v = vAt(k, Math.min(grip * (1 + chi * (2 * w - 1)), Math.max(grip, gCap))); }
       if (k > 0.03) v = Math.min(v, lockSpeed(k));   // hairpins: the steering lock, not the grip, sets the speed
-      vmax[i] = Math.min(v, ceil);
+      vmax[i] = Math.min(v, ceil, aeroOn ? vTerm(wAt(i)) : Infinity);   // PURPLE: the setup's terminal speed, per sample with wind
     }
     // smooth a touch then enforce braking (backward) and acceleration (forward) limits
     const sm = track.smooth(vmax, 3);
@@ -291,7 +301,7 @@ window.EI = window.EI || {};
     for (let pass = 0; pass < 2; pass++) {
       for (let j = 2 * n - 1; j >= 0; j--) {
         const i = j % n, nx = (i + 1) % n;
-        const de = Math.min(B.cap, B.b0 + B.b1 * vmax[nx] * vmax[nx]) * dec;
+        const de = Math.min(B.cap, b0 + b1 * vmax[nx] * vmax[nx]) * dec;
         vmax[i] = Math.min(vmax[i], Math.sqrt(vmax[nx] * vmax[nx] + 2 * de * ds));
       }
       for (let j = 0; j < 2 * n; j++) {
@@ -299,9 +309,10 @@ window.EI = window.EI || {};
         const v = vmax[pv];
         // mode 1: what the car does at full throttle without ERS (lap-time calibration); mode 2: the shared reference profile
         // (pit approach, cool-down lap); otherwise a generous envelope that never holds a car back
-        const aCar = Math.min(14, PM / Math.max(v, 6)) - CD * v * v;
-        const acc = mode === 1 ? Math.max(0.3, aCar) : mode === 2 ? Math.max(0.5, aCar) : Math.max(3, 1.3 * Math.min(14, PM / Math.max(v, 6)) + 5);
-        vmax[i] = Math.min(vmax[i], Math.sqrt(v * v + 2 * acc * ds));
+        const va = v + wAt(pv), aCar = Math.min(14, PM / Math.max(v, 6)) - cd * va * Math.abs(va);
+        // PURPLE: with aero / wind in play (mode 1) the car approaches its terminal speed instead of climbing at the 0.3 floor
+        const acc = mode === 1 ? (aeroOn ? aCar : Math.max(0.3, aCar)) : mode === 2 ? Math.max(0.5, aCar) : Math.max(3, 1.3 * Math.min(14, PM / Math.max(v, 6)) + 5);
+        vmax[i] = Math.min(vmax[i], Math.sqrt(Math.max(1, v * v + 2 * acc * ds)));
       }
     }
     return vmax;
@@ -309,14 +320,14 @@ window.EI = window.EI || {};
   // the shared reference profile (pit approach, cool-down lap): the original 0.88 braking profile with its VMAX + 6 ceiling
   const sharedProfile = track => buildSpeedProfile(track, 0.88, 1, EI.CAR.VMAX + 6, 2);
   // profiles are shared between bots with the same braking level and corner grip (quantised)
-  function profileFor(track, dec, grip, chi) {
+  function profileFor(track, dec, grip, chi, aero, wind) {
     grip = grip || 1;
     const kd = Math.round(dec * 200), kg = Math.round(grip * 2000), kc = Math.round((chi || 0) * 1000);
-    const c = track.aiSpeedByDec || (track.aiSpeedByDec = {}), key = kd + ':' + kg + ':' + kc;
-    return c[key] || (c[key] = buildSpeedProfile(track, kd / 200, kg / 2000, 0, 0, kc / 1000));
+    const c = track.aiSpeedByDec || (track.aiSpeedByDec = {}), key = kd + ':' + kg + ':' + kc + aeroKey(aero, wind);   // PURPLE: aero + wind in the key
+    return c[key] || (c[key] = buildSpeedProfile(track, kd / 200, kg / 2000, 0, 0, kc / 1000, aero, wind));
   }
   // lap time of a speed profile driven exactly (top speed capped at the car's VMAX)
-  function profileLap(prof, ds) { let T = 0; const vm = EI.CAR.VMAX; for (let i = 0; i < prof.length; i++) T += ds / Math.max(1, Math.min(vm, prof[i])); return T; }
+  function profileLap(prof, ds, vcap) { let T = 0; const vm = vcap || EI.CAR.VMAX; for (let i = 0; i < prof.length; i++) T += ds / Math.max(1, Math.min(vm, prof[i])); return T; }   // PURPLE: vcap = the setup's terminal speed
   // per track: lap time vs corner grip (at a reference braking level) and vs braking level (at full grip), built once per circuit
   const calCache = new Map();
   const CAL_G = [0.12, 0.18, 0.25, 0.33, 0.42, 0.52, 0.63, 0.75, 0.87, 0.97, 1.07, 1.17, 1.27, 1.37], CAL_D = [0.68, 0.8, 0.92, 1.0], CAL_DREF = 0.92;
@@ -455,8 +466,9 @@ window.EI = window.EI || {};
       const kb = K_BRAKE[trackOf(this.track)]; const gs = GAP_STRETCH[trackOf(this.track)] || GAP_STRETCH_DEFAULT;
       const lr = (1 + d.lapLoss) * (1 + (GAP_SLOPE[trackOf(this.track)] || 1) * this.expGap);
       this.cornerScale = gripFor(this.track, (1 + gs * (lr - 1)) * (1 + (kb != null ? kb : K_BRAKE_DEFAULT) * (T.braking - 0.5)) / (1 + calibration(this.track).chiSens * (this.chi || 0)), P.decel, DEC_REF);
-      this.prof = profileFor(this.track, P.decel, this.cornerScale, this.chi);
-      this.profDive = profileFor(this.track, Math.min(0.96, P.decel + L(0.0, 0.05, U.clamp((T.risk - 0.55) / 0.45, 0, 1))), this.cornerScale, this.chi);
+      const aero = (this.car && this.car.aero) || null;   // PURPLE: a car with per-car aero (F-04) drives its own profile
+      this.prof = profileFor(this.track, P.decel, this.cornerScale, this.chi, aero);
+      this.profDive = profileFor(this.track, Math.min(0.96, P.decel + L(0.0, 0.05, U.clamp((T.risk - 0.55) / 0.45, 0, 1))), this.cornerScale, this.chi, aero);
       // consistency and composure: lap-to-lap drift (narrower on the higher levels), steering noise, mistake rate, pressure
       P.formStep = L(0.045, 0.006, T.consistency) * d.formMul; P.formMax = L(0.024, 0.006, T.consistency) * d.formMul;
       P.noiseMul = L(1.5, 0.45, T.consistency);
@@ -848,5 +860,8 @@ window.EI = window.EI || {};
   EI.AI_DIFF = DIFF;
   EI.AI_TRAITS = TRAITS;
   EI.AI_ARCHETYPES = ARCHETYPES;
-  EI.buildSpeedProfile = (track, dec) => buildSpeedProfile(track, dec || 0.88, 1, EI.CAR.VMAX + 6, 2);   // reference profile (track wear marks)
+  // reference profile (track wear marks) when called with (track); PURPLE's evaluator passes the full signature (ARCHITECTURE §9)
+  EI.buildSpeedProfile = (track, dec, grip, ceil, mode, chi, aero, wind) => buildSpeedProfile(track, dec || 0.88, grip || 1, ceil || EI.CAR.VMAX + 6, mode == null ? 2 : mode, chi, aero, wind);
+  EI.profileLap = profileLap; EI.profileFor = profileFor;
+  EI.LIMIT_LAP = LIMIT_LAP; EI.AI_CAL = { DEC_REF: CAL_DREF, C_LIMIT: C_LIMIT };   // PURPLE: the evaluator calibrates against these
 })();
