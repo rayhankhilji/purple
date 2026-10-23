@@ -5,6 +5,7 @@ Living document. Owned by the **integrator** (whoever merges lane branches). Lan
 ## 1. Where we are
 
 - **GO given 2026-10-23 23:58 London.** Console: task **Research engineer of F1**, Training v1, **43 kept** of 57. Phase 1 is open; lanes may start their first task immediately after the read-in.
+- **SERVER lane list complete (01:05):** overrule/rules hardened, `GET /api/rules?active=1`, status carries `prompt_hash`, `last_console_read_at`, `budget` per UTC day. 63 tests. Routes are now stable for the UI lane.
 - **Provider exam (00:55): verdicts 20/20, next-step 10/20.** Verdicts cannot differentiate v1/v2 (the prompt states the thresholds); the story is the *next experiment* the agent proposes. UI/DEMO: show both numbers as n/20; Try-models comparison is about next_parameter + direction.
 - **Exam + generator bias merged (00:50):** `data/exam.json` (20 items, truth from the evaluator), `npm run exam:build`; generator `promote_bias` (use 0.3 for v2); `aero.describeViolation(id)` for UI labels. 58 tests.
 - **Guards merged (00:40):** editing `lab/prompt.js` now fails `npm test` and blocks `npm start` (sha256 pin); `POST /api/collect` needs `{ confirm: "trained" }`. 47 tests.

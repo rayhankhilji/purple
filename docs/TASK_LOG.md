@@ -37,6 +37,9 @@ Exit criteria: **all true at 23:58 London** (six verifies, task named from the p
 
 ## Checklist (P2 items already landed)
 
+- [x] P2.T3 server side: `POST /api/overrule` hardened (text collapsed/cut at 160, R-xx by max id, response { rule, experiment }, SSE rule then plan), `GET /api/rules?active=1`, boolean toggle (SERVER, merged 01:05 from PR #5). UI side open.
+- [x] Status widget plumbing: `GET /api/status` + SSE status carry `prompt_hash`, `last_console_read_at`, `budget { day_utc, trained_today_utc, untrained_today_utc, resets_at }` (SERVER, merged 01:05 from PR #6).
+
 - [x] P2.T5 data + F-08.AC1: `data/exam.json` (20 scenarios), `npm run exam:build`; **`npm run exam` on the provider (untrained, 00:55): verdicts 20/20, next-parameter+direction 10/20** → widget `exam.provider = 20`, `exam.provider_param = 10`.
 - [x] P2.T6 model side: TD-01 + wind/wet semantics verified, `aero.describeViolation` (EVAL). UI side (sliders, toggles) still open.
 
@@ -97,6 +100,8 @@ Exit criteria: **all true at 23:58 London** (six verifies, task named from the p
 | 2026-10-24 00:50 | D-E2 exam truth: tie-break + ≥ 0.003 s margin filter for filler items; 20 items = 4 promote / 5 retest / 11 reject, 3 wind, 2 wet, 2 Monza; `exam-rw8` truth reject/rear_wing_deg/decrease | ARCH §4.10; rebuild with `npm run exam:build` | Yes |
 | 2026-10-24 00:50 | D-E3 TD-01 constrains candidates; a grandfathered baseline above the cap is still evaluated; a baseline outside the regulation throws instead of NaN deltas | F-09 semantics | Yes |
 | 2026-10-24 00:50 | D-E4 `aero.describeViolation(id)` is the UI's label source; numbers come from `RANGES` | label and check cannot disagree | Yes |
+| 2026-10-24 01:05 | Decisions proposed (for the integrator to log in TASK_LOG): D-S9: budget counters are per UTC calendar day of `calls.jsonl` rows (matches ROADMAP "00:00 UTC = 01:00 London"); D-S10: `last_console_read_at` is stamped server-side on any console-field update (add | SERVER lane, merged PR #5/#6 | Yes |
+| 2026-10-24 01:05 | Decisions proposed (for the integrator to log in TASK_LOG): D-S6: `/api/overrule` returns `{ rule, experiment }` (additive); D-S7: `POST /api/rules/:id` requires a boolean `active` (was `!!active`); D-S8: `GET /api/rules?active=1/0` added (additive to ARCH §5) | SERVER lane, merged PR #5/#6 | Yes |
 
 ### 2026-10-23 23:58 — console read-out (Tanuj, screenshot)
 - Overview: 57 total requests, median response 1.80 s, errors 0, adapters serving 0. Tasks: 1 task **Research engineer of F1**, status **Training** ("training v1"), examples **43 kept**, requests 57, models asked claude-haiku-4-5 100 %. Task rules: "Grouped: same instructions and tools", "Named from its instructions". Figures panel said "Figures unavailable" (console hiccup, details still shown).
@@ -115,3 +120,6 @@ Exit criteria: **all true at 23:58 London** (six verifies, task named from the p
 ### 2026-10-24 00:55 — integrator — provider exam (20 untrained calls, `npm run exam`)
 - **Verdicts 20/20. Next experiment (parameter + direction) 10/20.** Latency 1.7–2.8 s, all `mreq_` ids in calls.jsonl with `trained: false`. `status.json.exam = { provider: 20, total: 20, provider_param: 10 }`.
 - **Strategic finding for the demo and deck:** the frozen prompt states the verdict thresholds, so the provider (and therefore v1) already gets every verdict right; PRD F-05.AC3's "v2 reject / v1 promote on rear wing +8°" will not materialise on the verdict. The learnable, correctable part is the **next experiment**: today the agent proposes front-wing moves 39 times out of 43 and is right half the time. The pit-wall rule ("Weigh straight-line drag against corner gain; judge on full-lap delta.") and the promote-biased v2 collection target exactly that. Score and show the exam as two numbers, verdict n/20 and next-step n/20 (G-HON-06: with n, never %), and make the Try-models comparison (P3.T1) about the next step. DEMO lane to pick this up; demo-script 1:30–2:05 needs rewording.
+
+### 2026-10-24 01:05 — integrator — merged SERVER PR #5 (P2.T3 server side) and PR #6 (status widget fields)
+- 63/63 tests after both. Live status view: kept 43, exam provider 20/20 verdicts · 10/20 next-step, budget 57 trained / 21 untrained on the Friday UTC day, prompt hash 6c5be1a3. SERVER lane next: `--promote-bias` plumbing for the v2 collection, then review of GAME's P1.T2 payload.
