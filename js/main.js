@@ -7,6 +7,29 @@ window.EI = window.EI || {};
   let engines = [], shake = 0, resultsShown = false;
   const tmp = new THREE.Vector3(), tmp2 = new THREE.Vector3(), tmp3 = new THREE.Vector3();
   const CAM_MODES = ['chase', 'cockpit', 'tcam', 'tv'];   // tcam: the T-camera on top of the airbox (over the helmet and the halo)
+  // ---------------------------------------------------------------- PURPLE (F-04, ARCHITECTURE §6 steps 7-8, §9): broadcast mode
+  // ?lab=1&exp=<experiment id>&seed=<n>&laps=3&circuit=silverstone&baseline=<b64 json setup>&candidate=<b64 json setup>
+  //   &mult_baseline=<b64 json { df, cd, a0, b0 }>&mult_candidate=<the same>   (the lab page precomputes the multipliers: this page does not load lab/aero.js)
+  // Zero players, two bots with the same neutral driver (race.js buildLabGrid), TV camera, no intro, auto-start. When both cars have
+  // finished, the page posts { type: 'purple:result', experiment_id, seed, cars: [{ role, lap, sectors, vmax_kmh, vmin_becketts_kmh }] }
+  // to window.parent (the lab page forwards it to POST /api/race/result). Without ?lab=1 LAB is null and nothing of this runs.
+  const LAB = (() => {
+    try {
+      const q = new URLSearchParams(location.search); if (q.get('lab') !== '1') return null;
+      const b64 = (k) => { const v = q.get(k); if (!v) return null; try { return JSON.parse(atob(v.replace(/-/g, '+').replace(/_/g, '/'))); } catch (e) { console.warn('PURPLE: bad ?' + k, e); return null; } };
+      // multipliers: anything missing or not a positive number is x1 (both cars always carry an aero object, so both drive the same profile path in ai.js)
+      const mult = (k) => { const m = b64(k) || {}; const n = (x) => (typeof x === 'number' && isFinite(x) && x > 0 ? x : 1); return { df: n(m.df), cd: n(m.cd), a0: n(m.a0), b0: n(m.b0) }; };
+      return {
+        exp: q.get('exp') || null, seed: q.get('seed') != null ? (parseInt(q.get('seed'), 10) >>> 0) : undefined, laps: Math.max(1, parseInt(q.get('laps'), 10) || 3), circuit: q.get('circuit') || 'silverstone',
+        cars: [{ role: 'baseline', setup: b64('baseline'), aero: mult('mult_baseline') }, { role: 'candidate', setup: b64('candidate'), aero: mult('mult_candidate') }],
+      };
+    } catch (e) { console.warn('PURPLE: bad lab URL', e); return null; }
+  })();
+  // the reference corner for vmin_becketts_kmh, in the track's own s frame (track.s starts at the data's first centreline point, the
+  // start/finish line is at track.sf): Maggotts 3,631 / Becketts 3,875 / Chapel 4,033-4,167 m in js/data/silverstone.js; Monza: Lesmo 1-2.
+  // The same numbers as lab/aero.js REF_CORNER (not loaded here). ARCHITECTURE §9's 2,850-3,250 m predates the corner table.
+  const LAB_REF_CORNER = { silverstone: [3600, 4200], monza: [2150, 2700] };
+  let views = [];   // the cars the cameras and the HUD follow: race.players in the shipped game, the lab's first (baseline) car in broadcast mode
 
   let composer = null, bloomPass = null, fxaaPass = null, speedPass = null, particles = null, skyMesh = null;
   // the race partners' logos in the menu footer (drawn with the same painters as the trackside boards)
@@ -18,7 +41,7 @@ window.EI = window.EI || {};
     });
   }
   // the circuit is chosen in the menu; a change reloads the page with ?track=<id> (the whole scene is built once at start-up)
-  const trackId = (() => { try { const q = new URLSearchParams(location.search).get('track'); const id = q || localStorage.getItem('ei-track') || 'silverstone'; return EI.TRACKS[id] ? id : 'silverstone'; } catch (e) { return 'silverstone'; } })();
+  const trackId = (() => { try { const q = new URLSearchParams(location.search).get('track') || (LAB && LAB.circuit) || null; const id = q || localStorage.getItem('ei-track') || 'silverstone'; return EI.TRACKS[id] ? id : 'silverstone'; } catch (e) { return 'silverstone'; } })();
   // loading screen (F1 dress): the event and circuit of the track being built, filled in before the (blocking) scene build starts
   (function fillLoader(d) {
     if (!d) return; const set = (sel, v) => { const el = document.querySelector(sel); if (el && v) el.textContent = v; };
@@ -222,7 +245,7 @@ window.EI = window.EI || {};
     EI.HUD.drawTrackPreview(track, $('track-preview')); fillTrackCard(track.data);
     setupMenu(); drawPartnerLogos();
     // the GLB car is optional: hide the loading overlay once it is in (or has failed and we fall back to the procedural car)
-    const hideLoading = () => { $('loading').classList.add('hidden'); loaded = true; };
+    const hideLoading = () => { $('loading').classList.add('hidden'); loaded = true; if (LAB) labStart(); };
     const tp = performance.now(); if (EI.CarGLB) EI.CarGLB.preload().then(() => { timings.preload = Math.round(performance.now() - tp); hideLoading(); }, hideLoading); else hideLoading();
     window.addEventListener('resize', onResize);
     if (U.isTouch()) EI.Input.initTouch($('touch'));
@@ -249,7 +272,7 @@ window.EI = window.EI || {};
   }
   function renderView(cam, usePost, rect) {
     if (!(usePost && composer && quality === 'high')) { pipeDraw(cam, rect); return; }
-    { composer.passes[0].camera = cam; if (speedPass && race) { const car = hlCams ? { v: 0 } : race.players[0]; const v = Math.abs(car.v); speedPass.uniforms.strength.value = U.clamp((v - 35) / 60, 0, 1) * (CAM_MODES[camModes[0]] === 'cockpit' ? 0.5 : 0.9); } composer.render(); }
+    { composer.passes[0].camera = cam; if (speedPass && race) { const car = hlCams ? { v: 0 } : views[0]; const v = Math.abs(car.v); speedPass.uniforms.strength.value = U.clamp((v - 35) / 60, 0, 1) * (CAM_MODES[camModes[0]] === 'cockpit' ? 0.5 : 0.9); } composer.render(); }
   }
   // pixel ratio per tier: the device ratio capped (low 1, medium 1.25, high 1.5) and held to a pixel budget, so a large or dense
   // screen does not multiply the fill cost (low ~1.6 Mpx, medium ~3.2 Mpx, high ~4.6 Mpx; 1080p at ratio 1 is 2.1 Mpx)
@@ -402,9 +425,10 @@ window.EI = window.EI || {};
   function startRace(cfg) {
     endRace(); cfg.envMap = envMap;
     race = new EI.Race(track, cfg);
+    views = cfg.lab ? [race.cars[0]] : race.players;   // PURPLE: broadcast mode follows the first lab car (no players)
     if (EI.Replay) EI.Replay.attach(race);   // post-race highlights: records the race (js/replay.js)
     for (const c of race.cars) scene.add(c.group);
-    viewports = race.players.map((car, k) => EI.HUD.makeViewport(k, car, race.players.length));
+    viewports = views.map((car, k) => EI.HUD.makeViewport(k, car, views.length));
     // split screen: each view shows its player's keys while the cars wait on the grid (and for a few seconds after the start)
     if (race.players.length > 1) viewports.forEach((vp, k) => {
       const chip = document.createElement('div'); chip.className = 'sp-keys show';
@@ -412,23 +436,57 @@ window.EI = window.EI || {};
         : '<span class="ctl-pl">P2</span><span><kbd>&#8593;</kbd><kbd>&#8592;</kbd><kbd>&#8595;</kbd><kbd>&#8594;</kbd> drive</span><span><kbd>R.Shift</kbd>/<kbd>.</kbd> aero</span><span><kbd>Enter</kbd> ERS</span><span><kbd>/</kbd> camera</span><span><kbd>&#9003;</kbd> pit</span>';
       vp.el.appendChild(chip); vp.keyChip = chip;
     });
-    cameras = race.players.map(() => new THREE.PerspectiveCamera(62, 1, 0.25, 6000)); camModes = race.players.map(() => 0);
+    cameras = views.map(() => new THREE.PerspectiveCamera(62, 1, 0.25, 6000)); camModes = views.map(() => (cfg.lab ? CAM_MODES.indexOf('tv') : 0));
     engines = race.players.map(() => EI.Audio.createEngine());
     $('menu').classList.add('hidden'); $('results').classList.add('hidden');
     $('touch').classList.toggle('hidden', !(U.isTouch() && race.players.length === 1));
     resultsShown = false; paused = false; lastT = performance.now(); acc = 0; introT = 0; autopilots = []; tunF[0] = tunF[1] = 0; applySplitTier(race.players.length > 1); onResize();   // tunF: a race quit inside the tunnel must not start the next one over-exposed. onResize sizes the HUD viewports (setRect)
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();   // Enter / Space must not press a menu button
-    race.players.forEach((car, k) => placeCamera(cameras[k], car, k, true, 0));
+    views.forEach((car, k) => placeCamera(cameras[k], car, k, true, 0));
     EI.HUD.banner('EQUATION I · ' + track.name.toUpperCase() + ' GP', race.gridInfo ? 3400 : 2400, null, [race.gridInfo ? 'Grid: ' + race.gridInfo.label : '', cfg.difficulty && race.ais && race.ais.length ? skillLabel(cfg.difficulty) : ''].filter(Boolean).join(' · ') || null);
-    introLen = race.players.length === 1 ? 8.2 : 2.8;
+    introLen = cfg.lab ? 1.5 : race.players.length === 1 ? 8.2 : 2.8;   // the lab: no intro, straight to the lights
     raceRenderSetup();
+  }
+  // ---------------------------------------------------------------- PURPLE (F-04): broadcast mode (see LAB at the top of this file)
+  // auto-start once the scene is built: no players, the two lab cars, skill 100 (the neutral driver), the TV camera from the first frame
+  function labStart() {
+    if (!LAB || race) return;
+    startRace({ players: [], bots: 0, laps: LAB.laps, difficulty: 100, grid: 'front', assist: 'full', seed: LAB.seed, envMap, lab: LAB });
+  }
+  // telemetry, once per physics step (120 Hz): per car and lap, the top speed and the minimum speed through the reference corner
+  function labSample() {
+    if (!race.started) return; const R = LAB_REF_CORNER[track.data.id] || LAB_REF_CORNER.silverstone;
+    for (const car of race.cars) {
+      if (car.finished) continue; const T = car.labTel || (car.labTel = {}); const L = T[car.lap] || (T[car.lap] = { vmax: 0, vmin: Infinity });
+      const v = car.speedKmh, s = car.trk.s; if (v > L.vmax) L.vmax = v; if (s >= R[0] && s <= R[1] && v < L.vmin) L.vmin = v;
+    }
+  }
+  // the result: best lap and best sectors per car (race.js timing), vmax / Becketts vmin from the best lap (the whole race if that lap
+  // has no sample), posted to the parent page; also kept as EI.labResult and logged for the QA checklist (T-F04-AC2)
+  function labPostResult() {
+    const r1 = (x) => +x.toFixed(1), r3 = (x) => +x.toFixed(3);
+    const cars = race.cars.map(car => {
+      const T = car.labTel || {}; const lapNos = Object.keys(T).map(Number);
+      const best = car.bestLap > 0 ? car.bestLap : (car.laps.length ? Math.min.apply(null, car.laps) : null);   // every lap deleted (track limits): the quickest, flagged below
+      const bi = best != null ? car.laps.indexOf(best) : -1; const L = bi >= 0 ? T[bi + 1] : null;   // car.laps[i] is lap i + 1
+      const all = lapNos.reduce((a, n) => ({ vmax: Math.max(a.vmax, T[n].vmax), vmin: Math.min(a.vmin, T[n].vmin) }), { vmax: 0, vmin: Infinity });
+      const vmax = L && L.vmax > 0 ? L.vmax : all.vmax, vmin = L && isFinite(L.vmin) ? L.vmin : all.vmin;
+      return {
+        role: car.role, lap: best != null ? r3(best) : null, sectors: car.bestSectors.map(s => (s > 0 ? r3(s) : null)),
+        vmax_kmh: vmax > 0 ? r1(vmax) : null, vmin_becketts_kmh: isFinite(vmin) ? r1(vmin) : null,
+        laps: car.laps.map(r3), laps_deleted: (car.lapsDeleted || []).some(Boolean), finished: !!car.finished, setup: (car.labSpec && car.labSpec.setup) || null, aero: car.aero,
+      };
+    });
+    const msg = { type: 'purple:result', experiment_id: LAB.exp, seed: race.seed, circuit: track.data.id, laps: race.laps, cars };
+    EI.labResult = msg; console.log('purple:result ' + JSON.stringify(msg));
+    try { window.parent.postMessage(msg, '*'); } catch (e) { console.warn('PURPLE: postMessage failed', e); }
   }
   function endRace() {
     if (EI.Replay) EI.Replay.detach();
     if (race) for (const c of race.cars) scene.remove(c.group);
     if (contactShadows) { scene.remove(contactShadows.mesh); contactShadows.mesh.geometry.dispose(); contactShadows = null; }
     if (race && race.players.length > 1) applySplitTier(false);
-    race = null; $('viewports').innerHTML = ''; viewports = []; EI.Audio.stopAll(); engines = []; autopilots = [];
+    race = null; views = []; $('viewports').innerHTML = ''; viewports = []; EI.Audio.stopAll(); engines = []; autopilots = [];
     $('lights').classList.add('hidden'); $('banner').classList.add('hidden'); $('touch').classList.add('hidden'); $('menu').classList.remove('hidden');
     cameras = [new THREE.PerspectiveCamera(60, 1, 0.3, 6000)]; onResize();
   }
@@ -880,7 +938,7 @@ window.EI = window.EI || {};
   }
   // name tags above nearby cars, projected into the viewport
   function updateTags(k, cam, vp) {
-    const car = race.players[k]; const list = []; const w = vp.w, h = vp.h; const split = cameras.length > 1; const maxD = split ? 60 : 90;
+    const car = views[k]; const list = []; const w = vp.w, h = vp.h; const split = cameras.length > 1; const maxD = split ? 60 : 90;
     for (const o of race.cars) {
       if (o === car) continue; const dx = o.x - car.x, dz = o.z - car.z; const d = Math.hypot(dx, dz); if (d > maxD) continue;
       tmp3.set(o.x, o.y + 1.4, o.z); tmp3.project(cam); if (tmp3.z > 1 || Math.abs(tmp3.x) > 1.1 || Math.abs(tmp3.y) > 1.1 || (cameras.length > 1 && tmp3.y < -0.8)) continue;   // split: no tags cut off at the bottom edge
@@ -911,23 +969,23 @@ window.EI = window.EI || {};
     // two players: a player who has taken the flag is driven round the cool-down lap while the other one is still racing
     race.players.forEach((c, k) => { const ap = autopilots[k]; if (ap) { inputs[k] = ap.inp; c.input = ap.inp; } });
     // fixed 120 Hz steps; up to 12 per frame (100 ms) so the race keeps real time down to 10 fps instead of slowing down
-    acc += dt; let steps = 0; while (acc >= DT && steps < MAX_STEPS) { for (const c of race.cars) c.savePose(); for (const ap of autopilots) if (ap && race.started) ap.ai.coolDown(); race.update(DT, inputs); acc -= DT; steps++; } if (steps === MAX_STEPS) acc = Math.min(acc, DT);
+    acc += dt; let steps = 0; while (acc >= DT && steps < MAX_STEPS) { for (const c of race.cars) c.savePose(); for (const ap of autopilots) if (ap && race.started) ap.ai.coolDown(); race.update(DT, inputs); if (race.lab) labSample(); acc -= DT; steps++; } if (steps === MAX_STEPS) acc = Math.min(acc, DT);
     if (EI.Pit) EI.Pit.frame(race, dt); if (PF) PF.to('cars');
     const alpha = U.clamp(acc / DT, 0, 1); for (const c of race.cars) presentCar(c, alpha);
     updateCarLod();
     const wasIntro = introT < 6.7; introT += dt; if (wasIntro && introT >= 6.7 && race.players.length === 1) { placeCamera(cameras[0], race.players[0], 0, true, 0); shake = 0.25; }
-    if (!race.started && race.phase === 'grid' && introT >= introLen) { race.startLights(); $('lights').classList.remove('hidden'); EI.HUD.setLights(0); race.players.forEach((car, k) => placeCamera(cameras[k], car, k, true, 0)); }
+    if (!race.started && race.phase === 'grid' && introT >= introLen) { race.startLights(); $('lights').classList.remove('hidden'); EI.HUD.setLights(0); views.forEach((car, k) => placeCamera(cameras[k], car, k, true, 0)); }
     if (PF) PF.to('hud'); handleEvents(); if (PF) PF.to('cars'); for (const c of race.cars) { c.updateVisual(dt); if (dt > 0) particles.fromCar(c, dt); } particles.update(dt); shake = Math.max(0, shake - dt * 3); for (let k = 0; k < shakeP.length; k++) shakeP[k] = Math.max(0, (shakeP[k] || 0) - dt * 3); hudT += dt;
     // HUD at 20 Hz; with two players the two panels take turns (one DOM update per frame, never both in the same frame)
-    const hudDue = hudT > 0.05 / race.players.length; const hudK = hudDue ? (hudTurn++) % race.players.length : -1;
-    if (PF) PF.to('cam'); race.players.forEach((car, k) => { if (k === 0 && EI.debug.freeCam) { const f = EI.debug.freeCam; cameras[0].position.set(f.pos[0], f.pos[1], f.pos[2]); cameras[0].lookAt(f.look[0], f.look[1], f.look[2]); cameras[0].fov = f.fov || 50; cameras[0].updateProjectionMatrix(); } else placeCamera(cameras[k], car, k, false, dt); if (k === hudK) { if (PF) PF.push('hud'); viewports[k].update(race, 0.05); updateTags(k, cameras[k], viewports[k]); drawWheelScreen(car, race.deltaBest(car)); if (PF) PF.pop(); } if (engines[k]) { const idleBlip = !race.started ? (Math.sin(performance.now() * 0.004 + k) > 0.6 ? 0.5 : 0.08) : 0; EI.Audio.setEngine(engines[k], race.started ? car.rpm : 0.15 + idleBlip * 0.8, race.started ? car.throttle : idleBlip, paused ? 0 : (CAM_MODES[camModes[k]] === 'cockpit' ? 1.3 : 1), car.gear); } });
+    const hudDue = hudT > 0.05 / views.length; const hudK = hudDue ? (hudTurn++) % views.length : -1;
+    if (PF) PF.to('cam'); views.forEach((car, k) => { if (k === 0 && EI.debug.freeCam) { const f = EI.debug.freeCam; cameras[0].position.set(f.pos[0], f.pos[1], f.pos[2]); cameras[0].lookAt(f.look[0], f.look[1], f.look[2]); cameras[0].fov = f.fov || 50; cameras[0].updateProjectionMatrix(); } else placeCamera(cameras[k], car, k, false, dt); if (k === hudK) { if (PF) PF.push('hud'); viewports[k].update(race, 0.05); updateTags(k, cameras[k], viewports[k]); drawWheelScreen(car, race.deltaBest(car)); if (PF) PF.pop(); } if (engines[k]) { const idleBlip = !race.started ? (Math.sin(performance.now() * 0.004 + k) > 0.6 ? 0.5 : 0.08) : 0; EI.Audio.setEngine(engines[k], race.started ? car.rpm : 0.15 + idleBlip * 0.8, race.started ? car.throttle : idleBlip, paused ? 0 : (CAM_MODES[camModes[k]] === 'cockpit' ? 1.3 : 1), car.gear); } });
     if (hudDue) hudT = 0; if (PF) PF.to('hud');
     for (const vp of viewports) if (vp.keyChip) { const on = !race.started || race.time < 4; if (on !== vp.keyChipOn) { vp.keyChipOn = on; vp.keyChip.classList.toggle('show', on); } }
-    if (race.over && !resultsShown && race.classified) { resultsShown = true; EI.HUD.showResults(race); if (race.players.length > 1) markResultPlayers(); if (EI.Replay) EI.Replay.onResults(race); }
+    if (race.over && !resultsShown && race.classified) { resultsShown = true; if (race.lab) labPostResult(); EI.HUD.showResults(race); if (race.players.length > 1) markResultPlayers(); if (EI.Replay) EI.Replay.onResults(race); }
     const split = cameras.length > 1; if (PF) PF.to('scenery');
     if (!split) {
       if (splitShadow) { renderer.shadowMap.autoUpdate = splitShadow.auto; splitShadow = null; }
-      scenery.update(dt, race.players[0].x, race.players[0].z);
+      scenery.update(dt, views[0].x, views[0].z);
       if (skyMesh) skyMesh.position.set(cameras[0].position.x, 0, cameras[0].position.z);   // the sky box follows the eye (TV / free cameras can be far from the car)
     } else {
       // Two views, one shadow pass per frame when the cars are close: the sun's shadow box is centred between them (it covers
@@ -945,7 +1003,7 @@ window.EI = window.EI || {};
     renderer.setScissorTest(false); renderer.setViewport(0, 0, window.innerWidth, window.innerHeight);
     cameras.forEach((cam, k) => {
       const r = rects[k];
-      const car = race.players[k];
+      const car = views[k];
       if (!split) sunFollow(car.x, car.z);
       else {
         if (sharedEye) { if (k === 0) { sunFollow(sharedEye[0], sharedEye[1]); renderer.shadowMap.needsUpdate = true; } }
@@ -1054,7 +1112,7 @@ window.EI = window.EI || {};
     if (race && race.players.length > 1) applySplitTier(true);
     for (const e of engines) EI.Audio.setEngine(e, 0.15, 0, 0, 0);
     onResize(); invalidateShadowCache(); lastT = performance.now(); acc = 0;
-    if (race) race.players.forEach((car, k) => placeCamera(cameras[k], car, k, true, 0));
+    if (race) views.forEach((car, k) => placeCamera(cameras[k], car, k, true, 0));
   }
   function hlFrame(dt, gl2) {
     const H = EI.Replay; H.update(dt); if (!H.playing) return;   // the reel ended this frame: the results card is back
