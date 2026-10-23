@@ -25,6 +25,8 @@ Living document. Owned by the **integrator** (whoever merges lane branches). Lan
 
 **Human (Tanuj) items:** Discord `/team create`; console screenshots of Tasks (expect ≈ 80 kept) and Adapters (v1 result; if Below target / Prompt only → collect 30 more now); `/checkin` #1 by 12:00 from `docs/checkins/checkin-1.md`; `/checkin` #2 12:00–18:00; merge PR #1 at tag points; Try models by hand (P3.T1) with `docs/try-models/sheet.md`; record the video; `/submit` by Sat 23:59; rotate the Mubit key after the hackathon.
 
+**Unmerged PR left for you:** EVAL PR #15 (`claude/eval-p3-score`, Try-models scorer + README) conflicts in server/scenarios.js and the EVAL lane file because it was cut before EVAL's own PR #9 update; EVAL has been asked to sync and push a conflict-free head. Merge it when they report, then add `"exam:score": "node server/scenarios.js --score docs/try-models/sheet.md"` to package.json.
+
 **Open decisions for the next integrator:** none blocking. Watch: UI is the critical path for a demo-able loop (P2 exit = full loop clickable without a terminal). If UI slips past ~08:00, pair the idle SERVER session onto `lab/lab.css` only (PARALLEL_PLAN allows one helper on CSS).
 
 - Hard dates: `/checkin` #1 by Sat 12:00 · #2 Sat 12:00–18:00 · `/submit` MP4 ≤ 3 min + PDF by **Sat 23:59** · freeze Sun 05:00 · expo Sun 10:30.

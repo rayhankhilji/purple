@@ -172,3 +172,6 @@ Exit criteria: **all true at 23:58 London** (six verifies, task named from the p
 
 ### 2026-10-24 02:35 — integrator session 1 — last merges before handover
 - SERVER PR #13: `npm run snapshot -- --label <x>` freezes data/ into docs/ledger-snapshot/<stamp>-<label>/ with README + counts.json (use it instead of the hand copy from now on). GAME PR #14: "How to film it" in docs/agents/lanes/GAME.md (Shot A baseline vs rear wing 28°, Shot B VER on the grid, settings, expected numbers). GAME's browser-run numbers land on that same lane file later. SERVER PR #10 closed on GitHub (merged by hand earlier).
+
+### 2026-10-24 02:42 — integrator session 1 — PR #15 deferred
+- EVAL PR #15 (scorer + Try-models README) conflicts with the integration branch (stale base); merge aborted, EVAL asked to sync. Next integrator merges it and adds `exam:score`. Noted for SERVER: POST /api/status is a shallow merge (exam sub-object replaced); make it deep.
