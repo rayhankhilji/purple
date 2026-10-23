@@ -102,6 +102,29 @@ test("P2.T3 SSE: /api/plan emits plan; overrule emits rule then plan (status ove
   const order = buf.split("\n\n").map(ch => (/event: (\w+)/.exec(ch) || [])[1]).filter(e => e && e !== "ping");
   assert.deepEqual(order, ["status", "plan", "rule", "plan", "rule", "plan"]);
 });
+test("status widget: GET /api/status carries prompt_hash, last_console_read_at and budget counted per UTC day (00:00 UTC = 01:00 London)", async () => {
+  mock.reset(); const dir = tmp(); const { app, db } = createApp({ dataDir: dir, mubit: mock, log: () => {} });
+  const s0 = (await json(app, "/api/status")).body.data;
+  assert.equal(s0.prompt_hash, "6c5be1a3f4ed0f5fb21226363fa3524404996558628bc8cba119677dfc37ce6a"); assert.equal(s0.last_console_read_at, null);
+  assert.deepEqual(s0.budget, { day_utc: new Date().toISOString().slice(0, 10), trained_today_utc: 0, untrained_today_utc: 0, resets_at: s0.budget.resets_at, boundary: "00:00 UTC = 01:00 London" });
+  assert.equal(s0.budget.resets_at, new Date(Date.parse(s0.budget.day_utc + "T00:00:00Z") + 864e5).toISOString());
+  // rows around the boundary: yesterday 23:59:59Z does not count, today 00:00:00Z does; illegal rows never count
+  const day = s0.budget.day_utc, yday = new Date(Date.parse(day + "T00:00:00Z") - 1000).toISOString();
+  const row = (kind, trained, created_at) => db.appendCall({ id: kind + created_at, created_at, kind, trained, session_id: null, mubit_request_id: trained || kind === "illegal" ? null : "mreq_x", model: null, latency_ms: 0, status: "ok" });
+  row("plan", true, yday); row("smoke", false, yday); row("plan", true, day + "T00:00:00.000Z"); row("plan", true, new Date().toISOString()); row("exam", false, new Date().toISOString()); row("smoke", false, day + "T12:00:00Z"); row("illegal", false, new Date().toISOString());
+  const s1 = (await json(app, "/api/status")).body.data; assert.equal(s1.budget.trained_today_utc, 2); assert.equal(s1.budget.untrained_today_utc, 2); assert.equal(s1.calls_total, 7); assert.equal(s1.calls_trained, 3);
+  await post(app, "/api/plan", { scenario_overrides: { seed: 9 } }); assert.equal((await json(app, "/api/status")).body.data.budget.trained_today_utc, 3);
+  // a console read-out stamps last_console_read_at; a non-console patch does not; an explicit value wins; garbage is rejected
+  const t0 = Date.now(); const s2 = (await post(app, "/api/status", { task_name: "Research engineer of F1", kept_examples: 43, adapter_version: "v1" })).body.data;
+  assert.equal(s2.kept_examples, 43); assert.ok(Date.parse(s2.last_console_read_at) >= t0 - 5); assert.equal(s2.budget.trained_today_utc, 3); assert.equal(s2.prompt_hash, s0.prompt_hash);
+  const s3 = (await post(app, "/api/status", { test_result: "pass" })).body.data; assert.ok(Date.parse(s3.last_console_read_at) >= Date.parse(s2.last_console_read_at));
+  const s4 = (await post(app, "/api/status", { note: "unrelated", budget: { trained_today_utc: 999 }, prompt_hash: "fake" })).body.data; assert.equal(s4.last_console_read_at, s3.last_console_read_at); assert.equal(s4.budget.trained_today_utc, 3); assert.equal(s4.prompt_hash, s0.prompt_hash); assert.equal(s4.note, "unrelated");
+  const s5 = (await post(app, "/api/status", { kept_examples: 50, last_console_read_at: "2026-10-24T00:05:00Z" })).body.data; assert.equal(s5.last_console_read_at, "2026-10-24T00:05:00Z"); assert.equal(s5.kept_examples, 50);
+  const bad = await post(app, "/api/status", { last_console_read_at: "yesterday-ish" }); assert.equal(bad.status, 400); assert.match(bad.body.error.message, /last_console_read_at/);
+  const persisted = JSON.parse(fs.readFileSync(path.join(dir, "status.json"), "utf8")); assert.equal(persisted.last_console_read_at, "2026-10-24T00:05:00Z"); assert.equal("budget" in persisted, false); assert.equal("prompt_hash" in persisted, false);
+  // the SSE status event carries the same view
+  const sse = await sseUntil(app, /event: status/, 2); const buf = await sse.read(); const ev = sseEvent(buf, "status")[0]; assert.equal(ev.budget.trained_today_utc, 3); assert.equal(ev.last_console_read_at, "2026-10-24T00:05:00Z"); assert.equal(ev.prompt_hash, s0.prompt_hash);
+});
 test("POST /api/evaluate: pure, illegal -> 422 ILLEGAL_SETUP, bad input -> 400", async () => {
   mock.reset(); const { app, EI } = createApp({ dataDir: tmp(), mubit: mock });
   const okr = await post(app, "/api/evaluate", { setup: Object.assign({}, EI.aero.BASELINE, { rear_wing_deg: 28 }), conditions: { circuit: "silverstone" } }); assert.equal(okr.status, 200); assert.ok(okr.body.data.delta_lap > 0);

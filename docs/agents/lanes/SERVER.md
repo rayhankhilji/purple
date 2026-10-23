@@ -1,10 +1,23 @@
 # Lane SERVER
 
-Status: in_progress (PRs #2 P1.T3, #3 guards, P2.T3 server side open; next: status widget plumbing). Owner: agent B (Claude, session_01Tq3p158ophv4wuU2ibcJbj). Branches: `claude/server-p1-race` → `claude/server-p1-guards` → `claude/server-p1-rules` (stacked branches `claude/server-p1-*` follow, one PR per task into `claude/amazing-planck-804i13`).
+Status: done for the assigned list; four stacked PRs open (#2 P1.T3, #3 guards, #5 P2.T3, status widget). Idle until merges or GAME/EVAL payloads land. Owner: agent B (Claude, session_01Tq3p158ophv4wuU2ibcJbj). Branches: `claude/server-p1-race` → `claude/server-p1-guards` → `claude/server-p1-rules` → `claude/server-p1-status` (stacked branches `claude/server-p1-*` follow, one PR per task into `claude/amazing-planck-804i13`).
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
 
 ## Sessions
+
+### 2026-10-24 01:25 London — agent B (Claude) — status widget plumbing (F-06 widget data)
+- Status: done, PR open into `claude/amazing-planck-804i13` (branch `claude/server-p1-status`, stacked on `claude/server-p1-rules`; merge #2, #3, #5 first).
+- Files changed: `server/app.js` (`statusView`, `budgetView`, `POST /api/status`), `test/server.test.js` (+1 test), this file.
+- Contract for the UI lane (`GET /api/status`, and the SSE `status` event, same view): existing fields plus
+  - `prompt_hash`: sha256 of `lab/prompt.js` (`6c5be1a3…ce6a`); the widget can show the first 8 chars next to `prompt_version`.
+  - `last_console_read_at`: ISO time of the last `POST /api/status` that carried a console field (`task_name`, `kept_examples`, `adapter_version`, `test_result`, `exam`); `null` until Tanuj enters the first read-out. An explicit `last_console_read_at` in the body wins; a bad string → 400.
+  - `budget: { day_utc, trained_today_utc, untrained_today_utc, resets_at, boundary: "00:00 UTC = 01:00 London" }` from `calls.jsonl` rows whose `created_at` falls on today's UTC day (`illegal` rows excluded; they never reached Mubit).
+  - Computed fields (`budget`, `prompt_hash`, `model`, `prompt_version`, `calls_*`, `experiments`) cannot be overwritten through `POST /api/status`.
+- Verify step run + output: `npm test` → 52/52 pass. Mock server: one `/api/plan`, then `POST /api/status {task_name, kept_examples: 43, adapter_version: "v1"}`, then `GET /api/status` → `kept_examples 43, prompt_hash 6c5be1a3…, last_console_read_at 2026-10-23T23:27:26Z, budget {day_utc 2026-10-23, trained_today_utc 1, untrained_today_utc 0, resets_at 2026-10-24T00:00:00.000Z}`.
+- Decisions proposed (for the integrator to log in TASK_LOG): D-S9: budget counters are per UTC calendar day of `calls.jsonl` rows (matches ROADMAP "00:00 UTC = 01:00 London"); D-S10: `last_console_read_at` is stamped server-side on any console-field update (additive to ARCH §5 status shape).
+- Blockers / questions for Tanuj: none. Note for the integrator: `data/calls.jsonl` on your machine has the 57 trained Friday-budget rows, so `trained_today_utc` reads 57 until 01:00 London, then 0.
+- Next three actions: (1) respond to review on PRs #2/#3/#5/status; (2) when GAME P1.T2 lands, post one real `purple:result` payload through `/api/race/result` in the browser and record T-F04-AC2 here; (3) when EVAL ships `data/exam.json`, dry-run `npm run exam` with `MUBIT_MOCK=1` and check the `status.exam` write (no live exam calls without the integrator's go).
 
 ### 2026-10-24 01:10 London — agent B (Claude) — P2.T3 server side (F-05 correction loop)
 - Status: done, PR open into `claude/amazing-planck-804i13` (branch `claude/server-p1-rules`, stacked on `claude/server-p1-guards`; merge #2, #3 first).
