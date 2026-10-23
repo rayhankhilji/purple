@@ -6,6 +6,17 @@ Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of eve
 
 ## Sessions
 
+### 2026-10-24 02:10 London — agent B (Claude) — PR #10 re-based on the integrator's seededRng; v2 preview re-run
+- Status: PR #10 updated (merge of the integration branch, conflict resolved). The integrator fixed the same PRNG finding independently with `seededRng(U, seed)` (splitmix-style mix + 16-draw warm-up, commit 2c23957) in runPlan, collect() and biasApplied. I dropped my `itemSeed` and kept their semantics: per-item seed stays `seed0*1000+i`, the rng is `seededRng`. `dryCollect` now uses exactly that, so the preview matches the v2 collection that is running (`--seed 2 --promote-bias 0.3`). D-S12 from the entry below is superseded by the integrator's commit; D-S13 (collect-dry before any trained collection) stands.
+- Verify: `npm test` → 67/67 after the merge. Preview for the running v2 (same seeds and rng as collect()):
+  ```
+  verdicts (truth rule, |Δ| 0.03 s): promote 14 (35 %), retest 12 (30 %), reject 14 (35 %)
+  delta_lap: min -0.118 s, max 0.431 s, mean 0.04 s; promote-biased draws 8; illegal retries 0
+  conditions: dry 27, wind 5, wet 8; parameters moved: ride_height_mm 15, brake_bias_pct 14, ers_deploy 10, front_wing_deg 9, rear_wing_deg 8
+  ```
+  Seeds 1 / 3 at bias 0.3: promote 17 (43 %), retest 14 (35 %), reject 9 (23 %) · promote 12 (30 %), retest 11 (28 %), reject 17 (43 %).
+- Next three actions: unchanged from the entry below.
+
 ### 2026-10-24 01:55 London — agent B (Claude) — collect-dry preview, seed mixing, GAME PR #8 payload review
 - Status: done, PR open into `claude/amazing-planck-804i13` (branch `claude/server-p1-dry`, cut from the integration branch after #6 merged; nothing stacked).
 - Files changed: `server/app.js` (`dryCollect`, `itemSeed`; `collect()` uses the mixed seed), `server/scripts/collect-dry.js` (new), `test/server.test.js` (+2), this file. `server/scenarios.js` untouched.
