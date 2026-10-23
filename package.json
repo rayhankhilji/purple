@@ -1,0 +1,27 @@
+{
+  "name": "purple",
+  "version": "0.1.0",
+  "private": true,
+  "description": "PURPLE: an autonomous F1 research lab on Equation I, routed through Mubit",
+  "license": "UNLICENSED",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "dev": "node server/dev.js",
+    "start": "node server/index.js",
+    "static": "node server/static.js",
+    "test": "node --test 'test/*.test.js'",
+    "test:model": "node --test test/aero.test.js test/evaluator.test.js",
+    "test:contract": "node --test test/schema.test.js test/server.test.js",
+    "smoke": "node server/scripts/smoke.js",
+    "collect": "node server/scripts/collect.js",
+    "exam": "node server/scripts/exam.js",
+    "fixtures": "node server/scripts/fixtures.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "0.137.0",
+    "@hono/node-server": "2.1.5",
+    "dotenv": "16.6.1",
+    "hono": "4.13.13",
+    "ulid": "3.0.2"
+  }
+}
