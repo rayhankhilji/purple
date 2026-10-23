@@ -6,6 +6,16 @@ Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of eve
 
 ## Sessions
 
+### 2026-10-24 01:35 London — agent B (Claude) — promote_bias wiring for the v2 collection (integrator request, EVAL D-E1)
+- Status: done, on the status-widget PR #6 (branch `claude/server-p1-status`). Branches `claude/server-p1-rules` and `claude/server-p1-status` both merged with `origin/claude/amazing-planck-804i13` (no conflicts).
+- Files changed: `server/app.js` (`collect()` takes `promote_bias`, `biasApplied` replay, `runPlan` honours an internal `candidate_source`; `POST /api/collect` accepts `promote_bias`), `server/scripts/collect.js` (`--promote-bias <0..1>`), `test/server.test.js` (+2), this file. `server/scenarios.js` untouched.
+- How "random-biased" is decided: `perturb()`'s first `rng()` is the bias draw, and it uses a promote move only when that class is non-empty. `collect()` replays `U.rng(seed)()` < bias and checks the class is non-empty with `scenarios.movesByVerdict` (cached). The test with bias 1 confirms every biased candidate is in the promote class, and with 0.3 the count matches the replay.
+- Verify step run + output: `npm test` → 65/65 pass (after merging the integration branch: 63 before my change). CLI test (`MUBIT_MOCK=1`, temp data dir): `collect: n=4 seed=3 circuit=silverstone with_rules=false promote_bias=0.5 concurrency=2 … [MUBIT_MOCK]`; `--promote-bias 3` → exit 1. Bias 0 reproduces the no-bias candidates exactly.
+- v2 command (integrator, Saturday budget): `npm run collect -- --n 40 --with-rules --promote-bias 0.3`. `POST /api/collect` equivalent: `{ n: 40, with_rules: true, promote_bias: 0.3, confirm: "trained" }`.
+- Decisions proposed: D-S11 `candidate_source` gains the value `"random-biased"` (ledger rows); `collect()` result gains `promote_bias` and `biased`.
+- Blockers / questions for Tanuj: none.
+- Next three actions: (1) review responses on PRs #5/#6; (2) GAME P1.T2 payload check against `/api/race/result`; (3) `npm run exam` dry run with `MUBIT_MOCK=1` against the committed `data/exam.json` in a temp data dir.
+
 ### 2026-10-24 01:25 London — agent B (Claude) — status widget plumbing (F-06 widget data)
 - Status: done, PR open into `claude/amazing-planck-804i13` (branch `claude/server-p1-status`, stacked on `claude/server-p1-rules`; merge #2, #3, #5 first).
 - Files changed: `server/app.js` (`statusView`, `budgetView`, `POST /api/status`), `test/server.test.js` (+1 test), this file.
