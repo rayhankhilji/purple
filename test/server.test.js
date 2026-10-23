@@ -315,3 +315,10 @@ test("G-MUBIT-06 only server/mubit.js names the gateway host", () => {
   const { execSync } = require("child_process"); const out = execSync("grep -rl 'api." + "mubit.ai' --include=*.js --exclude-dir=node_modules . || true", { cwd: path.join(__dirname, ".."), encoding: "utf8" }).trim().split("\n").filter(Boolean);
   assert.deepEqual(out, ["./server/mubit.js"]);
 });
+test("CORS: the lab page on 127.0.0.1:8788 may call the API on :8787 (preflight + header); other origins get nothing", async () => {
+  mock.reset(); const { app } = createApp({ dataDir: tmp(), mubit: mock });
+  const pre = await app.request("/api/status", { method: "OPTIONS", headers: { origin: "http://127.0.0.1:8788", "access-control-request-method": "POST", "access-control-request-headers": "content-type, x-client-id" } });
+  assert.ok(pre.status === 204 || pre.status === 200); assert.equal(pre.headers.get("access-control-allow-origin"), "http://127.0.0.1:8788"); assert.match(pre.headers.get("access-control-allow-headers") || "", /x-client-id/i);
+  const res = await app.request("/api/status", { headers: { origin: "http://localhost:8788" } }); assert.equal(res.headers.get("access-control-allow-origin"), "http://localhost:8788");
+  const other = await app.request("/api/status", { headers: { origin: "https://evil.example" } }); assert.equal(other.headers.get("access-control-allow-origin"), null);
+});
