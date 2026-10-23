@@ -151,3 +151,18 @@ test("generator: the collection's consecutive seeds are degenerate without warm-
   const w = []; for (let s = 2000; s < 2040; s++) w.push(moved(scenarios.generate(EI.U.rng(s), { circuit: "silverstone", warm: true })));
   assert.ok(w.filter(m => m.includes("front_wing_deg")).length < 30, "warm: true alone also breaks the degeneracy");
 });
+
+// ---- P3.T1: scoring a hand-filled Try-models sheet (truth from data/exam.json, answers from the Markdown)
+test("scoreSheet: filled fixture scores provider 8/7, v1 4/0, v2 7/5; score-card free text is a fallback; truth never comes from the sheet", () => {
+  const md = fs.readFileSync(path.join(__dirname, "fixtures", "try-sheet.filled.md"), "utf8"), r = scenarios.scoreSheet(md, exam);
+  assert.equal(r.n, 8); assert.deepEqual(r.unknown_ids, []);
+  assert.deepEqual([r.per.provider.verdict, r.per.provider.param, r.per.v1.verdict, r.per.v1.param, r.per.v2.verdict, r.per.v2.param], [8, 7, 4, 0, 7, 5]);
+  const v1_16 = r.per.v1.rows.find(x => x.id === "exam-16"); assert.deepEqual(v1_16.answer, { verdict: "reject", next_parameter: "front_wing_deg", direction: "increase" }, "exam-16 v1 came from the score-card cell 'Reject — front_wing_deg increase'");
+  assert.deepEqual(r.status, { exam: { v1: 4, v1_param: 0, v1_total: 8, v2: 7, v2_param: 5, v2_total: 8, provider_sheet: 8, provider_sheet_param: 7 } });
+  // a tampered truth line in the sheet changes nothing; an unknown id is reported, not scored; the blank sheet scores nothing
+  assert.equal(scenarios.scoreSheet(md.replace("**reject** | rear_wing_deg decrease", "**promote** | ers_deploy increase"), exam).per.provider.verdict, 8);
+  const extra = scenarios.scoreSheet(md.replace("### 8. `exam-05`", "### 8. `exam-99`"), exam); assert.deepEqual(extra.unknown_ids, ["exam-99"]); assert.equal(extra.n, 7);
+  const blank = scenarios.scoreSheet(scenarios.trySheet(exam, { k: 8 }), exam); assert.equal(blank.per.v2.answered, 0); assert.deepEqual(blank.status, { exam: {} });
+  // cell tolerance: order, case, punctuation, dashes for "no answer"
+  assert.deepEqual(scenarios.parseSheet("### 1. `exam-rw8`\n| model | verdict | next_parameter | direction |\n|---|---|---|---|\n| v2 | RIDE_HEIGHT_MM decrease; promote | | |\n| v1 | — | - | |\n")["exam-rw8"], { v2: { verdict: "promote", next_parameter: "ride_height_mm", direction: "decrease" } });
+});

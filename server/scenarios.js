@@ -186,6 +186,49 @@ function trySheet(items, opts) {
   });
   return L.join("\n");
 }
+// ---- scoring a hand-filled Try-models sheet (P3.T1). Reads the Markdown trySheet() wrote after Tanuj typed the answers in: for each
+// scenario section ("### n. `exam-id`") the per-model table rows "| provider | verdict | next_parameter | direction | ...", and as a
+// fallback the score-card cells ("reject, rear_wing_deg decrease" in one cell). Cells may hold "promote|reject|retest" and
+// "param direction" in any order, with or without punctuation; "-", "—" or blank = not answered. Truth comes from data/exam.json
+// (passed in), never from the sheet, so an edited sheet cannot score itself.
+const SHEET_MODELS = ["provider", "v1", "v2"];
+function parseAnswerCells(cells) {
+  const txt = cells.join(" ").toLowerCase().replace(/[*`_]/g, m => (m === "_" ? "_" : " "));
+  const verdict = (txt.match(/\b(promote|reject|retest)\b/) || [])[1] || null;
+  const param = (txt.match(/\b(front_wing_deg|rear_wing_deg|ride_height_mm|brake_bias_pct|ers_deploy)\b/) || [])[1] || null;
+  const dir = (txt.match(/\b(increase|decrease)\b/) || [])[1] || null;
+  return verdict || param || dir ? { verdict, next_parameter: param, direction: dir } : null;
+}
+function parseSheet(md) {
+  const answers = {};   // id -> model -> { verdict, next_parameter, direction }
+  const lines = md.split(/\r?\n/); let current = null, cardCols = null;
+  for (const line of lines) {
+    const h = /^###\s+\d+\.\s+`(exam-[\w-]+)`/.exec(line); if (h) { current = h[1]; answers[current] = answers[current] || {}; continue; }
+    if (/^##\s/.test(line)) { current = null; }
+    if (!line.startsWith("|")) continue;
+    const cells = line.split("|").slice(1, -1).map(c => c.trim());
+    if (!cells.length || /^-+$/.test(cells[0])) continue;
+    if (current) { const m = cells[0].toLowerCase(); if (SHEET_MODELS.includes(m)) { const a = parseAnswerCells(cells.slice(1, 4)); if (a) answers[current][m] = a; } continue; }
+    // score card: header row names the model columns; data rows carry the id in a backticked cell
+    if (cells[0] === "#" ) { cardCols = cells.map(c => c.toLowerCase()); continue; }
+    if (cardCols) { const idc = cells.find(c => /^`exam-/.test(c)); if (!idc) continue; const id = idc.replace(/`/g, ""); for (const m of SHEET_MODELS) { const ci = cardCols.indexOf(m); if (ci < 0 || !cells[ci]) continue; const a = parseAnswerCells([cells[ci]]); if (a && !(answers[id] && answers[id][m])) { answers[id] = answers[id] || {}; answers[id][m] = a; } } }
+  }
+  return answers;
+}
+function scoreSheet(md, examItems) {
+  const answers = parseSheet(md), truth = Object.fromEntries(examItems.map(it => [it.id, it.truth]));
+  const ids = Object.keys(answers).filter(id => truth[id]), per = {}, missing = Object.keys(answers).filter(id => !truth[id]);
+  for (const m of SHEET_MODELS) {
+    const rows = ids.map(id => { const a = answers[id][m] || null, t = truth[id]; return { id, truth: t, answer: a, verdict_ok: !!a && a.verdict === t.verdict, param_ok: !!a && a.next_parameter === t.next_parameter && a.direction === t.direction }; });
+    per[m] = { answered: rows.filter(r => r.answer).length, total: ids.length, verdict: rows.filter(r => r.verdict_ok).length, param: rows.filter(r => r.param_ok).length, rows };
+  }
+  // the status patch: POST /api/status is a shallow merge, so the whole exam object is sent (merged over the current one by the caller)
+  const status = { exam: {} }; const put = (k, v) => { status.exam[k] = v; };
+  for (const m of ["v1", "v2"]) if (per[m].answered) { put(m, per[m].verdict); put(m + "_param", per[m].param); put(m + "_total", per[m].total); }
+  if (per.provider.answered) { put("provider_sheet", per.provider.verdict); put("provider_sheet_param", per.provider.param); }
+  return { per, status, unknown_ids: missing, n: ids.length };
+}
+
 // ---- the v2 dry run: what the collection would send, scored by the evaluator's truth rule only (no Mubit). Mirrors app.js collect():
 // seeds seed0*1000+i, generate(rng, { circuit, baseline, td01, promote_bias }); candidates are always legal, so no retry path here.
 function dryRun(evaluator, opts) {
@@ -200,7 +243,7 @@ function dryRun(evaluator, opts) {
   return { rows, summary: { n, seed: seed0, promote_bias: bias, promote: by("promote"), retest: by("retest"), reject: by("reject"), dry: rows.filter(r => !r.conditions.wet && !r.conditions.wind_ms).length, wind: rows.filter(r => r.conditions.wind_ms).length, wet: rows.filter(r => r.conditions.wet).length, min_delta: Math.min(...rows.map(r => r.delta_lap)), max_delta: Math.max(...rows.map(r => r.delta_lap)), max_chars: Math.max(...rows.map(r => r.chars)) } };
 }
 
-module.exports = { STEPS, MIX, VERDICT, EXAM, RNG_WARM, perturb, conditions, generate, menuMoves, movesByVerdict, truthFor, buildExam, examSummary, verdictOf, hardestItems, trySheet, dryRun };
+module.exports = { STEPS, MIX, VERDICT, EXAM, RNG_WARM, perturb, conditions, generate, menuMoves, movesByVerdict, truthFor, buildExam, examSummary, verdictOf, hardestItems, trySheet, dryRun, SHEET_MODELS, parseSheet, scoreSheet };
 
 // ---- CLI: node server/scenarios.js --build-exam data/exam.json [--seed 2026] [--circuit silverstone]
 //           node server/scenarios.js --faster-moves [--circuit silverstone]        (the table behind MIX.promote_bias)
@@ -215,6 +258,18 @@ if (require.main === module) {
     const items = JSON.parse(fs.readFileSync(examFile, "utf8")), md = trySheet(items, { k: parseInt(arg("k", "8"), 10), seed: arg("seed", "2026"), model: EI.evaluator.MODEL_LABEL });
     fs.mkdirSync(path.dirname(out), { recursive: true }); fs.writeFileSync(out, md + "\n");
     console.log(`try-sheet: ${hardestItems(items, parseInt(arg("k", "8"), 10)).map(x => x.id).join(", ")} -> ${out}`);
+  } else if (args.includes("--score")) {
+    // node server/scenarios.js --score docs/try-models/sheet.md [--exam data/exam.json] [--status data/status.json] : hand-entered answers -> n/8 + status JSON
+    const sheet = arg("score", null), examFile = arg("exam", path.join(__dirname, "..", "data", "exam.json")), statusFile = arg("status", path.join(process.env.PURPLE_DATA_DIR || path.join(__dirname, "..", "data"), "status.json"));
+    if (!sheet) { console.error("usage: --score <sheet.md> [--exam data/exam.json] [--status data/status.json]"); process.exit(1); }
+    const r = scoreSheet(fs.readFileSync(sheet, "utf8"), JSON.parse(fs.readFileSync(examFile, "utf8")));
+    for (const m of SHEET_MODELS) { const p = r.per[m]; console.log(`${m.padEnd(9)} verdict ${p.verdict}/${p.total}  next-step ${p.param}/${p.total}  (${p.answered} answered)`); for (const x of p.rows) if (x.answer) console.log(`  ${x.id.padEnd(9)} ${x.verdict_ok ? "✓" : "✗"} ${(x.answer.verdict || "-").padEnd(7)} ${x.param_ok ? "✓" : "✗"} ${x.answer.next_parameter || "-"} ${x.answer.direction || ""}   truth ${x.truth.verdict} / ${x.truth.next_parameter} ${x.truth.direction}`); }
+    if (r.unknown_ids.length) console.log("ignored ids not in the exam: " + r.unknown_ids.join(", "));
+    let current = {}; try { current = JSON.parse(fs.readFileSync(statusFile, "utf8")).exam || {}; } catch (e) { /* no status yet */ }
+    const patch = { exam: Object.assign({}, current, r.status.exam) };
+    console.log("\nPOST /api/status body (merged over " + statusFile + "; the route replaces the exam object as a whole):");
+    console.log(JSON.stringify(patch));
+    console.log(`curl -s -X POST localhost:8787/api/status -H 'content-type: application/json' -d '${JSON.stringify(patch)}'`);
   } else if (args.includes("--dry-run")) {
     // node server/scenarios.js --dry-run --n 40 --seed 2 --promote-bias 0.3 [--circuit silverstone] : the collection, scored by the evaluator only
     const r = dryRun(EI.evaluator, { n: parseInt(arg("n", "40"), 10), seed: parseInt(arg("seed", "2"), 10), circuit, promote_bias: parseFloat(arg("promote-bias", String(MIX.promote_bias))), rng: EI.U.rng });
