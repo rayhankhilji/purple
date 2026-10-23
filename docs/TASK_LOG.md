@@ -35,6 +35,11 @@ Exit criteria: **all true at 23:58 London** (six verifies, task named from the p
 - [ ] P1.T4 watch v1 in **Adapters** (Tanuj screenshot → `status.json`); if Below target / Prompt only → `npm run collect -- --n 30` on the Saturday budget
 - [ ] P1.T5 `/checkin` #1 in #max by Sat 12:00 (Tanuj)
 
+## Checklist (P2 items already landed)
+
+- [x] P2.T5 data: `data/exam.json` (20 scenarios, truth from the evaluator), `npm run exam:build` (EVAL, merged 00:50 from PR #4). `npm run exam` on the provider: see Session log.
+- [x] P2.T6 model side: TD-01 + wind/wet semantics verified, `aero.describeViolation` (EVAL). UI side (sliders, toggles) still open.
+
 ## Blockers
 
 | When | What | Owner | Resolution |
@@ -88,6 +93,10 @@ Exit criteria: **all true at 23:58 London** (six verifies, task named from the p
 | 2026-10-24 00:30 | D-S3 racing an `overruled`/`promoted` experiment keeps that status and gains `measured` | The engineer's verdict outranks the race | Yes |
 | 2026-10-24 00:40 | D-S4 `POST /api/collect` requires `confirm: "trained"` and caps n at 60; the CLI `npm run collect` is unchanged | Trained calls spend budget and shape the task | Yes |
 | 2026-10-24 00:40 | D-S5 a changed `lab/prompt.js` fails `npm test` (sha256 pin 6c5be1a3…ce6a) and blocks `npm start` unless `PURPLE_ALLOW_PROMPT_CHANGE=1` after a logged decision | G-MUBIT-01 enforced by machine, not memory | Yes |
+| 2026-10-24 00:50 | D-E1 `MIX.promote_bias` in the generator (default 0, v1 seeds byte-identical); **v2 collection runs with 0.3** (every faster move at Silverstone lowers ride height: 97 of 948 menu moves) | v1 never saw a correct promote (0 of 50) | Yes |
+| 2026-10-24 00:50 | D-E2 exam truth: tie-break + ≥ 0.003 s margin filter for filler items; 20 items = 4 promote / 5 retest / 11 reject, 3 wind, 2 wet, 2 Monza; `exam-rw8` truth reject/rear_wing_deg/decrease | ARCH §4.10; rebuild with `npm run exam:build` | Yes |
+| 2026-10-24 00:50 | D-E3 TD-01 constrains candidates; a grandfathered baseline above the cap is still evaluated; a baseline outside the regulation throws instead of NaN deltas | F-09 semantics | Yes |
+| 2026-10-24 00:50 | D-E4 `aero.describeViolation(id)` is the UI's label source; numbers come from `RANGES` | label and check cannot disagree | Yes |
 
 ### 2026-10-23 23:58 — console read-out (Tanuj, screenshot)
 - Overview: 57 total requests, median response 1.80 s, errors 0, adapters serving 0. Tasks: 1 task **Research engineer of F1**, status **Training** ("training v1"), examples **43 kept**, requests 57, models asked claude-haiku-4-5 100 %. Task rules: "Grouped: same instructions and tools", "Named from its instructions". Figures panel said "Figures unavailable" (console hiccup, details still shown).
@@ -99,3 +108,6 @@ Exit criteria: **all true at 23:58 London** (six verifies, task named from the p
 
 ### 2026-10-24 00:40 — integrator — merged SERVER task-integrity guards (PR #3, branch `claude/server-p1-guards`)
 - `test/prompt-frozen.test.js` pins the prompt hash; `server/index.js` logs it and refuses a changed prompt; `npm run prompt:check`; `/api/collect` needs `confirm: "trained"`, n ≤ 60; `store.appendCall` throws on any non-plan row without `trained: false`. 47/47 tests after merge; real-env startup prints the hash. SERVER next: P2.T3 server side, `/api/status` widget fields.
+
+### 2026-10-24 00:50 — integrator — merged EVAL P2.T5 + P2.T6 (PR #4, branch `claude/eval-p2-exam`)
+- `buildExam` + CLI, `data/exam.json` committed (20 items), generator `promote_bias` (opt-in), TD-01/conditions tests, `describeViolation`. 58/58 tests after merge. Asked SERVER to wire `--promote-bias` into `collect.js`/`app.js collect()`. Lane files: restored GAME.md status line to the original so the GAME lane's PR merges cleanly (integrator no longer edits lane files).

@@ -19,7 +19,8 @@
     "exam": "node server/scripts/exam.js",
     "fixtures": "node server/scripts/fixtures.js",
     "fake-race": "node server/scripts/fake-race.js",
-    "prompt:check": "node server/scripts/prompt-hash.js"
+    "prompt:check": "node server/scripts/prompt-hash.js",
+    "exam:build": "node server/scenarios.js --build-exam data/exam.json --seed 2026"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.137.0",
