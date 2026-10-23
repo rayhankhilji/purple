@@ -15,10 +15,12 @@ window.EI = window.EI || {};
   //    (Deliberately not used here: blue / black-and-white flags, strikes, unsafe release, the two-compound rule.)
   const TOW_LEN = 50, TOW_MAX = 0.6;   // wake length (m) and strength right behind (car.js: x0.3 = 18% less drag) - f1-DRIVING, see the slipstream block
   const NOSE = 2.7, LOOP = 20, HYST = 1.0, OT_GAP = 1.0, OT_ENERGY = 0.5, OFF_W = 1.1, TL_DEBOUNCE = 0.12, TL_REJOIN = 0.35, GIVE_BACK_T = 15, MANDATORY_LAPS = 3;
+  const LAB_GAP = 10;   // PURPLE (F-04): grid slots between the lab cars (10 x 8 m = 80 m, beyond the tow)
 
   class Race {
     constructor(track, cfg) {
       this.track = track; this.cfg = cfg; this.laps = cfg.laps;
+      this.lab = cfg.lab || null;   // PURPLE (F-04): broadcast mode, see buildLabGrid; null = the shipped game
       this.cars = []; this.ais = []; this.players = [];
       this.phase = 'grid'; this.time = 0; this.started = false; this.lightsOn = 0; this.phaseT = 0; this.finishedCount = 0;
       this.events = []; this.fastest = { time: -1, car: null }; this.leaderFinished = false; this.over = false; this.overT = 0;
@@ -53,6 +55,7 @@ window.EI = window.EI || {};
 
     buildGrid() {
       const cfg = this.cfg, track = this.track, rng = this.rng;
+      if (this.lab && this.lab.cars) return this.buildLabGrid();
       let id = 0;
       // every seat of the field (11 entries x 2 = 22); a player takes a seat and replaces that real driver. A player on an own team
       // (Lumi / Intake) takes over a real entry (Race.lineup), keeping its other driver and its grid slots
@@ -101,8 +104,13 @@ window.EI = window.EI || {};
         const dl = { veryeasy: 0.05, easy: 0.15, rookie: 0.15, average: 0.4, pro: 0.4, above: 0.55, hard: 0.7, veryhard: 0.85, legend: 0.85, official: 0.93, ultra: 1.0 }; const fr = EI.Skill && EI.Skill.gridFraction ? EI.Skill.gridFraction(cfg.difficulty) : (dl[cfg.difficulty] != null ? dl[cfg.difficulty] : 0.4); const slot = Math.round(order.length * (isFinite(fr) ? fr : 0.4));
         players.forEach((p, k) => order.splice(Math.min(order.length, slot + k), 0, p));
       }
+      this.placeGrid(order, 1);
+    }
+    // put the cars on the grid in this order: slot = pos x gap (the shipped game: gap 1; the lab: one car every LAB_GAP slots)
+    placeGrid(order, gap) {
+      const track = this.track;
       order.forEach((car, pos) => {
-        const g = track.gridSlot(pos);
+        const g = track.gridSlot(pos * gap);
         car.place(g.x, g.z, g.heading, g.y);
         car.gridPos = pos + 1; car.pos = pos + 1;
         // distance counted from behind the line (so a grid that wraps past the end of the lap still starts short of lap 1)
@@ -111,6 +119,26 @@ window.EI = window.EI || {};
         car.lapMarks = new Float32Array(Math.ceil(track.length / 10) + 2); car.bestMarks = null;
       });
       this.order = order.slice();
+    }
+    // ---------------------------------------------------------------- PURPLE (F-04, ARCHITECTURE §9): the lab's broadcast grid
+    // cfg.lab.cars = [{ role: 'baseline' | 'candidate', aero: { df, cd, a0, b0 }, driver?, team?, tyre? }] -> exactly those bots, no
+    // players. Every car gets the same neutral driver (Race.neutralDriver: skill 100, form 0, every trait 0.5, no season gap, no
+    // car character), so the only difference between the cars is the aero they were given. One car every LAB_GAP grid slots
+    // (8 m each): neither starts in the other's tow (TOW_LEN 50 m), so the first laps are clean for both.
+    buildLabGrid() {
+      const cfg = this.cfg, track = this.track, rng = this.rng;
+      const LU = Race.lineup([]); this.entries = LU.entries; this.takeovers = LU.takeovers; this.gridInfo = null;
+      const TEAM_OF = { baseline: 'williams', candidate: 'mclaren' };   // liveries only (a blue car and an orange one on the TV feed)
+      cfg.lab.cars.forEach((spec, i) => {
+        const team = (EI.TEAM_BY_ID && EI.TEAM_BY_ID[spec.team || TEAM_OF[spec.role]]) || EI.TEAMS[i % EI.TEAMS.length];
+        const label = String(spec.role || 'car ' + (i + 1)).toUpperCase();
+        // a driver the season does not know (no code / number / surname match), named after the role for the tags and the tower
+        const driver = Object.assign({ name: label, num: 90 + i, code: label.slice(0, 3) }, spec.driver || {});
+        const car = new EI.Car({ id: i, team, driver, name: label, num: driver.num, tyre: spec.tyre || 'medium', assist: 'full', skill: 1, envMap: cfg.envMap, aero: spec.aero || null });
+        car.seat = { team, driver, di: 0, key: 'lab:' + i }; car.role = spec.role || 'car' + (i + 1); car.labSpec = spec;
+        this.cars.push(car); this.ais.push(Race.neutralDriver(car, track, rng, this.seed));
+      });
+      this.placeGrid(this.cars.slice(), LAB_GAP);
     }
     aiFor(car) { return this.ais.find(a => a.car === car); }
 
@@ -198,7 +226,7 @@ window.EI = window.EI || {};
       this.stewards(dt);
       this.updatePositions();
       // ---- race end
-      if (this.players.every(p => p.finished)) {
+      if ((this.lab ? this.cars : this.players).every(p => p.finished)) {   // PURPLE: no players in the lab, the race is over when both bots have finished
         if (!this.over) { this.over = true; this.overT = 0; this.emit('over'); }
       }
       if (this.over) { this.overT += dt; if (!this.classified && (this.cars.every(c => c.finished) || this.overT > 20)) { this.classified = true; this.emit('classified'); } }
@@ -470,6 +498,17 @@ window.EI = window.EI || {};
   const seasonName = (t) => { const s = EI.SEASON && (EI.SEASON.teams || []).find(x => x.id === t.id); return s && s.name || t.name; };   // 'Cadillac', not the full entry name
   // the team a player config picks: { own: 'lumi' } for an own team, else EI.TEAMS[teamIndex]
   const ownOf = (p) => p && p.own ? Race.ownTeams().find(t => t.id === p.own) || null : null;
+  // PURPLE (F-04): the lab's neutral driver. An AIDriver at skill 100 with every per-driver and per-race term removed: form 0,
+  // season gap 0 (lapRatio = 1 + the level's lapLoss, expGap 0), car character 0, every trait 0.5 (all-rounder), no line bias,
+  // a mid-range reaction. Two of these in cars with different aero measure the aero, nothing else.
+  Race.neutralDriver = function (car, track, rng, seed) {
+    const ai = new EI.AIDriver(car, track, 100, rng, { seed, slot: car.id });
+    const t = {}; for (const tr of EI.AI_TRAITS) t[tr.id] = 0.5;
+    ai.traits = t; ai.archetype = (EI.AI_ARCHETYPES || []).find(a => a.id === 'allrounder') || ai.archetype;
+    ai.realGap = 0; ai.qGap = 0; ai.chi = 0; ai.riskMul = 1; ai.lineBias = 0; ai.form = 0; ai._react = 0.5;
+    ai.lapRatio = 1 + ai.d.lapLoss; ai.expGap = 0;
+    ai.derive(); return ai;
+  };
   // players -> { entries (EI.TEAMS order, taken-over entries replaced by the own team's per-race clone), seats, playerSeats, takeovers }
   Race.lineup = function (players) {
     const real = EI.TEAMS, entries = real.slice(), takeovers = [];
