@@ -330,3 +330,36 @@ Files: `concept/engineer/scenario.js` (`corrections`, `fitCorrections`, `culprit
 `concept/exam/questions.js` (`buildCorrections`), `concept/exam/questions-corrections.json`, `test/physics-corrections.test.js`.
 `curves.json` `corrections`: the current-physics no-AI curves for seeds 7, 11, 12 (uncut; 11 and 12 checked equal to the main
 table's), and the steered-with-corrections curves once (b) has run.
+
+## 9. Two more races (2026-10-24, live, trained designer calls; physics lap sim, Silverstone, model prediction)
+
+**9.1 One physics test per idea (`--screen direct`: variants 1, confirm 1, explore 0), Claude with corrections vs no AI.** In this mode
+nothing in the engine is random and the model answers at temperature 0, so seeds 7, 11 and 12 gave the identical Claude run (one run
+counts; logs in `docs/concept/loop-runs/trained-direct-seed7/`). Best lap at a physics-lap count:
+
+| | 100 | 250 | 500 | 1,000 | 3,500 | laps to beat 88.111 s |
+|---|---|---|---|---|---|---|
+| Claude + corrections (1 run, 71 calls) | 88.463 | 88.349 | — | — | — | not within 251 |
+| No AI, seeds 7 / 11 / 12 | 88.494 / 88.578 / 88.530 | 88.323 / 88.389 / 88.462 | 88.218 / 88.372 / 88.276 | 88.166 / 88.280 / 88.132 | 88.137 / 88.070 / 88.061 | — / 2,761 / 1,218 |
+
+Claude is a little ahead early (by 0.03–0.12 s at 100 tests); at 250 one no-AI seed is level. Not a decisive difference.
+
+**9.2 Half and half (`--mix 2`, full screen): Claude with corrections directs every other decision, the engine's random step the rest.**
+60–61 calls per seed (logs in `docs/concept/loop-runs/trained-mix-seed{7,11,12}/`).
+
+| seed | method | laps to beat 88.111 s | @500 | @1,000 | @2,000 | @3,500 |
+|---|---|---|---|---|---|---|
+| 7 | half Claude | 314 | 87.920 | 87.721 | 87.617 | 87.525 |
+| 7 | no AI | 339 | 87.887 | 87.656 | 87.512 | 87.470 |
+| 11 | half Claude | 329 | 87.809 | 87.708 | 87.620 | 87.576 |
+| 11 | no AI | 374 | 87.861 | 87.691 | 87.558 | 87.525 |
+| 12 | half Claude | 130 | 87.793 | 87.667 | 87.592 | 87.515 |
+| 12 | no AI | 183 | 87.797 | 87.609 | 87.538 | 87.506 |
+
+Half Claude reaches pole sooner on all three seeds (258 vs 299 laps on average) and is 0.01–0.10 s behind at 1,000+ laps: a tie.
+
+**Verdict.** In this simulator a physics test costs ~20 ms and the engine screens 3,000 variants per idea, so the direction Claude
+picks adds little over a random direction. Claude through Mubit never beats the no-AI engine clearly in any of the four set-ups
+measured (plain, with corrections, one test per idea, half and half). What the corrections did change, measurably: illegal-as-proposed
+fell from 26–64 per run to 3–8, and on the held-out exam legal-as-proposed went 17/30 → 25/30 and mean gain as proposed
+0.0193 → 0.0314 s.
