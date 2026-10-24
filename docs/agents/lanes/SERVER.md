@@ -1,10 +1,19 @@
 # Lane SERVER
 
-Status: in_progress — PRs #2, #3, #5, #6, #10 merged; snapshot PR open (branch `claude/server-p3-snapshot`, from the integration branch). Waiting for the UI lane PR to review `lab/lab.js` fetches against the envelope. Owner: agent B (Claude, session_01Tq3p158ophv4wuU2ibcJbj). Branches: `claude/server-p1-race` → `claude/server-p1-guards` → `claude/server-p1-rules` → `claude/server-p1-status` (stacked branches `claude/server-p1-*` follow, one PR per task into `claude/amazing-planck-804i13`).
+Status: in_progress — PRs #2, #3, #5, #6, #10, #13 merged; open: #20 (status deep merge + UI review, branch `claude/server-p2-status-merge`) and the data-mock PR (branch `claude/server-p2-datadir`). Both cut from the integration branch, independent (their lane-file entries will touch the same lines; take both).
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
 
 ## Sessions
+
+### 2026-10-24 03:25 London — agent B (Claude) — mock data dir rule for every script (integrator request)
+- Status: done, PR open into `claude/amazing-planck-804i13` (branch `claude/server-p2-datadir`, cut from 37b8275; independent of #20).
+- Files changed: `server/app.js` (createApp default: `opts.dataDir` → `PURPLE_DATA_DIR` → `data-mock/` when `MUBIT_MOCK=1`, else `data/`), `server/scripts/smoke.js` (same rule), `server/scripts/collect.js`, `exam.js`, `collect-dry.js` (`--data <dir>` wins over `PURPLE_DATA_DIR`), `server/scripts/fake-race.js` (comment: no data dir of its own, it writes wherever the running server points), `test/server.test.js` (+1), this file. `server/index.js` keeps the integrator's line (the startup log shows the resolved dir either way).
+- Audit: `collect`, `exam`, `collect-dry` go through `createApp()` and inherit the rule; `smoke` opens the store itself and now applies it; `snapshot` takes `--data`/`PURPLE_DATA_DIR` (defaults to the real `data/`, which is what a freeze wants); `fake-race` is an HTTP client (the server's dir); `prompt-hash`, `fixtures` touch no data.
+- Verify step run + output: `npm test` → 75/75 (new test: createApp resolves `data-mock/` under `MUBIT_MOCK=1` with no env, `data/` otherwise, explicit env/opts win; `server/index.js` startup line prints `data <root>/data-mock`; `collect.js --data` beats `PURPLE_DATA_DIR` and the other dir stays empty; `collect-dry.js --data` reported in its line; `.gitignore` has `data-mock/`).
+- Decisions proposed: D-S16 the data-dir precedence above, for every CLI.
+- Blockers / questions for Tanuj: none.
+- Next three actions: (1) respond to review on #20 and this PR; (2) re-check `lab/lab.js` after the UI fixes (findings 1, 2, 4 in the UI review on #20); (3) T-F04-AC2 with a real browser post.
 
 ### 2026-10-24 02:30 London — agent B (Claude) — P3.T6 prep: `server/scripts/snapshot.js` (freeze step); PR #10 closed as merged by hand
 - Status: done, PR open into `claude/amazing-planck-804i13` (branch `claude/server-p3-snapshot`, cut from the integration branch at 103d066). PR #10 was merged by the integrator by hand (9cea07d, keeping both `itemSeed` and the rng warm-up); I closed the GitHub PR and dropped my two later commits on that branch (they would have undone the integrator's resolution). My 02:10 entry below describes a state that never reached the integration branch; D-S12 as logged by the integrator (both fixes) is the truth.
