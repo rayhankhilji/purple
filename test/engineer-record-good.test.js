@@ -76,4 +76,36 @@ test("route record_good (stub Mubit): approved decision -> exactly one extra tra
   const rows = fs.readFileSync(path.join(r.j.data.dir, "calls.jsonl"), "utf8").trim().split("\n").map(JSON.parse);
   assert.equal(rows.length, 3); assert.equal(rows.filter(x => x.trained === true && x.record_good === true).length, 1, "the trained re-send is logged, so the budget counts it");
   assert.match(r.j.data.dir, /concept-engine/);
+  // the run folder replays with the same training chips the live stream showed (concept/engineer/replay.js, no good.jsonl on the route)
+  const rep = require("../concept/engineer/replay.js").fromV2(r.j.data.dir, "route-run");
+  assert.equal(rep.record_good, true); assert.equal(rep.training_examples, 1); assert.equal(rep.designer_calls, 2);
+  assert.deepEqual(rep.decisions.map(d => d.training_example), ["sent", "not trained"]);
+  assert.equal(rep.decisions[0].trained_request_id, ex[0].trained_request_id);
+});
+
+test("replay of a record_good run: per decision training_example sent (+ trained request id) / not trained, from good.jsonl or calls.jsonl", () => {
+  const replay = require("../concept/engineer/replay.js");
+  const FIX = path.join(__dirname, "fixtures", "record-good-run");   // synthetic 4-decision run (placeholder request ids), as cli.js --record-good writes it
+  const check = r => {
+    assert.equal(r.record_good, true); assert.equal(r.designer_calls, 4); assert.equal(r.training_examples, 2); assert.equal(r.calls, 6);
+    assert.deepEqual(r.decisions.map(d => d.training_example), ["not trained", "sent", "not trained", "sent"]);
+    assert.equal(r.decisions[1].trained_request_id, "mreq_" + "21".padStart(32, "0"));
+    assert.equal(r.decisions[0].trained_request_id, undefined);
+    // the demo's timing strip reads these straight from the decision rows
+    for (const d of r.decisions) assert.ok(d.latency_ms > 0 && d.screen.distinct > 0 && d.screen.ms > 0 && d.physics_laps > 0 && d.physics_ms > 0);
+  };
+  check(replay.fromV2(FIX, "fixture"));
+  // the engine route writes no good.jsonl: the calls.jsonl rows with record_good: true say the same
+  const dir = tmp(); for (const f of ["decisions.jsonl", "events.jsonl", "calls.jsonl", "run.json"]) fs.copyFileSync(path.join(FIX, f), path.join(dir, f));
+  check(replay.fromV2(dir, "route"));
+  // a failed trained re-send is "failed", never "sent"
+  fs.writeFileSync(path.join(dir, "good.jsonl"), JSON.stringify({ decision: 2, error: "MUBIT_TIMEOUT" }) + "\n");
+  const f = replay.fromV2(dir, "failed");
+  assert.equal(f.decisions[1].training_example, "failed"); assert.equal(f.decisions[3].training_example, "not trained"); assert.equal(f.training_examples, 0);
+  // a run without record_good carries no training_example field (the demo then shows the run's own trained / untrained label)
+  const plain = replay.fromV2(path.join(__dirname, "..", "docs", "concept", "loop-runs", "trained-corrections-seed12"), "plain");
+  assert.equal(plain.record_good, false); assert.ok(plain.decisions.every(d => !("training_example" in d)));
+  // build: the index lists the record_good flag and the example count
+  const out = tmp(); const idx = replay.build([FIX], out);
+  assert.equal(idx.length, 1); assert.equal(idx[0].record_good, true); assert.equal(idx[0].training_examples, 2);
 });

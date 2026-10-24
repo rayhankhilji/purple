@@ -9,6 +9,8 @@
 // (mock: no mreq_ id) are refused.
 // Output: <out>/index.json (the list, newest first) and <out>/<name>.json (format "purple-replay/1"; one decision per Mubit call or
 // fallback step, the tree's result nodes, the peak, per-run stats including the share of kept gains from Mubit-directed decisions).
+// A run recorded with record_good (cli.js --record-good: good.jsonl; the engine route: calls.jsonl rows with record_good: true) also
+// carries, per decision, training_example "sent" + trained_request_id | "failed" | "not trained", as the live stream says it.
 "use strict";
 const fs = require("fs"), path = require("path");
 const ROOT = path.join(__dirname, "..", "..");
@@ -78,20 +80,38 @@ function fromV1(dir, name) {
   };
 }
 
-// engine v2 runs: decisions.jsonl (compact decisions) + calls.jsonl + run.json (+ tree.json)
+// record_good runs (concept/engineer/record-good.js): which decisions became a Mubit training example. The terminal run writes
+// good.jsonl ({ decision, d_lap_s, untrained_id, trained_id, served_by } or { decision, error }); the engine route writes only the
+// calls.jsonl rows with record_good: true (iteration = decision). good.jsonl wins when both exist. null = not a record_good run.
+function trainingOf(dir, calls) {
+  const good = readJsonl(path.join(dir, "good.jsonl")), rg = calls.filter(c => c.record_good === true);
+  if (!good.length && !rg.length) return null;
+  const by = new Map();
+  if (good.length) for (const g of good) by.set(g.decision, g.error ? { error: String(g.error) } : { trained_id: g.trained_id || null, served_by: g.served_by || null });
+  else for (const c of rg) by.set(c.iteration, c.status === "error" || !c.mubit_request_id ? { error: c.mubit_code || "error" } : { trained_id: c.mubit_request_id, served_by: c.served_by || null });
+  return by;
+}
+
+// engine v2 runs: decisions.jsonl (compact decisions) + calls.jsonl + run.json (+ tree.json, + good.jsonl for a record_good run)
 function fromV2(dir, name) {
   const decs = readJsonl(path.join(dir, "decisions.jsonl")), calls = readJsonl(path.join(dir, "calls.jsonl")), run = readJson(path.join(dir, "run.json")), ev = readJsonl(path.join(dir, "events.jsonl"));
   const start = ev.find(e => e.type === "start") || {}, fin = run && run.final ? run.final : null;
   const team = (run && run.opts && run.opts.team) || "redbull", base = design.baseline(team === "generic" ? undefined : { team });
   const nodes = [{ id: "n0", parent: null, decision: null, kind: "root", lap_s: start.baseline ? start.baseline.lap_s : null, legal: true, by: "baseline" }];
   for (const e of ev.filter(x => x.type === "decision")) for (const n of e.nodes || []) nodes.push(n);
-  const decisions = decs.map(d => Object.assign({}, d, { at: (ev.find(e => e.type === "decision" && e.decision === d.decision) || {}).at || null, params: (() => { const e = ev.find(x => x.type === "decision" && x.decision === d.decision); return e && e.head_params ? paramDiff(base, e.head_params) : null; })() }));
+  const training = trainingOf(dir, calls);
+  // per decision, as the live stream says it: "sent" (+ the trained call's request id), "failed" (the trained re-send errored) or "not trained"
+  const trainOf = d => { if (!training) return {}; const t = training.get(d.decision); return !t ? { training_example: "not trained" } : t.error ? { training_example: "failed", training_error: t.error } : { training_example: "sent", trained_request_id: t.trained_id }; };
+  const decisions = decs.map(d => Object.assign({}, d, { at: (ev.find(e => e.type === "decision" && e.decision === d.decision) || {}).at || null, params: (() => { const e = ev.find(x => x.type === "decision" && x.decision === d.decision); return e && e.head_params ? paramDiff(base, e.head_params) : null; })() }, trainOf(d)));
   const last = ev.filter(e => e.type === "decision").pop() || {};
   const ids = calls.map(c => c.mubit_request_id).filter(Boolean);
+  const examples = training ? decisions.filter(d => d.training_example === "sent").length : null;
   return {
     format: FORMAT, name, kind: "engineer-v2", engine: "engine v2 · autonomous engineer: Mubit decides the subspace → surrogate screen → physics confirm → interactions → kept / reverted by the numbers",
     source: path.relative(ROOT, dir), run_id: run ? run.run_id : null, recorded_at: (calls[0] || {}).created_at || null, model: (calls.find(c => c.model) || {}).model || null,
     trained: calls.some(c => c.trained === true), calls: calls.length, request_ids: ids, all_real: ids.length > 0 && ids.every(isReal), stop_reason: run ? run.stop_reason : null,
+    // record_good: designer calls untrained; the physics-approved ones re-sent as trained calls (training examples)
+    record_good: !!training, designer_calls: training ? calls.filter(c => c.record_good !== true).length : calls.length, training_examples: examples,
     team, baseline: start.baseline || null, pole_s: bench.racepace().silverstone.pole.s, peak: last.peak || null, stats: last.stats || (fin && fin.summary && fin.summary.stats) || null,
     label: "physics lap sim · quasi-steady-state point mass · Silverstone · calibrated to 2026 British GP qualifying (recorded run; replayed, not re-run)",
     nodes, decisions,
@@ -106,7 +126,7 @@ function build(dirs, out) {
     const r = fs.existsSync(path.join(dir, "decisions.jsonl")) ? fromV2(dir, name) : fromV1(dir, name);
     if (!r.all_real) { console.error("replay: skipped " + name + " (not every call has a real Mubit request id: never replay a mock as the AI)"); continue; }
     fs.writeFileSync(path.join(out, name + ".json"), JSON.stringify(r) + "\n");
-    index.push({ name, kind: r.kind, engine: r.engine, recorded_at: r.recorded_at, calls: r.calls, trained: r.trained, model: r.model, decisions: r.decisions.length, baseline_lap_s: r.baseline && r.baseline.lap_s, peak_lap_s: r.peak && r.peak.lap_s, gap_to_pole_s: r.peak && r.peak.gap_to_pole_s, directed_gain_share: r.stats ? r.stats.directed_gain_share : null, first_request_id: r.request_ids[0] || null, last_request_id: r.request_ids[r.request_ids.length - 1] || null, file: name + ".json" });
+    index.push({ name, kind: r.kind, engine: r.engine, recorded_at: r.recorded_at, calls: r.calls, trained: r.trained, record_good: !!r.record_good, training_examples: r.record_good ? r.training_examples : undefined, model: r.model, decisions: r.decisions.length, baseline_lap_s: r.baseline && r.baseline.lap_s, peak_lap_s: r.peak && r.peak.lap_s, gap_to_pole_s: r.peak && r.peak.gap_to_pole_s, directed_gain_share: r.stats ? r.stats.directed_gain_share : null, first_request_id: r.request_ids[0] || null, last_request_id: r.request_ids[r.request_ids.length - 1] || null, file: name + ".json" });
   }
   // engine v2 runs first, then the fastest
   index.sort((a, b) => (a.kind === "engineer-v2" ? 0 : 1) - (b.kind === "engineer-v2" ? 0 : 1) || String(b.recorded_at || "").localeCompare(String(a.recorded_at || "")));
