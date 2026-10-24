@@ -4,7 +4,7 @@ Living document. Owned by the **integrator** (whoever merges lane branches). Lan
 
 ## 1. Where we are (handover from integrator session 1, 2026-10-24 02:25 London)
 
-**Integrator handover in progress.** Session 1 (`session_01U2tgEhT5Kgr4kE9kJ4Psw4`) is out of budget; the next integrator starts from `docs/agents/INTEGRATOR_PROMPT.md`. Its check-in trigger is cancelled. PR #1 to main: https://github.com/rayhankhilji/purple/pull/1 (tracks the integration branch).
+**Integrator: session 1 (`session_01U2tgEhT5Kgr4kE9kJ4Psw4`) continues** (usage reset 03:00). Check-in trigger re-armed (45 min). If it runs out again: `docs/agents/INTEGRATOR_PROMPT.md`. PR #1 to main: https://github.com/rayhankhilji/purple/pull/1.
 
 **Phase state.** P0 done (console: task "Research engineer of F1", Training v1, 43 kept of 57 at 23:58). P1 exit met (demo experiment `01M5NHXH4RSEQ50VM955FK20B7`: rear wing +8°, predicted +0.436 s, measured +0.518 s, agreement 19 %, in the ledger). v2 collected 01:50 (40 scenarios, rule R-01 active, promote_bias 0.3; truth promote 14 / retest 12 / reject 14; agent verdicts agreed 38/39; next_parameter now spread). 99 trained + 21 untrained calls. Provider exam: 20/20 verdicts, 10/20 next-step. **The story is the next experiment, not the verdict** (the prompt states the thresholds). v1 candidates were 94 % front-wing (PRNG seeding defect, fixed; one canonical `scenarios.seededRng`).
 
@@ -20,12 +20,10 @@ Living document. Owned by the **integrator** (whoever merges lane branches). Lan
 | SERVER | `session_01Tq3p158ophv4wuU2ibcJbj` | all routes done. Next: `server/scripts/snapshot.js` (ledger freeze), review `lab/lab.js` fetches when UI's PR lands |
 | EVAL | `session_01Ma6U13odw1SA1vFhepRj8u` | exam, sheet, rng done. Next: `--score` for hand-entered Try-models answers, `docs/try-models/README.md` |
 | UI | `session_01LerQvr7T9YvRQxL76EErVH` | **P2.T1 + P2.T6 merged (PR #16/#17).** Lab page at http://127.0.0.1:8788/lab/ with `npm run dev`. Next: re-verify in a real browser against the merged CORS/CAR3D/GAME, then P3.T2 polish. Decisions D-U1..D-U4 in its lane file still to copy into TASK_LOG; SERVER to review lab.js fetches |
-| CAR3D | `session_01DoxHh5Ynx2BDWZsPvLCyDR` | P2.T2 merged (PR #12). Next: P3.T2 hero polish once UI's container size is known; D-C1..D-C4 in its lane file still to copy into TASK_LOG |
-| DEMO | `session_01UAY6ykh3dQkf9GfJoZ9BTy` | rewriting demo-script.md, deck sources, shot list (no PR yet). Has the corrected story (next-experiment, PRNG finding) |
+| CAR3D | `session_01DoxHh5Ynx2BDWZsPvLCyDR` | P2.T2 + P3.T2 part 1 merged. Next: hero polish part 2 against the merged lab page |
+| DEMO | `session_01UAY6ykh3dQkf9GfJoZ9BTy` | demo-script.md rewritten (3:00, measured numbers) and merged; deck sources / shot list: see docs/deck/. Numbers owed list in its lane file |
 
 **Human (Tanuj) items:** Discord `/team create`; console screenshots of Tasks (expect ≈ 80 kept) and Adapters (v1 result; if Below target / Prompt only → collect 30 more now); `/checkin` #1 by 12:00 from `docs/checkins/checkin-1.md`; `/checkin` #2 12:00–18:00; merge PR #1 at tag points; Try models by hand (P3.T1) with `docs/try-models/sheet.md`; record the video; `/submit` by Sat 23:59; rotate the Mubit key after the hackathon.
-
-**Unmerged PR left for you:** EVAL PR #15 (`claude/eval-p3-score`, Try-models scorer + README) conflicts in server/scenarios.js and the EVAL lane file because it was cut before EVAL's own PR #9 update; EVAL has been asked to sync and push a conflict-free head. Merge it when they report, then add `"exam:score": "node server/scenarios.js --score docs/try-models/sheet.md"` to package.json.
 
 **Open decisions for the next integrator:** none blocking. Watch: UI is the critical path for a demo-able loop (P2 exit = full loop clickable without a terminal). If UI slips past ~08:00, pair the idle SERVER session onto `lab/lab.css` only (PARALLEL_PLAN allows one helper on CSS).
 
