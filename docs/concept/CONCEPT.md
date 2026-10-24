@@ -66,6 +66,19 @@ the optimiser alone (3D view blocked) runs 86 ms per generation, frames p50 16.7
 | 2 | 51 | 87.826 | −0.285 | −0.923 | P1 | P1 / P1 | 0.296 | yes |
 | 3 | 39 | 87.652 | −0.459 | −1.097 | P1 | P1 / P1 | 0.470 | yes |
 
+**Campaign: can a legal car with the same engine beat the real laps? (2026-10-24, docs/concept/CAMPAIGN.md, physics lap sim v2,
+quali objective).** CMA-ES with restarts, surrogate pre-screening only, every kept candidate and every final number on the physics
+sim, PU locked to the homologated DM01 (`bench.checkPU` + regs.js `PKG-PU-FIXED`), every regs.js rule checked:
+
+| Baseline | Baseline lap | Campaign best ± 1σ (95 % band) | Δ pole 88.111 | Δ HAD 88.746 | Grid | Aero-map gains halved |
+|---|---|---|---|---|---|---|
+| RB22 / Red Bull Ford DM01 | 88.752 | **87.334 ± 0.149** (87.043–87.625) | −0.777 | −1.412 | P1 | 88.023 |
+| generic 2026 / 400 kW PU | 88.115 | 86.824 ± 0.159 (86.513–87.135) | −1.287 | −1.922 | P1 | 87.411 |
+
+The band is the sim's own held-out error on lap-time changes, fit residuals and noise; it does not cover the concept aero map's
+coefficients (with its gains halved, pole falls inside the band). `REG-C-FLOOR-ROOF` (floor throat) and `REG-C-SUSP-WIDTH` are not
+enforced yet; re-run after `claude/sim-v3-fia` (CAMPAIGN.md §3). The table below is the earlier weekend-objective run (sim v1).
+
 Top changes in all three seeds: rear Straight Mode flap opened 15° → 25.5-30° (domain edge), floor body width 1450 → 1540 mm (the
 C3.5.1 rule edge), diffuser expansion 14° → 17-17.5°, sidepod undercut 100 → 145-170 mm, rear wing span 1100 → 1150 mm (rule
 edge), endplate up to 870-880 mm. Read these as the concept aero map's direction on the sim's car, not as an RB22 upgrade: the map
