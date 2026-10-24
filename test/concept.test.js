@@ -51,7 +51,7 @@ const CASES = {
   "REG-C-DRIVELINE-MASS": () => ids(withOverride("gearbox", { mass_kg: 20 })),
   "PKG-WB": () => ids(withParam("layout", "wheelbase_mm", 3300)),
   "PKG-COOLING": () => ids(withParam("sidepods", "inlet_cm2", 550)),
-  "PKG-FLOOR-STALL": () => { const d = withParam("floor", "ride_height_mm", 30); d.params.floor.throat_mm = 80; return ids(d); },
+  "PKG-FLOOR-STALL": () => { const d = withParam("floor", "ride_height_mm", 30); d.params.floor.throat_mm = 48; return ids(d); },
 };
 test("concept regs: check() catches every checkable violation type, with its article in the message", () => {
   const checkable = regs.RULES.concat(regs.MODEL_RULES).filter(r => r.kind !== "info").map(r => r.id);
@@ -140,7 +140,7 @@ test("concept aero map v0: straight mode lowers drag only with a flap; stall and
   assert.ok(one1(35) < one1(33), "a single-volume wing stalls earlier: past its peak more setting gives less load");
   assert.ok(aeromap.evaluate(withParam("sidepods", "inlet_cm2", 400).params).cooling.power_factor < 1, "small inlets derate the PU");
   assert.equal(aeromap.evaluate(B.params).cooling.power_factor, 1);
-  const low = withParam("floor", "ride_height_mm", 20); low.params.floor.throat_mm = 80; assert.equal(aeromap.evaluate(low.params).floor_stalled, true);
+  const low = withParam("floor", "ride_height_mm", 20); low.params.floor.throat_mm = 48; assert.equal(aeromap.evaluate(low.params).floor_stalled, true);
 });
 
 test("concept code and docs never use the banned words (EVAL_GUARDRAILS G-HON-02)", () => {

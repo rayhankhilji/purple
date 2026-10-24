@@ -31,7 +31,7 @@ test("CMA-ES: seeded and deterministic, and it minimises a rotated ellipsoid", (
 
 test("uncertainty: built from the sim's held-out sector errors and fit residuals; verdicts are inside / outside the 95 % band", () => {
   const tr = U.transferError("redbull"); assert.ok(tr.k > 0.05 && tr.k < 0.6 && tr.n === 27);
-  const bias = U.sectorBias(); assert.ok(bias.mean_s[1] > 0.4 && bias.mean_s[0] < 0 && bias.mean_s[2] < 0);
+  const bias = U.sectorBias(); assert.ok(bias.mean_s.length === 3 && bias.mean_s.every(x => Math.abs(x) < 0.35), JSON.stringify(bias.mean_s));   // sim v3: |sector bias| ~0.2 s or less
   const b = U.band({ lap_s: 87.9, sectors_s: [27.9, 36.2, 23.8] }, { lap_s: 88.749, sectors_s: [28.158, 36.522, 24.07] }, "redbull");
   assert.ok(b.sigma_s > U.NOISE_S && b.band95_s[0] < 87.9 && b.band95_s[1] > 87.9);
   const A = U.anchorRecord("redbull");

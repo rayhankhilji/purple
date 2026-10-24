@@ -54,7 +54,7 @@ bal corner aero balance (front share of CLA), cda corner CDA, cdaS straight-mode
 | rear_wing.endplate_top_mm | 860 ± 86 | m↑ wdf↓ h↑ cda↓ cdaS↓ | **Hoerner endplate gain** e = 1 + 1.9·h/b on induced drag (h above Z 725); endplate mass ∝ height, high up | taller: less induced drag, more and higher mass | +0.029 / +0.004† | +0.048 / −0.032† | +0.033 / −0.023† | fixed (span coupling; slope at the baseline now 0.0014/mm instead of a flat 0.002/mm); 880: −0.005 (legal) |
 | rear_wing.sm_delta_deg | 15 ± 1.5 | cdaS↓ | as the front flap, reference 15° | more flap: less straight-mode drag | +0.149 / −0.011 | +0.149 / −0.011 | +0.150 / −0.012 | **weak by convention** (as the front flap): 7.5° costs +0.839 s, 25° gains only −0.054 s |
 | floor.width_mm | 1450 ± 145 | m↑ wdf↓ h↓ cla↑ bal↓ cda↑ cdaS↑ | floor planform × ground effect; floor mass ∝ planform | more floor load | +0.280 / −0.236† | +0.335 / −0.285† | +0.273 / −0.225† | OK (β: the floor's share of the ride-height slope is now 92 %, §3.2); 1540: −0.143 (legal) |
-| floor.throat_mm | 100 ± 10 | cla↓ bal↑ cda↓ cdaS↓ | ground effect ∝ ((35 + c₀)/(rh + 0.3167·throat))^β | higher throat: less suction | −0.142† / +0.124 | −0.181† / +0.158 | −0.139† / +0.119 | OK; 97: −0.045 (legal) |
+| floor.throat_mm (v2 units: × 0.6, see below) | 60 ± 6 (v1: 100 ± 10) | cla↓ bal↑ cda↓ cdaS↓ | ground effect ∝ ((35 + c₀)/(rh + 0.5278·throat))^β (v1: 0.3167·throat) | higher throat: less suction | −0.142† / +0.124 | −0.181† / +0.158 | −0.139† / +0.119 | OK; 97: −0.045 (legal) |
 | floor.ride_height_mm | 35 ± 3.5 | h↑ cla↓ bal↑ cda↓ cdaS↓ | floor ground effect; **front wing ground effect**; sprung mass rises; plank wear below 32 mm; stall margin | higher: less load, higher CoG | −0.243† / +0.214 | −0.246† / +0.212 | −0.245† / +0.224 | fixed (front wing now feels the ground; the total slope is still the lab's −0.006 /mm); 34: −0.066 (legal) |
 | diffuser.expansion_deg | 14 ± 1.4 | wdf↓ h↑ cla↑ bal↓ cda↑ cdaS↑ | D = 1 + q(2pe − e²), **peak p falls 0.1°/mm of lost gap**; **stall onset +0.5 mm/°**; drag +2 %/° of floor drag | more expansion: more load up to the (gap-dependent) peak | +0.150 / −0.097 | +0.176 / −0.115 | +0.157 / −0.106 | fixed (gap coupling) |
 | sidepods.inlet_cm2 | 650 ± 65 | m↑ wdf↓ h↑ cda↑ cdaS↑ | cooling capacity (PKG-COOLING, derate), cooling drag ∝ inlet, radiator mass ∝ inlet^0.8 | bigger: more drag and mass | −0.090 / +0.217 | −0.087 / +0.201 | −0.095 / +0.209 | OK (asymmetric because a lighter car is topped up with ballast) |
@@ -78,7 +78,7 @@ Each term is in the model on purpose, with its source or "estimate". The numbers
 | Front vs rear wing × weight distribution | the sim limits cornering by the weaker axle: `min(ay_front, ay_rear)` with axle loads from CLA per axle and `weight_dist_front`; the design sets both | sim (SIM.md §3) | front wing +2° (−0.074 s) and rear wing +2° (+0.178 s) together: −0.188 s, int −0.29 s |
 | Wheelbase × aero balance (lever rule) | front share of each component = (WB − x_cop)/WB: front wing (XF −860) 1 + 860/WB, rear wing (XR +400) −400/WB, floor 0.3213 and body 0.3125 fixed fractions | lever rule (statics); CoP positions from the RV-FW/RW-PROFILES X ranges (App. C2 §22, §30); floor/body fractions estimates set to keep 43.5 % | balance shift of a +2° front wing: +0.0170 at WB 3100 vs +0.0160 at 3400 |
 | Wheelbase × mass distribution × ballast position (CoG) | every part has an x tied to XF, XA, XC, XPU or XR; ballast at x_frac·WB; wdf = x_cog/WB; the gearbox spacer fills WB − packaging minimum | mass sheet (MASS.md) | wdf shift of ballast 0.05 → 0.9: −0.0002 with 0.2 kg, −0.0111 with 10.2 kg (int −0.0109) |
-| Floor width × throat × ride height × diffuser expansion | df_floor = planform × G^β × S(stall) × D(e, gap) × U; G = (35 + c₀)/(rh + 0.3167·throat); stall onset 58 + 0.5·(e − 14) mm at the dynamic gap; D peaks at 18° + 0.1·(gap − gap₀) | ground-effect form (lab calibration); diffuser–gap coupling direction from Senior & Zhang 2001 (Exp. Fluids 31) and Ruhrmann & Zhang 2003 (J. Fluids Eng. 125); 0.1°/mm, 0.5 mm/° estimates; β = 0.920 from the lab slope | throat −10 × ride height −3: int −0.0026 df; width +90 × ride height −3: +0.0011; diffuser +3° × ride height −3: −0.0023; stall onset +1.5 mm at 17° |
+| Floor width × throat × ride height × diffuser expansion | df_floor = planform × G^β × S(stall) × D(e, gap) × U; G = (35 + c₀)/(rh + 0.5278·throat), c₀ = 31.67 mm; stall onset 58 + 0.5·(e − 14) mm at the dynamic gap; D peaks at 18° + 0.1·(gap − gap₀) | ground-effect form (lab calibration); diffuser–gap coupling direction from Senior & Zhang 2001 (Exp. Fluids 31) and Ruhrmann & Zhang 2003 (J. Fluids Eng. 125); 0.1°/mm, 0.5 mm/° estimates; β = 0.920 from the lab slope | throat −10 × ride height −3: int −0.0026 df; width +90 × ride height −3: +0.0011; diffuser +3° × ride height −3: −0.0023; stall onset +1.5 mm at 17° |
 | Ride height × front wing (ground effect) × balance | front wing load × ((h₀/c₀)/(h/c))^0.25, h = rh + 10 + 85 mm | trend of Zerihan & Zhang 2000 (J. Aircraft 37(6)); exponent and the 85 mm (mean Z of the RV-FW-PROFILES lower edge, App. C2 §22.1) are estimates | ride height +10 mm: front wing load × 0.982; with front chord +60: balance int +0.0009 |
 | Ride height × plank | plank wear 0.25 mm per mm below 32 mm (REG-C-PLANK); sprung mass (only) rises with ride height; floor stall at the dynamic height | concept plank model (CONCEPT.md); C3.6.1 | 28 mm: 1 mm of wear; +10 mm: CoG +8.6 mm (unsprung stays) |
 | Sidepod inlet × undercut × cooling × drag | capacity = inlet/650 × (1 − (undercut − 140)/300); PU derate below 1.05 × need; cooling drag ∝ inlet; radiator mass ∝ inlet^0.8 | concept thermal model (estimates) | inlet 590 alone and undercut 160 alone: no derate (−0.090 s, −0.131 s); together: ICE −72.6 kW (int −53 kW), lap +0.417 s |
@@ -138,3 +138,22 @@ Already there and still unread by the sim: `wheelbase_m` (longitudinal load tran
 - **Browser:** pages that load `concept/parts.js` (concept/lab, concept/view, concept/tools/film.js) should load
   `concept/materials.js` before it; without it a design that names a material throws (clear message) and others work as before.
   `concept/view/view3d.js` interpolates every key in `params[part]`; a string `material` would need skipping there.
+
+## FIA pass and sim v3 (2026-10-24)
+
+- **Floor throat re-parameterised (C3.5.1(a)).** `floor.throat_mm` is the venturi roof's height above Z=0, which the RV-FLOOR-BODY
+  roof caps at Z=75 between XF=1775 and XR=−600. The v1 domain 80–130 mm "above Z=0" lay entirely above that roof. v2: domain
+  40–75 mm, base 60, `aeromap.js FLOOR.throat_k` = 0.3167 / 0.6, so c = throat_k · throat (and every aero number) is unchanged
+  for a v1 design moved to throat × 0.6 (100 → 60, 80 → 48, 90 → 54, 105 → 63). `design.migrate(d)` does that mapping for designs
+  written in v1 units (any throat above 75 mm); v1 values above 125 mm map past the roof and are clamped to 75 mm (a real change:
+  that floor was never legal). `REG-C-FLOOR-ROOF` is now checked (`kind: "max"`). The sensitivity rows above keep their v1-unit
+  numbers; the effect per v2 step of 6 mm equals the v1 step of 10 mm.
+- **Track widths (C10.10.1).** The anchor cars (concept/sim) use 1.540 / 1.470 m, the widest legal; `physical.js` REF_V0 the
+  same; the mass sheet places the wheel centres at |y| 770 / 735 mm (was 790 / 760) and every part row now carries `y_mm`, so
+  `REG-C-SUSP-WIDTH` checks them. The mass sheet's yaw inertia drops by the wheels' lateral move (≈ −3 kg·m² of ~1060).
+- **The anchor moved (sim v3, docs/concept/SIM.md §0).** physical(baseline) still maps exactly onto the anchor car, which now
+  laps 88.107 s (generic; v2 88.115) and 88.763 s (RB22; v2 88.752). The anchor's CLA (5.32 m²), CdA (1.18 / 0.95 m²), tyres
+  (power-law load sensitivity, slip angle 0.098 rad) changed, so absolute lap deltas per design change are on the v3 scale;
+  directions are unchanged (the sensitivity test passes as before). `PhysicalCar.tyres.slip_angle_rad` (new) is copied from
+  the anchor.
+

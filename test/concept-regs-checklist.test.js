@@ -19,6 +19,7 @@ const LIM = {
   min_q: 726, min_r: 724, ntm_estimate: 44, front: 0.44, rear: 0.54, driver: 82,                                     // C4.1, C4.2, C4.5.2
   pu: 185, ice_a: 130, mguk_a: 20, tc: 12, es: 35, pu_cog: 200, driveline: 22,                                       // C5.5, C5.3.4, C5.17.9, C5.18.7, C9.5.2
   plank_hole: 470 + 500, sidepod_cm2: 2 * 80000 / 100,                                                               // C3.6.1(c), C3.16.9
+  floor_roof_z: 75,                                                                                                  // C3.5.1(a), App. C2 §4.5/§4.11
 };
 // RV-FW-PROFILES: [Y, Z] polygon (App. C2 §22.1); the X trims (§21.1 plane through [XF−1250, Y100], [XF−1025, Y700]; §22.4 plane
 // through [XF−750, Y0], [XF−500, Y400]) are vertical
@@ -60,6 +61,7 @@ function oracle(d, opts) {
   add("REG-C-PLANK", Math.max(0, parts.PLANK.free_mm - fl.ride_height_mm) * parts.PLANK.wear_per_mm > LIM.plank_wear);   // wear model: parts.PLANK
   add("REG-C-PLANK-HOLES", wb - XPU < LIM.plank_hole);
   add("REG-C-SIDEPOD-INLET", p.sidepods.inlet_cm2 > LIM.sidepod_cm2);
+  add("REG-C-FLOOR-ROOF", fl.throat_mm > LIM.floor_roof_z);
   const quali = !opts || !opts.session || ["qualifying", "sprint_qualifying"].includes(opts.session) || !["race", "sprint", "practice"].includes(opts.session);
   const min = (quali ? LIM.min_q : LIM.min_r) + LIM.ntm_estimate;
   add("REG-C-MASS-MIN", m.total_kg < min - 1e-6, m.total_kg - min);
@@ -77,7 +79,7 @@ function oracle(d, opts) {
   add("PKG-PU-FIXED", ["pu_ice", "pu_turbo", "pu_mguk", "pu_es", "pu_electronics"].some(id => { const a = m.parts.find(r => r.id === id), b = ref.find(r => r.id === id); return !a || a.mass_kg !== b.mass_kg || a.x_mm !== b.x_mm || a.z_mm !== b.z_mm; }) || m.mguk_transmission !== parts.PU.mguk_transmission);
   return { ids: out, near };
 }
-const ORACLE_IDS = ["REG-C-WIDTH", "REG-C-WB", "REG-C-FRONT-AXLE", "REG-C-COCKPIT", "REG-C-BULKHEAD", "REG-C-FLOOR-WIDTH", "REG-C-FW-ELEMENTS", "REG-C-RW-ELEMENTS", "REG-C-FW-SPAN", "REG-C-RW-SPAN", "REG-C-FW-CHORD", "REG-C-FW-SM-ENVELOPE", "REG-C-FW-PROFILES-Z", "REG-C-RW-CHORD", "REG-C-RW-ENDPLATE", "REG-C-FW-FLAP", "REG-C-RW-FLAP", "REG-C-SM-DIRECTION", "REG-C-ELEMENTS-MIN", "REG-C-PLANK", "REG-C-PLANK-HOLES", "REG-C-SIDEPOD-INLET", "REG-C-MASS-MIN", "REG-C-MASS-FRONT", "REG-C-MASS-REAR", "REG-C-DRIVER-MASS", "REG-C-PU-MASS", "REG-C-ICE-MASS", "REG-C-MGUK-MASS", "REG-C-TC-MASS", "REG-C-ES-MASS", "REG-C-PU-COG", "REG-C-DRIVELINE-MASS", "PKG-WB", "PKG-COOLING", "PKG-FLOOR-STALL", "PKG-PART-MASS", "PKG-PU-FIXED"];
+const ORACLE_IDS = ["REG-C-WIDTH", "REG-C-WB", "REG-C-FRONT-AXLE", "REG-C-COCKPIT", "REG-C-BULKHEAD", "REG-C-FLOOR-WIDTH", "REG-C-FW-ELEMENTS", "REG-C-RW-ELEMENTS", "REG-C-FW-SPAN", "REG-C-RW-SPAN", "REG-C-FW-CHORD", "REG-C-FW-SM-ENVELOPE", "REG-C-FW-PROFILES-Z", "REG-C-RW-CHORD", "REG-C-RW-ENDPLATE", "REG-C-FW-FLAP", "REG-C-RW-FLAP", "REG-C-SM-DIRECTION", "REG-C-ELEMENTS-MIN", "REG-C-PLANK", "REG-C-PLANK-HOLES", "REG-C-SIDEPOD-INLET", "REG-C-FLOOR-ROOF", "REG-C-MASS-MIN", "REG-C-MASS-FRONT", "REG-C-MASS-REAR", "REG-C-DRIVER-MASS", "REG-C-PU-MASS", "REG-C-ICE-MASS", "REG-C-MGUK-MASS", "REG-C-TC-MASS", "REG-C-ES-MASS", "REG-C-PU-COG", "REG-C-DRIVELINE-MASS", "PKG-WB", "PKG-COOLING", "PKG-FLOOR-STALL", "PKG-PART-MASS", "PKG-PU-FIXED"];
 
 // ---------------------------------------------------------------- design generators
 const quantize = (s, v) => +Math.min(s.max, Math.max(s.min, Math.round((v - s.min) / s.step) * s.step + s.min)).toFixed(6);
@@ -219,6 +221,7 @@ test("materials (C15): the table contract, permitted / prohibited classes and co
       { id: "basalt", name: "Basalt fibre / epoxy", density_kg_m3: 2000, E_GPa: 40 },
       { id: "secret", name: "Unobtainium", density_kg_m3: 1000, E_GPa: 500, class: "metal" },
       { id: "bad", name: "Broken record", density_kg_m3: null, E_GPa: 70 },
+      { id: "cfrp-t1100", name: "Carbon fibre (T1100G) / epoxy prepreg", density_kg_m3: 1560, E_GPa: 75 },
     ];
     regs.setMaterials({ _meta: { what: "test table" }, materials: T });
     const m = (part, mat) => regs.materialViolations(part, mat).map(v => v.id);
@@ -236,7 +239,8 @@ test("materials (C15): the table contract, permitted / prohibited classes and co
     // component articles
     assert.deepEqual(m("wheels_front", "az80"), []); assert.deepEqual(m("wheels_rear", "we43"), ["REG-C-MAT-COMPONENT"]); assert.deepEqual(m("wheels_rear", "al7075"), ["REG-C-MAT-COMPONENT"]);
     assert.deepEqual(m("cooling", "al7075"), []); assert.deepEqual(m("cooling", "ti64"), ["REG-C-MAT-COMPONENT"]);
-    assert.deepEqual(m("survival_cell", "cfrp-t800"), []); assert.ok(m("survival_cell", "al7075").includes("REG-C-MAT-COMPONENT"));
+    // C15.5.1(f), C15.5.3: survival-cell skins are CC-UHS, fibre Ftu > 6250 MPa: T800 (5880 MPa) is not, T1100 (7000 MPa) is
+    assert.deepEqual(m("survival_cell", "cfrp-t800"), ["REG-C-MAT-COMPONENT"]); assert.deepEqual(m("survival_cell", "cfrp-t1100"), []); assert.ok(m("survival_cell", "al7075").includes("REG-C-MAT-COMPONENT"));
     assert.ok(m("front_wing", "al7075").includes("REG-C-MAT-COMPONENT"));
     assert.deepEqual(m("halo", "ti64"), []); assert.deepEqual(m("halo", "steel4340"), ["REG-C-MAT-COMPONENT"]);
     assert.deepEqual(m("driver_ballast", "w-heavy"), []); assert.deepEqual(m("driver_ballast", "al7075"), ["REG-C-MAT-DENSITY"]);
@@ -258,9 +262,8 @@ test("materials (C15): the table contract, permitted / prohibited classes and co
 test("materials (C15) on the real table: every row's verdict on a general part agrees with its fia.status; every baseline material is legal on its part; the bench rejects an illegal material", () => {
   const M = require("../concept/materials.js");
   regs.setMaterials(M.MATERIALS);
-  // the checklist's reading differs from the table's on mg_we43 only: C15.2.1(c) lists WE43B (UNS M18432) and WE43C (UNS M18434),
-  // not WE43 / WE43A; the row does not say which (correction requested for concept/data/materials-2026.json)
-  const KNOWN = { mg_we43: "grade unstated" };
+  // (mg_we43 now names its variant, WE43C / UNS M18434, so the table and the checklist agree on every row)
+  const KNOWN = {};
   for (const m of M.MATERIALS) {
     const v = regs.materialViolations("rear_wing", m.id).map(x => x.id), expectLegal = m.fia.status === "permitted";
     if (KNOWN[m.id]) { assert.ok(v.length > 0, m.id + " " + KNOWN[m.id]); continue; }
@@ -309,7 +312,10 @@ test("PU and ERS figures the scorer uses stay inside C5.2 (checkPU, sim constant
   assert.deepEqual(ids_({ ice_kw: 400, mguk_kw: 360, es_deploy_mj_per_lap: 12.5, es_harvest_mj_per_lap: 8.5, es_soc_window_mj: 4 }), ["REG-C-ERS-K"]);
   assert.deepEqual(ids_({ ice_kw: 400, mguk_kw: 350, es_deploy_mj_per_lap: 13, es_harvest_mj_per_lap: 9, es_soc_window_mj: 4.5 }), ["REG-C-ES-SOC", "REG-C-ES-RECHARGE", "REG-C-ES-SOC"]);
   assert.deepEqual(ids_({ ice_kw: 900, mguk_kw: 350, es_deploy_mj_per_lap: 12.5, es_harvest_mj_per_lap: 8.5 }), ["REG-C-FUEL-FLOW"]);
-  assert.deepEqual(regs.checkPU({ ice_kw: 400, mguk_kw: 350, es_deploy_mj_per_lap: 12.5, es_harvest_mj_per_lap: 8.5 }, { recharge_limit_mj: 6.5 }).map(v => v.id), ["REG-C-ES-RECHARGE"]);
+  // the session limit (6.5 MJ in Silverstone qualifying) binds the lap's recharge, not the declared 8.5 MJ capability
+  assert.deepEqual(regs.checkPU({ ice_kw: 400, mguk_kw: 350, es_deploy_mj_per_lap: 12.5, es_harvest_mj_per_lap: 8.5 }, { recharge_limit_mj: 6.5 }).map(v => v.id), []);
+  assert.deepEqual(regs.checkPU({ ice_kw: 400, mguk_kw: 350, es_deploy_mj_per_lap: 12.5, es_harvest_mj_per_lap: 8.5 }, { recharge_limit_mj: 6.5, harvested_mj: 6.4 }).map(v => v.id), []);
+  assert.deepEqual(regs.checkPU({ ice_kw: 400, mguk_kw: 350, es_deploy_mj_per_lap: 12.5, es_harvest_mj_per_lap: 8.5 }, { recharge_limit_mj: 6.5, harvested_mj: 6.9 }).map(v => v.id), ["REG-C-ES-RECHARGE"]);
   // the lap sim's own regulation constants and its ERS-K taper (C5.2.7-C5.2.10)
   assert.equal(lapsim.REGS.mguk_max_kw, 350); assert.equal(lapsim.REGS.es_soc_window_mj, 4); assert.equal(lapsim.REGS.recharge_max_mj, 8.5);
   for (let v = 0; v <= 360; v += 0.5) for (const ot of [false, true]) {
@@ -352,11 +358,24 @@ test("the optimiser never keeps an illegal car: replayed lineage (physics bench,
 
 // ---------------------------------------------------------------- known conflicts in files this checklist does not own (todo: they
 // do not fail the suite; each names the fix requested in docs/concept/FIA_CHECKLIST.md "Fixes requested")
-test("C10.10.1: the PhysicalCar track widths fit the suspension-width limit (front ≤ 1.540 m, rear ≤ 1.470 m)", { todo: "fix requested: concept/sim/lapsim.js baselineCar tracks 1.60 / 1.55 m and concept/parts.js wheel |y| 790 / 760 mm exceed C10.10.1" }, () => {
+test("C10.10.1: the PhysicalCar track widths and the mass sheet's wheel rows fit the suspension-width limit (front ≤ 1.540 m, rear ≤ 1.470 m)", () => {
   assert.deepEqual(regs.checkPhysical(physical.physical(B)), []);
+  assert.deepEqual(regs.checkPhysical(physical.physical(design.baseline("redbull"))), []);
+  const rows = design.facts(B).mass.parts;
+  for (const id of ["wheels_front", "wheels_rear"]) assert.ok(typeof rows.find(r => r.id === id).y_mm === "number", id + " carries y_mm");
+  assert.ok(!regs.check(B).some(v => v.id === "REG-C-SUSP-WIDTH"));
+  const f = design.facts(B); f.mass.parts.find(r => r.id === "wheels_front").y_mm = 790;   // the v1 wheel position
+  assert.deepEqual(regs.checkFacts(f).filter(v => v.id === "REG-C-SUSP-WIDTH").map(v => v.part), ["wheels_front"]);
 });
-test("C3.5.1(a), App. C2 §4.5/§4.11: the floor throat parameter fits the RV-FLOOR-BODY roof (Z ≤ 75 mm between XF=1775 and XR=−600)", { todo: "fix requested: concept/parts.js floor.throat_mm domain 80-130 'above Z=0' lies above the 75 mm roof" }, () => {
+test("C3.5.1(a), App. C2 §4.5/§4.11: the floor throat parameter fits the RV-FLOOR-BODY roof (Z ≤ 75 mm between XF=1775 and XR=−600)", () => {
   assert.ok(parts.BY_ID.floor.params.throat_mm.max <= regs.FLOOR_ROOF_Z);
+  assert.equal(regs.BY_ID["REG-C-FLOOR-ROOF"].kind, "max");
+  const f = design.facts(B); f.floor = Object.assign({}, f.floor, { throat_mm: 76 });
+  assert.ok(regs.checkFacts(f).some(v => v.id === "REG-C-FLOOR-ROOF"));
+  // a v1 design (throat 80-130 "above Z=0") maps onto v2 by × 0.6 with the same aero; above 125 it is clamped to the roof
+  const v1 = design.clone(B); v1.params.floor.throat_mm = 100; const m = design.migrate(v1);
+  assert.equal(m.params.floor.throat_mm, 60); assert.deepEqual(regs.check(m), []);
+  v1.params.floor.throat_mm = 129; assert.equal(design.migrate(v1).params.floor.throat_mm, 75);
 });
 test("checkPhysical bites: tracks past C10.10.1 and PU figures past C5.2 are named", () => {
   const pc = JSON.parse(JSON.stringify(physical.physical(B)));

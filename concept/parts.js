@@ -36,7 +36,7 @@
   const PLANK = { free_mm: 32, wear_per_mm: 0.25, thickness_mm: 10 };
   // unsprung parts: tyre radius 353 mm (≈ 705 mm OD; PhysicalCar tyres.radius_m), 8 mm static deflection (estimate) -> wheel
   // centres 345 mm above the ground, Z ≈ 300 at the baseline (10 mm plank + 35 mm ride height below Z=0)
-  const WHEEL = { tyre_radius_mm: 353, deflection_mm: 8 };
+  const WHEEL = { tyre_radius_mm: 353, deflection_mm: 8, y_front_mm: 770, y_rear_mm: 735 };
   // unsprung share of each suspension group (uprights, hubs and about half of the links move with the wheel; estimate)
   const UNSPRUNG = { susp_frac: 0.4 };
   // C5.5.1 / C5.18.7 MGU-K Mechanical Transmission option of the concept PU: fixed at "a" (all of the speed ratio in RV-PU-ERS:
@@ -65,7 +65,7 @@
       params: { span_mm: P(900, 1300, 1100, 10, "mm", "Span"), chord_mm: P(300, 600, 420, 5, "mm", "Chord (X extent)"), aoa_deg: P(5, 35, 20, 0.5, "°", "Wing setting (lab rear_wing_deg units)"), elements: P(1, 4, 2, 1, "", "Profile volumes", { int: true }), endplate_top_mm: P(760, 960, 860, 5, "mm", "Endplate top (Z)"), sm_delta_deg: P(0, 30, 0, 0.5, "°", "Straight-mode flap incidence reduction") },
       kind: EST, sources: [], basis: "11.5 kg without actuator (MASS.md): 7.6 kg of profiles at 0.462 m² and 2 volumes (∝ planform, +15 % per extra volume) + 2.9 kg endplates ∝ height + 1.0 kg pylon and brace; + 1.0 kg actuator if straight mode is used" },
     { id: "floor", name: "Floor (body, foot, edge, boards, fences, plank and skids)", group: "aero",
-      params: { width_mm: P(1200, 1700, 1450, 10, "mm", "Floor body width (2 × max |Y|)"), throat_mm: P(80, 130, 100, 1, "mm", "Venturi throat height above Z=0"), ride_height_mm: P(20, 70, 35, 0.5, "mm", "Static ride height at the plank") },
+      params: { width_mm: P(1200, 1700, 1450, 10, "mm", "Floor body width (2 × max |Y|)"), throat_mm: P(40, 75, 60, 0.5, "mm", "Venturi throat roof height above Z=0 (≤ 75: RV-FLOOR-BODY roof, C3.5.1(a))"), ride_height_mm: P(20, 70, 35, 0.5, "mm", "Static ride height at the plank") },
       kind: EST, sources: ["FIA-C-ISS20"], basis: "31.4 kg (MASS.md): 24.4 kg of floor at the baseline planform (3100 × 1450 mm), ∝ planform (length WB−300 mm × floor body width) + 7 kg plank assembly ∝ length (regulation geometry, C3.6; specific gravity 1.30-1.45)" },
     { id: "diffuser", name: "Diffuser", group: "aero", params: { expansion_deg: P(8, 22, 14, 0.5, "°", "Diffuser expansion angle") }, kind: EST, sources: [], basis: "5.0 kg (MASS.md), +2 % per degree of expansion" },
     { id: "sidepods", name: "Sidepods (bodywork, inlets, undercut)", group: "aero",
@@ -183,8 +183,10 @@
       (() => { const k = matFactor(params, "gearbox"), fr = k === 1 ? 0 : mats().PARTS.gearbox.frac, sc = 1 - fr + fr * k; const mb = 48.6 * sc, ms = PACK.spacer_kg_per_mm * g.spacer_mm * k, xs = g.XPU + PACK.ice_len_mm + 0.5 * g.spacer_mm; return ["gearbox", mb + ms, (mb * (g.XR - 230) + ms * xs) / (mb + ms), 270, 0]; })(),
       ["front_suspension", W("front_suspension", 30.7), 0, 280, 500],
       ["rear_suspension", W("rear_suspension", 27.2), g.XR, 300, 500],
-      ["wheels_front", 2 * 10.0 + 0.455 * ntm, 0, zWheel, 790],
-      ["wheels_rear", 2 * 11.4 + 0.545 * ntm, g.XR, zWheel, 760],
+      // wheel centre planes at the widest legal track (C10.10.1: Wheel Coordinate System origin = inboard rim plane at |Y| ≤ 603 / 525,
+      // + half the rim overall width 334 / 420.3 mm, C10.7.2(a)): |y| 770 / 735 mm, tracks 1.540 / 1.470 m (v1 had 790 / 760: illegal)
+      ["wheels_front", 2 * 10.0 + 0.455 * ntm, 0, zWheel, WHEEL.y_front_mm],
+      ["wheels_rear", 2 * 11.4 + 0.545 * ntm, g.XR, zWheel, WHEEL.y_rear_mm],
       ["brakes_front", 11.9, 0, zWheel, 700],
       ["brakes_rear", 11.5, g.XR, zWheel, 700],
       ["cooling", 40.2 * Math.pow(sp.inlet_cm2 / 650, 0.8), g.XC + 250, 300, 500],
@@ -217,7 +219,7 @@
     const sprungCog = ((zcg + ground) * M - zUs) / (M - usF - usR);
     const Mt = mats(), matSummary = Mt ? Mt.summary(params) : {};
     return {
-      parts: rows.map(r => ({ id: r.id, group: r.group, kind: BY_ID[r.id].kind, sources: BY_ID[r.id].sources.slice(), mass_kg: r2(r.mass_kg), x_mm: Math.round(r.x_mm), z_mm: Math.round(r.z_mm) })),
+      parts: rows.map(r => ({ id: r.id, group: r.group, kind: BY_ID[r.id].kind, sources: BY_ID[r.id].sources.slice(), mass_kg: r2(r.mass_kg), x_mm: Math.round(r.x_mm), z_mm: Math.round(r.z_mm), y_mm: Math.round(r.y_mm) })),
       parts_kg: r2(partsKg), ballast_kg: r2(ballastKg), total_kg: r2(M), min_kg: min.kg, session: min.session,
       front_kg: r2(front), rear_kg: r2(rear), front_share: Math.round((front / M) * 10000) / 10000,
       cog_x_mm: r2(xcg), cog_z_mm: r2(zcg), cog_height_mm: r2(zcg + ground), ground_z_mm: -ground, izz_kgm2: r2(izz),

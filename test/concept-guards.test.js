@@ -136,7 +136,7 @@ test("guard 9: floor stall judged at the dynamic ride height with a margin; Phys
   const pc = physical.physical(B);
   assert.equal(pc.aero.floor_stalled, false); assert.ok(pc.aero.stall_margin_mm >= 2, String(pc.aero.stall_margin_mm));
   assert.ok(pc.aero.ride_sens_per_mm > 0, "ride_sens_per_mm keeps its sign");
-  const hack = withParam("floor", "ride_height_mm", 30); hack.params.floor.throat_mm = 80;   // the reviewer's best design: static gap 55.3 mm
+  const hack = withParam("floor", "ride_height_mm", 30); hack.params.floor.throat_mm = 48;   // (v1: 80) the reviewer's best design: static gap 55.3 mm
   const ph = physical.physical(hack);
   assert.equal(ph.aero.floor_stalled, true); assert.ok(ph.aero.stall_margin_mm < 0); assert.ok(ph.aero.ride_sens_per_mm >= 0);
   assert.ok(ids(hack).includes("PKG-FLOOR-STALL"));

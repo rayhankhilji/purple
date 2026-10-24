@@ -10,14 +10,14 @@
 (function () {
   const root = typeof window !== "undefined" ? window : globalThis;
   const EI = (root.EI = root.EI || {}); const C = (EI.concept = EI.concept || {});
-  const VERSION = "surrogate features v3";
+  const VERSION = "surrogate features v4";
 
   // reference constants. Changing any of them changes every feature: bump VERSION (saved models record it and refuse a mismatch).
   const K = Object.freeze({
     rho: 1.225,          // kg/m³, ISA sea-level air: only scales the aero groups (a constant factor, not a weather model)
     g: 9.81,             // m/s²
     v_ref: 60,           // m/s (216 km/h): a characteristic medium-fast corner speed; q_ref = ½ ρ v_ref² ≈ 2205 Pa
-    bal_ref: -0.0033,    // aero balance − weight distribution of the baseline concept car (0.4467 − 0.4500, physical() on the sim v2 anchor car): the reference set-up
+    bal_ref: -0.0085,    // aero balance − weight distribution of the baseline concept car (0.4415 − 0.4500, physical() on the sim v3 anchor car): the reference set-up
     rh_ref_mm: 35,       // baseline static ride height
     bottoming_mm: 30,    // below this static ride height the plank works the ground (lab/aero.js BOTTOMING, sim v0 grip term)
     load_ref_n: 1000,    // tyre load-sensitivity unit (load_sens is μ fraction lost per kN)

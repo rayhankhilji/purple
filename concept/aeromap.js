@@ -55,14 +55,17 @@
   // the baseline (e0 = 1.233). A given endplate is worth more on a shorter wing (h/b larger): span and endplate do not add.
   const ENDPLATE = { k: 1.9, z_ref_mm: 725 };
   const endplateE = p => 1 + ENDPLATE.k * Math.max(0, p.endplate_top_mm - ENDPLATE.z_ref_mm) / p.span_mm;
-  // floor: ground effect ~ 1/(ride height + c) with c = throat_k · throat height; c = 31.7 mm at the baseline throat (100 mm) makes
+  // floor: ground effect ~ 1/(ride height + c) with c = throat_k · throat height; c = 31.7 mm at the baseline throat makes
+  // (v2 parameterisation, 2026-10-24 FIA pass: the throat is the venturi roof's height above Z=0, which C3.5.1(a) caps at the
+  // RV-FLOOR-BODY roof, Z=75; the old 80-130 mm domain "above Z=0" lay above that roof. Rescaled ×0.6 with throat_k ÷ 0.6, so
+  // c, and every aero number, is unchanged for a v1 design moved to throat_v2 = 0.6 × throat_v1: base 100 -> 60, 80 -> 48)
   // d(df)/d(rh) = -0.006 per mm at 35 mm, as in the lab. Below an effective gap of stall_mm the floor starts to stall (porpoising
   // region): load falls off quadratically. The stall is judged at the DYNAMIC ride height: static minus dyn_compression_mm (5 mm,
   // assumption: suspension and tyre compression under high-speed aero load), and the model rule PKG-FLOOR-STALL wants the dynamic
   // gap at least stall_margin_mm (2 mm, assumption) above stall_mm. The ground-effect term itself stays on the static height (the
   // lab calibration). Diffuser expansion peaks at 18°. Undercut feeds the floor edge (+0.02 % /mm) and trims body drag (-0.05 %/mm)
   // but past 140 mm it eats radiator volume (cooling capacity -1/3 % per mm).
-  const FLOOR = { throat_k: 0.3167, base_rh: 35, base_throat: 100, stall_mm: 58, stall_w: 25, stall_floor: 0.4, base_len_mm: 3100, base_width_mm: 1450, dyn_compression_mm: 5, stall_margin_mm: 2 };
+  const FLOOR = { throat_k: 0.3167 / 0.6, base_rh: 35, base_throat: 60, stall_mm: 58, stall_w: 25, stall_floor: 0.4, base_len_mm: 3100, base_width_mm: 1450, dyn_compression_mm: 5, stall_margin_mm: 2 };
   // FRONT WING IN GROUND EFFECT (interaction ride height × front wing × balance). An inverted wing near the ground gains load as
   // its height-to-chord ratio h/c falls (Zerihan & Zhang 2000, J. Aircraft 37(6), single-element wing in ground effect: the
   // force-enhancement region above h/c ≈ 0.1). Modelled as lift × ((h0/c0) / (h/c))^n with n = 0.25 (estimate read off the

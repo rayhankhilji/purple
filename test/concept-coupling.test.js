@@ -15,8 +15,8 @@ const lap = d => sim.simulateLap(physical.physical(d), "silverstone").lap_s;
 const claT = pc => pc.aero.corner.CLA_front_m2 + pc.aero.corner.CLA_rear_m2;
 const bal = pc => pc.aero.corner.CLA_front_m2 / claT(pc);
 
-test("baseline: physical(baseline) is still exactly the anchor car, and laps the same time (generic 88.115 s, RB22 88.752 s on sim v2)", () => {
-  for (const [d, team, want] of [[GEN, null, 88.115], [RB, "redbull", 88.752]]) {
+test("baseline: physical(baseline) is still exactly the anchor car, and laps the same time (generic 88.107 s, RB22 88.763 s on sim v3)", () => {
+  for (const [d, team, want] of [[GEN, null, 88.107], [RB, "redbull", 88.763]]) {
     const pc = physical.physical(d), A = physical.anchor(team);
     assert.equal(pc.mass_kg, A.mass_kg); assert.equal(pc.cog_height_m, A.cog_height_m); assert.equal(pc.weight_dist_front, A.weight_dist_front);
     for (const k of ["CLA_front_m2", "CLA_rear_m2", "CDA_m2"]) assert.ok(Math.abs(pc.aero.corner[k] - A.aero.corner[k]) < 2e-6 && Math.abs(pc.aero.straight[k] - A.aero.straight[k]) < 2e-6, k);
@@ -46,7 +46,7 @@ const SENS = {
   "rear_wing.endplate_top_mm": { to: 880, expect: { cda: -1, cog: +1 } },
   "rear_wing.sm_delta_deg": { to: 13, expect: { cdaS: +1 } },
   "floor.width_mm": { to: 1500, expect: { cla: +1 } },
-  "floor.throat_mm": { to: 105, expect: { cla: -1 } },
+  "floor.throat_mm": { to: 63, expect: { cla: -1 } },
   "floor.ride_height_mm": { to: 37, expect: { cla: -1, cog: +1 } },
   "diffuser.expansion_deg": { to: 15, expect: { cla: +1 } },
   "sidepods.inlet_cm2": { to: 700, expect: { cda: +1, mass: +1 } },
@@ -80,7 +80,7 @@ test("interactions: the combined effect differs from the sum where the physics c
   const wings = interaction(lap, [["front_wing", "aoa_deg", 27]], [["rear_wing", "aoa_deg", 22]]);
   assert.ok(Math.abs(wings.int) > 0.05, "front × rear wing lap interaction " + JSON.stringify(wings));
   // floor: throat × ride height (ground effect 1/(rh + k·throat)^β is not separable)
-  assert.ok(Math.abs(interaction(d => A(d).df, [["floor", "throat_mm", 90]], [["floor", "ride_height_mm", 32]]).int) > 1e-3);
+  assert.ok(Math.abs(interaction(d => A(d).df, [["floor", "throat_mm", 54]], [["floor", "ride_height_mm", 32]]).int) > 1e-3);
   // floor width × ride height (planform × ground effect)
   assert.ok(interaction(d => A(d).df, [["floor", "width_mm", 1540]], [["floor", "ride_height_mm", 32]]).int > 5e-4);
   // diffuser × gap: the best expansion falls with the gap, so a steeper diffuser gains less on a lower car ...
@@ -211,4 +211,22 @@ test("coupling docs exist and keep the honesty rules (no banned words in the new
   }
   const doc = fs.readFileSync(path.join(ROOT, "docs/concept/COUPLING.md"), "utf8");
   for (const s of parts.PARAMS) assert.ok(doc.includes(s.part + "." + s.param), "COUPLING.md row for " + s.part + "." + s.param);
+});
+
+test("materials (FIA pass): mutate draws only materials the regulations allow on the part; the front wing takes laminates only; the table's C15 corrections", () => {
+  const rng = design.seededRng(5); let swaps = 0;
+  for (let i = 0; i < 400; i++) {
+    const r = design.mutate(GEN, rng, 0.1, { materials: true, material_p: 1 });
+    for (const c of r.changes) if (c.param === "material") { swaps++; assert.deepEqual(regs.materialViolations(c.part, c.to), [], c.part + " " + c.to); }
+  }
+  assert.ok(swaps > 300, "swaps " + swaps);
+  assert.deepEqual(materials.PARTS.front_wing.forms, ["laminate"]);
+  assert.match(materials.problem("front_wing", "al_7075_t6"), /laminate/);
+  const M = id => materials.get(id);
+  assert.match(M("mg_we43").name, /WE43C/); assert.equal(M("mg_we43").uns, "M18434"); assert.deepEqual(regs.materialViolations("gearbox", "mg_we43"), []);
+  assert.match(M("afrp_k49").fia.note, /KC60 aramid cloth only/); assert.doesNotMatch(M("cfrp_t1100g").name, /CC-UHS/);
+  assert.match(M("cfrp_t1100g").fia.note, /woven/); assert.equal(M("tungsten_ha").fia.article, "C15.2.1(g); C4.3.2(d); C15.6.1(g)");
+  // C15.5.1(f): survival-cell skins are CC-UHS (fibre Ftu > 6250 MPa): the baseline T1100G passes, T800S does not
+  assert.deepEqual(regs.materialViolations("survival_cell", "cfrp_t1100g"), []);
+  assert.deepEqual(regs.materialViolations("survival_cell", "cfrp_t800s").map(v => v.id), ["REG-C-MAT-COMPONENT"]);
 });
