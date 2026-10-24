@@ -87,8 +87,9 @@ td.best { color: var(--purple); }
 footer.honest { flex: none; padding: 6px 14px 8px; border-top: 1px solid var(--line); font: 400 10.5px/1.45 var(--sans); color: var(--muted); }
 
 @media (max-width: 1000px) {
-  body { overflow: auto; }
-  .main { grid-template-columns: 1fr; }
+  html, body { height: auto; }
+  body { overflow: auto; min-height: 100%; }
+  .main { grid-template-columns: 1fr; flex: none; }   /* the page grows with the column; the footer no longer sits on the timing tower */
   .stage { height: 62vh; }
   .side { overflow: visible; }
   .top { flex-wrap: wrap; height: auto; padding: 8px 12px; row-gap: 8px; }

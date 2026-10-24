@@ -39,7 +39,7 @@
     if (built.errors && built.errors.length) banner(built.errors);
     S.payload = built.payload;
     if (S.mode === "quali") await buildQuali();
-    $("sub").textContent = "concept race · " + (built.design.id || "design") + (built.design.label ? " · " + built.design.label : "") + " · on the game's 3D Silverstone";
+    $("sub").textContent = "concept race · " + designName(built.design) +(built.design.label ? " · " + built.design.label : "") + " · on the game's 3D Silverstone";
     renderLap(); renderCar(); renderCheck();
     setMode(S.mode, true);
   }
@@ -97,7 +97,9 @@
     const P = S.qualiP; if (!P) return;
     const t = st ? st.t : -1, n = P.cars.length, fin = (st && st.fin) || [], dist = (st && st.d) || [];
     const rows = P.cars.map((c, i) => ({ c, i, f: fin[i] == null ? null : fin[i], d: dist[i] == null ? -1 : dist[i] }));
-    rows.sort((a, b) => (a.f != null) !== (b.f != null) ? (a.f != null ? -1 : 1) : a.f != null ? (Math.round(a.f * 1e6) - Math.round(b.f * 1e6)) || a.c.rank - b.c.rank : b.d - a.d || a.c.rank - b.c.rank);
+    // before the clock reaches the control line (t < 0) the cars are still in their run-up, slowest furthest along: list them in qualifying order
+    if (!st || t < 0) rows.sort((a, b) => a.c.lap_s - b.c.lap_s || a.c.rank - b.c.rank);
+    else rows.sort((a, b) => (a.f != null) !== (b.f != null) ? (a.f != null ? -1 : 1) : a.f != null ? (Math.round(a.f * 1e6) - Math.round(b.f * 1e6)) || a.c.rank - b.c.rank : b.d - a.d || a.c.rank - b.c.rank);
     const firstFin = rows.find((r) => r.f != null), leadRun = rows.find((r) => r.f == null);
     let pos = 0, h = "";
     for (const r of rows) {
@@ -105,7 +107,7 @@
       const p = c.kind === "base" ? "" : String(++pos);
       let v, g;
       if (r.f != null) { v = f3(r.f); g = r === firstFin ? "fastest" : sg(r.f - firstFin.f); }
-      else if (!st || t < 0) { v = "—"; g = "on the line"; }
+      else if (!st || t < 0) { v = "—"; g = "at start"; }
       else { const into = Math.max(0, Math.min(r.d, c.L)); v = Math.round(into) + " m"; g = r === leadRun ? "leads" : sg(t - RP.tAtS(P.tables[leadRun.i], Math.max(1e-6, into)), 2); }
       h += '<div class="r' + (me ? " me" : "") + (r.f != null ? " fin" : "") + (r === firstFin ? " best" : "") + '" role="row" title="' + esc(c.name + " · " + c.source + (c.scale_note ? " · " + c.scale_note : "") + " · lap " + c.lap_s.toFixed(3) + " s") + '">' +
         '<span class="p">' + p + '</span><span class="sw2" style="background:' + esc(c.color) + '"></span><span class="cd">' + esc(c.short) + '</span><span class="nm">' + esc(c.name) + '</span><span>' + tag + (c.time_scaled ? ' <i class="tg ts">time-scaled</i>' : "") + '</span><span class="v">' + v + '</span><span class="g ' + (r.f != null && r === firstFin ? "pu" : "muted") + '">' + g + "</span></div>";
@@ -139,11 +141,16 @@
     $("lapTable").innerHTML = h;
     $("lapSrc").textContent = "physics-sim seconds"; $("lapSrc").title = S.payload.conditions_label;
   }
+  // a design changed by the lab keeps its baseline id ("baseline-redbull"): name it as the concept when its lap differs from the RB22 ghost's
+  function designName(d) {
+    const me = S.payload && S.payload.cars[0], rf = S.payload && S.payload.cars[1], id = (d && d.id) || "design";
+    return /^baseline-/.test(id) && me && rf && Math.abs(me.lap_s - rf.lap_s) > 5e-4 ? "PURPLE concept (from " + id + ")" : id;
+  }
   function renderCar() {
     const b = S.built.bench, pc = b.physical, d = S.built.design, A = pc.aero, me = S.payload.cars[0], rf = S.payload.cars[1];
     $("carSrc").textContent = (d.team || "generic") + " baseline frame";
     $("carKv").innerHTML = kv([
-      ["design", esc(d.id || "—")],
+      ["design", esc(designName(d))],
       ["legal (concept/regs.js)", b.legal ? "yes" : "no", b.legal ? "gr" : "rd"],
       ["mass, mass sheet (kg)", (+b.mass.total_kg).toFixed(1)],
       ["CLA corner / straight (m²)", (A.corner.CLA_front_m2 + A.corner.CLA_rear_m2).toFixed(3) + " / " + (A.straight.CLA_front_m2 + A.straight.CLA_rear_m2).toFixed(3)],
