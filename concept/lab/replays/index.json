@@ -1,8 +1,25 @@
 {
  "format": "purple-replay/1",
- "built_at": "2026-10-24T13:55:19.854Z",
+ "built_at": "2026-10-24T14:03:15.176Z",
  "note": "recorded LIVE Mubit runs (real x-middleware-request-id values); replayed in the browser, not re-run; mock runs are never listed",
  "runs": [
+  {
+   "name": "trained-engineer-seed12",
+   "kind": "engineer-v2",
+   "engine": "engine v2 · autonomous engineer: Mubit decides the subspace → surrogate screen → physics confirm → interactions → kept / reverted by the numbers",
+   "recorded_at": "2026-10-24T13:56:58.638Z",
+   "calls": 120,
+   "trained": true,
+   "model": "claude-haiku-4-5-20251001",
+   "decisions": 120,
+   "baseline_lap_s": 88.745,
+   "peak_lap_s": 87.815,
+   "gap_to_pole_s": -0.296,
+   "directed_gain_share": 1,
+   "first_request_id": "mreq_01a16e334fc37d129a48fe738a78ba6e",
+   "last_request_id": "mreq_01a16e389dd67382b1eb016c47d65108",
+   "file": "trained-engineer-seed12.json"
+  },
   {
    "name": "trained-engineer-seed11",
    "kind": "engineer-v2",
