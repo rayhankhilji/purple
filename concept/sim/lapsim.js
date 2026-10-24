@@ -50,7 +50,38 @@
       reset: [[400, 550], [3000, 3300], [5650, 5900]],
       vthr: [[3700, 4150, 300], [5600, 5800, 230]],
     },
+    // multi-track (SIM.md "Multi-track"): the FIA 2026 <event> Grand Prix "Power Unit Information" documents (Race Director,
+    // fia.com decision documents, read 2026-10-24; transcribed by hand from the page image). Lap distances are on the FIA
+    // centreline (lap_m), mapped by length ratio as for Silverstone. Qualifying-only rows ([..] in the document) are included.
+    // recharge_q_mj: C5.2.10 maximum recharge per lap in Qualifying; rate_kw_s / limited_m: C5.12.8 rate limit and power-limited
+    // distance; curve: the C5.2.8 ERS-K curve for "any practice session incl. Qualifying" (Base-Overtake = C5.2.8.ii; Monaco
+    // "Rev 1 - Overtake" read off the document's drawing: 350 kW to 200 km/h, ~150 kW at 300 km/h, 0 by ~308 km/h).
+    monza: {
+      lap_m: 5793, source: "FIA 2026 Italian GP Power Unit Information (R13)", recharge_q_mj: 5.0, rate_kw_s: 50, limited_m: 4218, curve: "base_overtake",
+      big: [[2100, 2800], [5050, 5350]], reset: [[5300, 5800]], vthr: [],
+    },
+    monaco: {
+      lap_m: 3337, source: "FIA 2026 Monaco GP Power Unit Information (R06)", recharge_q_mj: 9.0, rate_kw_s: 100, limited_m: 1388, curve: [[0, 350], [200, 350], [300, 150], [308, 0]], curve_name: "Rev 1 - Overtake",
+      big: [[2980, 3200]], reset: [[3070, 3400]], vthr: [],
+    },
+    spa: {
+      lap_m: 7004, source: "FIA 2026 Belgian GP Power Unit Information (R10)", recharge_q_mj: 7.0, rate_kw_s: 50, limited_m: 4594, curve: "base_overtake",
+      big: [[2350, 3250], [3750, 4000], [4450, 4850], [6730, 6900]], reset: [[1150, 1400], [2650, 2750], [3800, 4000], [6150, 6350], [6800, 7000]],
+      vthr: [[2500, 2680, 240], [4450, 4650, 240]],
+    },
+    hungaroring: {
+      lap_m: 4381, source: "FIA 2026 Hungarian GP Power Unit Information (R11, 22 Jul 2026)", recharge_q_mj: 9.0, rate_kw_s: 100, limited_m: 1885, curve: "base_overtake",
+      big: [[1780, 2000], [2570, 2700], [3500, 4000], [4000, 4200]], reset: [[4150, 4400]], vthr: [[1150, 1400, 240]],
+    },
   };
+  // the event's ERS-K propulsion limit (kW) at a speed: Silverstone keeps C5.2.8 as calibrated (opts.overtake selects C5.2.8.ii);
+  // the multi-track events use the qualifying curve of their FIA document
+  function eventTaper(P, overtake) {
+    if (!P || !P.curve) return v => mgukTaperKw(v, overtake);
+    if (P.curve === "base_overtake") return v => mgukTaperKw(v, true);
+    const C = P.curve;
+    return v => { if (v <= C[0][0]) return C[0][1]; for (let k = 1; k < C.length; k++) if (v <= C[k][0]) return C[k - 1][1] + ((v - C[k - 1][0]) / (C[k][0] - C[k - 1][0])) * (C[k][1] - C[k - 1][1]); return 0; };
+  }
   function puSectorArrays(tr, trackId) {
     if (tr._puSectors) return tr._puSectors;
     const n = tr.n, big = new Uint8Array(n), reset = new Uint8Array(n), vthr = new Float64Array(n).fill(REG_RATE.vthr_kmh), P = PU_SECTORS[trackId];
@@ -129,6 +160,23 @@
   // pressure 1007.4-1007.8 mbar, humidity 46.2-50.2 %, wind 0.3-4.9 m/s with no published direction (-> 0), dry.
   // recharge_limit_mj: Silverstone qualifying recharge limit 6.5 MJ/lap (FIA Power Unit Information doc, same file, energy_limits).
   const DEFAULT_CONDITIONS = Object.freeze({ air_temp_c: 25.2, track_temp_c: 40.4, air_pressure_hpa: 1007.6, humidity_pct: 48.2, wind_ms: 0, wind_from_deg: 0, wet: false, recharge_limit_mj: 6.5 });
+  // multi-track: each event's qualifying conditions = the median of the OpenF1 one-minute weather samples inside the session
+  // (concept/data/telemetry/<circuit>/<circuit>-2026-q-weather.json); wind = the vector mean of the samples (the steady part; gusts
+  // average out), direction as OpenF1 reports it (from); recharge = the event's FIA qualifying limit (PU_SECTORS). Dry at all four.
+  const EVENT_CONDITIONS = Object.freeze({
+    monza: Object.freeze({ air_temp_c: 34.0, track_temp_c: 53.5, air_pressure_hpa: 994.6, humidity_pct: 34.4, wind_ms: 0.73, wind_from_deg: 242, wet: false, recharge_limit_mj: 5.0 }),
+    monaco: Object.freeze({ air_temp_c: 23.7, track_temp_c: 36.65, air_pressure_hpa: 1017.5, humidity_pct: 54.4, wind_ms: 0.73, wind_from_deg: 195, wet: false, recharge_limit_mj: 9.0 }),
+    spa: Object.freeze({ air_temp_c: 20.9, track_temp_c: 35.2, air_pressure_hpa: 968.4, humidity_pct: 55.6, wind_ms: 2.69, wind_from_deg: 314, wet: false, recharge_limit_mj: 7.0 }),
+    hungaroring: Object.freeze({ air_temp_c: 26.8, track_temp_c: 46.9, air_pressure_hpa: 984.2, humidity_pct: 23.25, wind_ms: 1.7, wind_from_deg: 133, wet: false, recharge_limit_mj: 9.0 }),
+  });
+  function trackGrip(trackId) {
+    if (trackId === "silverstone") return 1;
+    const SU = EI.conceptSimSetup || (typeof require === "function" ? safeRequire("./setup.js") : null);
+    return SU ? SU.trackGrip(trackId) : 1;
+  }
+  function defaultConditions(trackId) { return EVENT_CONDITIONS[trackId] || DEFAULT_CONDITIONS; }
+  const EVENT_LABEL = { monza: "2026 Italian GP", monaco: "2026 Monaco GP", spa: "2026 Belgian GP", hungaroring: "2026 Hungarian GP" };
+  function labelFor(trackId) { return EVENT_LABEL[trackId] ? "physics lap sim · quasi-steady-state point mass · " + trackId + " field-median telemetry line · car calibrated to 2026 British GP qualifying, set-up and track grip fitted to " + EVENT_LABEL[trackId] + " qualifying" : LABEL; }
   // Timing frame used with the OSM-centreline racing line (opts.line = "osm"; the default telemetry line carries its own, measured
   // on the pole lap - concept/sim/line-silverstone.js). The alignment of the OpenF1 pole trace with the OSM frame puts the
   // control line at OSM s = 80.4 m (Procrustes fit, RMS 5.3 m; build-line.js), not at the game's startFinish 260 m. Lap
@@ -357,14 +405,17 @@
     opts = opts || {}; trackId = trackId || "silverstone";
     if (typeof trackId !== "string" || !/^[a-z0-9_]+$/.test(trackId)) throw new Error("concept sim: trackId must be a circuit id such as 'silverstone' (signature: simulateLap(car, trackId, conditions, opts))");
     checkCar(car);
-    const c = Object.assign({}, DEFAULT_CONDITIONS, conditions || {});
+    const c = Object.assign({}, defaultConditions(trackId), conditions || {});
     const cal = opts.cal || activeCal();
     const tr = T.buildTrack(trackId, opts.line ? { line: opts.line } : undefined), n = tr.n;
     const fuel = c.fuel_kg != null && isFinite(+c.fuel_kg) ? +c.fuel_kg : car.fuel_kg;
     const carF = fuel === car.fuel_kg ? car : Object.assign({}, car, { fuel_kg: fuel });
     const m = carF.mass_kg + carF.fuel_kg, me = m * MODEL.rot_mass_factor, rho = airDensity(c);
     const muT = tyreTempFactor(c.track_temp_c);
-    const tab = buildTables(carF, rho, cal, (c.wet ? MODEL.wet_mu : 1) * muT, c.wet ? MODEL.wet_crr : 1);
+    // multi-track: the circuit's grip factor (surface / temperature beyond MODEL.tyre_temp, shared by every car; concept/sim/setup.js
+    // trackGrip, fitted by build-fit-tracks.js; 1 at Silverstone, the calibration circuit). opts.track_grip overrides (the fit).
+    const tg = opts.track_grip != null && isFinite(+opts.track_grip) ? +opts.track_grip : trackGrip(trackId);
+    const tab = buildTables(carF, rho, cal, (c.wet ? MODEL.wet_mu : 1) * muT * tg, c.wet ? MODEL.wet_crr : 1);
     const du = MODEL.du, NU = tab[0].AY.length;
     // linear interpolation in a table at air speed u
     const L = (arr, u) => { let x = u / du; if (x < 0) x = 0; if (x > NU - 1.001) x = NU - 1.001; const i = x | 0, t = x - i; return arr[i] + t * (arr[i + 1] - arr[i]); };
@@ -430,7 +481,10 @@
     const revCut = vk => { if (!gr) return 1; const N = gr.rpm_per_kmh[gearOf(vk)] * vk, x = (revLim - N) / RV.cut_band_rpm; return x >= 1 ? 1 : x > 0 ? x : 0; };
     const clipKw = Math.min(pu.superclip_kw != null ? pu.superclip_kw : MODEL.superclip_kw, kKw);
     const recLim = c.recharge_limit_mj != null && isFinite(+c.recharge_limit_mj) ? +c.recharge_limit_mj : Infinity;
-    const harvCap = Math.min(pu.es_harvest_mj_per_lap, recLim, REGS.recharge_max_mj) * 1e6, depCap = pu.es_deploy_mj_per_lap * 1e6, soc = REGS.es_soc_window_mj * 1e6;
+    // multi-track: an event document may set the qualifying recharge above C5.2.10's 8.5 MJ (Monaco, Hungary: 9.0 MJ; the car's
+    // es_harvest_mj_per_lap copies the regulation figure, so it is raised with it); 0 at Silverstone (unchanged)
+    const evCap = (PU_SECTORS[trackId] && PU_SECTORS[trackId].recharge_q_mj) || 0;
+    const harvCap = Math.min(Math.max(pu.es_harvest_mj_per_lap, evCap), recLim, Math.max(REGS.recharge_max_mj, evCap)) * 1e6, depCap = pu.es_deploy_mj_per_lap * 1e6, soc = REGS.es_soc_window_mj * 1e6;
     // the store at the start of the flying lap (conditions.es_start_mj, default: the full C5.2.9 window) and the timing frame
     const socWin = soc, socStart = c.es_start_mj != null && isFinite(+c.es_start_mj) ? Math.min(socWin, Math.max(0, +c.es_start_mj * 1e6)) : socWin;
     const tim = tr.timing || TIMING[trackId] || { control_s: tr.sf, sectors: tr.sectors, trap_s: tr.sf, i1_s: tr.sectors[0], i2_s: tr.sectors[1], source: "game data sf + sector lines" };
@@ -439,6 +493,7 @@
     if (["regulated", "threshold", "marginal", "optimal"].indexOf(strat) < 0) throw new Error("concept sim: opts.strategy is 'regulated', 'marginal', 'threshold' or 'optimal'");
     const reg = strat === "regulated", overtake = !!opts.overtake, noClip = !!opts.no_superclip, clipGate = ETA * ETA, optimal = strat === "optimal" || reg, marginal = strat === "marginal";
     const PS = puSectorArrays(tr, trackId), rBig = PS.big, rReset = PS.reset, rVthr = PS.vthr;
+    const taper = eventTaper(PU_SECTORS[trackId], overtake), rateKwS = (PU_SECTORS[trackId] && PU_SECTORS[trackId].rate_kw_s) || REG_RATE.rate_kw_s;
     const clipRho = cal.clip_rho != null ? cal.clip_rho : MODEL.clip_rho;
     const vf = new Float64Array(n), tAt = new Float64Array(n), modeAt = new Uint8Array(n), brk = new Uint8Array(n), sens = new Float64Array(n);
 
@@ -479,7 +534,7 @@
         const vv = v > 3 ? v : 3;
         // deploy (K power limited by the C5.2.8 taper) or superclip
         let PkMech = 0, PclipElec = 0;
-        if (x < 0 || (optimal || marginal ? sens[i] >= x : v < x)) { const tp = mgukTaperKw(v * 3.6, overtake); PkMech = ETA * 1e3 * (tp < kKw ? (tp > 0 ? tp : 0) : kKw); }
+        if (x < 0 || (optimal || marginal ? sens[i] >= x : v < x)) { const tp = taper(v * 3.6); PkMech = ETA * 1e3 * (tp < kKw ? (tp > 0 ? tp : 0) : kKw); }
         else if (optimal) { if (!noClip && Eclip < clipCap && sens[i] < x * clipGate && sens[i] < clipSens) PclipElec = PclipMax; }
         else if (!marginal || sens[i] < x * clipRho) PclipElec = PclipThr;   // threshold / marginal: uniform power share
         const PiceN = gr ? Pice * iceFactor(v * 3.6) : Pice;
@@ -574,7 +629,7 @@
           // Silverstone's power-limited distance is 3833 m > 3500 m) while the ERS-K is above 100 kW; at or below 100 kW, or below
           // the sector's speed threshold (210 km/h, C5.12.7) it follows the plan at once. No increase inside a period (C5.12.5)
           // except in a reset sector; a period ends when the driver lifts (the speed is set by grip or braking).
-          const tp = mgukTaperKw(v * 3.6, overtake), kDep = Math.min(kKw, MODEL.reg_deploy_kw), Kav = tp < kDep ? (tp > 0 ? tp : 0) : kDep;   // kW (electrical)
+          const tp = taper(v * 3.6), kDep = Math.min(kKw, MODEL.reg_deploy_kw), Kav = tp < kDep ? (tp > 0 ? tp : 0) : kDep;   // kW (electrical)
           const clipK = Math.min(PclipMax, ETA * PiceN) / 1e3;
           let K = Kav, kStep = null;
           if (x >= 0) {
@@ -603,7 +658,7 @@
               if (!free && (wv === 0 || kc <= REG_RATE.free_below_kw)) free = true;
               if (free) kc = Kp;
               else {
-                let kn = kc; const k0 = kc, drop = REG_RATE.rate_kw_s * (ds / vv);
+                let kn = kc; const k0 = kc, drop = rateKwS * (ds / vv);
                 if (t >= tP) kn = Math.max(Kp, kc - drop);
                 kc = wv * kn + (1 - wv) * Kp;
                 if (kc < REG_RATE.free_below_kw) {
@@ -626,7 +681,7 @@
           }
         } else {
           if (x >= 0) { fd = s > 0 ? 1 / (1 + Math.exp((lx - Math.log(s)) * isoft)) : 0; if (!noClip && s > 0 && y > 0) fc = (1 - fd) / (1 + Math.exp((Math.log(s) - ly) * isoft)); }
-          if (fd > 1e-4) { const tp = mgukTaperKw(v * 3.6, overtake); PkMech = fd * ETA * 1e3 * (tp < kKw ? (tp > 0 ? tp : 0) : kKw); }
+          if (fd > 1e-4) { const tp = taper(v * 3.6); PkMech = fd * ETA * 1e3 * (tp < kKw ? (tp > 0 ? tp : 0) : kKw); }
           if (fc > 1e-4) PclipElec = fc * PclipMax;
         }
         if (PclipElec > ETA * PiceN) PclipElec = ETA * PiceN;
@@ -835,7 +890,7 @@
       vmax_kmh: r1(vmax * 3.6), speed_trap_kmh: r1(vAt(tim.trap_s) * 3.6), vmin_kmh: r1(vmin * 3.6),
       energy: { deployed_mj: r3(res.Edep / 1e6), harvested_mj: r3(res.Eharv / 1e6), harvested_braking_mj: r3(Math.min(res.EharvBrake, res.Eharv) / 1e6), harvested_superclip_mj: r3(Math.max(0, res.Eharv - Math.min(res.EharvBrake, res.Eharv) - (res.EharvPart || 0)) / 1e6), harvested_part_throttle_mj: r3((res.EharvPart || 0) / 1e6), recharge_cap_mj: r3(harvCap / 1e6), superclip_share: optimal ? null : r3(clipFrac), superclip_fill: optimal ? null : r3(phiOut), energy_limited: lam >= 0, soc_start_mj: optimal ? r3(socStart / 1e6) : null, soc_min_mj: optimal ? r3(res.socMin / 1e6) : null, soc_end_mj: optimal ? r3(res.socEnd / 1e6) : null, strategy: strat, deploy_ceiling_kmh: strat === "threshold" && lam >= 0 ? r1(lam * 3.6) : null },
       speeds_kmh: { intermediate_1: r1(vAt(tim.i1_s) * 3.6), intermediate_2: r1(vAt(tim.i2_s) * 3.6), finish_line: r1(vAt(tim.control_s) * 3.6) },
-      air_density_kgm3: r3(rho), label: LABEL,
+      air_density_kgm3: r3(rho), label: labelFor(trackId),
     };
     if (opts.trace) {
       // s_m from the control line along the centreline frame; one sample per track point
@@ -848,7 +903,7 @@
     // per corner (telemetry line: the MultiViewer markers; window 70 m before to 90 m after the marker): minimum speed and where,
     // apex speed (at the line's tightest point) and the lateral g there
     if (tr.corners && tr.corners.length && tr.corners[0].d != null) {
-      const names = CORNER_NAMES[trackId] || {};
+      const names = CORNER_NAMES[trackId] || tr.corner_names || {};
       out.corners = tr.corners.map(k => {
         let vm = Infinity, sm = 0, kb = 0, ia = tr.idxAtS(k.d);
         for (let d = k.d - 70; d <= k.d + 90; d += tr.ds) { const i = tr.idxAtS(d); if (vf[i] < vm) { vm = vf[i]; sm = d; } const kk = Math.abs(kap[i]); if (kk > kb) { kb = kk; ia = i; } }
@@ -902,7 +957,7 @@
     } catch (e) { return null; }
   }
 
-  const api = { LABEL, REGS, REG_RATE, PU_SECTORS, MODEL, DEFAULT_CONDITIONS, TIMING, CORNER_NAMES, mgukTaperKw, capacity, crosswind, tyreTempFactor, platform, parseWeekend, baselineCar, priorCar, simulateLap, airDensity, headwind, loadWeekendConditions, activeCal };
+  const api = { EVENT_CONDITIONS, defaultConditions, labelFor, eventTaper, LABEL, REGS, REG_RATE, PU_SECTORS, MODEL, DEFAULT_CONDITIONS, TIMING, CORNER_NAMES, mgukTaperKw, capacity, crosswind, tyreTempFactor, platform, parseWeekend, baselineCar, priorCar, simulateLap, airDensity, headwind, loadWeekendConditions, activeCal };
   EI.conceptSim = Object.assign(EI.conceptSim || {}, api);
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();
