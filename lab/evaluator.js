@@ -58,8 +58,11 @@
     const track = trackFor(circuit), cal = calibrate(track, circuit);
     const wind = aero.windField(track, conditions);
     const prof = profileOf(track, cal.grip, mult, wind);
+    // the setup's still-air terminal speed, reported as terminal_kmh. It is NOT used to cap the samples: the profile already caps each
+    // sample at its own terminal speed against the local headwind (js/ai.js vTerm(w)), so a still-air cap here clipped tailwind samples
+    // and made every windy lap lean slow (fixed 2026-10-24; still-air results are unchanged, the fixtures prove it).
     const vcap = aero.terminalSpeed(mult.cd, EI.CAR.VMAX);
-    const t = timing(track, prof, vcap, circuit);
+    const t = timing(track, prof, Infinity, circuit);
     return {
       lap: r3(t.lap), sectors: t.sectors.map(r3), vmax_kmh: kmh(t.vmax), vmin_kmh: kmh(t.vminRef), vmin_lap_kmh: kmh(t.vminLap),
       terminal_kmh: kmh(vcap), sector_vmax_kmh: t.sectorVmax.map(kmh), straight_vmax_kmh: kmh(t.vmaxStraight),

@@ -11,13 +11,13 @@ Context when reading v1's answers: v1 was trained on the Friday collection, wher
 | # | id | truth verdict | truth next move | provider | v1 | v2 |
 |---|---|---|---|---|---|---|
 | 1 | `exam-rw8` | **reject** | rear_wing_deg decrease |   |   |   |
-| 2 | `exam-03` | **reject** | ride_height_mm decrease |   |   |   |
-| 3 | `exam-02` | **retest** | ride_height_mm decrease |   |   |   |
-| 4 | `exam-14` | **retest** | ride_height_mm decrease |   |   |   |
-| 5 | `exam-15` | **retest** | ride_height_mm decrease |   |   |   |
-| 6 | `exam-16` | **retest** | ride_height_mm decrease |   |   |   |
-| 7 | `exam-20` | **retest** | ride_height_mm decrease |   |   |   |
-| 8 | `exam-05` | **reject** | ride_height_mm increase |   |   |   |
+| 2 | `exam-14` | **retest** | ride_height_mm decrease |   |   |   |
+| 3 | `exam-15` | **retest** | ride_height_mm decrease |   |   |   |
+| 4 | `exam-02` | **retest** | ride_height_mm decrease |   |   |   |
+| 5 | `exam-16` | **retest** | ride_height_mm decrease |   |   |   |
+| 6 | `exam-20` | **retest** | ride_height_mm decrease |   |   |   |
+| 7 | `exam-05` | **reject** | ride_height_mm increase |   |   |   |
+| 8 | `exam-12` | **promote** | ride_height_mm decrease |   |   |   |
 
 Totals: provider __/8 · v1 __/8 · v2 __/8 (verdict) · provider __/8 · v1 __/8 · v2 __/8 (next move). Enter the verdict totals as `exam.v1` / `exam.v2` via `POST /api/status` (the provider score comes from `npm run exam`, 20 items).
 
@@ -37,35 +37,7 @@ Change vs baseline: **rear_wing_deg +8** → evaluator Δ lap **+0.436 s** (0.40
 | v1 |  |  |  |  |  |  |
 | v2 |  |  |  |  |  |  |
 
-### 2. `exam-03` — tailwind 8 m/s on Hangar Straight (Silverstone, dry, wind 8 m/s from 28°)
-
-Change vs baseline: **front_wing_deg -5, rear_wing_deg -8** → evaluator Δ lap **+0.037 s** (0.007 s from a threshold). Truth: **reject**, next **ride_height_mm decrease** (best ±1 step is -0.041 s, margin over the runner-up 0.033 s). User message (519 chars):
-
-```json
-{"objective":"min lap","circuit":"silverstone","conditions":{"wet":false,"wind_ms":8,"wind_from_deg":28},"baseline":{"front_wing_deg":25,"rear_wing_deg":20,"ride_height_mm":35,"brake_bias_pct":57,"ers_deploy":0.5,"lap":81.191,"sectors":[25.465,25.745,29.981],"vmax_kmh":331},"candidate":{"front_wing_deg":20,"rear_wing_deg":12,"ride_height_mm":35,"brake_bias_pct":57,"ers_deploy":0.5},"result":{"delta_lap":0.037,"delta_sectors":[-0.105,-0.085,0.227],"vmax_kmh":344,"vmin_kmh":199,"legal":true},"rules":[],"history":[]}
-```
-
-| model | verdict | next_parameter | direction | verdict hit | param hit | notes |
-|---|---|---|---|---|---|---|
-| provider |  |  |  |  |  |  |
-| v1 |  |  |  |  |  |  |
-| v2 |  |  |  |  |  |  |
-
-### 3. `exam-02` — headwind 10 m/s on Hangar Straight (Silverstone, dry, wind 10 m/s from 208°)
-
-Change vs baseline: **rear_wing_deg -2, brake_bias_pct +1** → evaluator Δ lap **-0.015 s** (0.015 s from a threshold). Truth: **retest**, next **ride_height_mm decrease** (best ±1 step is -0.032 s, margin over the runner-up 0.023 s). User message (521 chars):
-
-```json
-{"objective":"min lap","circuit":"silverstone","conditions":{"wet":false,"wind_ms":10,"wind_from_deg":208},"baseline":{"front_wing_deg":25,"rear_wing_deg":20,"ride_height_mm":35,"brake_bias_pct":57,"ers_deploy":0.5,"lap":80.83,"sectors":[24.709,25.553,30.568],"vmax_kmh":331},"candidate":{"front_wing_deg":25,"rear_wing_deg":18,"ride_height_mm":35,"brake_bias_pct":58,"ers_deploy":0.5},"result":{"delta_lap":-0.015,"delta_sectors":[-0.028,-0.016,0.029],"vmax_kmh":334,"vmin_kmh":209,"legal":true},"rules":[],"history":[]}
-```
-
-| model | verdict | next_parameter | direction | verdict hit | param hit | notes |
-|---|---|---|---|---|---|---|
-| provider |  |  |  |  |  |  |
-| v1 |  |  |  |  |  |  |
-| v2 |  |  |  |  |  |  |
-
-### 4. `exam-14` — filler (Silverstone, dry, no wind)
+### 2. `exam-14` — filler (Silverstone, dry, no wind)
 
 Change vs baseline: **rear_wing_deg -4** → evaluator Δ lap **+0.011 s** (0.019 s from a threshold). Truth: **retest**, next **ride_height_mm decrease** (best ±1 step is -0.037 s, margin over the runner-up 0.025 s). User message (497 chars):
 
@@ -79,7 +51,7 @@ Change vs baseline: **rear_wing_deg -4** → evaluator Δ lap **+0.011 s** (0.01
 | v1 |  |  |  |  |  |  |
 | v2 |  |  |  |  |  |  |
 
-### 5. `exam-15` — filler (Silverstone, dry, no wind)
+### 3. `exam-15` — filler (Silverstone, dry, no wind)
 
 Change vs baseline: **brake_bias_pct -3, ers_deploy -0.3** → evaluator Δ lap **+0.009 s** (0.021 s from a threshold). Truth: **retest**, next **ride_height_mm decrease** (best ±1 step is -0.026 s, margin over the runner-up 0.013 s). User message (492 chars):
 
@@ -93,7 +65,21 @@ Change vs baseline: **brake_bias_pct -3, ers_deploy -0.3** → evaluator Δ lap 
 | v1 |  |  |  |  |  |  |
 | v2 |  |  |  |  |  |  |
 
-### 6. `exam-16` — filler (Silverstone, dry, no wind)
+### 4. `exam-02` — headwind 10 m/s on Hangar Straight (Silverstone, dry, wind 10 m/s from 208°)
+
+Change vs baseline: **rear_wing_deg -2, brake_bias_pct +1** → evaluator Δ lap **-0.008 s** (0.022 s from a threshold). Truth: **retest**, next **ride_height_mm decrease** (best ±1 step is -0.032 s, margin over the runner-up 0.023 s). User message (521 chars):
+
+```json
+{"objective":"min lap","circuit":"silverstone","conditions":{"wet":false,"wind_ms":10,"wind_from_deg":208},"baseline":{"front_wing_deg":25,"rear_wing_deg":20,"ride_height_mm":35,"brake_bias_pct":57,"ers_deploy":0.5,"lap":80.805,"sectors":[24.707,25.53,30.568],"vmax_kmh":337},"candidate":{"front_wing_deg":25,"rear_wing_deg":18,"ride_height_mm":35,"brake_bias_pct":58,"ers_deploy":0.5},"result":{"delta_lap":-0.008,"delta_sectors":[-0.026,-0.011,0.029],"vmax_kmh":339,"vmin_kmh":209,"legal":true},"rules":[],"history":[]}
+```
+
+| model | verdict | next_parameter | direction | verdict hit | param hit | notes |
+|---|---|---|---|---|---|---|
+| provider |  |  |  |  |  |  |
+| v1 |  |  |  |  |  |  |
+| v2 |  |  |  |  |  |  |
+
+### 5. `exam-16` — filler (Silverstone, dry, no wind)
 
 Change vs baseline: **rear_wing_deg -3, ers_deploy -0.3** → evaluator Δ lap **-0.001 s** (0.029 s from a threshold). Truth: **retest**, next **ride_height_mm decrease** (best ±1 step is -0.032 s, margin over the runner-up 0.023 s). User message (499 chars):
 
@@ -107,7 +93,7 @@ Change vs baseline: **rear_wing_deg -3, ers_deploy -0.3** → evaluator Δ lap *
 | v1 |  |  |  |  |  |  |
 | v2 |  |  |  |  |  |  |
 
-### 7. `exam-20` — filler (Silverstone, dry, no wind)
+### 6. `exam-20` — filler (Silverstone, dry, no wind)
 
 Change vs baseline: **rear_wing_deg -3** → evaluator Δ lap **-0.001 s** (0.029 s from a threshold). Truth: **retest**, next **ride_height_mm decrease** (best ±1 step is -0.032 s, margin over the runner-up 0.023 s). User message (499 chars):
 
@@ -121,12 +107,26 @@ Change vs baseline: **rear_wing_deg -3** → evaluator Δ lap **-0.001 s** (0.02
 | v1 |  |  |  |  |  |  |
 | v2 |  |  |  |  |  |  |
 
-### 8. `exam-05` — wet (Silverstone, wet, no wind)
+### 7. `exam-05` — wet (Silverstone, wet, no wind)
 
 Change vs baseline: **rear_wing_deg +5, ride_height_mm -8** → evaluator Δ lap **+0.071 s** (0.041 s from a threshold). Truth: **reject**, next **ride_height_mm increase** (best ±1 step is -0.104 s, margin over the runner-up 0.043 s). User message (496 chars):
 
 ```json
 {"objective":"min lap","circuit":"silverstone","conditions":{"wet":true,"wind_ms":0},"baseline":{"front_wing_deg":25,"rear_wing_deg":20,"ride_height_mm":35,"brake_bias_pct":57,"ers_deploy":0.5,"lap":83.854,"sectors":[25.837,26.421,31.596],"vmax_kmh":328},"candidate":{"front_wing_deg":25,"rear_wing_deg":25,"ride_height_mm":27,"brake_bias_pct":57,"ers_deploy":0.5},"result":{"delta_lap":0.071,"delta_sectors":[0.05,0.091,-0.07],"vmax_kmh":323,"vmin_kmh":190,"legal":true},"rules":[],"history":[]}
+```
+
+| model | verdict | next_parameter | direction | verdict hit | param hit | notes |
+|---|---|---|---|---|---|---|
+| provider |  |  |  |  |  |  |
+| v1 |  |  |  |  |  |  |
+| v2 |  |  |  |  |  |  |
+
+### 8. `exam-12` — filler (Silverstone, dry, no wind)
+
+Change vs baseline: **ride_height_mm -3, ers_deploy -0.2** → evaluator Δ lap **-0.078 s** (0.048 s from a threshold). Truth: **promote**, next **ride_height_mm decrease** (best ±1 step is -0.022 s, margin over the runner-up 0.009 s). User message (499 chars):
+
+```json
+{"objective":"min lap","circuit":"silverstone","conditions":{"wet":false,"wind_ms":0},"baseline":{"front_wing_deg":25,"rear_wing_deg":20,"ride_height_mm":35,"brake_bias_pct":57,"ers_deploy":0.5,"lap":80.8,"sectors":[25.094,25.582,30.125],"vmax_kmh":328},"candidate":{"front_wing_deg":25,"rear_wing_deg":20,"ride_height_mm":32,"brake_bias_pct":57,"ers_deploy":0.3},"result":{"delta_lap":-0.078,"delta_sectors":[-0.01,-0.027,-0.042],"vmax_kmh":328,"vmin_kmh":214,"legal":true},"rules":[],"history":[]}
 ```
 
 | model | verdict | next_parameter | direction | verdict hit | param hit | notes |
