@@ -1,0 +1,90 @@
+# Lane CAR3D
+
+Status: P2.T2, P3.T2 parts 1–2 merged (PRs #12, #18, #22); QA S5 fix (display gain ×3 with label, per-wing depth-tested ghost) in PR. Owner: agent F (session `session_01DoxHh5Ynx2BDWZsPvLCyDR`). Branch: `claude/car3d-p3-qa`.
+
+Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
+
+## The `EI.labCar3D` contract (stable; UI lane builds against this)
+
+Load order in `lab/index.html`: `vendor/three.min.js`, `js/util.js`, `js/carmodel.js` (what the page has today), then `<script src="car3d.js"></script>`. Since P3.T2 part 2 `car3d.js` loads the livery pipeline itself (season data, ads, teams, liveries, carglb) from the repo root next to `lab/`, resolved from its own script URL, and points `EI.Ads.BRAND_DIR` at `assets/brand/` absolutely; if the page already loaded those scripts (as `lab/car3d-test.html` does) nothing is loaded twice. `mount` returns at once with the studio scene; the car appears when the scripts are in (about 300 ms locally), the container gets a `car3d:ready` event, and `setSetup` / `setBaseline` called before that are applied then (`setSetup` returns `{ ms: 0, pending: true }`). The container needs a CSS height (the canvas fills it; a `ResizeObserver` follows it).
+
+```js
+EI.labCar3D.mount(document.getElementById('car3d'), opts?)   // opts (all optional): { team: 'lumi', num: 7, driver: null, setup: null, baseline: null, ghost: true, orbit: true, pixelRatioCap: 2, background: 0x0a0a0c, ghostColor: 0xb26cff, exaggerate: 3, label: true }
+EI.labCar3D.setSetup(candidate, { animate: true }?)        // -> { ms, total }: ms is EI.rebuildWings' own time; swaps the wing geometry in place + body y for ride height; animate !== false eases the camera to the hero (600 ms; instant under prefers-reduced-motion)
+EI.labCar3D.setBaseline(baseline | null)                   // ghost (purple edge lines, depth-tested) of the baseline wing(s) whose value differs: front elements for front_wing_deg, rear main plane for rear_wing_deg, both for ride_height_mm; hidden when nothing differs
+EI.labCar3D.hero()                                         // 600 ms ease to the three-quarter rear view with the rear wing in frame
+EI.labCar3D.dispose()                                      // stops the rAF loop, frees GL resources, empties the container
+// also: EI.labCar3D.view() (internals for tests), .rearAoa() (rad, current rear main plane), .lastMs(), .reducedMotion()
+```
+`setup` is the ARCHITECTURE §4.1 object; missing fields mean the baseline (25 / 20 / 35). **Display gain (G-HON-01):** the mesh is built from `baseline + exaggerate × (setup − baseline)` on the three geometric fields (default ×3: rear wing 30° shows as a 30° main plane instead of 16°; ride height 28 mm as −21 mm); the numbers the UI prints stay the real setup, and the view carries its own label top-right inside the container: "wing angles and ride height exaggerated ×3 for visibility · geometry from the setup, not a measurement" (`EI.labCar3D.labelText()` returns the same string if the UI wants to mirror it in `#mainSrc`; `exaggerate: 1` gives true geometry and the label drops the gain clause). The container receives a `car3d:setup` CustomEvent (`detail: { ms, total, setup }`) on every `setSetup`. Idle motion is a slow sway (±0.22 rad over 26 s) about the hero azimuth, so the rear wing never leaves frame; `prefers-reduced-motion` turns it off and makes `hero()` instant. The view renders only while the camera moves or something changed. The shadow map is rendered once per `setSetup`, not per frame.
+
+Game side (`js/carmodel.js`, opt-in): `EI.CarModel.build(car, setup?)`, `EI.CarModel.wingGeometry(setup?, elementsOnly?)`, `EI.CarModel.rebuildWings(modelOrGroup, setup)` (returns ms), `EI.CarModel.SETUP_BASE / SETUP_K`; aliases `EI.carModel(opts, setup)` and `EI.rebuildWings(target, setup)` as ARCHITECTURE §9 names them. `build()` now also returns `wingMesh`, `bodyY0`, `setup`, and the group carries `userData.carModel`. With no setup every geometry is byte-identical to before (hash check below).
+
+### 2026-10-24 03:00 London — agent F (Claude, session `session_01DoxHh5Ynx2BDWZsPvLCyDR`) — QA S5 (3D view: visible change, honest ghost)
+- Status: done pending merge; PR from `claude/car3d-p3-qa` into `claude/amazing-planck-804i13`.
+- Files changed: `js/carmodel.js` (`wingGeometry(setup, { front, rear })` picks the moving elements to build; default path unchanged), `lab/car3d.js`, this file, `car3d-screens/lab-rw30-x3.png`.
+- What changed (QA.md S5): (1) display gain `opts.exaggerate` = 3 on the wing-angle / ride-height deltas in the mesh only, stated in a label inside the view (top-right, `--muted` mono) so it stays honest; the UI's numbers are untouched. (2) The baseline ghost draws only the wing(s) whose setup value differs (front for front_wing_deg, rear for rear_wing_deg, both for ride height). (3) Ghost lines are depth-tested again (opacity 0.85), so they never show through the nose or sidepods.
+- Verify: geometry hash of `build(car)` with no setup still `3699814338` (byte-identical to the shipped car). Test page: rear wing 30 → displayed main plane 29.8° (was 16.0°), swap 16.5 ms first call, 10× 5.7–35.5 ms (software GL), ghost hidden at baseline / shown at 30°; ride height 28 → body y −0.021 (×3 of −7 mm). Lab page at 1440×900 (`MUBIT_MOCK=1 npm run dev`): rear wing 30 against the baseline, swap 11.1 ms, ghost on, label visible; game `index.html` 0 errors; reduced motion ok. `npm test` 82 pass, 0 fail. Screenshot `car3d-screens/lab-rw30-x3.png`.
+- Decisions proposed: D-C6 the 3D view exaggerates wing angles and ride height ×3 and says so in its own label (G-HON-01); numbers on screen are never scaled. Reversible: `mount(el, { exaggerate: 1 })`.
+- Blockers / questions for Tanuj: none. UI may mirror `EI.labCar3D.labelText()` in `#mainSrc` if one label is preferred; mine can be turned off with `label: false`.
+- Next three actions: 1. QA re-run of S5 (expect the rw 20→30 pixel diff well above 0.5 % without the ghost). 2. Idle. 3. Idle.
+
+### 2026-10-24 02:20 London — agent F (Claude, session `session_01DoxHh5Ynx2BDWZsPvLCyDR`) — P3.T2 (hero shot, part 2: the real lab page)
+- Status: done pending merge; PR from `claude/car3d-p3-hero2` into `claude/amazing-planck-804i13`.
+- Files changed: `lab/car3d.js`, this file, `car3d-screens/lab-page-1440x900.png`. Nothing in the UI lane's files.
+- Found on the merged lab page (`MUBIT_MOCK=1 npm run dev`, http://127.0.0.1:8788/lab/): `lab/index.html` loads only `three`, `util`, track data, `carmodel`, `car`, `ai` and the lab files, so `EI.paintLivery` / `EI.TEAM_BY_ID` / `EI.TYRES` were missing, `mount` threw, `lab.js` swallowed it (its try/catch) and the panel stayed black. Fixed inside my lane: `car3d.js` now lazy-loads the 18 livery scripts itself (sequential `<script>` tags from the repo root derived from `document.currentScript.src`), sets `EI.Ads.BRAND_DIR` absolutely, waits for `EI.Ads.ready()` at most 3.5 s, then builds the car; `setSetup` / `setBaseline` queue until then. No change needed in `lab/index.html` or `lab.js`. (The UI lane may add the game scripts to the page later; `car3d.js` then skips the load.)
+- Hero against the real layout: the look-at point moved below the car (`HERO.target.y −0.05`, elev 0.21) so the car sits in the upper two thirds of the panel, clear of the UI's setup table (bottom-left) and source line (bottom-right); the rear wing stays in frame at the panel's aspect (897×560 → 1.6 and 897×484 → 1.85 at 1440×900).
+- Verify: lab page at 1440×900: mounted, canvas present, car built, `aspect 1.6, radius 7.4`, opens on the hero; mock `Run` → candidate applied through `setSetup` in 18.6 ms (brake-bias candidate, so no ghost, correct). Console: only the page's own `/favicon.ico` 404 (UI lane; not mine). Standalone test page: AC1 rear wing 30 in 9.8 ms, 10× 4.6–11.3 ms, ghost hidden at mount / shown at 30°, reduced motion ok, resize ok; game `index.html` 0 errors. `npm test` 74 pass, 0 fail. Screenshot: `car3d-screens/lab-page-1440x900.png`.
+- For QA, headless rendering flags that work here (Chromium 1243 at `/opt/pw-browsers/chromium`, Playwright): `--use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader` (WebGL2 reports "WebKit WebGL" and renders the view; a black `#car3d` on the integration branch before PR #22 was the missing-livery throw, not GL). Allow ~5 s after load for the lazy livery scripts + first frame before screenshotting.
+- Decisions proposed: D-C5 `lab/car3d.js` owns loading the livery pipeline it needs (self-contained; the lab page stays as the UI lane wrote it). DESIGN_SYSTEM §8 line "opens on the three-quarter rear hero angle with the rear wing in frame": checked on the real page.
+- Blockers / questions for Tanuj: none. Note for UI: a `<link rel="icon" href="data:,">` in `lab/index.html` removes the only console error on the page (DESIGN_SYSTEM §8 asks for none).
+- Next three actions:
+  1. After merge: re-open http://127.0.0.1:8788/lab/, run a random candidate with a rear-wing change and confirm the purple ghost reads well at the panel size (test page shows it does at 1280×800).
+  2. Optional 200 ms ride-height ease.
+  3. QA: GPU timing of `setSetup` on the demo laptop; add to QA.md.
+
+### 2026-10-24 01:05 London — agent F (Claude, session `session_01DoxHh5Ynx2BDWZsPvLCyDR`) — P3.T2 (hero shot, part 1)
+- Status: in_progress; this part in PR from `claude/car3d-p3-hero`. Part 2 (final framing against the real lab panel) waits for the UI lane (`lab/index.html` does not exist yet; UI.md unclaimed at 01:00).
+- Files changed: `lab/car3d.js` only (+ screenshots `car3d-screens/hero-rw8-{wide,square,tall}.png`, this file). Contract unchanged.
+- What changed: the hero distance now fits the frame. `HERO.radius` 7.4 holds for frames at least 1.5:1 wide; narrower frames pull the camera back by `refAspect / aspect` so the car's full length stays in view (`fitRadius`). `hero()`, the reduced-motion jump, mount and resize all use it; the hero target moved back to x = −0.45 and azim 0.68 so the rear wing sits nearer the centre.
+- Verify (Playwright, SwiftShader, rear wing 28° with the baseline ghost): wide 1280×800 → aspect 1.97, radius 7.4; square 640×720 → 1.25, radius 8.9; tall 420×760 → 0.89, radius 12.5. 0 console errors in all three; car fully in frame in each (screenshots). `npm test` 71 pass, 0 fail.
+- Decisions proposed: none new (D-C1..D-C4 stand).
+- Blockers / questions for Tanuj: none. Dependency: UI lane's `#car3d` panel size and aspect for the final hero framing; also please confirm in the lab page that `EI.Ads.BRAND_DIR` is set from `lab/` (see the contract section).
+- Next three actions:
+  1. When `lab/index.html` lands: open it, check the hero at the real panel size, adjust `HERO` once, screenshot for DESIGN_SYSTEM §8.
+  2. Optional 200 ms ride-height translate ease (geometry swap stays instant).
+  3. Hand the test page to QA for a GPU timing (`setSetup` ms on the demo laptop).
+
+### 2026-10-24 00:45 London — agent F (Claude, session `session_01DoxHh5Ynx2BDWZsPvLCyDR`) — P2.T2 (F-07)
+- Status: done; PR into `claude/amazing-planck-804i13` from `claude/car3d-p2-wings`.
+- Files changed: `js/carmodel.js` (wing section moved into `wingGeometry(setup)`; `setupDeltas`, `rebuildWings`, optional `setup` on `build`; new exports), new `lab/car3d.js`, new `lab/car3d-test.html`, `docs/agents/lanes/car3d-screens/*.png`, this file.
+- Setup → geometry (ARCHITECTURE §9): rear main plane `aoa = 0.16 + 0.012·(rear_wing_deg − 20)` rad; the four front elements `aoa *= 1 + 0.03·(front_wing_deg − 25)`; `body.position.y = (ride_height_mm − 35) / 1000` (wheels stay on the road). The DRS flap, beam wing, swan necks and endplates do not move.
+- Verify step run + output (Playwright, headless Chromium with ANGLE/SwiftShader, `npm run static` on :8788; script kept in the session scratchpad, not in the repo):
+  - **T-F07-AC1**: `setSetup({ rear_wing_deg: 30 })` → rear main plane 9.2° → 16.0°; `rebuildWings` 10.4 ms, `setSetup` end to end 10.8 ms (first call); 10 alternating calls 3.8–23.7 ms, all < 200 ms (software GL; a real GPU is faster). The test page prints the same numbers in its log, green when < 200 ms.
+  - Ride height 28 mm → `body.position.y = −0.007`; baseline → 0. Ghost hidden at mount and at baseline, shown at rear wing 30.
+  - **Default rendering unchanged**: a hash over every mesh's world matrix + position/normal/uv/index arrays of `EI.CarModel.build(car)` with no setup (Mercedes, Ferrari, Lumi): old `3699814338` (184,546 values, 6 children) = new `3699814338`. Identical.
+  - Game `index.html` through the static server: 0 console errors, menu visible after load.
+  - `prefers-reduced-motion: reduce`: no idle sway (camera position identical 1.5 s apart), `hero()` instant.
+  - Resize: viewport 1280×800 → 700×900, canvas followed the container (700×538).
+  - `npm test`: 58 pass, 0 fail.
+  - Screenshots (1280×800, hero angle): `car3d-screens/hero-baseline.png`, `car3d-screens/hero-rw8.png` (rear wing 28°, ghost of the baseline visible), `car3d-screens/hero-rw30-ac1.png`, `car3d-screens/hero-rh28.png`.
+- Decisions proposed (for the integrator to log in TASK_LOG):
+  - D-C1 `EI.carModel(opts, setup)` and `EI.rebuildWings(target, setup)` exist as ARCHITECTURE §9 names them, but the canonical entry stays `EI.CarModel.build(car, setup?)` (what `js/car.js` calls); `rebuildWings` accepts the model object or its group and returns the elapsed ms.
+  - D-C2 The lab livery is Lumi Racing (the works team already in the game, cream / plum) with #7; the UI may pass `{ team }` to `mount` to change it.
+  - D-C3 The ghost of the baseline draws only the parts the setup moves (front elements + rear main plane), as `--purple` edge lines with depth test off, visible only while the setup differs from the baseline.
+  - D-C4 three r128 takes material colours as linear: design tokens go through `convertSRGBToLinear()` in `lab/car3d.js` (the background is cleared raw and stays `--bg`). Worth a line in DESIGN_SYSTEM for anyone else drawing in THREE.
+- Blockers / questions for Tanuj: none. For the UI lane: the two page-side notes above (`EI.Ads.BRAND_DIR` from `lab/`, container height) and that `lab/index.html` must not load `js/main.js` (it boots the whole game on `DOMContentLoaded`).
+- Next three actions:
+  1. P3.T2 hero shot: tighten the frame (camera closer / lower, rear wing larger) once the UI lane's container size is known; check it at the lab panel's real aspect; a one-off `hero()` on first candidate select is already in `setSetup`.
+  2. Optional: animate the ride-height translate over ~200 ms (geometry swap stays instant per DESIGN_SYSTEM §5).
+  3. QA lane: run `lab/car3d-test.html` on the demo laptop's GPU and record the real `setSetup` ms in QA.md.
+
+## Template for a session entry
+
+### YYYY-MM-DD HH:MM London — <agent/session> — <task id>
+- Status: in_progress | done | blocked: <what, who>
+- Files changed:
+- Verify step run + output:
+- Decisions proposed (for the integrator to log in TASK_LOG):
+- Blockers / questions for Tanuj:
+- Next three actions:

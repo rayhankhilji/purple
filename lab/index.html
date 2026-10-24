@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PURPLE · F1 research lab</title>
+<meta name="color-scheme" content="dark">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="lab.css">
+</head>
+<body>
+<header class="top">
+  <span class="brand">PURPLE</span>
+  <span class="sub">agent-driven F1 research lab · built on Equation I · research agent through Mubit</span>
+  <div id="banner" role="alert" hidden></div>
+  <span class="spacer"></span>
+  <span id="tdBadge" class="badge td" hidden>TD-01 active · rear wing ≤ 20°</span>
+  <span id="circuitBadge" class="badge" title="objective">silverstone · min lap</span>
+  <span id="apiState" class="src"><span class="dot wait"></span>API 127.0.0.1:8787</span>
+</header>
+
+<main class="lab">
+  <section class="col left">
+    <div class="rail" id="rail" aria-label="stages">
+      <article class="card is-empty" id="card-design" data-stage="design"><div class="head"><span class="stage-name">Design</span><span class="state">empty</span></div><div class="body"></div><div class="srcbar"></div><div class="foot"></div></article>
+      <article class="card is-empty" id="card-evaluate" data-stage="evaluate"><div class="head"><span class="stage-name">Evaluate</span><span class="state">empty</span></div><div class="body"></div><div class="srcbar"></div><div class="foot"></div></article>
+      <article class="card is-empty" id="card-race" data-stage="race"><div class="head"><span class="stage-name">Race</span><span class="state">empty</span></div><div class="body"></div><div class="srcbar"></div><div class="foot"></div></article>
+      <article class="card is-empty" id="card-learn" data-stage="learn"><div class="head"><span class="stage-name">Learn</span><span class="state">empty</span></div><div class="body"></div><div class="srcbar"></div><div class="foot"></div></article>
+    </div>
+
+    <form class="panel cond" id="conditions" aria-label="conditions" autocomplete="off">
+      <span class="label">Conditions</span>
+      <label class="f" for="windMs">wind <input type="range" id="windMs" min="0" max="12" step="1" value="0"><span class="num" id="windMsV">0 m/s</span></label>
+      <label class="f" for="windFrom">from <span class="dial" id="windDial" aria-hidden="true"></span><input type="range" id="windFrom" min="0" max="345" step="15" value="0"><span class="num" id="windFromV">0° N</span></label>
+      <label class="switch" title="wet track"><input type="checkbox" id="wet"><span class="tk"></span><span>wet</span></label>
+      <label class="f" for="circuit">circuit <select id="circuit"><option value="silverstone">silverstone</option><option value="monza">monza</option></select></label>
+      <label class="switch td" title="technical directive TD-01: rear wing capped at 20°"><input type="checkbox" id="td01"><span class="tk"></span><span>TD-01</span></label>
+      <span class="src" id="condSrc">conditions · from /api/state</span>
+    </form>
+
+    <div class="panel main" id="main">
+      <div id="car3d"></div>
+      <div class="main-empty" id="mainEmpty"><div class="inner"><div class="h">3D car view</div>The candidate's wing angles and ride height render here from Equation I's procedural car (lab/car3d.js, CAR3D lane). The setup table below carries the numbers meanwhile.</div></div>
+      <iframe id="game" title="Equation I broadcast race" allow="autoplay" hidden></iframe>
+      <div class="corner" id="mainCorner"></div>
+      <div class="overlay"><div id="setupBox"></div><div class="src" id="mainSrc"></div></div>
+    </div>
+  </section>
+
+  <aside class="col right">
+    <section class="panel widget" id="widget" aria-label="Mubit task status"></section>
+    <section class="panel trace" id="trace" aria-label="trace stream">
+      <div class="head"><span class="label">Trace · Mubit calls</span><span class="src" id="traceMeta"><span class="dot wait"></span>stream</span></div>
+      <div class="lines" id="traceLines" aria-live="polite" aria-relevant="additions"></div>
+    </section>
+    <section class="panel ledger" id="ledger" aria-label="experiment ledger">
+      <div class="head"><span class="label">Ledger</span><span class="src" id="ledgerMeta"></span><span class="src srcline" id="ledgerSrc"></span></div>
+      <div class="wrap" id="ledgerWrap"></div>
+    </section>
+  </aside>
+</main>
+
+<!-- game scripts in the game's own order (ARCHITECTURE §7.3), then the lab -->
+<script src="../vendor/three.min.js"></script>
+<script src="../js/util.js"></script>
+<script src="../js/data/silverstone.js"></script>
+<script src="../js/data/monza.js"></script>
+<script src="../js/track.js"></script>
+<script src="../js/carmodel.js"></script>
+<script src="../js/car.js"></script>
+<script src="../js/ai.js"></script>
+<script src="aero.js"></script>
+<script src="schema.js"></script>
+<script src="evaluator.js"></script>
+<script src="car3d.js"></script>
+<script src="lab.js"></script>
+</body>
+</html>

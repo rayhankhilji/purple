@@ -1,0 +1,99 @@
+{
+ "source": "MultiViewer circuit API (api.multiviewer.app), as used by FastF1 get_circuit_info()",
+ "accessed": "2026-10-24",
+ "circuit_key": 19,
+ "layout_year_served": 2022,
+ "rotation_deg": 1,
+ "corners": [
+  {
+   "number": 1,
+   "letter": "",
+   "angle_deg": -115.8,
+   "x_m": -306.4,
+   "y_m": -220.9,
+   "distance_m_on_pole_lap": 440.0,
+   "match_error_m": 0.7
+  },
+  {
+   "number": 2,
+   "letter": "",
+   "angle_deg": 32.8,
+   "x_m": -631.5,
+   "y_m": 321.8,
+   "distance_m_on_pole_lap": 1075.0,
+   "match_error_m": 0.7
+  },
+  {
+   "number": 3,
+   "letter": "",
+   "angle_deg": 147.5,
+   "x_m": -821.0,
+   "y_m": 546.0,
+   "distance_m_on_pole_lap": 1375.0,
+   "match_error_m": 1.9
+  },
+  {
+   "number": 4,
+   "letter": "",
+   "angle_deg": 16.3,
+   "x_m": -26.6,
+   "y_m": 469.4,
+   "distance_m_on_pole_lap": 2180.0,
+   "match_error_m": 1.8
+  },
+  {
+   "number": 5,
+   "letter": "",
+   "angle_deg": -75.6,
+   "x_m": -147.3,
+   "y_m": 346.2,
+   "distance_m_on_pole_lap": 2375.0,
+   "match_error_m": 1.8
+  },
+  {
+   "number": 6,
+   "letter": "",
+   "angle_deg": -39.5,
+   "x_m": -463.2,
+   "y_m": 332.3,
+   "distance_m_on_pole_lap": 2705.0,
+   "match_error_m": 0.7
+  },
+  {
+   "number": 7,
+   "letter": "",
+   "angle_deg": 96.5,
+   "x_m": -327.2,
+   "y_m": 85.3,
+   "distance_m_on_pole_lap": 3025.0,
+   "match_error_m": 0.5
+  },
+  {
+   "number": 8,
+   "letter": "",
+   "angle_deg": 108.0,
+   "x_m": -161.9,
+   "y_m": 194.9,
+   "distance_m_on_pole_lap": 3225.0,
+   "match_error_m": 0.8
+  },
+  {
+   "number": 9,
+   "letter": "",
+   "angle_deg": 51.3,
+   "x_m": 367.0,
+   "y_m": 185.2,
+   "distance_m_on_pole_lap": 3760.0,
+   "match_error_m": 2.7
+  },
+  {
+   "number": 10,
+   "letter": "",
+   "angle_deg": -9.2,
+   "x_m": 420.1,
+   "y_m": 8.5,
+   "distance_m_on_pole_lap": 3955.0,
+   "match_error_m": 3.7
+  }
+ ]
+}

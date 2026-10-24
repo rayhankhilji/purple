@@ -1,0 +1,13 @@
+.DS_Store
+Thumbs.db
+node_modules/
+*.log
+# PURPLE
+server/.env
+data/*
+!data/.gitkeep
+!data/exam.json
+data-mock/
+.env
+.env.*
+server/.env.*

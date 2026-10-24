@@ -1,0 +1,43 @@
+{
+  "name": "purple",
+  "version": "0.1.0",
+  "private": true,
+  "description": "PURPLE: an autonomous F1 research lab on Equation I, routed through Mubit",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "node server/dev.js",
+    "start": "node server/index.js",
+    "static": "node server/static.js",
+    "test": "node --test 'test/*.test.js'",
+    "test:model": "node --test test/aero.test.js test/evaluator.test.js",
+    "test:contract": "node --test test/schema.test.js test/server.test.js",
+    "smoke": "node server/scripts/smoke.js",
+    "collect": "node server/scripts/collect.js",
+    "exam": "node server/scripts/exam.js",
+    "fixtures": "node server/scripts/fixtures.js",
+    "fake-race": "node server/scripts/fake-race.js",
+    "prompt:check": "node server/scripts/prompt-hash.js",
+    "exam:build": "node server/scenarios.js --build-exam data/exam.json --seed 2026",
+    "exam:sheet": "node server/scenarios.js --try-sheet docs/try-models/sheet.md",
+    "collect:dry": "node server/scripts/collect-dry.js",
+    "snapshot": "node server/scripts/snapshot.js",
+    "exam:score": "node server/scenarios.js --score docs/try-models/sheet.md",
+    "concept": "node concept/cli.js",
+    "test:concept": "node --test test/concept.test.js test/concept-bench.test.js",
+    "test:sim": "node --test test/concept-sim.test.js",
+    "sim:line": "node concept/sim/build-line.js",
+    "sim:fit": "node concept/sim/build-fit.js",
+    "sim:fit:check": "node concept/sim/build-fit.js --check",
+    "sim:plot": "node concept/sim/plot-trace.js ANT HAD SAI"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "0.137.0",
+    "@hono/node-server": "2.1.5",
+    "dotenv": "16.6.1",
+    "hono": "4.13.13",
+    "ulid": "3.0.2"
+  }
+}

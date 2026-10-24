@@ -1,0 +1,125 @@
+# Lane DEMO
+
+Status: in_progress P3.T5 (PRs #24, #26, #28, #30 merged; sheet-recomposition update on `claude/demo-p3-sheet2`; v1/v2 cells, kept count, adapter results owed). Owner: agent G (Claude, session `session_01UAY6ykh3dQkf9GfJoZ9BTy`). Branch: `claude/demo-p3-sheet2`.
+
+Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
+
+### 2026-10-24 04:50 London — agent G (DEMO) — P3.T5 provider score on the recomposed Try-models sheet: 2/8
+- Status: done (small PR on `claude/demo-p3-sheet2`).
+- Files changed: `docs/deck/slides.md` (slide 5: 2/8, six misses, rear wing 5 / brake bias 1; .src names snapshot 0530-windcap-exam), `docs/demo-script.md` (facts table, 2:10 on-screen and spoken lines, trigger line with the new 8), `docs/deck/shot-list.md` (shot 11), `docs/deck/README.md`, this file.
+- Verify step run + output: integration head 1a71b33. `docs/try-models/sheet.md` items: exam-rw8, -14, -15, -02, -16, -20, -05, -12 (exam-03 out, exam-12 in after EVAL's wind-cap fix, README line 37). Snapshot `2026-10-24_02-37-26Z-0530-windcap-exam/status.json`: 20/20 verdicts, 10/20 next step; on the 8: `param_ok` true for exam-rw8 and exam-12 (truth ride_height_mm decrease, answer the same) → **2/8**, `verdict_ok` 8/8; the 6 misses all have `ride_height_mm` truth (exam-05 increase, the rest decrease); answers rear_wing_deg ×5 (02, 05, 14, 16, 20), brake_bias_pct ×1 (15). No front-wing answer on the new sheet, so "front wing (1)" was removed everywhere. Honesty grep clean; speaker notes ≤ 60 words.
+- Numbers owed: unchanged (kept count after v2, adapter v1 / v2 results, v1 / v2 n/8 cells, screenshots). If the sheet recomposes again, the three places to touch are slide 5, the script facts table + 2:10, and shot 11.
+- Blockers / questions for Tanuj: the four batched questions in the 03:20 entry stand.
+- Next three actions: (1) integrator merges; (2) DEMO fills owed numbers, runs the placeholder grep, exports the PDF; (3) P3.T6 snapshot after `/submit`.
+
+### 2026-10-24 04:00 London — agent G (DEMO) — honesty-audit fixes (integrator audit 03:55)
+- Status: done (small PR on `claude/demo-p3-audit`).
+- 04:10 addendum: reference frame `docs/agents/integrator-screens/lab-1440-0505-merged.png` (integration branch e958710) wired into the deck README, shot list (shots 1, 4) and the slide 3 note, with the caveat that its widget shows mock zeros (0 kept / 0 trained) and the deck must use the real-ledger widget (43 kept at 23:58, 99 trained, exam 20/20 · 10/20) or a re-shoot on `npm run dev`. Honesty slide already uses "not a high-fidelity aerodynamic simulation", the same wording as the README.
+- Files changed: `docs/demo-script.md` (1:35: "twenty of twenty verdicts and ten of twenty next steps", never "half"; "Those kept examples train version two." now spoken; self-check lines corrected), `docs/deck/slides.md` (`.src` source lines added to slides 2, 5, 8), `docs/deck/shot-list.md` + `docs/deck/README.md` (never copy a snapshot over an existing `data/`; restore only into an empty one), this file.
+- Verify step run + output: `grep -n "half the" docs/demo-script.md` → nothing; `grep -c 'class="src"' docs/deck/slides.md` → 6 (slides 2–6, 8; slides 1 and 7 carry no numbers beyond the 19 % on slide 7, which names its own source in the sentence); honesty grep clean; spoken text ≈ 490 words.
+- Placeholders (audit item 4): still `[≈ 80, from Tasks]`, `[result]` ×2, `[n/8]` ×4 on slide 5; they are owed numbers (kept count, adapter v1/v2 results, v1/v2 Try-models scores) and will be filled or the cell cut before the PDF is exported; the README now has the grep that must print nothing first.
+- Blockers / questions for Tanuj: the four batched questions in the 03:20 entry stand.
+- Next three actions: (1) integrator merges; (2) DEMO fills the owed numbers, runs the placeholder grep, exports the PDF; (3) P3.T6 snapshot after `/submit`.
+
+### 2026-10-24 03:45 London — agent G (DEMO) — P3.T5 ride-height miss pattern (correction of my own 6-of-7 count)
+- Status: done (small PR on `claude/demo-p3-rideheight`). PRs #24 and #26 merged.
+- Files changed: `docs/deck/slides.md` (slide 5 bullets + note: on all 7 misses the truth is ride height; provider proposes rear wing 5 / front wing 1 / brake bias 1; v2 data proposed ride height 13 times), `docs/demo-script.md` (facts table, 2:10 line), this file (03:35 entry corrected).
+- Verify step run + output: recount from `docs/ledger-snapshot/2026-10-24_02-14-07Z-0350-exam-details/status.json`: misses on the sheet = exam-02, -03, -05, -14, -15, -16, -20; truth `next_parameter` is `ride_height_mm` on all 7 (exam-05 direction increase, the rest decrease). Matches the integrator's 03:40 message and EVAL's PR #25 README. "Never proposes ride height" holds only on these 8 (on the full 20 the provider did propose ride height on exam-12, -13, -17, -18), so the deck says "on all 7 misses", not "never". Honesty grep clean.
+- Numbers owed: unchanged (kept count after v2, adapter v1 / v2 results, v1 / v2 n/8 cells, screenshots).
+- Blockers / questions for Tanuj: the four batched questions in the 03:20 entry stand.
+- Next three actions: (1) integrator merges; (2) DEMO fills v1/v2 cells and adapter results when they exist, exports the PDF; (3) P3.T6 snapshot after `/submit`.
+
+### 2026-10-24 03:35 London — agent G (DEMO) — P3.T5 provider Try-models score filled in
+- Status: done (small PR). PR #24 (script v2.1, deck, shot list) was merged by the integrator at 847128b.
+- Files changed: `docs/deck/slides.md` (slide 5 table: provider next experiment **1/8**, verdict **8/8**; speaker note), `docs/demo-script.md` (facts table, 2:10 beat), `docs/deck/shot-list.md` (shot 11 widget line; shot 1 reference frame), `docs/deck/README.md` (reference frames in the repo), this file.
+- Verify step run + output: read `docs/ledger-snapshot/2026-10-24_02-14-07Z-0350-exam-details/status.json` on the integration branch: `exam.details` has 20 rows, `verdict_ok` true on all 20, `param_ok` true on 10 (exam-rw8, -04, -06, -07, -08, -12, -13, -17, -18, -19); of the 8 sheet items (exam-rw8, -03, -02, -14, -15, -16, -20, -05) only exam-rw8 has `param_ok` → **1/8 next step, 8/8 verdicts**, matching the integrator's message. On all 7 misses the truth parameter is ride_height_mm (exam-05's truth is ride height *increase*, which I had miscounted as a non-ride-height miss in the first draft of this entry; corrected 03:45) and the provider answered rear_wing_deg (5), front_wing_deg (1) or brake_bias_pct (1). Honesty grep still clean.
+- Numbers owed: unchanged except the provider n/8 cells, now measured. Still owed: kept count after v2, adapter v1 / v2 results, v1 / v2 next-step and verdict n/8 (hand-entered Saturday via `docs/try-models/sheet.md` + `npm run exam:score`), screenshots.
+- Decisions proposed: none new.
+- Blockers / questions for Tanuj: the four batched questions in the 03:20 entry stand.
+- Next three actions: (1) integrator merges this PR; (2) DEMO fills v1/v2 cells and adapter results when they exist, exports `docs/deck/purple-deck.pdf`; (3) P3.T6 snapshot after `/submit`.
+
+### 2026-10-24 03:20 London — agent G (DEMO) — P3.T5 deck sources + P3.T4 shot list + script v2.1 (after the PRNG correction)
+- Status: **done** on `claude/demo-p3-deck`, one PR into `claude/amazing-planck-804i13` with three commits (P3.T4 script fix, P3.T5 deck, P3.T4 shot list). No code, no Mubit calls, `lab/prompt.js` untouched. `npm test` on the branch base: 74/74.
+- Files changed: `docs/demo-script.md` (v2.1), `docs/deck/slides.md` (new, 8 slides), `docs/deck/README.md` (new), `docs/deck/shot-list.md` (new, 15 shots), `docs/deck/shots/.gitkeep`, this file.
+- What changed since the 02:10 entry (integrator messages 23:41 and 02:04, TASK_LOG 01:45–03:05):
+  1. **The front-wing line is no longer told as fixation.** 50 of 53 v1 ledger rows touched `front_wing_deg` because of the generator's PRNG seeding (fixed 01:45). Script 1:35, slide 5 and shot 9 now say: v1 learned from skewed data (our mistake, fixed), the clean next-step measure is the exam (10/20), v2 was collected over all five parameters with R-01 in every input (verdicts agreed with the evaluator 38/39; next parameter rh 13 / rw 11 / fw 7 / bb 6 / ers 2). "Do not say" line added to the script.
+  2. **Lab page facts:** P2.T1 has no candidate editor (D-U3), so the demo candidate and the 25° TD-01 candidate go in through `EI.lab.run({ candidate, seed })`, pre-typed in a second window; the buttons used on camera are Run next / Run random / Race it / Overrule. The screen descriptions match `docs/agents/lanes/ui-screens/03-plan-success.png`.
+  3. **Grid race (P3.T3) exists:** shot 15 and the close use GAME.md "How to film it" Shot B (`?lab=1&mode=grid&driver=VER&seed=42&laps=2`, VER P7 → P14 headless); the game draws the "Cinematic · mixes car and driver · …" caption itself, so no burned-in caption is needed. Shot A is the race b-roll (shots 5–7).
+  4. **Try models:** the 8 items are EVAL's sheet (exam-rw8, -03, -02, -14, -15, -16, -20, -05; five retests), not my margin list; the side-by-side screenshot is on `exam-rw8` (the demo premise); scores come from `npm run exam:score`. Steps per `docs/try-models/README.md` (paste the user message only; only a `Passed` version can be tried).
+  5. Deck: no cover slide (8 pages exactly, disclosure on slide 2). Slide 2 now carries the v2 collection line and owes the kept count after v2.
+- Verify step run + output:
+  - `grep -niE "cfd|wind tunnel|validated|aerodynamically tested" docs/deck/*.md docs/demo-script.md` → only the two lines that quote the rule itself (README honesty check, script self-check). The honesty slide says "not a high-fidelity aerodynamic simulation" instead of naming the banned words.
+  - Spoken text 477 words (about 3:00); shot durations sum to 180 s.
+  - Marp export in the cloud container: `CHROME_PATH=<chromium> npx -y @marp-team/marp-cli@latest docs/deck/slides.md --pdf --allow-local-files` → 8-page PDF; PNG check of slides 4 and 5 (tables fit, dark theme, source label at the foot). Speaker notes all ≤ 57 words.
+- **Numbers owed** (unchanged owners; status after the integrator's updates):
+
+  | Number | Where | Who | Status |
+  |---|---|---|---|
+  | Kept examples after v2 (expect ≈ 80) | slide 2, script 0:00 widget, shot 10 | Tanuj (console → Tasks) → widget ✎ / `POST /api/status` | owed |
+  | Adapter **v1 result** | slide 2, script 1:35, shot 10, checkin-1 | Tanuj (Adapters → History) | owed |
+  | Adapter **v2 status / result** | slide 2, script 1:35, shot 10 | v2 examples in since 01:50; Tanuj reads Adapters | owed (training) |
+  | **Try models v1 / v2 / provider, next-step n/8 and verdict n/8** | slide 5 table, script 2:10, shot 11 | Tanuj fills `docs/try-models/sheet.md`; integrator runs `npm run exam:score` and posts status | owed (needs a `Passed` version) |
+  | Grid-race footage | shot 15 | GAME P3.T3 merged; Tanuj records Shot B | ready to film |
+  | Console screenshots `console-tasks.png`, `console-adapters.png`, `try-models-side-by-side.png` | slides 2, 5 | Tanuj | owed |
+  | Lab screenshots `lab-stage-rail.png`, `lab-race-card.png`, `lab-design-td01.png`, `ledger-row.png` | slides 1, 4, 6, 8 | Tanuj on the demo laptop with the real ledger restored (UI merged) | owed |
+- Decisions proposed (for the integrator to log in TASK_LOG):
+  1. D-D4 The demo narrative states the PRNG finding openly ("v1 learned from our mistake, v2 learns the engineer's rule") rather than omitting it; the exam is the only next-step number quoted as a measure of the agent.
+  2. D-D5 Try-models screenshot and live beat use `exam-rw8` (in EVAL's 8) so the deck's one scenario is the same experiment the race measured.
+- Blockers / questions for Tanuj (batched; none block the docs):
+  1. Chrome or Edge on the recording laptop for Marp? Otherwise Route B (Google Slides) in `docs/deck/README.md`.
+  2. UI lane (P3.T2): a "Run demo candidate" preset (rear wing 28°, seed 42) and a "25° under TD-01" preset would take the DevTools hook out of shots 3, 12 and 14. Optional; the hook works.
+  3. For shots 5–8: film Shot A from the plain game page (GAME.md) and show the lab's RACE card with the ledger race; or run Race it live and wait 4 min 20 s. The script supports both.
+  4. The live Overrule on camera creates a second rule identical to R-01. Fine to leave both active (same text), or toggle R-01 off before the take so the chip that appears is the one being created.
+- Next three actions:
+  1. Integrator merges `claude/demo-p3-deck`.
+  2. DEMO: when kept count, v1/v2 results and the Try-models scores land, replace the placeholders, re-run the honesty grep, export `docs/deck/purple-deck.pdf`, commit it.
+  3. DEMO: P3.T6 after `/submit`: `npm run snapshot -- --label submitted`, and point slide 8 and the README at that folder.
+
+### 2026-10-24 02:10 London — agent G (DEMO) — P3.T4 demo script, P3.T5 deck sources, P3.T4 shot list
+- Status: **P3.T4 script done** (`claude/demo-p3-script`); **P3.T5 deck sources done** (`claude/demo-p3-deck`, stacked); **P3.T4 shot list done** (`claude/demo-p3-shots`, stacked). No code, no Mubit calls, `lab/prompt.js` untouched. Video recording (P3.T4 proper) and `/submit` (P3.T6) are Tanuj's.
+- Files changed: `docs/demo-script.md` (rewritten, v2.0), `docs/deck/slides.md` (8 slides, Marp), `docs/deck/README.md` (export routes), `docs/deck/shot-list.md` (15 shots, 3:00), `docs/deck/shots/.gitkeep` (screenshots go here), this file. `docs/checkins/checkin-1.md` left as is (every fact in it checks out against TASK_LOG).
+- Verify step run + output:
+  - `npm ci && npm test` on the integration branch before starting → `# tests 65 / # pass 65 / # fail 0`.
+  - `grep -niE "cfd|wind tunnel|validated|aerodynamically tested" docs/demo-script.md docs/deck/slides.md` → only the G-HON-02 checklist lines that quote the rule itself; no use in content.
+  - Spoken text of the script: 465 words (about 2:55 at a normal pace); shot list sums to 180 s (awk over the duration column).
+  - Deck export tested in the cloud container with `CHROME_PATH=<chromium> npx -y @marp-team/marp-cli@latest docs/deck/slides.md --pdf --allow-local-files -o purple-deck.pdf` → 8-page PDF, dark theme renders, tables legible (checked slides 4 and 5 as PNG). Screenshots are missing on purpose (Marp warns and continues).
+  - Speaker notes: 42–57 words per slide (all ≤ 60).
+- What changed in the story (for the integrator and Tanuj):
+  1. The old 0:45 line "Maggotts–Becketts purple, Hangar Straight red" is gone: all three measured sectors were slower for rear wing +8° (24.683 / 25.771 / 30.268 → 24.927 / 25.950 / 30.377). The script now says "faster through Becketts, slower in every sector".
+  2. The old 1:30 beat ("the agent still says retest with more wing") is gone: on the demo experiment the agent said reject / rear_wing_deg decrease 4, which is correct. The LEARN beat is now about the **next experiment**: 39/43 front-wing proposals live, exam verdicts 20/20 vs next step 10/20. The engineer keeps the verdict and writes the rule; v2 is rule-conditioned learning (G-HON-03).
+  3. Try models is scored as next step n/8 and verdict n/8 (G-HON-06); the 8 hardest exam items by `meta.margin` are exam-13, -11, -12, -15, -07, -10, -02, -16 (computed from `data/exam.json`; EVAL to confirm for P3.T1). Note 7 of those 8 have truth next step = ride_height_mm decrease.
+  4. TD-01 beat says what the server does: an illegal candidate is refused before any Mubit call (`illegal` trace line, no `mreq_`), then the next legal Run spends a call and the count continues.
+  5. The close no longer claims "open model" or "a fraction of the cost" (neither is measured).
+- **Numbers owed** (square-bracket placeholders in the script and slides; cut the line rather than invent):
+
+  | Number | Where it appears | Who produces it | When |
+  |---|---|---|---|
+  | Adapter **v1 result** (Adapters tab line) | slide 2, script 1:35, checkin-1 | Tanuj (console → Adapters screenshot) → `POST /api/status` | P1.T4, before the 12:00 check-in |
+  | Adapter **v2 status / result** | slide 2 notes, script 1:35, shot 10 | Integrator runs `npm run collect -- --n 40 --with-rules --promote-bias 0.3` after P2.T4; Tanuj reads the Adapters tab | Saturday budget, by 20:00 |
+  | **Exam v1 / v2 / provider next-step n/8 and verdict n/8** on the 8 hardest items | slide 5 table, script 2:10, shot 11 | EVAL picks the 8 (list above), Tanuj runs Try models (P3.T1), integrator enters `exam.v1`, `exam.v2` via `POST /api/status` | P3.T1, after v2 |
+  | **Grid-race footage** (F-10, "cinematic — mixes car and driver") | script 2:50, shot 15, slide 8 bullet | GAME lane P3.T3, URL published in GAME.md; Tanuj records | P3, else fallback to the RACE card |
+  | **Console screenshots** `console-tasks.png`, `console-adapters.png`, `try-models-side-by-side.png` | slides 2, 5 | Tanuj | before export |
+  | **Lab screenshots** `lab-stage-rail.png`, `lab-race-card.png`, `lab-design-td01.png`, `ledger-row.png` | slides 1, 4, 6, 8 | UI lane P2.T1/P2.T6 must land; Tanuj captures | before export |
+- Decisions proposed (for the integrator to log in TASK_LOG):
+  1. D-D1 The demo correction (P2.T4) keeps the agent's verdict (reject) and supplies the rule as the reason; the overrule is about the next experiment, not the verdict. `/api/overrule` accepts this (verdict is any of the three).
+  2. D-D2 Deck export route is Marp CLI with the repo's own `docs/deck/slides.md`; Google Slides is the fallback. PDF is `docs/deck/purple-deck.pdf` (not committed until the numbers are in).
+  3. D-D3 Deck is exactly 8 pages, no cover; slide 1 carries the name so the Equation I disclosure stays on slide 2 (G-HON-04).
+- Blockers / questions for Tanuj (batched, none blocking the docs):
+  1. Does Chrome (or Edge) exist on the recording laptop? Marp needs one; otherwise use Route B in `docs/deck/README.md`.
+  2. For shot 5–8 (the race): re-run `Race it` on the laptop GPU (real time, about 4 min for 3 laps) or cut to the race already in the ledger? The script supports both.
+  3. Confirm D-D1 before P2.T4: the overrule reason is exactly "Weigh straight-line drag against corner gain; judge on full-lap delta." with verdict reject.
+  4. Rotate the Mubit key after the hackathon (reminder from HANDOVER; the trace stream will show request ids on video, which is fine, the key never appears).
+- Next three actions:
+  1. Integrator merges the three stacked PRs in order (script → deck → shots).
+  2. DEMO: when v1/v2/exam numbers land, replace the placeholders in `slides.md` and `demo-script.md`, re-run the G-HON grep, export the PDF, and add `docs/deck/purple-deck.pdf`.
+  3. DEMO: P3.T6 freeze `data/` into `docs/ledger-snapshot/` after `/submit` (ledger.jsonl, calls.jsonl, rules.json, status.json, exam.json) with a README naming the submission commit.
+
+## Template for a session entry
+
+### YYYY-MM-DD HH:MM London — <agent/session> — <task id>
+- Status: in_progress | done | blocked: <what, who>
+- Files changed:
+- Verify step run + output:
+- Decisions proposed (for the integrator to log in TASK_LOG):
+- Blockers / questions for Tanuj:
+- Next three actions:

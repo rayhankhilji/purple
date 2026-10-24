@@ -1,0 +1,29 @@
+{
+  "baseline": {
+    "front_wing_deg": 25,
+    "rear_wing_deg": 20,
+    "ride_height_mm": 35,
+    "brake_bias_pct": 57,
+    "ers_deploy": 0.5
+  },
+  "conditions": {
+    "circuit": "silverstone",
+    "wet": false,
+    "wind_ms": 0,
+    "wind_from_deg": 0
+  },
+  "td01": false,
+  "last_plan": {
+    "verdict": "retest",
+    "next_parameter": "brake_bias_pct",
+    "direction": "decrease",
+    "magnitude": 2,
+    "expected_sector_effect": [
+      -0.003,
+      -0.001,
+      -0.002
+    ],
+    "hypothesis": "Brake bias +3 neutral; reduce to -2 from baseline 57 to improve mid-corner stability and exit traction.",
+    "reject_if": "delta_lap > 0.02"
+  }
+}

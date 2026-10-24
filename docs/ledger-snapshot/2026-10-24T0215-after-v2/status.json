@@ -1,0 +1,12 @@
+{
+  "task_name": "Research engineer of F1",
+  "kept_examples": 43,
+  "adapter_version": null,
+  "test_result": "training v1",
+  "updated_at": "2026-10-23T23:27:46.168Z",
+  "exam": {
+    "provider": 20,
+    "total": 20,
+    "provider_param": 10
+  }
+}

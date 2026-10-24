@@ -1,0 +1,17 @@
+{
+  "baseline": {
+    "front_wing_deg": 25,
+    "rear_wing_deg": 20,
+    "ride_height_mm": 35,
+    "brake_bias_pct": 57,
+    "ers_deploy": 0.5
+  },
+  "conditions": {
+    "circuit": "silverstone",
+    "wet": false,
+    "wind_ms": 0,
+    "wind_from_deg": 0
+  },
+  "td01": false,
+  "last_plan": null
+}

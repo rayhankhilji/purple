@@ -1,0 +1,237 @@
+{
+  "_meta": {
+    "what": "Public technical dossier for Red Bull Racing's 2026 car (RB22) and power unit (Red Bull Ford DM01), as the PURPLE baseline team for the Silverstone lap simulator. Companion prose: docs/concept/REDBULL.md.",
+    "built": "2026-10-24",
+    "season_context_through": "2026-10-18 (17 rounds run; last round Singapore GP, 11 Oct 2026)",
+    "kinds": {
+      "regulation": "Read in the FIA 2026 Section C [Technical] PDF itself (Issue 19, in force at Silverstone). Article given; quote copied from the extracted PDF text. Every Issue 19 quote below was also found word for word in Issue 21 (2026-10-19) unless same_in_iss21 says otherwise.",
+      "official": "Statement or document from the FIA, Formula 1, Red Bull, Ford or Red Bull Ford Powertrains (including a team spec sheet as reproduced by press).",
+      "reported": "Reputable journalism (or Wikipedia). Not confirmed by the team or the FIA.",
+      "measured": "Taken from public timing/telemetry already in this repo (concept/data/telemetry, OpenF1) or fetched from OpenF1 on the access date. One lap, about 3.7 Hz car_data, so treat as approximate.",
+      "derived": "Arithmetic on regulation or measured numbers; method stated.",
+      "unknown": "Not public. Value is null on purpose."
+    },
+    "fetch_note": "fetched=true: the page itself was opened on 2026-10-24 and the value read there. fetched=false: only a search-engine summary of the page was seen (page blocked or empty); treat as weaker.",
+    "units": {
+      "speed": "km/h",
+      "time": "s",
+      "power": "kW",
+      "energy": "MJ",
+      "mass": "kg"
+    }
+  },
+  "sources": {
+    "fia_c19": {"url": "https://www.fia.com/system/files/documents/fia_2026_f1_regulations_-_section_c_technical_-_iss_19_-_2026-06-25.pdf", "title": "2026 F1 Regulations Section C [Technical], Issue 19, 25 June 2026", "kind": "regulation", "accessed": "2026-10-24", "fetched": true},
+    "fia_c21": {"url": "https://www.fia.com/system/files/documents/fia_2026_f1_regulations_-_section_c_technical_-_iss_21_-_2026-10-19.pdf", "title": "2026 F1 Regulations Section C [Technical], Issue 21, 19 Oct 2026 (checked for changes)", "kind": "regulation", "accessed": "2026-10-24", "fetched": true},
+    "fia_gbr_pu_info": {"url": "https://www.fia.com/system/files/decision-document/2026_british_grand_prix_-_power_unit_information.pdf", "title": "FIA 2026 British GP Power Unit Information (Doc 7); values carried from concept/data/silverstone-2026-weekend.json", "kind": "official", "accessed": "2026-10-24", "fetched": true},
+    "fia_car_pres": {"url": "https://www.fia.com/system/files/decision-document/2026_british_grand_prix_-_car_presentation_submissions.pdf", "title": "FIA Car Presentation Submissions, British GP (Doc 13); carried from concept/data/grid-2026.json", "kind": "official", "accessed": "2026-10-24", "fetched": true},
+    "fia_q_class": {"url": "https://www.fia.com/system/files/decision-document/2026_british_grand_prix_-_final_qualifying_classification.pdf", "title": "FIA Final Qualifying Classification (Doc 63); carried from concept/data/grid-2026.json", "kind": "official", "accessed": "2026-10-24", "fetched": true},
+    "fia_t_q_speeds": {"url": "https://www.fia.com/sites/default/files/2026_09_gbr_f1_q0_timing_qualifyingsessionmaximumspeeds_v01.pdf", "title": "FIA timing: Qualifying Session Maximum Speeds (trap 140 m before T15)", "kind": "official", "accessed": "2026-10-24", "fetched": true},
+    "fia_t_r_speeds": {"url": "https://www.fia.com/sites/default/files/2026_09_gbr_f1_r0_timing_racemaximumspeeds_v01.pdf", "title": "FIA timing: Race Maximum Speeds", "kind": "official", "accessed": "2026-10-24", "fetched": true},
+    "fia_r_class": {"url": "concept/data/silverstone-2026-weekend.json (race.sources: fia_r_class, f1_race)", "title": "FIA Final Race Classification and formula1.com race result, as stored in the repo", "kind": "official", "accessed": "2026-10-24", "fetched": true},
+    "fia_aduo": {"url": "https://www.fia.com/news/fia-announces-aduo-results-following-first-and-second-review-periods-2026", "title": "FIA: ADUO results following first and second review periods of 2026 (26.08.26)", "kind": "official", "accessed": "2026-10-24", "fetched": true},
+    "f1_aduo_explainer": {"url": "https://www.formula1.com/en/latest/article/explained-what-is-f1s-aduo-engine-upgrade-system-and-how-will-it-work.2A67N47ntcdQbKhHOd7GdD", "title": "formula1.com: EXPLAINED: What is F1's ADUO engine upgrade system (18 May 2026)", "kind": "official", "accessed": "2026-10-24", "fetched": true},
+    "sky_aduo": {"url": "https://www.skysports.com/f1/news/13551591/aduo-in-f1-red-bull-engine-top-rated-by-fia-as-mercedes-ferrari-granted-upgrades-for-2026-formula-1-season", "title": "Sky Sports: ADUO in F1: Red Bull engine top rated by FIA (7 Jun 2026)", "kind": "reported", "accessed": "2026-10-24", "fetched": true},
+    "autoaction_aduo": {"url": "https://autoaction.com.au/2026/08/27/red-bull-ford-f1-best-engine-fia-aduo", "title": "Auto Action (Andrew Clarke): FIA declares Red Bull Ford F1's best engine (27 Aug 2026)", "kind": "reported", "accessed": "2026-10-24", "fetched": true},
+    "f1_ford_2023": {"url": "https://www.formula1.com/en/latest/article/breaking-ford-announce-new-technical-partnership-with-red-bull-for-2026-and.177bB2z0b7Iw6C79l1YQ9b", "title": "formula1.com: Ford announce new technical partnership with Red Bull for 2026 and beyond (3 Feb 2023)", "kind": "official", "accessed": "2026-10-24", "fetched": true},
+    "f1_pu_explainer": {"url": "https://www.formula1.com/en/latest/article/2026-regulations-explained-all-you-need-to-know-about-f1s-new-power-units.14jfv7a36905uDJDdNyfQd", "title": "formula1.com: 2026 REGULATIONS EXPLAINED: F1's new power units (14 Jan 2026)", "kind": "official", "accessed": "2026-10-24", "fetched": true},
+    "ams_ford": {"url": "https://www.auto-motor-und-sport.de/formel-1/red-bull-motor-ford-f1/", "title": "auto motor und sport (Tobias Gruener): So viel Ford steckt im Red-Bull-Motor (16 Jan 2026)", "kind": "reported", "accessed": "2026-10-24", "fetched": true},
+    "therace_unstoppable": {"url": "https://www.the-race.com/formula-1/unstoppable-red-bull-ford-mixed-messaging-isnt-what-it-seems/", "title": "The Race (Jon Noble): 'Unstoppable'? How Red Bull/Ford engine project is really going (16 Jan 2026)", "kind": "reported", "accessed": "2026-10-24", "fetched": true},
+    "mmag_engines": {"url": "https://www.motorsportmagazine.com/articles/single-seaters/f1/all-the-key-aspects-changing-on-f1s-2026-engines/", "title": "Motor Sport Magazine (Pablo Elizalde): All the key aspects changing on F1's 2026 engines (28 Jul 2025, updated 22 Jan 2026)", "kind": "reported", "accessed": "2026-10-24", "fetched": true},
+    "redbull_hp": {"url": "https://www.redbull.com/int-en/horsepower-in-formula-one-cars", "title": "redbull.com (Paul Keith): the horsepower in F1 cars for the 2026 season (23 Mar 2026)", "kind": "official", "accessed": "2026-10-24", "fetched": true},
+    "racer_wolff": {"url": "https://racer.com/2026/02/11/red-bull-the-benchmark-based-on-early-running-says-mercedes-wolff", "title": "RACER: Red Bull the benchmark based on early running, says Mercedes' Wolff (11 Feb 2026)", "kind": "reported", "accessed": "2026-10-24", "fetched": false},
+    "planetf1_wache": {"url": "https://www.planetf1.com/news/toto-wolff-red-bull-2026-engine-benchmark-pierre-wache-response", "title": "PlanetF1: Red Bull plays down Toto Wolff's 'benchmark' claim (Feb 2026)", "kind": "reported", "accessed": "2026-10-24", "fetched": false},
+    "planetf1_cr": {"url": "https://www.planetf1.com/news/red-bull-mercedes-f1-2026-engine-loophole-side-swap", "title": "PlanetF1: Red Bull denies switching sides in Mercedes F1 2026 engine row", "kind": "reported", "accessed": "2026-10-24", "fetched": false},
+    "therace_anderson": {"url": "https://www.the-race.com/formula-1/zeropods-blown-diffuser-gary-andersons-verdict-on-2026-red-bull", "title": "The Race (Gary Anderson): Zeropods + blown diffuser? verdict on 2026 Red Bull (26 Jan 2026)", "kind": "reported", "accessed": "2026-10-24", "fetched": true},
+    "racecar_spec": {"url": "https://www.racecar.com/news/103107/motorsport/red-bull-rb22-set-to-make-its-official-debut-on-track-today", "title": "racecar.com: Red Bull RB22 set to make its official debut (26 Jan 2026), reproduces the team's RB22 technical specification", "kind": "official", "accessed": "2026-10-24", "fetched": true},
+    "wiki_rb22": {"url": "https://en.wikipedia.org/wiki/Red_Bull_Racing_RB22", "title": "Wikipedia: Red Bull Racing RB22 (last edited 12 Oct 2026)", "kind": "reported", "accessed": "2026-10-24", "fetched": true},
+    "wiki_rbpt": {"url": "https://en.wikipedia.org/wiki/Red_Bull_Powertrains", "title": "Wikipedia: Red Bull Powertrains (last edited 10 Sep 2026)", "kind": "reported", "accessed": "2026-10-24", "fetched": true},
+    "gpfans_pushrod": {"url": "https://www.gpfans.com/nl/f1-nieuws/1070755/red-bull-gooit-filosofie-om-voor-rb22/", "title": "GPFans NL: Red Bull kiest voor dubbele pushrod-ophanging (citing AutoRacer)", "kind": "reported", "accessed": "2026-10-24", "fetched": false},
+    "rn365_weights": {"url": "https://racingnews365.com/the-weights-of-every-f1-car-in-2026", "title": "RacingNews365: The weights of every F1 car in 2026 (2 Apr 2026)", "kind": "reported", "accessed": "2026-10-24", "fetched": true},
+    "therace_overweight": {"url": "https://www.the-race.com/formula-1/where-red-bull-stands-in-tackling-overweight-car-problem/", "title": "The Race (Jon Noble): What we know about Red Bull's overweight car problems (2 Jun 2026)", "kind": "reported", "accessed": "2026-10-24", "fetched": true},
+    "therace_wing": {"url": "https://the-race.com/formula-1/red-bull-rear-wing-f1-2026-ferrari-macarena/", "title": "The Race (Scott Mitchell-Malm): The real story behind Red Bull wing that eclipsed Ferrari's (10 May 2026)", "kind": "reported", "accessed": "2026-10-24", "fetched": true},
+    "gpblog_miami": {"url": "https://gpblog.com/en/tech/how-red-bull-racing-turned-the-rb22-around-with-miami-updates", "title": "GPblog: How Red Bull turned the RB22 around with Miami updates", "kind": "reported", "accessed": "2026-10-24", "fetched": false},
+    "speedcafe_wing": {"url": "https://speedcafe.com/f1-news-2026-british-grand-prix-laurent-mekies-red-bull-max-verstappen-rear-wing-failure-reaction-response-fix/", "title": "Speedcafe (Ben Waterworth): Mekies on Verstappen rear wing failure (7 Jul 2026)", "kind": "reported", "accessed": "2026-10-24", "fetched": true},
+    "redbull_wing_explainer": {"url": "https://www.redbull.com/us-en/max-verstappen-rear-wing-issue-explained", "title": "redbull.com: Max Verstappen rear wing issue explained (page body empty when fetched)", "kind": "official", "accessed": "2026-10-24", "fetched": false},
+    "therace_surge": {"url": "https://www.the-race.com/formula-1/under-reported-factor-in-red-bull-f1-surge/", "title": "The Race (Jon Noble): The under-reported factor in Red Bull's F1 surge (7 Oct 2026)", "kind": "reported", "accessed": "2026-10-24", "fetched": true},
+    "therace_silverstone": {"url": "https://the-race.com/formula-1/very-very-poor-british-gp-a-harsh-reality-check-for-red-bull/", "title": "The Race (Josh Suttill, Jon Noble): 'Very very poor' - British GP a harsh reality check for Red Bull (4 Jul 2026)", "kind": "reported", "accessed": "2026-10-24", "fetched": true},
+    "verstappen_com_q": {"url": "https://news.verstappen.com/en/article/6212", "title": "verstappen.com (Florence Cobben): Max to start British GP from P7 (4 Jul 2026)", "kind": "official", "accessed": "2026-10-24", "fetched": true},
+    "f1technical_mekies": {"url": "https://www.f1technical.net/news/28868", "title": "F1Technical: Mekies ponders why Red Bull has taken 'a step backwards' after Silverstone qualifying", "kind": "reported", "accessed": "2026-10-24", "fetched": false},
+    "f1technical_austria": {"url": "https://www.f1technical.net/news/28771", "title": "F1Technical: How has Red Bull upgraded its RB22 at Spielberg? (HTTP 403 when fetched)", "kind": "reported", "accessed": "2026-10-24", "fetched": false},
+    "pitdebrief_hadjar": {"url": "https://www.pitdebrief.com/?p=131126", "title": "Pit Debrief: Hadjar rues 'waste of a race' after front wing problem (British GP 2026)", "kind": "reported", "accessed": "2026-10-24", "fetched": true},
+    "gpblog_fragile": {"url": "https://www.gpblog.com/en/news/verstappen-calls-red-bull-ford-engine-too-fragile-as-baku-disaster-exposes-a-season-long-pattern", "title": "GPblog: Verstappen calls Red Bull Ford engine 'too fragile' (26 Sep 2026)", "kind": "reported", "accessed": "2026-10-24", "fetched": true},
+    "planetf1_hadjar_aus": {"url": "https://www.planetf1.com/news/isack-hadjar-red-bull-australian-grand-prix-2026-dnf-cause", "title": "PlanetF1: cause of Hadjar's Australian GP retirement (11 Mar 2026)", "kind": "reported", "accessed": "2026-10-24", "fetched": true},
+    "gp247_monaco": {"url": "https://www.grandprix247.com/formula-1-news/max-verstappen-will-have-a-new-power-unit-in-barcelona-following-monaco-grand-prix-dnf", "title": "GrandPrix247: Verstappen new power unit in Barcelona after Monaco DNF (8 Jun 2026)", "kind": "reported", "accessed": "2026-10-24", "fetched": true},
+    "crash_standings": {"url": "https://www.crash.net/f1/results/1107471/1/new-f1-championship-standings-after-singapore-grand-prix", "title": "Crash.net: F1 standings after the Singapore Grand Prix (Oct 2026)", "kind": "reported", "accessed": "2026-10-24", "fetched": false},
+    "openf1_race": {"url": "https://api.openf1.org/v1/stints?session_key=11326 ; /v1/pit?session_key=11326 ; /v1/race_control?session_key=11326", "title": "OpenF1: British GP 2026 race (session_key 11326) stints, pit and race control for cars 3 and 6", "kind": "measured", "accessed": "2026-10-24", "fetched": true},
+    "repo_weekend": {"url": "concept/data/silverstone-2026-weekend.json (sprint_qualifying, sprint, race)", "title": "Repo: FIA/formula1.com Silverstone 2026 classifications", "kind": "official", "accessed": "2026-10-24", "fetched": true},
+    "rn365_joker": {"url": "https://racingnews365.com/red-bull-hold-potential-key-joker-ahead-of-british-grand-prix", "title": "RacingNews365: Red Bull hold potential key joker ahead of British Grand Prix", "kind": "reported", "accessed": "2026-10-24", "fetched": false},
+    "repo_telemetry": {"url": "concept/data/telemetry/silverstone-2026-q-had.json, silverstone-2026-q-ant.json, silverstone-2026-q-index.json", "title": "Repo: OpenF1 qualifying telemetry, British GP 2026 (session_key 11322)", "kind": "measured", "accessed": "2026-10-24", "fetched": true},
+    "repo_season": {"url": "js/data/season2026.js (EI.SEASON, team 'redbull', grids, standings)", "title": "Repo: season data as of 2026-10-18 (compiled from Wikipedia, FIA, the-race.com, racefans.net)", "kind": "reported", "accessed": "2026-10-24", "fetched": true}
+  },
+
+  "identity": {
+    "entrant": {"value": "Oracle Red Bull Racing", "kind": "official", "source": "fia_car_pres", "note": "FIA entry list, carried from concept/data/grid-2026.json"},
+    "constructor": {"value": "Red Bull Racing Red Bull Ford", "kind": "official", "source": "fia_car_pres"},
+    "chassis": {"value": "RB22", "kind": "official", "source": "racecar_spec"},
+    "power_unit": {"value": "Red Bull Ford Powertrains DM01", "kind": "official", "source": "racecar_spec", "note": "Named after Dietrich Mateschitz; launched in Detroit, 15 Jan 2026 (wiki_rbpt). Same PU supplied to Racing Bulls."},
+    "drivers": [
+      {"code": "VER", "number": 3, "name": "Max Verstappen"},
+      {"code": "HAD", "number": 6, "name": "Isack Hadjar", "note": "Missed rounds 12-14 (wrist injury); Liam Lawson (#30) drove the RB22 there (repo_season)."}
+    ]
+  },
+
+  "power_unit": {
+    "regulation": [
+      {"key": "ice_layout", "value": "1600 cc (+0/-10 cc), 6 cylinders, 90 deg V, 4 valves/cyl, bore 80 mm", "unit": null, "kind": "regulation", "article": "C5.1.2, C5.1.3, C5.1.4, C5.4.1", "source": "fia_c19", "quote": "Engine cubic capacity must be 1600cc (+0/−10cc). ... six cylinders arranged in a 90° “V” configuration ... The cylinder bore diameter must be 80mm (±0.1mm).", "same_in_iss21": true},
+      {"key": "compression_ratio_max", "value": 16.0, "unit": "geometric, per cylinder", "kind": "regulation", "article": "C5.4.3", "source": "fia_c19", "quote": "No cylinder ... may have a geometric compression ratio higher than 16.0 ... From 1 June 2026 to 31 December 2026: when the Engine is at ambient temperature as well as when the Engine is at 130degC.", "same_in_iss21": true, "note": "The hot check from 1 June 2026 followed the early-season row over Mercedes and Red Bull Ford allegedly exceeding 16:1 when hot. Red Bull's Ben Hodgkinson called it noise; reports say RBPT later backed the clarification (planetf1_cr, search summary only)."},
+      {"key": "rev_limit_crankshaft", "value": null, "unit": "rpm", "kind": "regulation", "article": "C5.14 (and absence of any crank-speed cap in C5)", "source": "fia_c19", "quote": "Engine high rev limits may vary for differing conditions provided all are contained within a band of 750rpm.", "same_in_iss21": true, "note": "Section C Issue 19 has no maximum crankshaft speed. C5.14 only requires all high rev limits to sit within a 750 rpm band. The only '15 000rpm' in the text is C9.8.2, a launch-gear test speed, not a limit. In effect the cap is fuel: C5.2.4 lets fuel energy flow rise with rpm only up to 10,500 rpm (0.27*10500+165 = 3000 MJ/h), so extra revs bring no extra fuel energy. Motor Sport Magazine (mmag_engines) and the Wikipedia RB22 infobox (wiki_rb22) print '15,000 rpm'; that wording was not found in Issue 19 or 21 and is probably carried over from the 2014-2025 rules."},
+      {"key": "fuel_energy_flow_max", "value": 3000, "unit": "MJ/h", "kind": "regulation", "article": "C5.2.3", "source": "fia_c19", "quote": "Fuel energy flow must not exceed 3000MJ/h, with a maximum energy flow per cylinder never exceeding 550MJ/h under normal operating conditions.", "same_in_iss21": true, "derived": "3000 MJ/h / 3.6 = 833 kW of fuel power."},
+      {"key": "fuel_energy_flow_below_10500rpm", "value": "EF(MJ/h) = 0.27 * N(rpm) + 165", "unit": null, "kind": "regulation", "article": "C5.2.4", "source": "fia_c19", "quote": "Below 10500rpm the fuel energy flow must not exceed EF(MJ/h)=0.27*N(rpm)+ 165", "same_in_iss21": true},
+      {"key": "intake_pressure_max", "value": 4.8, "unit": "bar absolute", "kind": "regulation", "article": "C5.3.2", "source": "fia_c19", "quote": "Engine intake air pressure must be less than 4.8 barA at all times.", "same_in_iss21": true},
+      {"key": "turbo", "value": "single-stage single turbo, max 150,000 rpm, no energy taken off the turbo shaft", "unit": null, "kind": "regulation", "article": "C5.3.1, C5.3.6", "source": "fia_c19", "quote": "The energy of the rotating parts of the Turbo Charger may not be transferrable to any other component. ... The rotational speed of the Turbo Charger may not exceed 150,000rpm.", "same_in_iss21": true},
+      {"key": "mgu_h", "value": "removed", "unit": null, "kind": "regulation", "article": "C5.2.1, C5.3.1(2)", "source": "fia_c19", "quote": "The use of any device, other than the engine described in C5.1 above, and the ERS-K, to propel the car and/or Recharge energy, is not permitted.", "same_in_iss21": true, "note": "The term MGU-H does not appear in Issue 19 or Issue 21. formula1.com: the new unit 'deletes the MGU-H' (f1_pu_explainer)."},
+      {"key": "mguk_power_max", "value": 350, "unit": "kW (electrical DC)", "kind": "regulation", "article": "C5.2.7", "source": "fia_c19", "quote": "The absolute electrical DC power of the ERS-K may not exceed 350kW.", "same_in_iss21": true, "derived": "C5.2.21 applies a fixed 0.97 electrical-to-mechanical efficiency in the Standard ECU, so 350 kW DC is treated as about 339.5 kW mechanical."},
+      {"key": "mguk_speed_taper_overtake_off", "value": "P = 1800 - 5v (v < 340); P = 6900 - 20v (340 <= v < 345); P = 0 (v >= 345)", "unit": "kW, v in km/h", "kind": "regulation", "article": "C5.2.8 i", "source": "fia_c19", "quote": "P(kW) = 1800 – 5 * car speed (kph) when the car speed is below 340kph", "same_in_iss21": true, "derived": "Full 350 kW up to 290 km/h; 300 kW at 300 km/h; 250 kW at 310 km/h; 100 kW at 340 km/h."},
+      {"key": "mguk_speed_taper_overtake_on", "value": "P = 7100 - 20v (v < 355); P = 0 (v >= 355)", "unit": "kW, v in km/h", "kind": "regulation", "article": "C5.2.8 ii", "source": "fia_c19", "quote": "P(kW) = 7100 – 20 * car speed (kph) when the car speed is below 355kph", "same_in_iss21": true},
+      {"key": "mguk_power_limited_sectors", "value": "P = 250 kW below 310 km/h, then base taper", "unit": "kW", "kind": "regulation", "article": "C5.2.8 iii", "source": "fia_c19", "same_in_iss21": false, "note": "Race/Sprint only, FIA-named sectors. Silverstone: T1-T4 (350-1000 m) and T15-T16 (4950-5450 m) per fia_gbr_pu_info. Issue 21 adds 'during any power limited period'."},
+      {"key": "mguk_torque_max", "value": 500, "unit": "Nm, referenced to crankshaft speed", "kind": "regulation", "article": "C5.2.11", "source": "fia_c19", "quote": "The MGU-K mechanical torque magnitude may not exceed 500Nm.", "same_in_iss21": true},
+      {"key": "es_state_of_charge_window", "value": 4, "unit": "MJ", "kind": "regulation", "article": "C5.2.9", "source": "fia_c19", "quote": "The difference between the maximum and the minimum state of charge of the ES may not exceed 4MJ at any time the car is on the track.", "same_in_iss21": true},
+      {"key": "recharge_per_lap_max", "value": 8.5, "unit": "MJ/lap", "kind": "regulation", "article": "C5.2.10", "source": "fia_c19", "same_in_iss21": true, "note": "Silverstone 2026 (fia_gbr_pu_info): 6.5 MJ in SQ/Q, 8.0 MJ race/sprint, 8.5 MJ with Overtake, 8.5 MJ in FP."},
+      {"key": "max_working_voltage", "value": 1000, "unit": "V", "kind": "regulation", "article": "C5.17.6", "source": "fia_c19", "same_in_iss21": true},
+      {"key": "pu_min_mass", "value": 185, "unit": "kg", "kind": "regulation", "article": "C5.5.2", "source": "fia_c19", "same_in_iss21": true},
+      {"key": "ice_min_mass", "value": [130.0, 134.0], "unit": "kg (by MGU-K transmission location)", "kind": "regulation", "article": "C5.5.1", "source": "fia_c19", "same_in_iss21": true},
+      {"key": "mguk_min_mass", "value": [16.0, 20.0], "unit": "kg", "kind": "regulation", "article": "C5.18.7", "source": "fia_c19", "same_in_iss21": true},
+      {"key": "es_main_enclosure_min_mass", "value": 35.0, "unit": "kg", "kind": "regulation", "article": "C5.17.9", "source": "fia_c19", "same_in_iss21": true},
+      {"key": "turbo_min_mass", "value": 12, "unit": "kg", "kind": "regulation", "article": "C5.3.4", "source": "fia_c19", "same_in_iss21": true},
+      {"key": "ice_power_cap", "value": null, "unit": "kW", "kind": "regulation", "article": "C5.2.3", "source": "fia_c19", "note": "There is no ICE power cap; ICE output is bounded only through fuel energy flow. An Italian site describing '400 kW' as a regulatory limit is wrong on this point."}
+    ],
+    "official_statements": [
+      {"key": "ford_role", "value": "Ford provides expertise 'including battery cell and electric motor technology as well as power unit control software and analytics'", "kind": "official", "source": "f1_ford_2023", "date": "2023-02-03"},
+      {"key": "ford_components", "value": "Ford contributes 12 components across several PU systems (MGU-K parts, turbo hardware, 3D-printed water pipes and exhaust parts), load simulation, energy-split simulation software, and battery charge-cycle software; Ford staff attend battery tests", "kind": "reported", "source": "ams_ford", "date": "2026-01-16", "note": "Quotes Ford chief engineer Christian Hertrich: 'Insgesamt steuern wir 12 Komponenten in verschiedenen Systemen zur Power Unit bei.' More than 600 people at Milton Keynes."},
+      {"key": "dyno_running", "value": "A sixth-generation DM01 was on the dyno running Barcelona race simulations on launch night (15 Jan 2026); aim for the first test was 'trouble-free'", "kind": "reported", "source": "therace_unstoppable", "date": "2026-01-16", "note": "Ben Hodgkinson (RBPT technical director). No dated first-fire-up milestone was found in an official release."},
+      {"key": "total_output_team_page", "value": 745, "unit": "kW (total PU, generic 2026 figure)", "kind": "official", "source": "redbull_hp", "date": "2026-03-23", "note": "redbull.com table row for the RB22 prints '10000+hp/745kW' (the hp figure is evidently a typo for about 1000 hp). Not stated as a measured DM01 figure; says only that the hybrid unit produces about 50% of the power."},
+      {"key": "power_split_target", "value": "about 50% electric", "kind": "official", "source": "f1_pu_explainer", "date": "2026-01-14"},
+      {"key": "fia_aduo_ranking", "value": "Best-performing ICE of 2026 (period 1, to Canada): Mercedes 2-4% below it; Audi, Ferrari and Honda more than 4% below it. Period 2 (to Hungary): no new homologations granted.", "kind": "official", "source": "fia_aduo", "date": "2026-08-26", "note": "The FIA text does not name the benchmark; Sky Sports (sky_aduo, 7 Jun 2026) and Auto Action (autoaction_aduo) report it is Red Bull Ford, which received no ADUO upgrades. The index is ICE-only (engine speed, input shaft torque, MGU-K power, lap-time power sensitivity; f1_aduo_explainer) and formula1.com says it is 'not representative of full power unit performance'. Period 3 (Netherlands to Mexico City) not yet published."},
+      {"key": "battery_cell_supplier", "value": null, "kind": "unknown", "note": "Not named by Red Bull, Ford or press in anything found. Ford's stated role covers cell technology expertise and charge-cycle software, not cell manufacture."}
+    ],
+    "reported_performance": [
+      {"key": "ice_power_generic_2026", "value": 400, "unit": "kW (536 hp)", "kind": "reported", "source": "mmag_engines", "note": "Generic 2026 ICE figure in a regulation explainer, not a DM01 measurement. No outlet found publishes a DM01-specific ICE kW figure."},
+      {"key": "ice_power_dm01_relative", "value": "benchmark ICE; Mercedes 2-4% lower; Ferrari/Honda/Audi >4% lower (first half of 2026)", "kind": "reported", "source": "sky_aduo", "note": "From the FIA ADUO index (fia_aduo) plus press identification of the benchmark. Mekies still says Mercedes has 'the most powerful power unit' overall (autoaction_aduo), i.e. ICE plus ERS use."},
+      {"key": "ice_power_sim_envelope", "value": [375, 420], "unit": "kW", "kind": "derived", "note": "Not a sourced estimate. Envelope = 833 kW fuel power (C5.2.3) x assumed brake efficiency 0.45-0.50; the 400 kW press figure sits inside it (48%). Use as a sensitivity range, not as data."},
+      {"key": "energy_deployment", "value": "Red Bull was the deployment 'benchmark' on day 1 of the Bahrain test (Wolff); Sainz agreed from GPS data; Red Bull's Pierre Wache disputed it and said rivals caught up by day 3", "kind": "reported", "source": "racer_wolff", "extra_sources": ["planetf1_wache"], "date": "2026-02-11"},
+      {"key": "deployment_silverstone", "value": "Verstappen: slow on straights, battery runs out late in the lap; Hadjar: deployment 'a way better job than the last few weekends'", "kind": "reported", "source": "therace_silverstone", "extra_sources": ["verstappen_com_q"]},
+      {"key": "reliability_2026", "value": [
+        "R1 Australia: HAD retired, power unit failure (planetf1_hadjar_aus)",
+        "R2 China: VER retirement, described by Mekies as engine-related; Wikipedia calls it a gearbox failure (sources conflict)",
+        "R6 Monaco: VER engine died at the start; new PU fitted for Barcelona (gp247_monaco)",
+        "R9 Silverstone qualifying: VER 'This engine is not responding normal' (verstappen_com_q); cause not published",
+        "R10 Spa: HAD 30-place grid penalty for PU elements (repo_season)",
+        "R15 Baku: VER ICE problem from Q1, 'too fragile at times' (gpblog_fragile)",
+        "R17 Singapore: HAD Q1 powertrain failure, pit-lane start (wiki_rb22)"
+      ], "kind": "reported"},
+      {"key": "standing_vs_rivals", "value": "ICE: Red Bull Ford first per FIA ADUO index. Whole PU incl. ERS use: Mercedes widely judged strongest (Mekies, Wolff quotes); Hamilton (June): 'Red Bull have the most powerful engine, Mercedes second, and then we [Ferrari] are behind'", "kind": "reported", "source": "sky_aduo", "extra_sources": ["autoaction_aduo", "therace_surge"]}
+    ],
+    "not_public": ["ICE power (kW) of the DM01", "torque curve", "power curve vs rpm", "brake specific fuel consumption / efficiency map", "ES cell chemistry, supplier, usable capacity beyond the 4 MJ window", "deployment and harvest maps per circuit", "actual rev limit used (only measured peaks)"]
+  },
+
+  "driveline": {
+    "regulation": [
+      {"key": "forward_gears", "value": 8, "unit": "gears", "kind": "regulation", "article": "C9.6.1", "source": "fia_c19", "quote": "The number of forward gear ratios must be 8. Continuously variable transmission systems are not permitted.", "same_in_iss21": true},
+      {"key": "ratio_nomination", "value": "Ratios nominated to the FIA technical delegate at or before the first Competition; in 2026 only, one change per season allowed (pairs and final drive), with one revert", "kind": "regulation", "article": "C9.6.2", "source": "fia_c19", "quote": "During 2026 only, the nominated set of forward gear ratios may be changed once during the Championship Season and may involve changes to the gear ratio pairs defined in Article C9.6.3 and to the final drive.", "same_in_iss21": true},
+      {"key": "ratio_pairs", "value": "steel, at least 12 mm wide, at least 600 g", "kind": "regulation", "article": "C9.6.3, C9.6.4", "source": "fia_c19", "same_in_iss21": true},
+      {"key": "shift_time_max", "value": {"down_ms": 300, "up_ms": 200, "up_request_to_disengage_ms": 80}, "kind": "regulation", "article": "C9.8.4", "source": "fia_c19", "quote": "The maximum permitted duration for down changes and up changes is 300ms and 200ms respectively.", "same_in_iss21": true},
+      {"key": "driveline_min_mass", "value": 22, "unit": "kg (driveline + gear-change components)", "kind": "regulation", "article": "C9.5.2", "source": "fia_c19", "same_in_iss21": true},
+      {"key": "layout", "value": "lay shaft concentric with crank at crank speed; final drive axis XR -60..+60 mm, Z 260-280 mm", "kind": "regulation", "article": "C9.5.1", "source": "fia_c19", "same_in_iss21": true}
+    ],
+    "red_bull": [
+      {"key": "gearbox", "value": "Red Bull Technology designed and built 8 speed transmission", "kind": "official", "source": "racecar_spec"},
+      {"key": "gear_ratios", "value": null, "kind": "unknown", "note": "Declared to the FIA (C9.6.2) but not published. Whether Red Bull used its 2026 one-time change is not reported."},
+      {"key": "rpm_per_kmh_by_gear_HAD_Q", "value": {"4": 61.2, "5": 53.1, "6": 45.8, "7": 40.0, "8": 35.7}, "unit": "rpm per km/h (median at >=99% throttle, speed > 60 km/h)", "kind": "measured", "source": "repo_telemetry", "note": "Hadjar's 88.746 s Q3 lap. 3rd gear had only 2 samples and is omitted. Implies roughly 336 km/h at 12,000 rpm in 8th. This is overall ratio divided by tyre rolling radius; the radius itself is not public."},
+      {"key": "gears_used_Q_lap", "value": [2, 3, 4, 5, 6, 7, 8], "kind": "measured", "source": "repo_telemetry", "note": "Lowest gear 2 at Luffield/Loop/Vale."},
+      {"key": "peak_rpm_Q_lap", "value": 12320, "unit": "rpm", "kind": "measured", "source": "repo_telemetry", "note": "HAD, 5th gear. Other teams on the same session: ANT 12172, LEC 12080, NOR 12579, LAW (same PU) 12194. Full-throttle rpm in 6th-8th spans about 9,000-12,200."}
+    ]
+  },
+
+  "chassis": {
+    "mass": [
+      {"key": "min_mass_q", "value": 726, "unit": "kg + Nominal Tyre Mass", "kind": "regulation", "article": "C4.1", "source": "fia_c19", "note": "724 kg + NTM other sessions. Press quote 768 kg as the total limit."},
+      {"key": "rb22_over_minimum_april", "value": [9, 10], "unit": "kg over 768 kg", "kind": "reported", "source": "rn365_weights", "date": "2026-04-02"},
+      {"key": "rb22_over_minimum_june", "value": [6, 7], "unit": "kg over 768 kg (estimate from ~0.2 s/lap)", "kind": "reported", "source": "therace_overweight", "date": "2026-06-02", "note": "Mass came off at Miami; 'a further leap' expected at Austria. No later figure found."},
+      {"key": "rb22_mass_exact", "value": null, "kind": "unknown", "note": "The FIA does not publish car masses. Wikipedia infobox '770 kg' is not sourced to the team."}
+    ],
+    "aero_concept": [
+      {"key": "concept", "value": "Low-drag concept; strong in low-speed corners and traction, less clear in medium/high-speed corners; aero degradation flagged by Verstappen at Monza", "kind": "reported", "source": "therace_surge", "date": "2026-10-07", "extra_sources": ["repo_season"]},
+      {"key": "sidepods_floor", "value": "Small sidepods ('certainly smaller than most, but zero? Not really'), heavily slotted bargeboards pulling flow from under the front floor, small floor louvres ahead of the rear tyre, cut-out in the diffuser side", "kind": "reported", "source": "therace_anderson", "date": "2026-01-26"},
+      {"key": "suspension", "value": "Pushrod front, pushrod rear (Gary Anderson, after the Barcelona test; GPFans/AutoRacer also report double pushrod)", "kind": "reported", "source": "therace_anderson", "extra_sources": ["gpfans_pushrod"], "note": "Conflict: Wikipedia infobox lists pull-rod front / push-rod rear (wiki_rb22). The photo-based Anderson reading is preferred; no team statement found."},
+      {"key": "active_rear_wing", "value": "From Miami: rotating upper flap that turns 'up and over from the rear', centre-mounted actuator on the mainplane; reported rotation about 160-180 deg", "kind": "reported", "source": "therace_wing", "extra_sources": ["gpblog_miami"], "date": "2026-05-10", "note": "Angle figures come from search summaries and disagree (160 vs 180 deg). Regulation: two fixed positions, <=400 ms transition, fails to Corner Mode (C3.11.6)."},
+      {"key": "active_wing_failures", "value": "Rear wing did not return to Corner Mode: VER qualifying crash in Austria (R8) and VER race crash at Stowe, Silverstone (R9). Mekies: Silverstone was 'a different type of failure'. Both drivers reverted to an older wing spec for Spa.", "kind": "reported", "source": "speedcafe_wing", "extra_sources": ["redbull_wing_explainer"]},
+      {"key": "upgrades_timeline", "value": [
+        "R4 Miami: rotating rear wing, revised sidepods, front wing and corner inlets, floor, engine cover; big mass reduction (gpblog_miami, therace_overweight)",
+        "R8 Austria: new sidepod inlet with revised floor and rear suspension fairings (f1technical_austria, search summary)",
+        "R9 Silverstone: rear wheel bodywork winglets, number of cascade elements changed (fia_car_pres)",
+        "R15 Baku: package Mekies called part of steady development, closing most of the early ~1 s gap (therace_surge)"
+      ], "kind": "reported"},
+      {"key": "CdA_ClA_balance", "value": null, "kind": "unknown", "note": "No drag or downforce coefficients, aero balance or Straight Mode drag delta are public for any 2026 car."}
+    ]
+  },
+
+  "silverstone_2026": {
+    "event": "British GP, round 9, sprint weekend, 3-5 July 2026",
+    "sprint_qualifying": {"VER": {"pos": 3, "best_s": 88.697}, "HAD": {"pos": 8, "best_s": 88.835}, "kind": "official", "source": "repo_weekend"},
+    "sprint": {"VER": {"pos": 6, "points": 3}, "HAD": {"pos": 9, "points": 0}, "kind": "official", "source": "repo_weekend"},
+    "qualifying": {
+      "kind": "official",
+      "source": "fia_q_class",
+      "extra_sources": ["fia_t_q_speeds"],
+      "HAD": {"pos": 5, "q1_s": 89.276, "q2_s": 89.069, "q3_s": 88.746, "gap_to_pole_s": 0.635, "speed_trap_kmh": 305.8},
+      "VER": {"pos": 7, "q1_s": 89.549, "q2_s": 89.113, "q3_s": 88.893, "gap_to_pole_s": 0.782, "speed_trap_kmh": 304.3},
+      "pole": {"code": "ANT", "s": 88.111, "speed_trap_kmh": 302.6},
+      "check": "Matches concept/data/grid-2026.json and js/data/season2026.js (VER 7, HAD 5); OpenF1 speed traps 305/304 are the same values truncated."
+    },
+    "qualifying_telemetry_HAD_vs_pole": {
+      "kind": "measured",
+      "source": "repo_telemetry",
+      "sectors_s": {"HAD": [28.442, 35.831, 24.473], "ANT": [28.348, 35.521, 24.242], "delta": [0.094, 0.31, 0.231]},
+      "max_speed_kmh": {"HAD": 316.0, "ANT": 316.9},
+      "corner_min_speed_kmh": {"Becketts_T12": {"HAD": 229, "ANT": 245}, "Stowe_T15": {"HAD": 225, "ANT": 236}, "Loop_T4": {"HAD": 86, "ANT": 87}, "Village_T3": {"HAD": 110, "ANT": 108}},
+      "full_throttle_share_of_distance": {"HAD": 0.724, "ANT": 0.75},
+      "note": "Corner minima = lowest speed within +/-80 m of the MultiViewer marker; about +/-20 m and a few km/h of sampling uncertainty. Read: Red Bull lost most in the fast S2/S3 corners (Becketts, Stowe), not on straights or in slow corners."
+    },
+    "race": {
+      "kind": "official",
+      "source": "fia_r_class",
+      "extra_sources": ["fia_t_r_speeds", "openf1_race"],
+      "HAD": {"pos": 5, "points": 10, "fastest_lap_s": 92.268, "speed_trap_kmh": 331.7, "stints": "MEDIUM L1-19, HARD L20-38, MEDIUM L39-47, SOFT L48-52", "pits": "L19 29.9 s, L38 36.4 s (front wing change), L47 29.6 s (lane time)"},
+      "VER": {"pos": "DNF (classified 20th, 46 laps)", "points": 0, "fastest_lap_s": 92.101, "speed_trap_kmh": 330.8, "stints": "MEDIUM L1-17, HARD L18-38, MEDIUM L39-46", "pits": "L17 28.7 s, L38 28.9 s", "retirement": "Spun into the Stowe gravel after the rear wing stayed open after Straight Mode; Safety Car deployed on lap 48. Reported to be running third."},
+      "stints_source": "openf1_race",
+      "winner": "LEC (Ferrari)"
+    },
+    "weekend_points": 13,
+    "setup_reported": [
+      {"key": "wing_level", "value": null, "kind": "unknown", "note": "No source states Red Bull's Silverstone wing level or ride heights."},
+      {"key": "tyre_allocation", "value": "Both drivers kept two new medium sets for the race vs one for Mercedes/Ferrari/McLaren", "kind": "reported", "source": "rn365_joker", "note": "Search summary only; page not opened."},
+      {"key": "driver_feedback", "value": "VER: 'no balance in the car' and 'slow on the straights', engine 'not responding normal'; 'getting destroyed in the very high speed' in the sprint. HAD: 'lacking a bit of pace everywhere'; race: 'missing load on the car' before a front wing change. Mekies: a 'step backwards' from Austria.", "kind": "reported", "source": "therace_silverstone", "extra_sources": ["verstappen_com_q", "pitdebrief_hadjar", "f1technical_mekies"]}
+    ]
+  },
+
+  "season_through_2026-10-18": {
+    "kind": "reported",
+    "source": "repo_season",
+    "extra_sources": ["crash_standings", "wiki_rb22"],
+    "rounds_run": 17,
+    "constructors": {"pos": 4, "points": 332, "ahead": [["mercedes", 578], ["ferrari", 444], ["mclaren", 339]]},
+    "drivers": {"VER": {"pos": 4, "points": 221}, "HAD": {"pos": 8, "points": 97}},
+    "wins": ["R16 Bahrain GP held at Sepang, 4 Oct (VER from pole)", "R17 Singapore GP, 11 Oct (VER from pole)"],
+    "pace_trend": "Car-only qualifying gap to the best car: 0.5% season average, 0.15% over the last 5 rounds (repo_season model numbers). Slowest top-4 car early, about 1 s off at the start of the year (therace_surge); Miami and Austria upgrades, Baku package, then poles and wins at Sepang and Singapore.",
+    "silverstone_track_modifier_pct": 0.15,
+    "monza_top_speed_kmh": {"quali": 326.7, "race": 333.5, "note": "FIA timing via grid-2026.json; Mercedes 338.1 in quali."}
+  },
+
+  "simulator_table": {
+    "exact_regulation": ["1.6 L V6 90 deg, bore 80 mm, CR <= 16.0 (C5.1, C5.4)", "fuel energy flow 3000 MJ/h, 0.27N+165 below 10,500 rpm (C5.2.3-4)", "no MGU-H (C5.2.1)", "MGU-K 350 kW DC, speed tapers, 500 Nm, 0.97 conversion (C5.2.7-8, C5.2.11, C5.2.21)", "ES window 4 MJ; recharge 6.5 MJ/lap in Silverstone Q (C5.2.9-10, FIA Doc 7)", "8 forward gears, shifts <=200 ms up / 300 ms down (C9.6.1, C9.8.4)", "min mass 726 kg + NTM in Q; axle split >=0.44 F / >=0.54 R (C4.1-2)", "active aero: 2 positions, <=400 ms, fails to Corner Mode (C3.10.10, C3.11.6)", "no crankshaft rev cap (C5.14 band rule only)"],
+    "measured_telemetry": ["peak ~12,300 rpm and per-gear rpm/km/h (HAD Q lap)", "speed trap 305.8 km/h Q, 331.7 km/h race (FIA)", "corner minima and braking points (5 m grid, +/-20 m)", "full-throttle share 72% of distance", "speed fade on straights at full throttle (MGU-K taper / ES depletion)", "sector times and stint/compound history"],
+    "reported_estimates": ["ICE ~400 kW generic (sim envelope 375-420 kW, derived)", "DM01 ICE = best per FIA ADUO; Mercedes 2-4% lower, others >4%", "total ~745-750 kW", "car 6-10 kg over 768 kg", "low-drag, strong low-speed, weaker high-speed", "pushrod front and rear", "rear flap rotates ~160-180 deg"],
+    "unknown": ["DM01 ICE kW", "torque and power curves", "efficiency/BSFC map", "deployment/harvest maps", "gear ratios and final drive", "tyre rolling radius", "CdA and ClA in each mode, aero balance", "exact mass and CoG", "ride heights, wing level at Silverstone", "ES cell supplier/chemistry"]
+  }
+}
