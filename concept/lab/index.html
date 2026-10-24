@@ -13,14 +13,19 @@
 <link rel="stylesheet" href="../../lab/lab.css">
 <link rel="stylesheet" href="concept-lab.css">
 <link rel="stylesheet" href="engine-panel.css">
+<link rel="stylesheet" href="engineer-panel.css">
 </head>
 <body class="clab-page">
 <header class="top">
   <span class="brand">PURPLE</span>
-  <span class="sub" id="sub">concept lab · an optimiser reshapes the car to beat the real 2026 grid at Silverstone</span>
+  <span class="sub" id="sub">concept lab · an autonomous engineer, directed by Mubit, reshapes the car to beat the real 2026 grid at Silverstone</span>
+  <div class="viewsw" role="group" aria-label="view">
+    <button type="button" class="btn small on" id="btnViewEng" aria-pressed="true" title="the autonomous engineer: Mubit decides what to explore, the engine screens thousands of variants and keeps by the numbers">Autonomous engineer</button>
+    <button type="button" class="btn small" id="btnViewNoAI" aria-pressed="false" title="the plain in-browser optimiser (no AI at all), for comparison">Compare: no AI</button>
+  </div>
   <div id="banner" role="alert" hidden></div>
   <span class="spacer"></span>
-  <form class="ctl" id="ctl" autocomplete="off" aria-label="optimiser controls" onsubmit="return false">
+  <form class="ctl noai-only" id="ctl" autocomplete="off" aria-label="optimiser controls" onsubmit="return false">
     <button type="button" class="btn primary" id="btnRun">Run</button>
     <button type="button" class="btn" id="btnStep" title="run one generation">Step</button>
     <button type="button" class="btn" id="btnReset">Reset</button>
@@ -30,7 +35,7 @@
     <label class="f" for="team" title="the car the optimiser starts from">baseline <select id="team"><option value="redbull" selected>Red Bull RB22</option><option value="generic">generic 2026</option></select></label>
     <label class="f" for="simSel" title="lap simulator: the physics lap sim (concept/sim) or sim v0 (the game's lap model, relative)">sim <select id="simSel"><option value="physics" selected>physics</option><option value="v0">v0</option></select></label>
   </form>
-  <span class="badge" id="genBadge">gen 0 / 200</span>
+  <span class="badge noai-only" id="genBadge">gen 0 / 200</span>
   <a class="src back" id="raceLink" href="../race/" title="replay the current best car's physics-sim lap on the game's 3D Silverstone, with the RB22 and the real 2026 pole lap as ghosts">watch on Silverstone →</a>
   <a class="src back" href="../../lab/" title="the setup research lab">research lab →</a>
 </header>
@@ -116,5 +121,7 @@
 <script src="loop-panel.js"></script>
 <!-- the engine dashboard (docs/concept/DASHBOARD.md): speed run, autonomous Mubit loop, garage, car sheet, stage timings; API on :8787 only -->
 <script src="engine-panel.js"></script>
+<!-- the autonomous engineer (engine v2, docs/concept/ENGINE_V2.md): the primary view; replays recorded live runs, live after unlock, mock only as a labelled offline demo -->
+<script src="engineer-panel.js"></script>
 </body>
 </html>

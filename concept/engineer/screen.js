@@ -3,7 +3,8 @@
 // function of (sub, seed, i)), and for each distinct car: FIA legality (concept/regs.js checkFacts) + the homologated-PU and
 // material guards (concept/bench.js), then the physics surrogate's lap (concept/surrogate, physics-silverstone model). A car outside
 // the surrogate's training box gets NO surrogate lap (the surrogate refuses to extrapolate); it is counted as `oob` and up to
-// `explore` of them are passed on unranked, so the physics sim (not the surrogate) can look at them.
+// `explore` of them (plus every top-K slot the surrogate could not fill) are passed on UNRANKED, so the physics sim (not the
+// surrogate) looks at them.
 // Returns { generated, distinct, legal, illegal, oob, keys: [hash], top: [{ i, lap, changes }] (the `keep` fastest by surrogate,
 // ties by index), explore: [{ i, changes }], violations: { id: n } }.
 // A surrogate number is a RANKING only: it is never reported as a lap. Every reported lap is a physics-sim lap (concept/bench.js).
@@ -37,7 +38,7 @@ function screenChunk(o) {
     if (v.length) { out.illegal++; for (const x of v) out.violations[x.id] = (out.violations[x.id] || 0) + 1; continue; }
     out.legal++;
     const lap = Sg.predictLap(bench.guardEnergy(pc), CIRCUIT, "physics");
-    if (!isFinite(lap)) { out.oob++; if (out.explore.length < explore) out.explore.push({ i, changes }); continue; }
+    if (!isFinite(lap)) { out.oob++; if (out.explore.length < explore + keep) out.explore.push({ i, changes }); continue; }
     insertTop(out.top, { i, lap, changes }, keep);
     if (along(changes)) insertTop(out.along, { i, lap, changes }, 3);
   }
@@ -65,7 +66,10 @@ function merge(results, keep, explore) {
   const used = new Set(), best = [];
   for (const x of top) { const k = keyOfChanges(x.changes); if (used.has(k)) continue; used.add(k); best.push(x); if (best.length >= keep) break; }
   ex.sort((a, b) => a.i - b.i);
-  const exp = []; for (const x of ex) { const k = keyOfChanges(x.changes); if (used.has(k)) continue; used.add(k); exp.push(x); if (exp.length >= explore) break; }
+  // unranked slots: `explore` always, plus every top-K slot the surrogate could not fill (the car left its training box): those
+  // slots go to legal variants it refused to rank, in index order (the physics sim measures them; nothing is extrapolated)
+  const nEx = explore + Math.max(0, keep - best.length);
+  const exp = []; for (const x of ex) { const k = keyOfChanges(x.changes); if (used.has(k)) continue; used.add(k); exp.push(x); if (exp.length >= nEx) break; }
   return Object.assign(tot, { top: best, explore: exp, along: al.slice(0, 3) });
 }
 
