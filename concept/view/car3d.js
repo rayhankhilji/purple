@@ -44,10 +44,53 @@
     floor: { xBib: 350, xMax: 1100, taperY: 70, xStep: -335, yStep: 400, xDiffW: -150, yDiff: 365, xExit: 300, xKink: -525, xLead: 720 },
     // nose tip (concept: 35 mm behind the FW profiles' front plane, on the main plane)
     noseTip: -1215,
-    // halo, cockpit, helmet (concept placement from the game car's cockpit, relative to XC; RV-HALO is a drawing)
+    // halo, cockpit, helmet (RV-HALO is a drawing): placed relative to XC from the RB22 photos (CK below)
     halo: { tube: 46 },
   };
+  // Cockpit-area placement, mm ahead of XC (the design's cockpit rear), measured on the 2026 RB22 photos along the axle line
+  // (docs/concept/rb22-refs/REFERENCES.md): helmet centre 1215 mm behind the front axle, airbox mouth 1450, halo front pillar
+  // root 425, sidepod inlet 955 (baseline XC 1855). The concept mass sheet puts the driver at XC-750 (1105), consistent with these.
+  const CK = { open0: 1245, open1: 400, helmet: 640, airbox: 405, haloRear: 455, haloPillar: 1430, wheel: 1185, inlet: 900, mirror: 930 };
   const ROUND = (v) => Math.round(v * 1000) / 1000;
+
+  // ---------------------------------------------------------------- concept families (discrete redesigns)
+  // Each family is a code in the design's params (docs/concept/REDESIGNS.md §1); a missing or unknown value reads as code 0. The
+  // geometry is built from a weight per variant (one-hot for a design; two non-zero weights while the view morphs from one variant to
+  // another: params.__cmix[key] = { from, to, t }), so every variant blends continuously into every other.
+  // keys here are the view's; `id` is the design parameter (docs/concept/REDESIGNS.md §1, parts.CONCEPTS), `ids` the code ids,
+  // `names` the short labels the change tags print, `base` the code a design without the parameter has (the RB22 baseline's)
+  const CONCEPTS = {
+    sidepods: { id: "sidepods.concept", part: "sidepods", ids: ["downwash", "zeropod", "ramp"], names: ["downwash", "zeropod", "ramp"], base: 0 },
+    nose: { id: "nose.concept", part: "nose", ids: ["long_low", "short_high"], names: ["long low nose", "short high nose"], base: 0 },
+    fwEndplate: { id: "front_wing.endplate", part: "front_wing", ids: ["open_outwash", "closed_inwash"], names: ["open endplate", "closed endplate"], base: 0 },
+    rwStyle: { id: "rear_wing.style", part: "rear_wing", ids: ["low_drag", "medium", "high_df"], names: ["low-drag spoon", "medium", "high downforce"], base: 1 },
+    floorEdge: { id: "floor.edge", part: "floor", ids: ["simple", "scrolled"], names: ["simple edge", "scrolled multi-fence edge"], base: 0 },
+    cooling: { id: "cooling.layout", part: "cooling", ids: ["standard", "airbox_gills", "compact"], names: ["standard cooling", "large airbox + gills", "compact louvred"], base: 0 },
+    cover: { id: "engine_cover.style", part: "engine_cover", ids: ["high_fin", "low_narrow"], names: ["high shark fin", "low narrow cover"], base: 0 },
+    frontSusp: { id: "suspension.front", part: "front_suspension", ids: ["pushrod", "pullrod"], names: ["pushrod", "pullrod"], base: 0 },
+  };
+  for (const c of Object.values(CONCEPTS)) { const [a, b] = c.id.split("."); c.paths = [[a, b]]; }
+  const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "");
+  // the family's code in a param set (defensive: missing / non-finite -> the baseline code; out of range clamped; a code id or
+  // label string is accepted too)
+  function conceptCode(params, key) {
+    const c = CONCEPTS[key], n = c.ids.length;
+    for (const [a, b] of c.paths) {
+      const o = params && params[a]; if (!o || o[b] == null) continue;
+      const v = o[b];
+      if (typeof v === "number") return Number.isFinite(v) ? clamp(Math.round(v), 0, n - 1) : c.base;
+      if (typeof v === "string") { const s = slug(v); let i = c.ids.findIndex(x => slug(x) === s); if (i < 0) i = c.names.findIndex(x => slug(x) === s); if (i >= 0) return i; const k = Number(v); return Number.isFinite(k) ? clamp(Math.round(k), 0, n - 1) : c.base; }
+      return c.base;
+    }
+    return c.base;
+  }
+  function conceptCodes(params) { const out = {}; for (const k of Object.keys(CONCEPTS)) out[k] = conceptCode(params, k); return out; }
+  function conceptWeights(params, key) {
+    const n = CONCEPTS[key].ids.length, w = new Array(n).fill(0), mx = params && params.__cmix && params.__cmix[key];
+    if (mx && Number.isFinite(mx.t)) { const a = clamp(Math.round(mx.from) || 0, 0, n - 1), b = clamp(Math.round(mx.to) || 0, 0, n - 1), t = clamp(mx.t, 0, 1); w[a] += 1 - t; w[b] += t; }
+    else w[conceptCode(params, key)] = 1;
+    return w.map(ROUND);
+  }
 
   // ---------------------------------------------------------------- the spec: every dimension the geometry uses (mm)
   function spec(params, opts) {
@@ -65,6 +108,11 @@
       materials: {},
     };
     for (const id of Object.keys(p)) if (p[id] && typeof p[id].material === "string") S.materials[id] = p[id].material;
+    // concept families: weights per variant; S.cw(key, [v0, v1, ...]) blends a number across the variants
+    S.cc = {}; for (const k of Object.keys(CONCEPTS)) S.cc[k] = conceptWeights(p, k);
+    S.cw = (key, vals) => { const w = S.cc[key]; let s = 0; for (let i = 0; i < w.length; i++) s += w[i] * vals[i]; return s; };
+    // nose: long low (tip 35 mm behind the FW profiles' front plane) or short high (ends over the first flap)
+    S.noseTip = S.cw("nose", [DIM.noseTip, -985]);
     // wheels: centre height above the ground = tyre radius - static deflection
     const T = DIM.tyre;
     S.wheel = {
@@ -81,13 +129,17 @@
     };
     S.fl.halfW = (X) => floorHalfW(S, X);
     S.fl.roof = (X) => floorRoof(S, X);
-    // sidepods: inlet (both sides = inlet_cm2) as a superellipse (n = 4) of aspect h/w = 0.55; per-side area in mm²
-    const A = S.sp.inlet * 100 / 2, aspect = 0.55, k4 = superArea(4);   // area = k4 · w · h
-    const wI = Math.sqrt(A / (k4 * aspect)), hI = wI * aspect;
-    S.pod = { A, w: wI, h: hI, n: 4, X: XC - 600, Zc: 515, Yin: 0 };
+    // sidepods: inlet (both sides = inlet_cm2) as a rounded square (superellipse n = 3.4, aspect h/w = 1.0: the RB22's upright
+    // "traditional" inlet, not a letterbox) under the mirror; per-side area in mm²
+    // the concept sets the inlet's shape (the area stays exact): downwash = upright rounded square, zeropod = tall narrow slot
+    // against the chassis, ramp = wide letterbox under a high flat shoulder
+    const A = S.sp.inlet * 100 / 2, aspect = S.cw("sidepods", [1.0, 2.3, 0.42]), nI = S.cw("sidepods", [3.4, 4, 4.4]), kI = superArea(nI);   // area = kI · w · h
+    const wI = Math.sqrt(A / (kI * aspect)), hI = wI * aspect;
+    S.pod = { A, w: wI, h: hI, n: nI, X: XC - CK.inlet, Zc: 0, Yin: 0 };
+    S.pod.Zc = S.cw("sidepods", [640, 700, 616]) - hI / 2;   // inlet top level with the cockpit sides (zeropod: higher)
     S.pod.Yin = bodyAt(S, S.pod.X).yw + 6;                   // inlet inner edge just outboard of the chassis side
     S.pod.Yc = S.pod.Yin + wI / 2; S.pod.Yout = S.pod.Yin + wI + 30;   // shoulder = inlet outer edge + 30 mm lip
-    S.pod.Ztop = S.pod.Zc + hI / 2 + 34; S.pod.Zsh = S.pod.Zc - hI / 2 - 18; S.pod.Zf = 72;
+    S.pod.Ztop = S.pod.Zc + hI / 2 + 30; S.pod.Zsh = S.pod.Zc - hI / 2 - 18; S.pod.Zf = 72;
     return S;
   }
   // area of the superellipse |x/(w/2)|^n + |y/(h/2)|^n ≤ 1 as a multiple of w·h: Γ(1+1/n)² / Γ(1+2/n)
@@ -120,23 +172,40 @@
   // ---------------------------------------------------------------- body sections (chassis + nose + engine cover + tail)
   // section parameters at X, by monotone cubics through stations that move with the design's anchors (XA, XC, XPU, XR)
   function bodyStations(S) {
-    const { XA, XC, XPU, XR } = S, NT = DIM.noseTip;
-    // [X, zb, zt, yw, zw, ys]  (bottom, top, max half width, its height, spine half width)
-    const rows = [
-      [NT, 128, 212, 62, 166, 34], [NT + 60, 122, 236, 78, 172, 48], [XA - 700, 132, 336, 112, 214, 74], [XA - 320, 150, 452, 148, 286, 104],
-      [XA, 172, 548, 178, 344, 132], [XA + 420, 150, 628, 236, 404, 182], [XC - 900, 104, 664, 296, 446, 286], [XC - 520, 62, 684, 360, 458, 300],
-      [XC - 150, 44, 694, 392, 456, 304], [XC + 60, 40, 792, 336, 446, 152], [XC + 260, 42, 802, 312, 426, 124], [XPU, 44, 762, 286, 392, 112],
-      [XPU + 420, 46, 652, 226, 346, 98], [XR - 520, 52, 528, 192, 306, 84], [XR - 160, 120, 474, 162, 302, 72], [XR + 160, 214, 436, 122, 318, 62],
-      [XR + 440, 254, 404, 84, 330, 52],
+    const { XA, XC, XPU, XR } = S, NT = S.noseTip, o0 = XC - CK.open0, o1 = XC - CK.open1;
+    // [X, zb, zt, yw, zw, ys]  (bottom, top, max half width, its height, spine half width), from the RB22 photos: a broad blunt nose
+    // rising in a near-straight line to a high chassis (top ~Z 610 at the front axle), cockpit sides at Z ~680, and the engine
+    // cover's broad black deck staying high (Z ~900 behind the airbox) all the way back to the rear-wing pylons
+    // nose concept: long low (the RB22's, tip on the main plane) / short high (a raised, blunter nose ending over the first flap)
+    const nz = (a, b) => a.map((v, i) => S.cw("nose", [v, b[i]]));
+    const nose = [
+      [NT].concat(nz([146, 290, 86, 208, 68], [262, 392, 104, 326, 82])), [NT + 60].concat(nz([136, 312, 98, 214, 78], [246, 414, 118, 334, 92])),
+      [S.cw("nose", [XA - 720, Math.max(XA - 720, NT + 150)])].concat(nz([146, 412, 124, 262, 98], [226, 478, 140, 356, 108])),
+      [XA - 360].concat(nz([160, 512, 152, 318, 118], [200, 548, 160, 376, 122])),
     ];
+    // engine cover concept: high shark-fin deck (the RB22's) / low narrow cover (deck ~70 mm lower, ~14 % narrower behind the ICE)
+    const lo = S.cw("cover", [0, 1]), cv = (zt, k) => [zt - k * 72 * lo, 1 - 0.14 * k * lo];
+    const tail = [[XPU + 420, 46, 836, 226, 360, 110, 0.6], [XR - 520, 52, 806, 192, 330, 98, 1], [XR - 160, 120, 760, 160, 330, 86, 0.9], [XR + 160, 214, 664, 124, 360, 70, 0.5]]
+      .map(([x, zb, zt, yw, zw, ys, k]) => { const [z, s] = cv(zt, k); return [x, zb, z, yw * s, Math.min(zw, z - 60), ys * s]; });
+    const rows = nose.concat([
+      [XA, 178, 590, 176, 364, 132], [XA + 380, 152, 640, 222, 418, 168], [o0 - 40, 104, 664, 274, 448, 226], [o0 + 300, 60, 680, 330, 458, 286],
+      [o1 - 260, 44, 686, 352, 458, 300], [o1 + 40, 42, 714, 346, 452, 250], [o1 + 170, 42, 856, 330, 440, 150], [XC - 60, 42, 906 - 24 * lo, 312, 428, 138],
+      [XPU, 44, 884 - 40 * lo, 282, 404, 126], ...tail, [XR + 440, 254, 452, 84, 340, 46],
+    ]);
     for (let i = 1; i < rows.length; i++) if (rows[i][0] < rows[i - 1][0] + 25) rows[i][0] = rows[i - 1][0] + 25;
     const xs = rows.map(r => r[0]), col = (k) => rows.map(r => r[k]);
     return { xs, f: m3.table(xs, { zb: col(1), zt: col(2), yw: col(3), zw: col(4), ys: col(5) }), x0: xs[0], x1: xs[xs.length - 1] };
   }
   function bodyAt(S, X) { if (!S._bs) S._bs = bodyStations(S); return S._bs.f(clamp(X, S._bs.x0, S._bs.x1)); }
+  // the body's outer half width at (X, Z): the section outline (behind the cockpit) where it crosses height Z
+  function bodyYAt(S, X, Z) {
+    const pts = bodyHalf(S, X).out; let best = 0;
+    for (let i = 1; i < pts.length; i++) { const [y0, z0] = pts[i - 1], [y1, z1] = pts[i]; if ((z0 - Z) * (z1 - Z) <= 0 && z0 !== z1) best = Math.max(best, lerp(y0, y1, (Z - z0) / (z1 - z0))); }
+    return best;
+  }
   // cockpit opening: half width cw (plan: a rounded front, straight sides, a short rear radius) and depth below the rim
   function cockpitAt(S, X) {
-    const x0 = S.XC - 905, x1 = S.XC - 30, cwMax = 252;
+    const x0 = S.XC - CK.open0, x1 = S.XC - CK.open1, cwMax = 248;
     if (X <= x0 || X >= x1) return { cw: 0, d: 0 };
     const a = X - x0, b = x1 - X;
     const cw = cwMax * Math.sqrt(clamp(a / 230, 0, 1) * (2 - clamp(a / 230, 0, 1))) * Math.sqrt(clamp(b / 70, 0, 1) * (2 - clamp(b / 70, 0, 1)));
@@ -149,7 +218,9 @@
     const s = bodyAt(S, X), ck = cockpitAt(S, X), out = [], inner = [];
     const k = scale == null ? 1 : scale, zm = zc == null ? (s.zb + s.zt) / 2 : zc;
     const Z = (z) => zm + (z - zm) * k, Y = (y) => y * k;
-    const nl = lerp(2.0, 2.8, ss(S.XA, S.XC - 400, X)), nu = 2.3;   // a rounder keel under the nose and the front chassis
+    // a rounder keel under the nose and the front chassis; a boxy tub; the engine cover's flanks run straighter (a tent) from the
+    // broad deck down into the sidepods
+    const nl = lerp(2.0, 2.8, ss(S.XA, S.XC - 800, X)), nu = lerp(lerp(2.3, 2.7, ss(S.noseTip, S.XA + 300, X)), 1.75, ss(S.XC - CK.open1, S.XC - 150, X));
     for (let i = 0; i < NL; i++) { const ph = -Math.PI / 2 + (Math.PI / 2) * i / NL, c = Math.cos(ph), sn = Math.sin(ph); out.push([Y(s.yw * Math.pow(Math.abs(c), 2 / nl)), Z(s.zw + (s.zw - s.zb) * -Math.pow(Math.abs(sn), 2 / nl))]); }
     for (let i = 0; i < NU; i++) { const ph = (Math.PI / 2) * i / NU, c = Math.cos(ph), sn = Math.sin(ph); out.push([Y(s.ys + (s.yw - s.ys) * Math.pow(c, 2 / nu)), Z(s.zw + (s.zt - s.zw) * Math.pow(sn, 2 / nu))]); }
     // the top run from the spine edge to the rim (or the centre), with a slight crown
@@ -195,12 +266,12 @@
   // ---------------------------------------------------------------- BODY: survival cell + nose, engine cover, airbox, tail
   function buildBody(S) {
     const items = [], bs = bodyStations(S); S._bs = bs;
-    const NT = DIM.noseTip, xEnd = bs.x1;
+    const NT = S.noseTip, xEnd = bs.x1;
     // stations: dense at the nose tip and around the cockpit opening
     const xs = [];
-    const tipR = 70; for (let k = 0; k <= 10; k++) xs.push(NT + tipR * (1 - Math.cos(Math.PI / 2 * k / 10)));
+    const tipR = 48; for (let k = 0; k <= 10; k++) xs.push(NT + tipR * (1 - Math.cos(Math.PI / 2 * k / 10)));
     for (let x = NT + tipR + 30; x < xEnd - 40; x += 28) xs.push(x);
-    const ck0 = S.XC - 905, ck1 = S.XC - 30; for (const x of [ck0 + 0.8, ck1 - 0.8, ck0 + 4, ck0 + 15, ck0 + 35, ck0 + 70, ck0 + 120, ck1 - 60, ck1 - 30, ck1 - 12, ck1 - 3]) xs.push(x);
+    const ck0 = S.XC - CK.open0, ck1 = S.XC - CK.open1; for (const x of [ck0 + 0.8, ck1 - 0.8, ck0 + 4, ck0 + 15, ck0 + 35, ck0 + 70, ck0 + 120, ck1 - 60, ck1 - 30, ck1 - 12, ck1 - 3]) xs.push(x);
     for (const x of [S.XA, S.XC, S.XPU, S.XR]) xs.push(x);   // rings exactly at the design's anchors (the section there is the station's)
     for (let k = 0; k <= 6; k++) xs.push(xEnd - 40 + 40 * k / 6);
     xs.sort((a, b) => a - b);
@@ -210,7 +281,7 @@
     let seg = null;
     for (const x of X) {
       let k = 1, zc = null;
-      if (x < NT + tipR) { const t = (x - NT) / tipR; k = Math.max(0.04, Math.sqrt(1 - Math.pow(1 - t, 2))); const s0 = bodyAt(S, NT + tipR); zc = (s0.zb + s0.zt) / 2 - 8; }
+      if (x < NT + tipR) { const t = (x - NT) / tipR; k = Math.max(0.05, Math.cbrt(1 - Math.pow(1 - t, 3))); const s0 = bodyAt(S, NT + tipR); zc = (s0.zb + s0.zt) / 2 - 6; }   // a blunt, squarish tip
       const r = bodyRing(S, x, k, zc); rings.push(r.ring); seg = r.seg;
     }
     // paint (outer) and cockpit interior (inner) segments of the same loft; the tip and the tail capped
@@ -230,20 +301,39 @@
   function podAt(S, X) {
     const P = S.pod, x0 = P.X;
     if (!S._pt) {
-      const rows = [[x0 + 40, P.Ztop, P.Yout, P.Zsh, 1], [x0 + 420, P.Ztop - 6, P.Yout + 8, P.Zsh - 12, 1], [S.XPU - 60, Math.max(P.Zsh + 40, P.Ztop - 110), P.Yout - 34, Math.max(300, P.Zsh - 70), 0.92],
-        [S.XPU + 420, Math.max(330, P.Ztop - 220), 0, 260, 0.7], [S.XR - 560, 270, 0, 205, 0.45], [S.XR - 270, 222, 0, 170, 0.2]];
+      // concept 0 downwash, the RB22's (photos): the top falls away right behind the inlet (downwash ramp) and the pod is
+      // shrink-wrapped, narrowing from mid-length into a tight coke bottle; the lower flank stays above the floor.
+      // concept 1 zeropod: a slim vertical box round the tall inlet that folds into the chassis within ~600 mm (W13 style).
+      // concept 2 ramp: a wide flat-topped pod that stays high to the ICE, then ramps down; an inboard gully on its top (SF-23 style).
+      // rows [X, top Z, shoulder |Y| (first three), shoulder Z, undercut share]; the variants are blended row by row
+      const xm = Math.max(x0 + 520, Math.min(S.XPU - 120, x0 + 820));
+      const V = [
+        [[x0 + 40, P.Ztop, P.Yout, P.Zsh, 1], [x0 + 400, P.Ztop - 8, P.Yout + 12, P.Zsh - 24, 1], [xm, Math.max(P.Zsh + 90, P.Ztop - 34), P.Yout - 8, Math.max(330, P.Zsh - 60), 0.95],
+          [S.XPU + 120, Math.max(P.Zsh + 60, 596), 0, 300, 0.8], [S.XPU + 480, 524, 0, 260, 0.6], [S.XR - 560, 440, 0, 220, 0.42], [S.XR - 270, 336, 0, 180, 0.2]],
+        [[x0 + 40, P.Ztop, P.Yout, P.Zsh, 1], [x0 + 400, P.Ztop - 40, P.Yout - 16, P.Zsh - 10, 1], [x0 + 620, P.Ztop - 120, P.Yout - 150, Math.max(330, P.Zsh - 30), 0.6],
+          [S.XPU + 120, 560, 0, 330, 0.45], [S.XPU + 480, 500, 0, 290, 0.35], [S.XR - 560, 420, 0, 230, 0.3], [S.XR - 270, 330, 0, 180, 0.2]],
+        [[x0 + 40, P.Ztop, P.Yout, P.Zsh, 1], [x0 + 400, P.Ztop + 4, P.Yout + 22, P.Zsh - 6, 1], [Math.max(xm, Math.min(S.XPU - 60, x0 + 980)), P.Ztop - 6, P.Yout + 14, Math.max(340, P.Zsh - 20), 1],
+          [S.XPU + 160, P.Ztop - 46, 0, 330, 0.95], [S.XPU + 520, P.Ztop - 130, 0, 290, 0.8], [S.XR - 560, 470, 0, 235, 0.55], [S.XR - 270, 350, 0, 190, 0.25]],
+      ];
+      const rows = V[0].map((r, i) => r.map((_, j) => S.cw("sidepods", [V[0][i][j], V[1][i][j], V[2][i][j]])));
       for (let i = 1; i < rows.length; i++) if (rows[i][0] < rows[i - 1][0] + 30) rows[i][0] = rows[i - 1][0] + 30;
       const xs = rows.map(r => r[0]);
-      S._pt = { xs, f: m3.table(xs, { zt: rows.map(r => r[1]), zsh: rows.map(r => r[3]), uk: rows.map(r => r[4]) }), yo: m3.monoCubic(xs.slice(0, 3), rows.slice(0, 3).map(r => r[2])).f };
+      // coke bottle: where the shoulder has folded into the body (zeropod: within ~520 mm of mid-pod)
+      const xCoke = S.cw("sidepods", [S.XR - 270, Math.min(S.XR - 270, xs[2] + 520), S.XR - 270]);
+      S._pt = { xs, xm: xs[2], xCoke, gully: S.cw("sidepods", [0, 0, 1]), f: m3.table(xs, { zt: rows.map(r => r[1]), zsh: rows.map(r => r[3]), uk: rows.map(r => r[4]) }), yo: m3.monoCubic(xs.slice(0, 3), rows.slice(0, 3).map(r => r[2])).f };
     }
     const t = S._pt.f(clamp(X, S._pt.xs[0], S._pt.xs[S._pt.xs.length - 1])), b = bodyAt(S, X);
-    // the outer width holds to the ICE face, then blends to the body (+ 22 mm) at the gearbox (coke bottle)
-    const y0 = S._pt.yo(Math.min(X, S.XPU - 60)), yo = X <= S.XPU - 60 ? y0 : lerp(y0, b.yw + 22, sstep((X - (S.XPU - 60)) / Math.max(60, S.XR - 270 - (S.XPU - 60))));
+    // the outer width holds to mid-pod, then blends to the body (+ 24 mm) at the gearbox (coke bottle)
+    const xb = S._pt.xm, y0 = S._pt.yo(Math.min(X, xb)), yo0 = X <= xb ? y0 : lerp(y0, b.yw + 24, sstep((X - xb) / Math.max(60, S._pt.xCoke - xb)));
     const zf0 = Math.min(t.zt - 40, floorRoof(S, X) + 12), zsh0 = clamp(t.zsh, zf0 + 30, t.zt - 40);
     const zf = lerp(zsh0 - 30, zf0, ss(x0 + 40, x0 + 520, X));
     const yi = Math.max(60, b.yw - 45);
+    // the front of the pod is always wide enough to carry the full undercut depth (every concept: undercut_mm keeps its meaning)
+    const yo = X <= x0 + 420 ? Math.max(yo0, yi + S.sp.u + 41) : yo0;
     const u = Math.min(S.sp.u * t.uk, Math.max(0, yo - yi - 40));
-    return { zt: t.zt, yo, zsh: Math.max(zsh0, zf + 30), u, zf, yi };
+    // ramp concept: the inboard gully on the top surface, deepening behind the inlet and running to the rear
+    const gully = S._pt.gully * 46 * ss(x0 + 200, x0 + 700, X) * (1 - ss(S.XR - 600, S.XR - 300, X));
+    return { zt: t.zt, yo, zsh: Math.max(zsh0, zf + 30), u, zf, yi, gully };
   }
   const NB = 5, NUC = 14, NFL = 14, NTP = 10, NIN = 5;   // pod ring: bottom, undercut, flank + corner, top, inner side
   // the pod section (right side) as [Y, Z] points, counter-clockwise from the inner bottom corner
@@ -255,7 +345,7 @@
       const zc = q.zt - rc, yc = q.yo - rc;
       if (s < 0.35) pts.push([q.yo, lerp(q.zsh, zc, s / 0.35)]);
       else { const ph = (s - 0.35) / 0.65 * Math.PI / 2; pts.push([yc + rc * Math.pow(Math.cos(ph), 0.8), zc + rc * Math.pow(Math.sin(ph), 0.8)]); } }
-    for (let i = 1; i <= NTP; i++) { const s = i / NTP; pts.push([lerp(q.yo - rc, q.yi, s), q.zt + 4 * Math.sin(Math.PI * s)]); }
+    for (let i = 1; i <= NTP; i++) { const s = i / NTP; pts.push([lerp(q.yo - rc, q.yi, s), q.zt + 4 * Math.sin(Math.PI * s) - q.gully * Math.exp(-Math.pow((s - 0.68) / 0.2, 2))]); }
     for (let i = 1; i < NIN; i++) pts.push([q.yi, lerp(q.zt, q.zf, i / NIN)]);
     return { pts, q };
   }
@@ -290,19 +380,57 @@
     items.push(...pair(item("pod_duct", "sidepods", "interior", Md, { meta: { inletRing: ex.length } })));
     const Mr = m3.mesh(); m3.cap(Mr, duct[duct.length - 1], W(S, x0 + 600, P.Yc, P.Zc));
     items.push(...pair(item("pod_radiator", "cooling", "radiator", Mr)));
-    // cooling louvres on the pod top ahead of the rear tyre: 6 raised gills over dark slots
-    const Ml = m3.mesh(), Mg = m3.mesh();
-    for (let i = 0; i < 6; i++) {
-      const X = S.XPU - 40 + i * 62; if (X > xEnd - 120) break;
-      const q = podAt(S, X), y0 = q.yo - 175, y1 = q.yo - 60; if (y1 - y0 < 40) continue;
-      const zs = q.zt + 1;
-      const ring = (dx, dz) => [[y0, zs + dz], [y1, zs + dz], [y1, zs + dz + 3], [y0, zs + dz + 3]].map(([y, z]) => W(S, X + dx, y, z));
-      m3.loft(Ml, [ring(-22, 0), ring(-10, 6), ring(4, 13), ring(14, 16)], { capA: true, capB: true, wrap: true, solid: true });
-      const sl = (dx) => [[y0, zs - 2], [y1, zs - 2], [y1, zs + 1], [y0, zs + 1]].map(([y, z]) => W(S, X + dx, y, z));
-      m3.loft(Mg, [sl(-20), sl(12)], { wrap: true, capA: true, capB: true, solid: true });
+    // cooling louvres (RB22 photos: a grille of upright bright slats on the engine cover's flank, just above the sidepod's top and
+    // ahead of the rear tyre): a dark recessed panel on the body surface with thin slats standing out of it
+    // cooling concept 0 standard: this grille; 1 large airbox + gills: slotted gills across the pod tops; 2 compact: rows of louvres
+    // on the engine cover's top (the airbox and the cooling exit change with it in buildDetails)
+    const aF = S.cw("cooling", [1, 0, 0]), aG = S.cw("cooling", [0, 1, 0]), aC = S.cw("cooling", [0, 0, 1]);
+    const xL0 = S.XPU - 40, xL1 = Math.min(S.XPU + 300, S.XR - 600);
+    if (xL1 - xL0 > 120 && aF > 0.02) {
+      const Ml = m3.mesh(), Mg = m3.mesh(), NZ = 6;
+      const zr = (X) => { const z0 = podAt(S, X).zt + 16; return [z0, Math.min(z0 + Math.max(16, 96 * aF), bodyAt(S, X).zt - 90)]; };
+      const panel = []; for (let k = 0; k <= 10; k++) { const X = lerp(xL0, xL1, k / 10), [z0, z1] = zr(X), row = [];
+        for (let j = 0; j <= NZ; j++) { const z = lerp(z0, z1, j / NZ); row.push(W(S, X, bodyYAt(S, X, z) + 2.5, z)); }
+        for (let j = NZ; j >= 0; j--) { const z = lerp(z0, z1, j / NZ); row.push(W(S, X, bodyYAt(S, X, z) - 6, z)); }
+        panel.push(row); }
+      m3.loft(Mg, panel, { wrap: true, capA: true, capB: true, solid: true });
+      for (let i = 0; i < 11; i++) {
+        const X = lerp(xL0 + 16, xL1 - 16, i / 10), [z0, z1] = zr(X), ring = (dx) => { const pts = []; for (let j = 0; j <= 4; j++) { const z = lerp(z0 + 6, z1 - 6, j / 4); pts.push([X + dx + 0.12 * (z - z0), bodyYAt(S, X, z) - 2, z]); } for (let j = 4; j >= 0; j--) { const z = lerp(z0 + 6, z1 - 6, j / 4); pts.push([X + dx + 0.12 * (z - z0), bodyYAt(S, X, z) + 13, z]); } return pts.map(([x, y, z]) => W(S, x, y, z)); };
+        m3.loft(Ml, [ring(-2.2), ring(2.2)], { wrap: true, capA: true, capB: true, solid: true });
+      }
+      items.push(...pair(item("pod_louvres", "cooling", "metal", Ml, { look: "al_7075_t6" }))); items.push(...pair(item("pod_louvre_slots", "cooling", "interior", Mg)));
     }
-    if (Ml.count) { items.push(...pair(item("pod_louvres", "sidepods", "paint", Ml, { role: "body", proj: "main" }))); items.push(...pair(item("pod_louvre_slots", "sidepods", "interior", Mg))); }
+    // a louvre in a surface: a dark slot (len along X) across Y [ya, yb] on the surface z(X, Y), and a raised lip at its rear edge
+    const slot = (Md, Ml, X, ya, yb, zf, len, lip) => {
+      const ys = []; for (let k = 0; k <= 6; k++) ys.push(lerp(ya, yb, k / 6));
+      m3.loft(Md, ys.map(y => { const z = zf(X, y); return [[X - len / 2, z - 2], [X + len / 2, z - 2], [X + len / 2, z + 1.6], [X - len / 2, z + 1.6]].map(([x, zz]) => W(S, x, y, zz)); }), { wrap: true, capA: true, capB: true, solid: true });
+      if (lip > 0.5) m3.loft(Ml, ys.map(y => { const z = zf(X + len / 2, y); return [[X + len / 2 - 5, z - 1], [X + len / 2 + 4, z - 1], [X + len / 2 + 4 + lip * 0.55, z + lip], [X + len / 2 - 2 + lip * 0.55, z + lip]].map(([x, zz]) => W(S, x, y, zz)); }), { wrap: true, capA: true, capB: true, solid: true });
+    };
+    // gills across the pod tops (large airbox + gills): five long slots with tall lips behind the inlet
+    if (aG > 0.02) {
+      const Md = m3.mesh(), Ml = m3.mesh();
+      for (let i = 0; i < 5; i++) {
+        const X = x0 + 380 + i * 105, q = podAt(S, X), ya = q.yi + 30, yb = q.yo - 60;
+        if (yb - ya > 60) slot(Md, Ml, X, ya, yb, (x, y) => podAt(S, x).zt + 2, 58 * aG, 30 * aG);
+      }
+      if (Md.count) { items.push(...pair(item("pod_gills", "cooling", "interior", Md))); items.push(...pair(item("pod_gill_lips", "cooling", "paint", Ml, { role: "body", proj: "main" }))); }
+    }
+    // compact: rows of louvres on the engine cover's top, either side of the spine
+    if (aC > 0.02) {
+      const Md = m3.mesh(), Ml = m3.mesh(), xa = S.XPU - 60, xb = Math.min(S.XR - 520, S.XPU + 760);
+      for (let i = 0; i < 9; i++) {
+        const X = lerp(xa, xb, i / 8), b = bodyAt(S, X), ya = Math.max(40, b.ys * 0.35), yb = Math.max(ya + 40, b.ys + 0.45 * (b.yw - b.ys));
+        slot(Md, Ml, X, ya, yb, (x, y) => bodyTopAt(S, x, y), 44 * aC, 16 * aC);
+      }
+      items.push(...pair(item("cover_louvres", "cooling", "interior", Md))); items.push(...pair(item("cover_louvre_lips", "cooling", "paint", Ml, { role: "body", proj: "main" })));
+    }
     return items;
+  }
+  // the body's top surface height at (X, |Y|): the highest point of the section outline at that |Y|
+  function bodyTopAt(S, X, Y) {
+    const pts = bodyHalf(S, X).out; let best = -Infinity;
+    for (let i = 1; i < pts.length; i++) { const [y0, z0] = pts[i - 1], [y1, z1] = pts[i]; if ((y0 - Y) * (y1 - Y) <= 0 && y0 !== y1) best = Math.max(best, lerp(z0, z1, (Y - y0) / (y1 - y0))); }
+    return isFinite(best) ? best : bodyAt(S, X).zt;
   }
 
   // ---------------------------------------------------------------- FLOOR and DIFFUSER (one section function, two lofts)
@@ -316,10 +444,14 @@
     const yk = FL_KEEL, zTop = Math.max(rT, ze + 26);
     // the central keel (plank bed) lifts into the diffuser roof behind the kink: one open channel across the diffuser
     const kz = X <= F.xKink - 120 ? 0 : (roof - 14) * sstep((X - (F.xKink - 120)) / 320);
+    // floor-edge concept 1: the outer edge rolls up and inboard into a scroll (never beyond the floor's half width), from behind
+    // the leading edge to ahead of the diffuser kink
+    const sc = S.cw("floorEdge", [0, 1]) * ss(F.xLead + 120, F.xLead + 420, X) * (1 - ss(F.xKink - 320, F.xKink - 60, X));
+    const zl = Math.max(ze + 36, 40);
     return [
       [0, kz], [yk - 10, kz], [yk, kz + 6], [yk + 6, Math.max(kz + 7, roof - 10)], [yk + 18, roof], [lerp(yk, yt, 0.5), roof], [yt - 18, roof], [yt - 6, roof - 10],
-      [yt, Math.max(ze + 6, 12)], [yt + 8, ze], [ye - 26, ze], [ye - 8, ze + 4], [ye, ze + 18], [ye - 2, ze + 34],
-      [ye - 16, Math.max(ze + 36, 40)], [ye - 60, Math.max(ze + 30, Math.min(zTop, 44))], [yt, zTop], [yk, zTop + 2], [0, zTop + 3],
+      [yt, Math.max(ze + 6, 12)], [yt + 8, ze], [ye - 26, ze], [ye - 8 + 6 * sc, ze + 4 + 6 * sc], [ye, ze + 18 + 30 * sc], [ye - 2 - 10 * sc, ze + 34 + 52 * sc],
+      [ye - 16 - 26 * sc, zl + 44 * sc], [ye - 60 - 4 * sc, Math.max(ze + 30, Math.min(zTop, 44)) + 8 * sc], [yt, zTop], [yk, zTop + 2], [0, zTop + 3],
     ];
   }
   function floorRing(S, X) { const h = floorHalf(S, X), ring = h.map(([y, z]) => W(S, X, y, z)); for (let i = h.length - 2; i >= 1; i--) ring.push(W(S, X, -h[i][0], h[i][1])); return ring; }
@@ -374,6 +506,21 @@
       m3.loft(st, [0, 1].map(k => m3.roundPoly([[sx - 40, 30, 4], [sx + 60, 30, 4], [sx + 40, 120, 4], [sx - 10, 120, 4]], 2).map(([x, z]) => W(S, x, sy + (k ? 4 : -4), z))), { wrap: true, capA: true, capB: true, solid: true });
       items.push(withMirror(item("floor_winglet", "floor", "carbon", Mw)));
       items.push(withMirror(item("floor_winglet_stay", "floor", "carbon", st)));
+    }
+    // floor-edge concept 1: four fences standing on the scrolled edge ahead of the rear tyre, toed out, and a second edge wing
+    const aE = S.cw("floorEdge", [0, 1]);
+    if (aE > 0.02) {
+      const Mfn = m3.mesh(), x1 = F.xStep - 420, x0 = Math.max(F.xMax + 150, x1 - 1100);
+      for (let i = 0; i < 4; i++) {
+        const xc = lerp(x0, x1, i / 3), y0 = floorHalfW(S, xc) - 44 - 10 * i, c = 170 - 12 * i, h = (70 + 22 * i) * aE, rs = [];
+        for (let k = 0; k <= 8; k++) { const t = k / 8, x = xc - c / 2 + c * t, y = y0 + 34 * t * t, top = 40 + h * Math.sin(Math.PI * Math.min(1, 0.12 + 0.95 * t)), th = 2.5 + 1.5 * Math.sin(Math.PI * t);
+          rs.push(m3.roundPoly([[y - th, 30, 1.5], [y + th, 30, 1.5], [y + th, top, 2], [y - th, top, 2]], 2).map(([yy, zz]) => W(S, x, yy, zz))); }
+        m3.loft(Mfn, rs, { wrap: true, capA: true, capB: true, solid: true });
+      }
+      const fo = m3.foil(0.08, 0.4, 0.1, 14, 0.01), xw = lerp(x0, x1, 0.5), yA = floorHalfW(S, xw) - 150, yB = floorHalfW(S, xw) - 20, ws = [];
+      for (let k = 0; k <= 6; k++) ws.push(m3.placeFoil(fo.ring, [xw - 60, 96 + 60 * aE + 10 * k / 6], 210 * Math.max(0.2, aE), rad(-10), 0, null).map(([x, z]) => W(S, x, lerp(yA, yB, k / 6), z)));
+      m3.loft(Mfn, ws, { wrap: true, capA: true, capB: true, solid: true });
+      items.push(withMirror(item("floor_edge_fences", "floor", "carbon", Mfn)));
     }
     // plank (10 mm, Z -10..0) with its three Ø34 holes and titanium skids (C3.6.1)
     {
@@ -470,9 +617,13 @@
     return { y, c, els, x0, z0, pivot };
   }
   function rwStation(S, y) {
-    const rw = S.rw, ay = Math.abs(y), els = chainSection(rw.chord, rw.n, rw.aoa), x0 = S.XR + DIM.rw.x0;
+    // style concept: the setting holds at the centre (the dimensioned angle); low-drag "spoon" washes out towards the tips (flaps
+    // ~9° flatter at the endplates) and lifts them (a spoon seen from behind); high-downforce washes in (+6°); medium is flat. The
+    // X extent stays the chord at every station (chainSection keeps it for any angle).
+    const rw = S.rw, ay = Math.abs(y), u2 = Math.pow(clamp(ay / 575, 0, 1), 2), aoa = Math.max(1, rw.aoa + S.cw("rwStyle", [-9, 0, 6]) * u2);
+    const els = chainSection(rw.chord, rw.n, aoa), x0 = S.XR + DIM.rw.x0;
     let zmin = Infinity, zmax = -Infinity; for (const p of sectionPolys(els, 0, 0, 0)) for (const q of p.pts) { zmin = Math.min(zmin, q[1]); zmax = Math.max(zmax, q[1]); }
-    const zb = DIM.rw.zMin + (DIM.rw.zMinTip - DIM.rw.zMin) * clamp((ay - 150) / 425, 0, 1) + 2;
+    const zb = DIM.rw.zMin + (DIM.rw.zMinTip - DIM.rw.zMin) * clamp((ay - 150) / 425, 0, 1) + 2 + S.cw("rwStyle", [70, 0, 0]) * u2;
     let z0 = zb - zmin; const top = Math.min(rw.E, DIM.rw.zMax) - 12; if (z0 + zmax > top) z0 = top - zmax;   // stays under the endplate top
     const last = els[els.length - 1], te = [x0 + last.le[0] + last.c * Math.cos(last.a), z0 + last.le[1] + last.c * Math.sin(last.a)];
     return { y, c: rw.chord, els, x0, z0, pivot: te };
@@ -482,7 +633,9 @@
     const rings = [];
     for (const st of stations) { const sp = sectionPolys(st.els, st.x0, st.z0, d(st), st.pivot)[ei]; rings.push(sp.pts.map(([x, z]) => mapPt(x, st.y, z))); }
     const n = rings[0].length, le = n >> 1, mid = stations[Math.floor(stations.length / 2)];
-    const inside = (() => { const sp = sectionPolys(mid.els, mid.x0, mid.z0, d(mid), mid.pivot)[ei]; let x = 0, z = 0; for (const p of sp.pts) { x += p[0]; z += p[1]; } return mapPt(x / sp.pts.length, mid.y, z / sp.pts.length); })();
+    // a point inside the section: midway between the upper and lower surfaces at mid-chord (the centroid of the ring's points can
+    // fall outside a strongly cambered flap, which would wind its surfaces inside out)
+    const inside = (() => { const sp = sectionPolys(mid.els, mid.x0, mid.z0, d(mid), mid.pivot)[ei], q = sp.pts, h = le >> 1, a = q[h], b = q[le + h]; return mapPt((a[0] + b[0]) / 2, mid.y, (a[1] + b[1]) / 2); })();
     m3.loft(outs.top, rings, { segments: [[0, le]], inside });
     m3.loft(outs.bot, rings, { segments: [[le, n - 1]], inside });
     m3.loft(outs.te, rings, { segments: [[n - 1, n]], wrap: true, inside });
@@ -500,7 +653,7 @@
       elementMeshes(st, ei, dCur, mapPt, outs);
       const flap = ei > 0;
       const fl = flap ? { wing: "front", pivot: "le" } : null;
-      items.push(item("fw_el" + ei + "_top", "front_wing", "paint", outs.top, { role: flap ? "fwFlap" : "fwMain", proj: flap ? "none" : "fwTop", flap: fl }));
+      items.push(item("fw_el" + ei + "_top", "front_wing", "paint", outs.top, { role: flap ? "fwFlap" : "fwMain", proj: "fwTop", flap: fl }));
       items.push(item("fw_el" + ei + "_bot", "front_wing", "carbon", outs.bot, { flap: fl }));
       items.push(item("fw_el" + ei + "_te", "front_wing", "carbon", outs.te, { flap: fl }));
     }
@@ -522,7 +675,11 @@
     // [XF 0, Z 360]); 10 mm plates at |Y| = span/2 + 6
     const tip = fwStation(S, h);
     let zTopEl = -Infinity, xTe = -Infinity; for (const sp of sectionPolys(tip.els, tip.x0, tip.z0, 0, tip.pivot)) for (const p of sp.pts) { zTopEl = Math.max(zTopEl, p[1]); xTe = Math.max(xTe, p[0]); }
-    const Fd = DIM.fw, xf = fwFront(Math.min(h + 6, 675)) - 4, epTop = Math.max(Fd.epZ1, zTopEl + 24);
+    // endplate concept: 0 open (outwash): a low plate just over the flap tips, its trailing edge flared outboard, a wide footplate;
+    // 1 closed (inwash): the full-height plate (RV-FWEP-BODY top plane to Z 375) joined to the flap tips, its top curled inboard
+    const cE = S.cw("fwEndplate", [0, 1]);
+    const Fd = DIM.fw, xf = fwFront(Math.min(h + 6, 675)) - 4, epTopC = Math.max(Fd.epZ1, zTopEl + 24), epTopO = Math.min(epTopC, Math.max(Fd.epZ0 + 130, zTopEl + 22));
+    const epTop = lerp(epTopO, epTopC, cE);
     const topZ = (x) => Math.min(epTop, Math.max(Fd.epZ1 - 125, Fd.epZ1 + (x + 750) * 125 / 300 + (epTop - Fd.epZ1)));
     const arcX = (z) => -Math.sqrt(Math.max(0, Fd.arcR * Fd.arcR - Math.pow(z - Fd.arcZ, 2))) - 8;
     const xr = (z) => Math.max(arcX(Math.min(z, Fd.arcZ)), xTe + 30);
@@ -531,10 +688,22 @@
     for (let k = 0; k <= 12; k++) { const z = lerp(epTop, Fd.epZ0, k / 12); outline.push([xr(z), z]); }
     const ol = m3.roundPoly(outline.map((p, i) => [p[0], p[1], i === 0 || i === outline.length - 1 ? 14 : 4]), 3).map(([x, z]) => [(1750 - x) / 1000, (z + 10 + S.rh) / 1000]);
     const Mep = m3.mesh(); m3.slab(Mep, ol, m3.frameXY((h + 6) / 1000), 0.010, 0.0045, 4);
+    // open: flare the rear third outboard (up to 70 mm, inside RV-FWEP's |Y|); closed: lean the upper part inboard by 26 mm
+    { const P = Mep.P, xR0 = (1750 - lerp(xf, xr(Fd.epZ0), 0.62)) / 1000, xR1 = (1750 - xr(Fd.epZ0)) / 1000, z0w = (Fd.epZ0 + 10 + S.rh) / 1000, z1w = (epTopC + 10 + S.rh) / 1000;
+      for (let i = 0; i < P.length; i += 3) { const fl = (1 - cE) * 0.07 * Math.pow(clamp((xR0 - P[i]) / Math.max(1e-3, xR0 - xR1), 0, 1), 1.6), lean = cE * 0.026 * Math.pow(clamp((P[i + 1] - z0w) / (z1w - z0w), 0, 1), 2); P[i + 2] += fl - lean; } }
     items.push(...pair(item("fw_endplate", "front_wing", "paint", Mep, { role: "fwEnd", proj: "fwEnd" })));
-    // outer footplate (RV-FWEP-OFP: Z 75..170 to |Y| 900): a curved strip outboard of the plate, turned down at its edge
+    // closed: the inboard curl along the top edge (a cambered lip, 70 mm wide, turned down at its inner edge)
+    if (cE > 0.02) {
+      const Mc = m3.mesh(), rs = [], w = 70 * cE, yT = h + 6 - 26 * cE;
+      for (let k = 0; k <= 14; k++) { const x = lerp(xf + 60, xr(epTop) - 50, k / 14), z = Math.max(Fd.epZ0 + 40, topZ(x)) - 3;
+        rs.push([[yT + 4, z + 2], [yT - w * 0.6, z + 6], [yT - w, z - 10 * cE], [yT - w + 3, z - 16 * cE], [yT - w * 0.6, z], [yT + 4, z - 5]].map(([y, zz]) => W(S, x, y, zz))); }
+      m3.loft(Mc, rs, { wrap: true, capA: true, capB: true, solid: true });
+      items.push(...pair(item("fw_endplate_curl", "front_wing", "paint", Mc, { role: "fwEnd", proj: "fwEnd" })));
+    }
+    // outer footplate (RV-FWEP-OFP: Z 75..170 to |Y| 900): a curved strip outboard of the plate, turned down at its edge (open:
+    // wider, swept outboard at the rear)
     {
-      const Mf = m3.mesh(), rs = [], yo = Math.min(Fd.ofpY, h + 150);
+      const Mf = m3.mesh(), rs = [], yo = Math.min(Fd.ofpY, h + lerp(205, 120, cE));
       for (let k = 0; k <= 16; k++) { const x = lerp(xf + 40, xr(90) - 6, k / 16), w = (yo - h - 8) * (0.55 + 0.45 * Math.sin(Math.PI * k / 16));
         rs.push([[h + 8, 84], [h + 8 + w * 0.7, 88 + 6 * Math.sin(Math.PI * k / 16)], [h + 8 + w, 80], [h + 8 + w, 72], [h + 8 + w * 0.7, 80 + 6 * Math.sin(Math.PI * k / 16)], [h + 8, 77]].map(([y, z]) => W(S, x, y, z))); }
       m3.loft(Mf, rs, { wrap: true, capA: true, capB: true, solid: true });
@@ -571,7 +740,9 @@
       const topAt = (x) => { let best = -Infinity; for (const p of main.pts) if (Math.abs(p[0] - x) < 25) best = Math.max(best, p[1]); return isFinite(best) ? best : s0.z0 + 20; };
       const xa = s0.x0 + 50, xb = Math.min(s0.x0 + 330, mx - 25), za = topAt(xa) - 2, zb = topAt(xb) - 2;
       const nb = (x) => bodyAt(S, x).zb + 14;
-      const ol = m3.roundPoly([[xa, za, 6], [xb, zb, 6], [xb + 30, nb(xb + 30), 20], [xa + 10, nb(xa + 10), 20]], 3);
+      // short high nose: the blades rake back up to the nose's underside behind its tip (the wing hangs on them)
+      const sh = S.cw("nose", [0, 1]), xn0 = lerp(xa + 10, S.noseTip + 50, sh), xn1 = lerp(xb + 30, S.noseTip + 300, sh);
+      const ol = m3.roundPoly([[xa, za, 6], [xb, zb, 6], [xn1, nb(xn1), 20], [xn0, nb(xn0), 20]], 3);
       m3.loft(Mp, [-1, 1].map(s => ol.map(([x, z]) => W(S, x, y0 + 5 * s, z))), { wrap: true, capA: true, capB: true, solid: true });
       items.push(...pair(item("fw_pylon", "front_wing", "carbon", Mp)));
     }
@@ -594,31 +765,53 @@
         const outs = { top: m3.mesh(), bot: m3.mesh(), te: m3.mesh() };
         elementMeshes(stations, ei, d, mapPt, outs);
         const nm = "rw_el" + ei + (si === 0 ? "" : si === 1 ? "_tipR" : "_tipL");
-        items.push(item(nm + "_top", "rear_wing", "paint", outs.top, { role: flap ? "rwFlap" : "rwMain", proj: "top", flap: flg }));
+        items.push(item(nm + "_top", "rear_wing", "paint", outs.top, { role: flap ? "rwFlap" : "rwMain", proj: "rwTop", flap: flg }));
         items.push(item(nm + "_bot", "rear_wing", "carbon", outs.bot, { flap: flg }));
         items.push(item(nm + "_te", "rear_wing", "carbon", outs.te, { flap: flg }));
+        // gurney on the last element's trailing edge (style: none on the spoon, 6 mm medium, 16 mm high-downforce)
+        const gh = S.cw("rwStyle", [0, 6, 16]);
+        if (ei === rw.n - 1 && gh > 0.4) {
+          const Mg = m3.mesh(), rs = stations.map((st) => {
+            const e = st.els[ei], a = e.a - (e.flap ? d(st) : 0), sp = sectionPolys(st.els, st.x0, st.z0, d(st), st.pivot)[ei], te = sp.pts[0], dir = [Math.cos(a), Math.sin(a)], nr = [-Math.sin(a), Math.cos(a)];
+            return [[te[0], te[1]], [te[0] - 3 * dir[0], te[1] - 3 * dir[1]], [te[0] - 3 * dir[0] + gh * nr[0], te[1] - 3 * dir[1] + gh * nr[1]], [te[0] + gh * nr[0], te[1] + gh * nr[1]]].map(([x, z]) => mapPt(x, st.y, z));
+          });
+          m3.loft(Mg, rs, { wrap: true, capA: true, capB: true, solid: true });
+          items.push(item(nm + "_gurney", "rear_wing", "carbon", Mg, { flap: flg }));
+        }
       });
     }
     if (o && o.flapOnly) return items;
     // endplates (RV-RWEP-BODY): upper part at |Y| = span/2 + 8 up to the endplate-top parameter, swept in below Z 700 to |Y| 360
     // at Z 250; leading edge XR+160 above Z 700, raked back to XR+375 at Z 250; trailing edge XR+740 above Z 625, to XR+625 at Z 250
     {
-      const E = rw.E, R = DIM.rw, t = 14, yTop = h + 8;
-      const xf = (z) => S.XR + (z >= 700 ? 160 : 160 + (700 - z) * 215 / 450), xr = (z) => S.XR + (z >= 625 ? 740 : 625 + (z - 250) * 115 / 375);
+      // style: the spoon's endplate is cut away (its swept-in lower part stops at Z ~500, its top-front corner trimmed back), the
+      // high-downforce plate keeps the full RV-RWEP-BODY shape and carries three strakes on its outer face
+      const E = rw.E, R = DIM.rw, t = 14, yTop = h + 8, sp0 = S.cw("rwStyle", [1, 0, 0]), lowZ = lerp(R.epLowZ, 500, sp0);
+      const notch = (z) => sp0 * 110 * sstep((z - (E - 150)) / 120);
+      const xf = (z) => S.XR + (z >= 700 ? 160 : 160 + (700 - z) * 215 / 450) + notch(z), xr = (z) => S.XR + (z >= 625 ? 740 : 625 + (z - 250) * 115 / 375);
       const yc = (z) => (z >= 690 ? yTop : z <= 420 ? Math.min(yTop, R.epLowY) : lerp(Math.min(yTop, R.epLowY), yTop, sstep((z - 420) / 270)));
-      const rs = [], zs = []; for (let k = 0; k <= 34; k++) zs.push(lerp(R.epLowZ, E, k / 34));
+      const rs = [], zs = []; for (let k = 0; k <= 34; k++) zs.push(lerp(lowZ, E, k / 34));
       zs.push(E + 0.0001);
       for (const z of zs.slice(0, -1)) { const a = (xr(z) - xf(z)) / 2, cx = (xr(z) + xf(z)) / 2; rs.push(m3.superellipse(a, t / 2, 5, 28).map(([u, v]) => W(S, cx + u, yc(z) + v, z))); }
       // a rounded top edge: two shrinking rings
       for (const [dz, k] of [[4, 0.7], [7, 0.3]]) { const z = E - 7 + dz, a = (xr(E) - xf(E)) / 2 - 3 * (1 - k), cx = (xr(E) + xf(E)) / 2; rs.push(m3.superellipse(a, t / 2 * k, 5, 28).map(([u, v]) => W(S, cx + u, yTop + v, z))); }
       rs[rs.length - 3] = rs[rs.length - 3].map((p) => [p[0], (E - 7 + 10 + S.rh) / 1000, p[2]]);
       const Me = m3.mesh(); m3.loft(Me, rs, { wrap: true, capA: true, capB: true, solid: true });
-      items.push(...pair(item("rw_endplate", "rear_wing", "paint", Me, { role: "rwEnd", proj: "main" })));
+      items.push(...pair(item("rw_endplate", "rear_wing", "paint", Me, { role: "rwEnd", proj: "rwEnd" })));
       // lateral safety / ERS light strip on the endplate's trailing edge (2026)
       const Ml = m3.mesh(), rl = [];
       for (let k = 0; k <= 6; k++) { const z = lerp(E - 240, E - 40, k / 6); rl.push(m3.superellipse(5, 3.5, 2, 8).map(([u, v]) => W(S, xr(z) + 2 + u, yTop + t / 2 + 1 + v, z))); }
       m3.loft(Ml, rl, { wrap: true, capA: true, capB: true, solid: true });
       items.push(...pair(item("rw_light", "rear_wing", "led", Ml)));
+      const hd = S.cw("rwStyle", [0, 0, 1]);
+      if (hd > 0.02) {
+        const Ms = m3.mesh();
+        for (const [z, c] of [[E - 90, 300], [E - 150, 260], [E - 210, 220]]) {
+          const xa = xf(z) + 40, rr = []; for (let k = 0; k <= 8; k++) { const x = xa + c * k / 8, w = 48 * hd * Math.sin(Math.PI * Math.min(1, 0.1 + 0.9 * k / 8)) + 1; rr.push([[yTop + t / 2 - 1, z - 3], [yTop + t / 2 + w, z - 3 - 0.2 * w], [yTop + t / 2 + w, z + 2 - 0.2 * w], [yTop + t / 2 - 1, z + 3]].map(([y, zz]) => W(S, x, y, zz))); }
+          m3.loft(Ms, rr, { wrap: true, capA: true, capB: true, solid: true });
+        }
+        items.push(...pair(item("rw_endplate_strakes", "rear_wing", "carbon", Ms)));
+      }
     }
     // pylons (RV-RW-PYLON, |Y| 50-110): from the crash structure [XR, Z 300-450] up to the main plane's underside
     {
@@ -675,7 +868,9 @@
     m3.lathe(Ms, hubP, C0, ax, ref, 40, { inside: C0 });
     const nut = [[0, aS + 46], [24, aS + 46], [34, aS + 40], [36, aS + 16], [44, aS + 12], [44, aS + 8]].map(([r, a]) => mm(r, a));
     const Mn = m3.mesh(); m3.lathe(Mn, nut, C0, ax, ref, 12, { inside: C0 });
-    items.push(item("rim", part, "rim", Mr, { look: "mg_az80a" }), item("rim_spokes", part, "rim", Ms, { look: "mg_az80a" }), item("wheel_nut", part, "metal", Mn, { look: "ti64" }));
+    // RB22 (photos): black rims with a thin blue band on the outer lip, a fluorescent wheel nut
+    const Mlip = m3.mesh(); m3.lathe(Mlip, [[231, rimH + 0.8], [249.2, rimH + 0.8], [249.4, rimH - 3]].map(([r, a]) => mm(r, a)), C0, ax, ref, 96, { inside: [C0[0], C0[1], C0[2] - 1] });
+    items.push(item("rim", part, "rim", Mr, { look: "mg_az80a" }), item("rim_spokes", part, "rim", Ms, { look: "mg_az80a" }), item("rim_lip", part, "rimLip", Mlip, { look: "mg_az80a" }), item("wheel_nut", part, "nut", Mn, { look: "ti64" }));
     // brake disc (carbon-carbon, C11.3.3 diameter) + bell, caliper behind the axle, duct drum and inlet scoop
     const rd = wh.disc / 2, aD = aS - 92, Md = m3.mesh();
     m3.lathe(Md, [[100, aD - 16], [rd, aD - 16], [rd + 1, aD], [rd, aD + 16], [100, aD + 16], [99, aD - 16]].map(([r, a]) => mm(r, a)), C0, ax, ref, 72, { inside: C0 });
@@ -721,21 +916,25 @@
     const corner = (w, pts, part, rear) => {
       const Mw = m3.mesh(), Mr = m3.mesh(), Mu = m3.mesh();
       // wishbones: two legs each, aero sections (chord 64 / 52 mm, 16 mm thick)
-      for (const [o, i1, i2, c] of [[pts.lbj, pts.lf, pts.lr, 0.062], [pts.ubj, pts.uf, pts.ur, 0.052]]) { blade(Mw, o, i1, c, 0.016); blade(Mw, o, i2, c, 0.016); }
-      blade(Mr, pts.pr0, pts.pr1, 0.044, 0.022);                  // push rod
-      blade(Mr, pts.tr0, pts.tr1, 0.040, 0.016);                  // track (front) / toe (rear) rod
+      // aero-faired carbon legs (RB22 photos: broad, near-horizontal front wishbones)
+      for (const [o, i1, i2, c] of [[pts.lbj, pts.lf, pts.lr, 0.078], [pts.ubj, pts.uf, pts.ur, 0.066]]) { blade(Mw, o, i1, c, 0.019); blade(Mw, o, i2, c, 0.019); }
+      blade(Mr, pts.pr0, pts.pr1, 0.052, 0.024);                  // push rod
+      blade(Mr, pts.tr0, pts.tr1, 0.050, 0.018);                  // track (front) / toe (rear) rod
       if (rear) rod(Mr, pts.ds0, pts.ds1, 0.022);                 // driveshaft
       // upright: a block between the ball joints (inside the rim)
       const up = [pts.lbj, m3.v3.lerp3(pts.lbj, pts.ubj, 0.5), pts.ubj];
       m3.sweep(Mu, up, () => m3.roundPoly([[-1, -1, 0.3], [1, -1, 0.3], [1, 1, 0.3], [-1, 1, 0.3]], 2).map(([u, v]) => [u * 0.05, v * 0.03]), { up: [0, 0, 1], fixedUp: true });
-      items.push(...pair(item("wishbones" + (rear ? "_r" : "_f"), part, "carbon", Mw)));
-      items.push(...pair(item("rods" + (rear ? "_r" : "_f"), part, "carbon", Mr)));
+      items.push(...pair(item("wishbones" + (rear ? "_r" : "_f"), part, "carbon", Mw, { carbon: "matte" })));
+      items.push(...pair(item("rods" + (rear ? "_r" : "_f"), part, "carbon", Mr, { carbon: "matte" })));
       items.push(...pair(item("upright" + (rear ? "_r" : "_f"), part, "metal", Mu, { look: "ti64" })));
     };
     const X0 = fr.X, Y0 = fr.Y;
+    // front concept: pushrod (the RB22's: rod from the lower wishbone's outer end up to a rocker high on the chassis) or pullrod (rod
+    // from the upper wishbone's outer end down to a rocker low on the chassis); the rod's ends move continuously between the two
+    const pl = S.cw("frontSusp", [0, 1]), mixP = (a, b) => [lerp(a[0], b[0], pl), lerp(a[1], b[1], pl), lerp(a[2], b[2], pl)];
     corner(fr, {
-      lbj: Gd(X0 - 10, Y0 - 150, 170), ubj: Gd(X0 + 18, Y0 - 168, 540), lf: W(S, X0 - 330, 150, 120), lr: W(S, X0 + 330, 180, 108), uf: W(S, X0 - 240, 165, 420), ur: W(S, X0 + 270, 190, 440),
-      pr0: Gd(X0 + 2, Y0 - 185, 196), pr1: W(S, X0 + 70, 120, 552), tr0: Gd(X0 - 110, Y0 - 160, 470), tr1: W(S, X0 - 95, 178, 418),
+      lbj: Gd(X0 - 10, Y0 - 150, 170), ubj: Gd(X0 + 18, Y0 - 168, 540), lf: W(S, X0 - 330, 150, 120), lr: W(S, X0 + 330, 180, 108), uf: W(S, X0 - 240, 165, 420), ur: W(S, X0 + 270, 190, 440 + 40 * pl),
+      pr0: mixP(Gd(X0 + 2, Y0 - 185, 196), Gd(X0 + 30, Y0 - 196, 520)), pr1: mixP(W(S, X0 + 70, 120, 552), W(S, X0 + 300, 150, 120)), tr0: Gd(X0 - 110, Y0 - 160, 470), tr1: W(S, X0 - 95, 178, 418),
     }, "front_suspension", false);
     const X1 = re.X, Y1 = re.Y;
     corner(re, {
@@ -755,60 +954,73 @@
     const Wp = (p) => W(S, p[0], p[1], p[2]);
     // halo (titanium, faired, painted): rear legs on the cockpit rim, hoop over the driver, front pillar onto the chassis
     {
-      const zt = (x) => bodyAt(S, x).zt;
-      const hoopR = [[XC - 135, 330, zt(XC - 135) - 4], [XC - 230, 338, 790], [XC - 420, 330, 828], [XC - 640, 286, 840], [XC - 820, 196, 840], [XC - 930, 92, 836], [XC - 968, 0, 834]];
+      // halo (black on the RB22): rear legs on the cockpit rim beside the headrest, hoop at helmet-top height, the centre pillar
+      // down onto the chassis ahead of the cockpit; a faired (wider, flatter) top bar
+      const zt = (x) => bodyAt(S, x).zt, hr = XC - CK.haloRear, hf = XC - CK.haloPillar;
+      const hoopR = [[hr, 318, zt(hr) - 6], [hr - 90, 326, 788], [hr - 260, 318, 826], [hr - 470, 268, 840], [hr - 640, 180, 842], [hr - 740, 86, 838], [hr - 776, 0, 836]];
       const pts = hoopR.concat(hoopR.slice(0, -1).reverse().map(([x, y, z]) => [x, -y, z]));
-      const path = m3.catmull(pts, 6).map(Wp);
-      const Mh = m3.mesh(); m3.sweep(Mh, path, () => m3.superellipse(0.023, 0.027, 2.3, 18), { up: [0, 1, 0] });
-      const pil = m3.catmull([[XC - 968, 0, 834], [XC - 1040, 0, 812], [XC - 1180, 0, zt(XC - 1180) + 40], [XC - 1260, 0, zt(XC - 1260) - 6]], 6).map(Wp);
-      m3.sweep(Mh, pil, (t) => m3.superellipse(lerp(0.022, 0.032, t), lerp(0.026, 0.016, t), 2.4, 18), { up: [0, 0, 1], fixedUp: true });
+      const path = m3.catmull(pts, 7).map(Wp);
+      const Mh = m3.mesh(); m3.sweep(Mh, path, (t) => { const top = Math.pow(Math.sin(Math.PI * t), 0.5); return m3.superellipse(lerp(0.024, 0.034, top), lerp(0.028, 0.02, top), 2.4, 20); }, { up: [0, 1, 0] });
+      const pil = m3.catmull([[hr - 776, 0, 836], [hr - 840, 0, 818], [hf + 150, 0, zt(hf + 150) + 70], [hf, 0, zt(hf) - 6]], 7).map(Wp);
+      m3.sweep(Mh, pil, (t) => m3.superellipse(lerp(0.024, 0.036, t), lerp(0.028, 0.018, t), 2.4, 20), { up: [0, 0, 1], fixedUp: true });
       items.push(item("halo", "halo", "paint", Mh, { role: "halo", proj: "halo" }));
     }
     // airbox + roll hoop: a tall section over the spine with the intake mouth at its front, the T-camera on top
     {
-      const x0 = XC - 110, x1 = S.XPU + 380, zb = (x) => bodyAt(S, x).zt - 70;
-      const T = m3.table([x0, XC - 60, XC + 30, XC + 220, S.XPU, x1], { top: [952, 966, 974, 930, 840, bodyAt(S, x1).zt + 6], hw: [116, 128, 134, 116, 92, 60] });
-      const N = 40, mouth = (grow) => m3.superellipse(84 + grow, 56 + grow, 3, N, -Math.PI / 2), mc = 884;
-      const sec = (x) => { const t = T(x), b = zb(x), a = t.hw, h = (t.top - b) / 2; return m3.superellipse(a, h, 2.6, N, -Math.PI / 2).map(([u, v]) => [x, u, b + h + v]); };
+      // RB22 (photos): a big rounded intake over the driver's head with a thick lip (painted sun-yellow), the roll-hoop fairing
+      // sweeping back into the engine cover's broad deck; the T-camera on a short pylon above the hoop
+      // cooling concept: the intake mouth is the standard one, 1.3× larger (large airbox + gills) or 0.78× (compact)
+      const ka = S.cw("cooling", [1, 1.3, 0.78]), lift = (ka - 1) * 70;
+      const x0 = XC - CK.airbox, x1 = XC + 300, zb = (x) => bodyAt(S, x).zt - 90;
+      const T = m3.table([x0, x0 + 60, x0 + 180, XC - 60, x1], { top: [1010 + 2 * lift, 1016 + 2 * lift, 996 + 1.5 * lift, bodyAt(S, XC - 60).zt + 30, bodyAt(S, x1).zt - 4], hw: [184 * ka, 186 * ka, 168 * ka, 146, 112] });
+      const N = 44, mc = 872 + lift, mw = 148 * ka, mh = 112 * ka, mouth = (grow) => m3.superellipse(mw + grow, mh + grow, 2.5, N, -Math.PI / 2).map(([u, v]) => [u * (1 - 0.34 * Math.max(0, -v) / (mh + grow)), v]);   // narrower at the bottom
+      const sec = (x) => { const t = T(x), b = zb(x), a = t.hw, h = (t.top - b) / 2; return m3.superellipse(a, h, 2.5, N, -Math.PI / 2).map(([u, v]) => [x, u * (1 - 0.12 * Math.max(0, v) / h), b + h + v]); };
       const blendR = (x, gr, k) => { const m = mouth(gr), s2 = sec(x); return m.map(([u, v], i) => [x, lerp(u, s2[i][1], k), lerp(mc + v, s2[i][2], k)]); };
-      const rings = [mouth(0).map(([u, v]) => [x0 + 18, u, mc + v]), mouth(6).map(([u, v]) => [x0 + 4, u, mc + v]), mouth(13).map(([u, v]) => [x0, u, mc + v]), blendR(x0 + 10, 20, 0.45), blendR(x0 + 34, 22, 0.85)];
-      for (let x = x0 + 60; x < x1; x += 30) rings.push(sec(x));
-      rings.push(sec(x1).map((p) => [x1, p[1] * 0.3, Math.max(p[2], zb(x1) + 20)]));
+      const rings = [mouth(0).map(([u, v]) => [x0 + 20, u, mc + v]), mouth(8).map(([u, v]) => [x0 + 5, u, mc + v]), mouth(18).map(([u, v]) => [x0, u, mc + v]), blendR(x0 + 12, 26, 0.45), blendR(x0 + 40, 30, 0.85)];
+      for (let x = x0 + 70; x < x1; x += 30) rings.push(sec(x));
+      rings.push(sec(x1).map((p) => [x1, p[1] * 0.4, Math.max(p[2] - 30, zb(x1) + 20)]));
       const Ma = m3.mesh(); m3.loft(Ma, rings.map(r => r.map(Wp)), { wrap: true, capB: true, solid: true });
       items.push(item("airbox", "engine_cover", "paint", Ma, { role: "body", proj: "main" }));
-      const duct = [[x0 + 18, 1], [x0 + 120, 0.86], [x0 + 210, 0.6]].map(([x, k]) => mouth(0).map(([u, v]) => Wp([x, u * k, mc + v * k])));
+      const duct = [[x0 + 20, 1], [x0 + 130, 0.84], [x0 + 230, 0.55]].map(([x, k]) => mouth(0).map(([u, v]) => Wp([x, u * k, mc + v * k])));
       const Md = m3.mesh(); m3.loft(Md, duct, { wrap: true, capB: true, inside: Wp([x0 + 100, 0, mc]), flip: true });
       items.push(item("airbox_duct", "engine_cover", "interior", Md));
-      // T-camera pod on the airbox (FIA camera housing)
-      const tc = XC + 70, tz = T(tc).top - 4, Mc = m3.mesh();
-      m3.loft(Mc, ellRings([tc - 70, tc - 60, tc - 20, tc + 40, tc + 70, tc + 76], (x) => ({ cy: 0, cz: tz + 22, a: 34 * Math.sin(Math.PI * clamp((x - tc + 76) / 152, 0.05, 0.95)) + 4, b: 18 * Math.sin(Math.PI * clamp((x - tc + 76) / 152, 0.05, 0.95)) + 3, n: 3 }), 16).map(r => r.map(Wp)), { wrap: true, capA: true, capB: true, solid: true });
-      for (const s of [-1, 1]) m3.loft(Mc, [0, 1].map(k => m3.roundPoly([[tc - 30, tz, 3], [tc + 40, tz, 3], [tc + 30, tz + 34, 3], [tc - 10, tz + 30, 3]], 2).map(([x, z]) => Wp([x, s * 40 + (k ? 3 : -3), z]))), { wrap: true, capA: true, capB: true, solid: true });
+      // T-camera on its pylon (FIA camera housing, the "T" wing over the hoop)
+      const tc = x0 + 120, tz = T(tc).top - 6, Mc = m3.mesh(), th = 62;
+      m3.loft(Mc, [0, 1].map(k => m3.roundPoly([[tc - 40, tz - 10, 6], [tc + 36, tz - 10, 6], [tc + 22, tz + th, 4], [tc - 26, tz + th, 4]], 2).map(([x, z]) => Wp([x, k ? 9 : -9, z]))), { wrap: true, capA: true, capB: true, solid: true });
+      const fo = m3.foil(0.02, 0.4, 0.16, 10, 0.03);
+      const wr = []; for (let k = 0; k <= 6; k++) { const y = lerp(-118, 118, k / 6); wr.push(m3.placeFoil(fo.ring, [tc - 62, tz + th + 4], 128, rad(-3), 0, null).map(([x, z]) => Wp([x, y, z]))); }
+      m3.loft(Mc, wr, { wrap: true, capA: true, capB: true, solid: true });
+      for (const s of [-1, 1]) m3.loft(Mc, ellRings([tc - 48, tc - 40, tc, tc + 50, tc + 58], (x) => ({ cy: s * 118, cz: tz + th + 12, a: 15 * Math.sin(Math.PI * clamp((x - tc + 48) / 106, 0.08, 0.92)) + 2, b: 14 * Math.sin(Math.PI * clamp((x - tc + 48) / 106, 0.08, 0.92)) + 2, n: 2.4 }), 12).map(r => r.map(Wp)), { wrap: true, capA: true, capB: true, solid: true });
       items.push(item("t_camera", "electronics", "tcam", Mc));
-      // engine-cover fin
-      const fx0 = S.XPU + 60, fx1 = S.XR - 120, Mf = m3.mesh();
-      const fo = []; for (let k = 0; k <= 10; k++) { const x = lerp(fx0, fx1, k / 10); fo.push([x, bodyAt(S, x).zt - 10]); }
-      for (let k = 10; k >= 0; k--) { const x = lerp(fx0, fx1, k / 10); fo.push([x, bodyAt(S, x).zt + 22 + 70 * Math.sin(Math.PI * Math.pow(k / 10, 0.7)) * (1 - 0.4 * k / 10)]); }
-      m3.slab(Mf, fo.map(([x, z]) => [(1750 - x) / 1000, (z + 10 + S.rh) / 1000]), m3.frameXY(0), 0.006, 0.0028, 2);
+      // engine-cover fin (carries the race number on the RB22). Cover concept 0: a high shark fin from behind the airbox to just
+      // ahead of the rear wing; 1 low narrow cover: no fin (a 6 mm spine strip)
+      const fh = S.cw("cover", [1, 0]), fx0 = lerp(S.XR - 620, Math.max(S.XPU + 200, S.XR - 1150), fh), fx1 = S.XR + lerp(60, 130, fh), Mf = m3.mesh();
+      const finH = (k) => 6 + (lerp(60, 170, fh) * fh) * Math.pow(Math.sin(Math.PI * 0.5 * Math.min(1, k / 8)), 1.6) * (1 - 0.3 * Math.max(0, k - 8) / 2);
+      const fo2 = []; for (let k = 0; k <= 10; k++) { const x = lerp(fx0, fx1, k / 10); fo2.push([x, bodyAt(S, x).zt - 12]); }
+      for (let k = 10; k >= 0; k--) { const x = lerp(fx0, fx1, k / 10); fo2.push([x, bodyAt(S, x).zt + 2 + finH(k)]); }
+      m3.slab(Mf, fo2.map(([x, z]) => [(1750 - x) / 1000, (z + 10 + S.rh) / 1000]), m3.frameXY(0), 0.008, 0.0035, 2);
       items.push(item("fin", "engine_cover", "paint", Mf, { role: "fin", proj: "main" }));
     }
     // mirrors (C3.7.5): housing ahead of the sidepod, glass facing back, inner stay to the chassis, rear stay to the sidepod
     {
-      const mx = XC - 930, my = 548, mz = 688, Mm = m3.mesh(), Mg = m3.mesh(), Mst = m3.mesh();
-      const ys = []; for (let k = 0; k <= 10; k++) ys.push(lerp(my - 88, my + 88, k / 10));
-      const rings = ys.map((y) => { const t = (y - (my - 88)) / 176, e = Math.sin(Math.PI * clamp(t, 0.02, 0.98)); return m3.superellipse(36 * (0.55 + 0.45 * e), 32 * (0.6 + 0.4 * e), 3, 20).map(([u, v]) => [mx + u + 8, y, mz + v]); });
+      // RB22 (photos): a wide flat black housing above the inlet's leading edge, an inner stay to the chassis and a rear stay down
+      // onto the sidepod's top
+      const mx = XC - CK.mirror, my = Math.max(500, S.pod.Yc + 70), mz = Math.max(720, S.pod.Ztop + 70), Mm = m3.mesh(), Mg = m3.mesh(), Mst = m3.mesh(), hw = 104;
+      const ys = []; for (let k = 0; k <= 12; k++) ys.push(lerp(my - hw, my + hw, k / 12));
+      const rings = ys.map((y) => { const t = (y - (my - hw)) / (2 * hw), e = Math.pow(Math.sin(Math.PI * clamp(t, 0.02, 0.98)), 0.35); return m3.superellipse(40 * (0.5 + 0.5 * e), 34 * (0.55 + 0.45 * e), 3.2, 22).map(([u, v]) => [mx + u + 8 - 0.12 * v, y, mz + v]); });
       m3.loft(Mm, rings.map(r => r.map(Wp)), { wrap: true, capA: true, capB: true, solid: true });
-      const gl = m3.roundPoly([[my - 80, mz - 26, 10], [my + 80, mz - 26, 10], [my + 80, mz + 26, 10], [my - 80, mz + 26, 10]], 3);
-      m3.loft(Mg, [gl.map(([y, z]) => Wp([mx + 43, y, z])), gl.map(([y, z]) => Wp([mx + 46, y, z]))], { wrap: true, capA: true, capB: true, solid: true });
-      const yc = bodyAt(S, mx + 20).yw - 10;
-      m3.sweep(Mst, [[mx + 10, my - 80, mz - 6], [mx + 14, (my + yc) / 2, mz - 20], [mx + 20, yc, mz - 50]].map(Wp), () => m3.superellipse(0.018, 0.005, 2.2, 10), { up: [0, 1, 0] });
-      m3.sweep(Mst, [[mx + 30, my + 20, mz - 26], [mx + 160, my - 10, mz - 70], [S.pod.X + 60, my - 60, S.pod.Ztop - 6]].map(Wp), () => m3.superellipse(0.016, 0.005, 2.2, 10), { up: [0, 1, 0] });
+      const gl = m3.roundPoly([[my - hw + 10, mz - 27, 10], [my + hw - 10, mz - 27, 10], [my + hw - 10, mz + 27, 10], [my - hw + 10, mz + 27, 10]], 3);
+      m3.loft(Mg, [gl.map(([y, z]) => Wp([mx + 47, y, z])), gl.map(([y, z]) => Wp([mx + 50, y, z]))], { wrap: true, capA: true, capB: true, solid: true });
+      const yc = bodyAt(S, mx + 30).yw - 14, zc = bodyAt(S, mx + 30).zt - 40;
+      m3.sweep(Mst, [[mx + 14, my - hw + 20, mz - 8], [mx + 22, (my - hw + yc) / 2, mz - 18], [mx + 30, yc, zc]].map(Wp), () => m3.superellipse(0.02, 0.006, 2.2, 10), { up: [0, 1, 0] });
+      m3.sweep(Mst, [[mx + 26, my + 30, mz - 30], [mx + 70, my + 20, (mz + S.pod.Ztop) / 2 - 10], [S.pod.X + 70, my + 6, S.pod.Ztop - 4]].map(Wp), () => m3.superellipse(0.018, 0.006, 2.2, 10), { up: [0, 1, 0] });
       items.push(...pair(item("mirror", "misc", "paint", Mm, { role: "mirror", proj: "main" })));
       items.push(...pair(item("mirror_glass", "misc", "mirror", Mg)));
       items.push(...pair(item("mirror_stays", "misc", "carbon", Mst)));
     }
     // driver: helmet (livery helmet design, cylindrical u around the head, v down from the crown), visor, HANS / shoulders, headrest
     {
-      const hx = XC - 268, hz = 688, Mh = m3.mesh(), xs = [];
+      const hx = XC - CK.helmet, hz = 712, Mh = m3.mesh(), xs = [];
       for (let k = 0; k <= 22; k++) xs.push(hx - 142 + 284 * (0.5 - 0.5 * Math.cos(Math.PI * k / 22)));
       const rings = xs.map((x) => { const t = (x - hx) / 142, e = Math.sqrt(Math.max(0.0004, 1 - t * t)); return m3.superellipse(110 * e, 124 * e, 2.15, 32).map(([u, v]) => [x, u, hz + v + 6 * t]); });
       m3.loft(Mh, rings.map(r => r.map(Wp)), { wrap: true, solid: true, uv: (r, i) => { const p = rings[r][i]; return [0.5 + Math.atan2(p[1], hx - p[0]) / (2 * Math.PI), clamp((hz + 124 - p[2]) / 248, 0, 1)]; } });
@@ -823,12 +1035,12 @@
       items.push(item("driver_body", "driver", "suit", Ms));
       // headrest pads around the helmet (dark foam)
       const Mp = m3.mesh(), cwR = (x) => cockpitAt(S, x).cw;
-      for (const s of [-1, 1]) { const pr = []; for (let k = 0; k <= 10; k++) { const x = lerp(XC - 400, XC - 80, k / 10), y = s * (Math.max(120, cwR(x) - 34)); pr.push([x, y, bodyAt(S, x).zt - 14 + 10 * Math.sin(Math.PI * k / 10)]); }
+      for (const s of [-1, 1]) { const pr = []; for (let k = 0; k <= 10; k++) { const x = lerp(hx - 110, XC - CK.open1 - 14, k / 10), y = s * (Math.max(120, cwR(x) - 34)); pr.push([x, y, bodyAt(S, x).zt - 14 + 10 * Math.sin(Math.PI * k / 10)]); }
         m3.sweep(Mp, pr.map(Wp), (t) => m3.superellipse(0.026 * (0.7 + 0.3 * Math.sin(Math.PI * t)), 0.03, 3, 14), { up: [0, 1, 0] }); }
-      m3.loft(Mp, ellRings([XC - 140, XC - 125, XC - 70, XC - 55], (x) => ({ cy: 0, cz: bodyAt(S, XC - 100).zt + 4, a: 150 * (x > XC - 130 && x < XC - 60 ? 1 : 0.85), b: 60, n: 3 }), 20).map(r => r.map(Wp)), { wrap: true, capA: true, capB: true, solid: true });
+      const hb = XC - CK.open1 - 90; m3.loft(Mp, ellRings([hb - 40, hb - 25, hb + 30, hb + 45], (x) => ({ cy: 0, cz: bodyAt(S, hb).zt + 4, a: 150 * (x > hb - 30 && x < hb + 40 ? 1 : 0.85), b: 60, n: 3 }), 20).map(r => r.map(Wp)), { wrap: true, capA: true, capB: true, solid: true });
       items.push(item("headrest", "seat_safety", "interior", Mp, { soft: true }));
       // steering wheel (flat, grips, display)
-      const sx = XC - 845, sz = 560, Mw = m3.mesh(), Md = m3.mesh();
+      const sx = XC - CK.wheel, sz = 580, Mw = m3.mesh(), Md = m3.mesh();
       const ol = m3.roundPoly([[-130, -62, 30], [130, -62, 30], [118, 52, 40], [62, 70, 18], [-62, 70, 18], [-118, 52, 40]], 4);
       m3.loft(Mw, [0, 1].map(k => ol.map(([y, z]) => Wp([sx + (k ? 22 : -22) + (z - sz) * 0.25, y, sz + z]))), { wrap: true, capA: true, capB: true, solid: true });
       const dp = m3.roundPoly([[-46, 2, 4], [46, 2, 4], [46, 42, 4], [-46, 42, 4]], 2);
@@ -845,8 +1057,9 @@
     }
     // engine-cover cooling exit above the gearbox (dark), framed by a lip
     {
-      const ox = S.XR - 40, ob = bodyAt(S, ox), Mo = m3.mesh(), Ml2 = m3.mesh();
-      const ring = (g, dz, k) => m3.superellipse((ob.ys + 34) * k + g, 46 * k + g, 2.4, 28).map(([y, z]) => Wp([ox + 6 - dz, y, ob.zt - 34 + z + dz * 0.4]));
+      // cooling concept: exit size standard / 1.3× (large airbox + gills) / 0.6× (compact)
+      const ox = S.XR - 40, ob = bodyAt(S, ox), Mo = m3.mesh(), Ml2 = m3.mesh(), ke = S.cw("cooling", [1, 1.3, 0.6]);
+      const ring = (g, dz, k) => m3.superellipse((ob.ys + 34) * k * Math.sqrt(ke) + g, 46 * k * Math.sqrt(ke) + g, 2.4, 28).map(([y, z]) => Wp([ox + 6 - dz, y, ob.zt - 34 + z + dz * 0.4]));
       m3.loft(Mo, [ring(0, 0, 1), ring(0, 70, 0.8)], { wrap: true, capB: true, inside: Wp([ox - 200, 0, ob.zt - 40]), flip: true });
       m3.loft(Ml2, [ring(10, -6, 1), ring(4, -2, 1), ring(0, 2, 1)], { wrap: true, inside: Wp([ox - 200, 0, ob.zt - 40]) });
       items.push(item("cooling_exit", "engine_cover", "interior", Mo), item("cooling_exit_lip", "engine_cover", "paint", Ml2, { role: "body", proj: "main" }));
@@ -858,9 +1071,10 @@
       const lr = m3.roundPoly([[-58, -26, 8], [58, -26, 8], [58, 26, 8], [-58, 26, 8]], 3);
       m3.loft(Ml, [lr.map(([y, z]) => Wp([xe - 6, y, lz + z])), lr.map(([y, z]) => Wp([xe + 6, y, lz + z]))], { wrap: true, capA: true, capB: true, solid: true });
       items.push(item("rain_light", "rear_impact", "led", Ml));
-      const ez = bodyAt(S, S.XR + 120).zt + 52, path = [[S.XR - 40, 0, ez - 30], [S.XR + 120, 0, ez], [S.XR + 330, 0, ez + 8]].map(Wp);
-      m3.lathe(Mx, [[0.047, -0.001], [0.047, 0.24], [0.051, 0.25], [0.051, 0.255], [0.043, 0.25]], Wp([S.XR + 330, 0, ez + 8]), [1, 0, 0], [0, 1, 0], 28, { inside: Wp([S.XR + 200, 0, ez + 8]) });
-      m3.lathe(Mxi, [[0.044, 0.248], [0.044, 0.18]], Wp([S.XR + 330, 0, ez + 8]), [1, 0, 0], [0, 1, 0], 28, { inside: Wp([S.XR + 200, 0, ez + 40]) });
+      // tailpipe (C3.9) exiting just above the crash structure's tail, under the rear wing
+      const ez = bodyAt(S, S.XR + 440).zt + 38, xp = S.XR + 520;
+      m3.lathe(Mx, [[0.047, -0.001], [0.047, 0.24], [0.051, 0.25], [0.051, 0.255], [0.043, 0.25]], Wp([xp, 0, ez]), [1, 0, 0], [0, 1, 0], 28, { inside: Wp([xp - 130, 0, ez]) });
+      m3.lathe(Mxi, [[0.044, 0.248], [0.044, 0.18]], Wp([xp, 0, ez]), [1, 0, 0], [0, 1, 0], 28, { inside: Wp([xp - 130, 0, ez + 32]) });
       items.push(item("exhaust", "pu_electronics", "metal", Mx, { look: "inconel_718" }), item("exhaust_inner", "pu_electronics", "black", Mxi));
     }
     return items;
@@ -868,16 +1082,18 @@
 
   // ---------------------------------------------------------------- groups
   // a group = one rebuild unit; key = the spec values its geometry depends on
+  // the body's shape families (nose, cover) reach every group that sits on the body
+  const bodyCC = (S) => [S.cc.nose, S.cc.cover];
   const GROUPS = {
-    body: { parts: ["survival_cell", "nose", "engine_cover", "rear_impact"], key: (S) => [S.XA, S.XC, S.XPU, S.XR, S.rh], build: buildBody },
-    sidepods: { parts: ["sidepods", "cooling"], key: (S) => [S.XA, S.XC, S.XPU, S.XR, S.rh, S.sp.inlet, S.sp.u, S.floor.throat], build: buildSidepods },
-    floor: { parts: ["floor"], key: (S) => [S.XA, S.XC, S.XPU, S.XR, S.rh, S.floor.W, S.floor.throat, S.floor.deg], build: buildFloor },
+    body: { parts: ["survival_cell", "nose", "engine_cover", "rear_impact"], key: (S) => [S.XA, S.XC, S.XPU, S.XR, S.rh, bodyCC(S)], build: buildBody },
+    sidepods: { parts: ["sidepods", "cooling"], key: (S) => [S.XA, S.XC, S.XPU, S.XR, S.rh, S.sp.inlet, S.sp.u, S.floor.throat, S.cc.sidepods, S.cc.cooling, S.cc.cover], build: buildSidepods },
+    floor: { parts: ["floor"], key: (S) => [S.XA, S.XC, S.XPU, S.XR, S.rh, S.floor.W, S.floor.throat, S.floor.deg, S.cc.floorEdge], build: buildFloor },
     diffuser: { parts: ["diffuser"], key: (S) => [S.XR, S.rh, S.floor.W, S.floor.throat, S.floor.deg], build: buildDiffuser },
-    front_wing: { parts: ["front_wing"], key: (S) => [S.fw, S.rh, S.XA], build: buildFrontWing, flap: true },
-    rear_wing: { parts: ["rear_wing"], key: (S) => [S.rw, S.XR, S.rh], build: buildRearWing, flap: true },
+    front_wing: { parts: ["front_wing"], key: (S) => [S.fw, S.rh, S.XA, S.cc.fwEndplate, S.cc.nose], build: buildFrontWing, flap: true },
+    rear_wing: { parts: ["rear_wing"], key: (S) => [S.rw, S.XR, S.rh, S.cc.rwStyle, S.cc.cover], build: buildRearWing, flap: true },
     wheels: { parts: ["wheels_front", "wheels_rear", "brakes_front", "brakes_rear"], key: (S) => [S.XR], build: buildWheels },
-    suspension: { parts: ["front_suspension", "rear_suspension"], key: (S) => [S.XR, S.rh], build: buildSuspension },
-    details: { parts: ["halo", "misc", "driver", "electronics", "pu_electronics", "seat_safety"], key: (S) => [S.XA, S.XC, S.XPU, S.XR, S.rh, S.sp.inlet], build: buildDetails },
+    suspension: { parts: ["front_suspension", "rear_suspension"], key: (S) => [S.XR, S.rh, S.cc.frontSusp], build: buildSuspension },
+    details: { parts: ["halo", "misc", "driver", "electronics", "pu_electronics", "seat_safety"], key: (S) => [S.XA, S.XC, S.XPU, S.XR, S.rh, S.sp.inlet, S.cc.sidepods, S.cc.cooling, bodyCC(S)], build: buildDetails },
   };
   function groupKey(id, S) { return JSON.stringify(GROUPS[id].key(S)); }
   function buildGroup(id, S, o) {
@@ -886,7 +1102,7 @@
   }
   function buildAll(S, o) { const out = {}; for (const id of Object.keys(GROUPS)) out[id] = buildGroup(id, S, o); return out; }
 
-  const api = { DIM, GROUPS, spec, buildGroup, buildAll, groupKey, floorHalfW, floorRoof, bodyAt, cockpitAt, superArea, W, Gd, mirrorGeo, mergeGeo, chainSection, sectionPolys, fwStation, rwStation };
+  const api = { DIM, CK, GROUPS, spec, buildGroup, buildAll, groupKey, floorHalfW, floorRoof, bodyAt, cockpitAt, superArea, W, Gd, mirrorGeo, mergeGeo, chainSection, sectionPolys, fwStation, rwStation, CONCEPTS, conceptCode, conceptCodes, conceptWeights };
   C.car3d = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();

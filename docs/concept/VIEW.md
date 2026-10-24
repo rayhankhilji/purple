@@ -116,6 +116,42 @@ undersides, suspension, pylons…) show its material, so an aluminium floor read
 approximations (colour, roughness, metalness, weave type), not measured optical data. `parts3d.LOOKS` covers every material id in
 `concept/materials.js` (tested).
 
+## RB22 look and concept families (view-rb22, 2026-10-24)
+
+**Look.** The car is laid out from the 2026 RB22 launch photos (`concept/view/livery-rb22.js`, `car3d.CK`): broad blunt nose, high
+chassis, upright rounded-square inlets under the mirrors, downwash pods, high engine-cover deck, black halo, black rims with a blue
+lip band and fluorescent nuts. Livery: gloss deep "heritage" blue with the darker jacquard pattern (the 2026 car is gloss, not the
+2022-25 matte: Red Bull's launch notes and photos; `finish: "matte"` still gives the old look), the large charging bull over the
+engine cover with the yellow airbox "sun", Red Bull wordmark, ORACLE on the pods, yellow nose with a red bull, Mobil 1 / Heineken
+on the rear endplates, carbon fin with the number. Partner marks come through `EI.Ads` artwork or plain styled text.
+
+**Concept families** (`car3d.CONCEPTS`; ids and baseline codes from docs/concept/REDESIGNS.md §1; a missing, garbage or out-of-range
+code reads as the baseline code / is clamped; code-id strings are accepted). Every variant is real geometry; the continuous
+parameters keep their exact meaning under every variant (the dimension test runs every variant: inlet area, undercut, wing chords
+and angles at the centre, floor width / throat, endplate top, |Y| ≤ 950 for legal designs).
+
+| family | variants (what is built) |
+|---|---|
+| `sidepods.concept` | 0 downwash: upright inlet (superellipse n 3.4, h/w 1.0), top falling away behind it, tight coke bottle · 1 zeropod: tall slot inlet (h/w 2.3) against the chassis, the pod folds into the body within ~0.5 m of mid-pod · 2 ramp: letterbox inlet (h/w 0.42), wide flat-topped pod staying high to the ICE then ramping down, a 46 mm inboard gully on its top |
+| `nose.concept` | 0 long low (tip XF −1215 on the main plane) · 1 short high (tip XF −985, ~110 mm higher, blunter; the FW pylons rake back up to the nose) |
+| `front_wing.endplate` | 0 open/outwash: plate cut down to just over the flap tips, rear third flared 70 mm outboard, wide footplate · 1 closed/inwash: full plate to Z 375 leaning 26 mm inboard, a 70 mm inboard curl along its top |
+| `rear_wing.style` | 0 spoon: flaps washed out 9° and lifted 70 mm at the tips, endplate cut away below Z 500 and trimmed at the top front, no gurney · 1 medium: flat, 6 mm gurney · 2 high downforce: washed in +6° at the tips, 16 mm gurney, full endplate with three strakes. Centre angle = the setting, X extent = chord everywhere |
+| `floor.edge` | 0 plain edge · 1 edge rolled up and inboard into a ~90 mm scroll, four toed-out fences and an edge wing ahead of the rear tyre (never beyond the floor's half width) |
+| `cooling.layout` | 0 standard: louvre grille on the cover flank · 1 roll-hoop intake 1.3×, five gills across the pod tops, exit 1.3× · 2 compact: intake 0.78×, nine rows of louvres on the cover top, exit 0.6× |
+| `engine_cover.style` | 0 high shark fin from behind the ICE to just ahead of the rear wing · 1 low narrow cover: deck up to 72 mm lower and 14 % narrower behind the ICE, no fin |
+| `suspension.front` | 0 pushrod (lower outer end → high inboard rocker) · 1 pullrod (upper outer end → low inboard rocker); the rod's ends move continuously |
+
+**Morph.** `setDesign(..., { animate: true })` morphs every family continuously over the existing 450 ms tween: `mixParams` adds
+`params.__cmix[key] = { from, to, t }`, and `car3d.spec` turns it into per-variant weights (`S.cc`, `S.cw`) that blend rows, sizes and
+endpoints; features that exist in one variant only grow from / shrink to nothing. Off under reduced motion (instant swap, no flash).
+**Highlight.** After a change the white flash now covers only the items whose geometry changed (`car.snapshot()` before, signature
+compare after), and the change tags name the variants (`Sidepods · downwash → ramp`, labels from `parts.CONCEPTS` when present).
+
+Numbers (SwiftShader, warm, ghost on): one slider change p50 ≈ 22 ms (p90 50-60 ms); one concept switch p50 ≈ 16-19 ms (p90 ≈ 45-60
+ms); a morph frame with one family ≈ 12 ms, with four families at once ≈ 40-80 ms. The baseline ghost's builds are cached by group
+key. Renderer geometries stay 178-226 over 24 redesigns with mode switches and return to 157 at the baseline (no leak). Screens:
+`docs/agents/integrator-screens/view-rb22/`.
+
 ## Hot swap
 
 `setDesign` rebuilds only the groups whose dimensions changed (each group has a key of the spec values it depends on; a material swap

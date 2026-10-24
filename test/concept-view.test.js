@@ -8,7 +8,7 @@ const fs = require("fs"), path = require("path");
 const parts = require("../concept/parts.js"), design = require("../concept/design.js"), materials = require("../concept/materials.js");
 const view = require("../concept/view/view3d.js");
 const m3 = require("../concept/view/mesh3d.js"), car3d = require("../concept/view/car3d.js"), p3 = require("../concept/view/parts3d.js");
-const SRC = ["view3d.js", "parts3d.js", "car3d.js", "mesh3d.js", "index.html"].map(f => fs.readFileSync(path.join(__dirname, "..", "concept", "view", f), "utf8")).join("\n");
+const SRC = ["view3d.js", "parts3d.js", "car3d.js", "mesh3d.js", "livery-rb22.js", "index.html"].map(f => fs.readFileSync(path.join(__dirname, "..", "concept", "view", f), "utf8")).join("\n");
 
 test("conceptView exports the v1/v2 API (mount, buildCar, layout, LABEL, EFFECTS, VIEWS, FIX, DEFAULTS, RAMP, reducedMotion, labelText)", () => {
   for (const k of ["mount", "buildCar", "layout", "reducedMotion", "labelText", "changesBetween"]) assert.equal(typeof view[k], "function", k);
@@ -87,4 +87,29 @@ test("materials: every material in concept/materials.js has a look; fixed (regul
   const d = design.applyChanges(design.baseline(), [{ part: "rear_wing", param: "material", to: "ti64" }]).design;
   const S = car3d.spec(d.params); assert.equal(S.materials.rear_wing, "ti64");
   assert.ok(car3d.buildGroup("rear_wing", S, {}).items.length > 10);
+});
+
+test("RB22 livery: its frame is the RB22 baseline (1:1 mapping), tiles fit the atlas without overlap, every projection range is ordered", () => {
+  const L = require("../concept/view/livery-rb22.js"), B = design.baseline("redbull"), g = parts.geometry(B.params);
+  assert.equal(L.team, "redbull");
+  assert.deepEqual([L.ANCHORS.XA, L.ANCHORS.XC, L.ANCHORS.XPU, L.ANCHORS.XR, L.ANCHORS.rh], [g.XA, g.XC, g.XPU, g.XR, B.params.floor.ride_height_mm]);
+  assert.equal(L.ANCHORS.tip, car3d.DIM.noseTip);
+  const T = Object.entries(L.TILES);
+  for (const [k, [x, y, w, h]] of T) assert.ok(x >= 0 && y >= 0 && x + w <= 4096 && y + h <= 4096 && w > 0 && h > 0, k);
+  for (let i = 0; i < T.length; i++) for (let j = i + 1; j < T.length; j++) { const [a, A] = T[i], [b, Bt] = T[j]; assert.ok(A[0] + A[2] <= Bt[0] || Bt[0] + Bt[2] <= A[0] || A[1] + A[3] <= Bt[1] || Bt[1] + Bt[3] <= A[1], a + " overlaps " + b); }
+  for (const [k, R] of Object.entries(L.RANGES)) for (const r of [R.s, R.t].filter(Boolean)) assert.ok(r[0] < r[1] && r[2] < r[3], k);
+  for (const role of ["body", "mirror", "halo", "fwEnd", "fwFlap", "rwEnd", "rwMain", "rwFlap"]) assert.match(L.BODY[role], /^#[0-9a-f]{6}$/i, role);
+});
+
+test("wing elements: every profile's upper surface faces up and its lower surface down (corner and straight mode)", () => {
+  // the decals (front-wing lettering, ORACLE on the rear flap) are projected from above onto faces whose normal points up; a
+  // strongly cambered flap once had its orientation point outside the section and was wound inside out
+  for (const [label, d] of [["redbull", design.baseline("redbull")], ["3el-high", design.applyChanges(design.baseline(), [{ part: "rear_wing", param: "elements", to: 3 }, { part: "rear_wing", param: "aoa_deg", to: 30 }, { part: "front_wing", param: "aoa_deg", to: 38 }]).design]]) {
+    const S = car3d.spec(d.params);
+    for (const g of ["front_wing", "rear_wing"]) for (const flap of [0, 1]) for (const it of car3d.buildGroup(g, S, { flap, flapOnly: flap === 1 }).items) {
+      if (!/_(top|bot)$/.test(it.name)) continue;
+      let ny = 0; for (let i = 1; i < it.geo.nrm.length; i += 3) ny += it.geo.nrm[i]; ny /= it.geo.count;
+      if (/_top$/.test(it.name)) assert.ok(ny > 0.3, label + " " + it.name + " mean normal y " + ny.toFixed(3)); else assert.ok(ny < -0.2, label + " " + it.name + " mean normal y " + ny.toFixed(3));
+    }
+  }
 });

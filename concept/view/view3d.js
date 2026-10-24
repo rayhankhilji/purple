@@ -56,13 +56,22 @@
     "floor.ride_height_mm": "sprung car height: plank bottom = ride height above the ground (wheels stay on the ground)", "diffuser.expansion_deg": "diffuser ramp angle from XR-525 to the exit at XR+300",
     "sidepods.inlet_cm2": "inlet opening area (both sides; superellipse n = 4, aspect 0.55), sidepod width follows the inlet", "sidepods.undercut_mm": "depth of the cut under the sidepod's shoulder (Y)",
     "ballast.x_frac": "no bodywork: ballast sphere position in x-ray mass mode", "ballast.extra_kg": "no bodywork: ballast sphere size in x-ray mass mode",
+    // concept families (claude/redesigns); geometry by claude/view-rb22 (concept/view/car3d.js CONCEPTS; inlet area and undercut depth stay exact)
+    "sidepods.concept": "sidepod shape template: 0 downwash (upright inlet, top falling away behind it, tight coke bottle), 1 zeropod (tall narrow inlet, a slim pod folding into the chassis within ~0.6 m), 2 ramp (letterbox inlet, wide flat-topped pod staying high to the ICE with an inboard gully, then a ramp down)",
+    "nose.concept": "nose: 0 long low (tip at XF -1215 on the main plane), 1 short high (tip at XF -985, ~110 mm higher, the wing hung on pylons)",
+    "front_wing.endplate": "front wing endplate: 0 open / outwash (low plate over the flap tips, trailing edge flared outboard, wide footplate), 1 closed / inwash (full-height plate to Z 375, leaning and curled inboard along its top)",
+    "rear_wing.style": "rear wing: 0 low-drag spoon (flaps washed out ~9° and lifted towards the tips, cut-away endplate, no gurney), 1 medium (flat, 6 mm gurney), 2 high downforce (washed in +6° at the tips, 16 mm gurney, full endplate with three strakes); the centre angle stays the setting",
+    "floor.edge": "floor edge: 0 plain edge, 1 edge rolled up into a scroll with four toed-out fences and an edge wing ahead of the rear tyre",
+    "cooling.layout": "cooling: 0 standard (louvre grille on the cover flank), 1 roll-hoop intake 1.3× with five gills across the pod tops and a larger exit, 2 compact (intake 0.78×, rows of louvres on the cover top, exit 0.6×)",
+    "engine_cover.style": "engine cover: 0 high shark fin from behind the ICE to just ahead of the rear wing, 1 low narrow cover (deck ~70 mm lower, ~14 % narrower), no fin",
+    "suspension.front": "front suspension: 0 pushrod (rod from the lower wishbone's outer end up to a high inboard rocker), 1 pullrod (rod from the upper wishbone's outer end down to a low inboard rocker)",
   };
   // fixed dimensions (mm) that are not design parameters
   const FIX = { tyreR: 352.5, tyreRrear: 355, plank: 10, track: [1580, 1520] };
   // the livery designs' car frame (js/liveries.js landmarks; the design's anchors map onto these for the livery projection)
   const GLB = { FA: 1.75, RA: -1.85, XA: 1.825, XC: -0.105, XPU: -0.485, noseTip: 3.04 };
   const PAIR_Y = { wheels_front: 790, wheels_rear: 760, brakes_front: 700, brakes_rear: 700, front_suspension: 500, rear_suspension: 500, sidepods: 550, cooling: 500, pu_mguk: 120, pu_electronics: 150 };
-  const HIGHLIGHT_ALIAS = { layout: ["wheels_rear", "floor", "diffuser", "engine_cover", "rear_suspension", "rear_wing"], survival_cell: ["survival_cell", "nose", "halo"], cooling: ["sidepods", "cooling"], ballast: [] };
+  const HIGHLIGHT_ALIAS = { layout: ["wheels_rear", "floor", "diffuser", "engine_cover", "rear_suspension", "rear_wing"], survival_cell: ["survival_cell", "nose", "halo"], cooling: ["sidepods", "cooling"], ballast: [], nose: ["survival_cell"], suspension: ["front_suspension"] };
   const RAMP = ["#173840", "#1f5a66", "#2b8394", "#4fb6c8", "#9be9f5"];
   // part ids (ghost ordering, x-ray colouring)
   const REGIONS = ["none", "nose", "survival_cell", "halo", "rear_impact", "front_wing", "rear_wing", "floor", "diffuser", "sidepods", "engine_cover", "gearbox", "front_suspension", "rear_suspension", "wheels_front", "wheels_rear", "brakes_front", "brakes_rear", "driver", "misc", "electronics", "pu_electronics", "cooling", "seat_safety"];
@@ -108,7 +117,16 @@
   function changesBetween(a, b) {
     if (!a || !b) return [];
     const by = {}, fmt = (v, s) => (s.int ? String(Math.round(v)) : (Math.round(v * 100) / 100).toString()) + (s.unit ? (s.unit === "°" ? "°" : " " + s.unit) : "");
+    // concept families first, by name ("sidepods · downwash → zeropod"); labels from parts.CONCEPTS when it has them
+    const K3 = C.car3d && C.car3d.CONCEPTS, cids = new Set();
+    if (K3) for (const key of Object.keys(K3)) {
+      const c = K3[key], x = C.car3d.conceptCode(a.params, key), y = C.car3d.conceptCode(b.params, key); cids.add(c.id);
+      if (x === y) continue;
+      const PC = parts.CONCEPTS && parts.CONCEPTS[c.id], nm = (i) => { const r = PC && PC.codes && PC.codes.find(q => q.code === i); return (r && r.label) || c.names[i]; };
+      (by[c.part] = by[c.part] || []).push(nm(x) + " → " + nm(y));
+    }
     for (const s of parts.PARAMS) {
+      if (cids.has(s.part + "." + s.param)) continue;
       const x = a.params[s.part] && a.params[s.part][s.param], y = b.params[s.part] && b.params[s.part][s.param];
       if (typeof x === "number" && typeof y === "number" && Math.abs(x - y) > 1e-9) (by[s.part] = by[s.part] || []).push(s.label.replace(/ \(.*\)$/, "").toLowerCase() + " " + fmt(x, s).replace(/ (mm|cm²|kg|× WB)$/, "") + " → " + fmt(y, s));
     }
@@ -147,6 +165,7 @@
       }
       if (!C.mesh3d) await loadScript(ROOT + "concept/view/mesh3d.js");
       if (!C.car3d) await loadScript(ROOT + "concept/view/car3d.js");
+      if (!C.liveryRB22) await loadScript(ROOT + "concept/view/livery-rb22.js");
       if (!C.parts3d) await loadScript(ROOT + "concept/view/parts3d.js");
       if (EI.Ads && EI.Ads.ready) await Promise.race([EI.Ads.ready(), new Promise((r) => setTimeout(r, 3500))]);
       return C.parts3d;
@@ -302,7 +321,7 @@
       car: null, xrGeos: [], changes: [], changeEls: [], rebuilt: [],
     };
 
-    const carCtx = { THREE, o, carRoot, mirror, ghostRoot, hiRoot, scene, renderer };
+    const carCtx = { THREE, o, carRoot, mirror, ghostRoot, hiRoot, scene, renderer, onRepaint: () => { s.dirty = true; } };
     ensureAssets().then(() => {
       if (s.disposed) return;
       s.car = C.parts3d.createCar(carCtx);
@@ -498,7 +517,7 @@
       let moving = false;
       if (s.tween && s.car) {
         const k = clamp((t - (s.tween.t0 == null ? (s.tween.t0 = t) : s.tween.t0)) / MORPH_MS, 0, 1), e = EASE(k);
-        if (k >= 1) { const tw = s.tween; s.tween = null; s.lastMs = build(tw.to, true); s.car.flash(tw.groups || s.rebuilt); emit(); }
+        if (k >= 1) { const tw = s.tween; s.tween = null; s.lastMs = build(tw.to, true); s.car.flash(tw.groups || s.rebuilt, undefined, tw.snap); emit(); }
         else { build(mixParams(s.tween.from, s.tween.to, e), false); s.tween.groups = Array.from(new Set((s.tween.groups || []).concat(s.rebuilt))); ghostRoot.visible = false; moving = true; }
       }
       if (s.car && s.car.tick(t)) moving = true;
@@ -530,6 +549,11 @@
           out[part][k] = sp && sp.int ? (e < 0.5 ? x : y) : lerp(x, y, e);
         }
       }
+      // concept families morph continuously: car3d blends the two variants' shapes by e (params.__cmix)
+      const K3 = C.car3d; if (K3 && K3.CONCEPTS) for (const key of Object.keys(K3.CONCEPTS)) {
+        const from = K3.conceptCode(a, key), to = K3.conceptCode(b, key);
+        if (from !== to) (out.__cmix = out.__cmix || {})[key] = { from, to, t: e };
+      }
       return out;
     }
 
@@ -548,10 +572,11 @@
       s.mass = massOf(s.design, so.mass);
       if (!s.car) { s.tween = null; return { ms: null, pending: true }; }
       const animate = so.animate !== false && !s.rm && !!prev;
-      if (animate) { s.tween = { from: s.tween ? mixParams(s.tween.from, s.tween.to, 0.5) : prev.params, to: s.design.params, t0: null, groups: [] }; s.dirty = true; return { ms: null, pending: true }; }
+      if (animate) { s.tween = { from: s.tween ? mixParams(s.tween.from, s.tween.to, 0.5) : prev.params, to: s.design.params, t0: null, groups: [], snap: s.tween && s.tween.snap ? s.tween.snap : s.car.snapshot() }; s.dirty = true; return { ms: null, pending: true }; }
       s.tween = null;
+      const snap = prev && !s.rm ? s.car.snapshot() : null;
       s.lastMs = build(s.design.params, true);
-      if (prev && s.rebuilt.length && !s.rm) s.car.flash(s.rebuilt);
+      if (prev && s.rebuilt.length && !s.rm) s.car.flash(s.rebuilt, undefined, snap);
       emit();
       return { ms: s.lastMs, rebuilt: s.rebuilt.slice() };
     }
@@ -578,7 +603,7 @@
     }
     function setAero(a) { if (!["cycle", "corner", "straight"].includes(a)) throw new Error("conceptView.setAero: cycle | corner | straight"); s.aero = a; s.smPhaseT0 = now(); if (a !== "cycle" || s.rm) { s.smT = a === "straight" ? 1 : 0; if (s.car) s.car.setFlaps(s.smT); renderer.shadowMap.needsUpdate = true; } s.dirty = true; }
     function screenshot() {
-      if (s.tween && s.car) { const tw = s.tween; s.tween = null; s.lastMs = build(tw.to, true); if (s.car) s.car.flash(tw.groups || s.rebuilt); }
+      if (s.tween && s.car) { const tw = s.tween; s.tween = null; s.lastMs = build(tw.to, true); if (s.car) s.car.flash(tw.groups || s.rebuilt, undefined, tw.snap); }
       if (s.car) s.car.tick(now());   // the hot-swap flash as it is now (frames can be slower than the flash)
       const pr0 = renderer.getPixelRatio(), cw = Math.max(1, cv.clientWidth), pr = Math.min(o.shotScale || 1, 3840 / cw);
       if (pr > pr0) renderer.setPixelRatio(pr);
@@ -630,7 +655,7 @@
       setDesign, setHighlight, setMode, setView, setAero, screenshot, labelText, stats, dispose,
       render: () => { if (s.tween && s.car) { const tw = s.tween; s.tween = null; s.lastMs = build(tw.to, true); } render(); },
       state: () => ({ loading: s.loading, error: s.error ? String(s.error.message || s.error) : null, mode: s.mode, view: s.view, aero: s.aero, straight: s.smT, ghost: (s.ghostParts || []).slice(), highlight: Array.from(s.highlight), ms: s.lastMs, layout: s.L, rebuilt: (s.rebuilt || []).slice(), changes: s.changes.slice() }),
-      ready: () => ensureAssets().then(() => new Promise(r => { const k = () => (s.car || s.disposed ? r() : setTimeout(k, 20)); k(); })),
+      ready: () => ensureAssets().then(() => new Promise(r => { const k = () => (s.car || s.disposed ? r() : setTimeout(k, 20)); k(); })).then(() => (s.car && s.car.liveryReady) || null),
       el: container, canvas: cv,
       _debug: { scene, renderer, camera, s },
     };
@@ -667,8 +692,9 @@
       group.userData = { units: "m", forward: "+x", up: "+y", right: "+z", ground_y: 0, frontAxleX: GLB.FA, rearAxleX: wx(sp.XR), wheelCentreY: sp.wheel.front.hc / 1000, wheelCentreYRear: sp.wheel.rear.hc / 1000, design_id: cur.id || null, team: o.team, driver: o.driver };
     };
     const make = () => { if (disposed) return group; car = C.parts3d.createCar({ THREE, o, carRoot, mirror, ghostRoot, hiRoot }); apply(); return group; };
-    const have = !!(C.parts3d && C.car3d && C.mesh3d && EI.TEAM_BY_ID && EI.LIVERIES);
-    group.ready = have ? Promise.resolve(make()) : ensureAssets().then(make);
+    const have = !!(C.parts3d && C.car3d && C.mesh3d && C.liveryRB22 && EI.TEAM_BY_ID && EI.LIVERIES);
+    // resolves with the group once the car is built and its livery final (partner artwork in)
+    group.ready = (have ? Promise.resolve(make()) : ensureAssets().then(make)).then(() => (car && car.liveryReady ? car.liveryReady : null)).then(() => group);
     group.setDesign = (d) => { if (!d || !d.params) throw new Error("buildCar.setDesign: a Design { params } is required"); cur = d; apply(); return group; };
     group.setAero = (t) => { flap = clamp(+t || 0, 0, 1); if (car) car.setFlaps(flap); return group; };
     group.dispose = () => {

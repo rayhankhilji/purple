@@ -32,8 +32,23 @@ function designs() {
   set("short-low", [{ part: "layout", param: "wheelbase_mm", to: 3250 }, { part: "floor", param: "ride_height_mm", to: 28 }, { part: "floor", param: "width_mm", to: 1300 }, { part: "floor", param: "throat_mm", to: 118 }, { part: "diffuser", param: "expansion_deg", to: 18.5 }]);
   set("pods", [{ part: "sidepods", param: "inlet_cm2", to: 900 }, { part: "sidepods", param: "undercut_mm", to: 180 }, { part: "survival_cell", param: "cockpit_len_mm", to: 1990 }, { part: "survival_cell", param: "front_axle_offset_mm", to: 140 }]);
   set("small", [{ part: "sidepods", param: "inlet_cm2", to: 420 }, { part: "sidepods", param: "undercut_mm", to: 20 }, { part: "front_wing", param: "elements", to: 1 }, { part: "rear_wing", param: "elements", to: 1 }, { part: "front_wing", param: "span_mm", to: 1100 }, { part: "rear_wing", param: "span_mm", to: 960 }]);
+  // mutants move only the parameters this test measures: the more-factors v1 set-up / gearing values have no geometry, and the
+  // redesigns v1 concept families (parts.CONCEPTS) are measured by the view's own concept tests; locking them keeps the seeded
+  // mutants identical to the ones this test was written for
+  const locked = ["gearbox.top_kmh", "gearbox.step", "setup.roll_front", "setup.heave_n_mm", "setup.brake_bias"].concat(Object.keys(parts.CONCEPTS || {}));
   const rng = design.seededRng(2026); let d = B;
-  for (let i = 0; i < 4; i++) { for (let k = 0; k < 6; k++) d = design.mutate(d, rng, 0.15).design; out.push(["mutant" + i, design.clone(d)]); }
+  for (let i = 0; i < 4; i++) { for (let k = 0; k < 6; k++) d = design.mutate(d, rng, 0.15, { locked }).design; out.push(["mutant" + i, design.clone(d)]); }
+  // every concept-family variant (docs/concept/REDESIGNS.md §1) on the RB22 baseline, plus all of them at once on the "pods" extreme
+  for (const [label, d2] of conceptDesigns()) out.push([label, d2]);
+  return out;
+}
+function withCodes(d, codes) { const x = design.clone(d); for (const [id, v] of Object.entries(codes)) { const [p, k] = id.split("."); x.params[p] = Object.assign({}, x.params[p], { [k]: v }); } return x; }
+function conceptDesigns() {
+  const R = design.baseline("redbull"), out = [];
+  for (const c of Object.values(car3d.CONCEPTS)) for (let i = 0; i < c.ids.length; i++) if (i !== c.base) out.push(["concept " + c.id + "=" + c.ids[i], withCodes(R, { [c.id]: i })]);
+  const P = design.applyChanges(design.baseline(), [{ part: "sidepods", param: "inlet_cm2", to: 900 }, { part: "sidepods", param: "undercut_mm", to: 180 }]).design;
+  out.push(["concepts all-1 on pods", withCodes(P, Object.fromEntries(Object.values(car3d.CONCEPTS).map(c => [c.id, 1])))]);
+  out.push(["concepts all-2 small", withCodes(design.applyChanges(design.baseline(), [{ part: "sidepods", param: "inlet_cm2", to: 420 }, { part: "sidepods", param: "undercut_mm", to: 20 }]).design, Object.fromEntries(Object.values(car3d.CONCEPTS).map(c => [c.id, c.ids.length - 1])))]);
   return out;
 }
 const CASES = designs().map(([label, d]) => { const S = car3d.spec(d.params), t0 = Date.now(), G = car3d.buildAll(S, { flap: 0 }); return { label, d, S, G, ms: Date.now() - t0, legal: regs.check(d).length === 0 }; });
@@ -67,8 +82,8 @@ test("ride height and plank: plank bottom at the static ride height, 10 mm thick
 test("survival cell anchors: cockpit opening relative to XC, body sections at XA and XPU, wheelbase-referenced tail", () => {
   for (const { label, S, G } of CASES) {
     const ck = { lo: [Infinity], hi: [-Infinity] }; verts(byName(G, /^cockpit_tub$/), (x, y, z) => { if (Math.abs(z) > 0.005) { ck.lo[0] = Math.min(ck.lo[0], x); ck.hi[0] = Math.max(ck.hi[0], x); } });   // where the opening has width
-    near(mmX(ck.hi[0]), S.XC - 905, TOL, label + " cockpit opening front (XC - 905)");
-    near(mmX(ck.lo[0]), S.XC - 30, TOL, label + " cockpit opening rear (XC - 30)");
+    near(mmX(ck.hi[0]), S.XC - car3d.CK.open0, TOL, label + " cockpit opening front (XC - " + car3d.CK.open0 + ")");
+    near(mmX(ck.lo[0]), S.XC - car3d.CK.open1, TOL, label + " cockpit opening rear (XC - " + car3d.CK.open1 + ")");
     const body = byName(G, /^body$/), at = (X) => { let w = 0; verts(body, (x, y, z) => { if (Math.abs(mmX(x) - X) < 0.01) w = Math.max(w, Math.abs(z) * 1000); }); return w; };
     near(at(S.XA), car3d.bodyAt(S, S.XA).yw, TOL, label + " body half width at the cell front XA");
     near(at(S.XPU), car3d.bodyAt(S, S.XPU).yw, TOL, label + " body half width at the ICE face XPU");
@@ -182,6 +197,33 @@ test("every vertex finite; builds are fast enough in Node (generous bound; brows
   for (const { label, G, ms } of CASES) {
     for (const it of all(G)) for (const v of it.geo.pos) assert.ok(Number.isFinite(v), label + " " + it.name + " has a non-finite vertex");
     assert.ok(ms < 3000, label + " full build " + ms + " ms");
+  }
+});
+
+test("concept families: each variant changes its group's geometry (not a tint), reads defensively, and blends continuously", () => {
+  const R = design.baseline("redbull"), S0 = car3d.spec(R.params);
+  const GROUPS_OF = { sidepods: ["sidepods"], nose: ["body", "front_wing"], fwEndplate: ["front_wing"], rwStyle: ["rear_wing"], floorEdge: ["floor"], cooling: ["sidepods", "details"], cover: ["body", "details"], frontSusp: ["suspension"] };
+  // geometry signature: vertex count and a coarse positional moment per group
+  const sig = (S, g) => { const G = car3d.buildGroup(g, S, { flap: 0 }); let n = 0, m = 0; for (const it of G.items) { const P = it.geo.pos; n += it.geo.count; for (let i = 0; i < P.length; i += 3) m += Math.abs(P[i]) + 2 * Math.abs(P[i + 1]) + 3 * Math.abs(P[i + 2]); } return { n, m }; };
+  for (const [key, c] of Object.entries(car3d.CONCEPTS)) {
+    const base = {}; for (const g of GROUPS_OF[key]) base[g] = sig(S0, g);
+    for (let i = 0; i < c.ids.length; i++) {
+      if (i === c.base) continue;
+      const S = car3d.spec(withCodes(R, { [c.id]: i }).params);
+      // the moment changes by at least ~0.5 m·vertex-units: tens of millimetres over thousands of vertices (a tint changes nothing)
+      const moved = GROUPS_OF[key].some(g => { const s = sig(S, g); return s.n !== base[g].n || Math.abs(s.m - base[g].m) > 0.5; });
+      assert.ok(moved, c.id + " = " + c.ids[i] + " changes the geometry of " + GROUPS_OF[key].join("/"));
+      assert.ok(GROUPS_OF[key].some(g => car3d.groupKey(g, S) !== car3d.groupKey(g, S0)), c.id + " is in its groups' rebuild keys");
+    }
+    // defensive reads: missing, garbage, out of range and id strings
+    assert.equal(car3d.conceptCode({}, key), c.base, key + " missing -> baseline code");
+    assert.equal(car3d.conceptCode(withCodes(R, { [c.id]: "nonsense" }).params, key), c.base, key + " garbage -> baseline code");
+    assert.equal(car3d.conceptCode(withCodes(R, { [c.id]: 99 }).params, key), c.ids.length - 1, key + " out of range -> clamped");
+    assert.equal(car3d.conceptCode(withCodes(R, { [c.id]: c.ids[c.ids.length - 1] }).params, key), c.ids.length - 1, key + " id string");
+    // a morph half way between two variants: weights sum to 1, finite geometry
+    const mid = withCodes(R, { [c.id]: 1 }).params; mid.__cmix = { [key]: { from: 0, to: c.ids.length - 1, t: 0.5 } };
+    const Sm = car3d.spec(mid), w = Sm.cc[key]; assert.ok(Math.abs(w.reduce((a, b) => a + b, 0) - 1) < 1e-9 && w[0] === 0.5, key + " half-way weights");
+    for (const g of GROUPS_OF[key]) for (const it of car3d.buildGroup(g, Sm, { flap: 0 }).items) for (const v of it.geo.pos) assert.ok(Number.isFinite(v), key + " half-way " + it.name);
   }
 });
 
