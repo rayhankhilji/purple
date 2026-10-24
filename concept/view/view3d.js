@@ -5,7 +5,13 @@
 // sections placed by the parameters; nothing here is a measured or tested shape.
 //
 // Contract (the lab pages embed this; mirrors lab/car3d.js conventions: dark studio, honesty label in the view, reduced motion, dispose):
-//   const v = EI.conceptView.mount(containerEl, opts?)    the canvas appears at once; the car once its model and livery are in (a few s)
+//   const v = EI.conceptView.mount(containerEl, opts?)    the canvas appears at once; the car once its model and livery are in (a few s;
+//        await v.ready() before a frame-exact capture). opts: design, baseline, mode, view, aero, label, legend, orbit, parts,
+//        livery ("redbull-rb22": the team prefix picks the game livery; default Red Bull), driver (index or code, e.g. "HAD";
+//        default the design's own `driver`), exaggerate, shadows, reflection
+//   setDesign(..., { livery }) or a design carrying another livery / driver rebuilds the car in that livery (once, not per call)
+//   EI.conceptView.buildCar(design, { livery, driver, baseline, lod, straight }) -> THREE.Group for another scene (no viewer or
+//        renderer; game-car frame: metres, x forward, y up, ground y = 0; .ready, .setDesign, .setAero, .dispose; see buildCar below)
 //   v.setDesign(design, { baseline?, animate?, mass? }) -> { ms }   rebuild from design.params. baseline: a Design (ghost the parts that
 //        differ from it, purple), null (clear), undefined (keep). animate (default true): morph from the previous design over 450 ms
 //        (off under prefers-reduced-motion). mass: a mass sheet (bench(design).mass) for x-ray; default parts.massSheet(design.params).
@@ -24,11 +30,12 @@
   const root = typeof window !== "undefined" ? window : globalThis;
   const EI = (root.EI = root.EI || {}); const C = (EI.concept = EI.concept || {});
   const req = (name, file) => C[name] || (typeof require === "function" ? require(file) : null);
-  const parts = req("parts", "../parts.js");
+  let parts = req("parts", "../parts.js");   // or mount(..., { parts }) when the page loaded it under another name
 
-  const LABEL = "concept car rendered from the design parameters on the game's car model · schematic, not a CAD model";
+  const LABEL = "concept geometry from the design parameters on the game's car model · schematic, not a CAD model";
   const DEFAULTS = {
-    team: "redbull", driver: 0,  // livery (EI.TEAM_BY_ID key) and which of its drivers (number, code, helmet)
+    team: "redbull", driver: 0,  // livery (EI.TEAM_BY_ID key) and which of its drivers (index, or driver code such as "HAD": number, helmet)
+    livery: null,           // a design's livery id ("redbull-rb22"): its team prefix picks `team` (concept/design.js TEAMS)
     background: 0x0b0c10,   // near DESIGN_SYSTEM --bg, a touch of blue for the studio
     ghostColor: 0xb26cff,   // --purple: the baseline
     highlightColor: 0xfbbf24, // --amber: parts named by setHighlight
@@ -88,6 +95,14 @@
       sp: { inlet: p.sidepods.inlet_cm2, u: p.sidepods.undercut_mm },
       ballast: { x: p.ballast.x_frac * XR, kg: p.ballast.extra_kg },
     };
+  }
+
+  // livery id ("redbull-rb22") -> o.team (its team prefix) and o.driver (a driver code such as "HAD"); true if either changed
+  function pickLivery(o, livery, driverCode) {
+    let changed = false;
+    if (typeof livery === "string" && livery) { const t = livery.split("-")[0]; if (t && t !== o.team) { o.team = t; changed = true; } }
+    if (typeof driverCode === "string" && driverCode && driverCode !== o.driver) { o.driver = driverCode; changed = true; }
+    return changed;
   }
 
   // ---------------------------------------------------------------- three.js part (browser only)
@@ -244,13 +259,13 @@
   function overlayMaterial(o) {
     const THREE = T();
     return new THREE.ShaderMaterial({
-      uniforms: { color: { value: srgb(o.color || 0xffffff) }, base: { value: o.base != null ? o.base : 0.1 }, rim: { value: o.rim != null ? o.rim : 0.8 }, alpha: { value: o.alpha != null ? o.alpha : 1 }, useCol: { value: o.useCol ? 1 : 0 } },
+      uniforms: { color: { value: srgb(o.color || 0xffffff) }, base: { value: o.base != null ? o.base : 0.1 }, rim: { value: o.rim != null ? o.rim : 0.8 }, alpha: { value: o.alpha != null ? o.alpha : 1 }, useCol: { value: o.useCol ? 1 : 0 }, rimPow: { value: o.rimPow || 2 } },
       vertexShader: [
         "attribute float aw; attribute vec3 acol; varying float vW; varying vec3 vN; varying vec3 vV; varying vec3 vC;",
         "void main() { vW = aw; vC = acol; vec4 mv = modelViewMatrix * vec4(position, 1.0); vN = normalize(normalMatrix * normal); vV = normalize(-mv.xyz); gl_Position = projectionMatrix * mv; }"].join("\n"),
       fragmentShader: [
-        "uniform vec3 color; uniform float base; uniform float rim; uniform float alpha; uniform float useCol; varying float vW; varying vec3 vN; varying vec3 vV; varying vec3 vC;",
-        "void main() { if (vW < 0.01) discard; float f = 1.0 - abs(dot(normalize(vN), normalize(vV))); f = f * f; vec3 c = mix(color, vC, useCol);",
+        "uniform vec3 color; uniform float base; uniform float rim; uniform float alpha; uniform float useCol; uniform float rimPow; varying float vW; varying vec3 vN; varying vec3 vV; varying vec3 vC;",
+        "void main() { if (vW < 0.01) discard; float f = 1.0 - abs(dot(normalize(vN), normalize(vV))); f = pow(f, rimPow); vec3 c = mix(color, vC, useCol);",
         "  gl_FragColor = vec4(c * (0.6 + 0.9 * f), clamp(alpha * vW * (base + rim * f), 0.0, 1.0)); }"].join("\n"),
       transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: o.additive ? THREE.AdditiveBlending : THREE.NormalBlending,
       depthFunc: o.hidden ? THREE.GreaterDepth : THREE.LessEqualDepth,
@@ -267,16 +282,16 @@
   // ---------------------------------------------------------------- views
   // camera on a sphere around a target: azim 0 = behind the car, π/2 = its right side, π = in front; elev above the ground; radius for a 1.6 frame
   const VIEWS = {
-    hero: { azim: 2.42, elev: 0.2, radius: 7.4, target: [0.1, 0.42, 0], fov: 28 },
-    front34: { azim: 2.2, elev: 0.1, radius: 7.2, target: [0.3, 0.42, 0], fov: 28 },
-    rear34: { azim: 0.7, elev: 0.18, radius: 7.0, target: [-0.3, 0.45, 0], fov: 28 },
-    rearwing: { azim: 0.62, elev: 0.26, radius: 3.3, target: [-2.05, 0.68, 0], fov: 28 },
-    frontwing: { azim: 2.35, elev: 0.3, radius: 3.4, target: [2.55, 0.18, 0], fov: 28 },
-    side: { azim: Math.PI / 2, elev: 0.02, radius: 9.6, target: [0.0, 0.5, 0], fov: 26 },
-    top: { azim: Math.PI / 2, elev: 1.53, radius: 9.8, target: [0.0, 0.2, 0], fov: 26 },
-    front: { azim: Math.PI, elev: 0.06, radius: 6.6, target: [0, 0.45, 0], fov: 28 },
-    rear: { azim: 0, elev: 0.1, radius: 6.6, target: [0, 0.5, 0], fov: 28 },
-    floor: { azim: 2.6, elev: -0.02, radius: 6.2, target: [0.2, 0.18, 0], fov: 28 },
+    hero: { azim: 2.36, elev: 0.24, radius: 8.6, target: [0.3, 0.3, 0], fov: 28 },
+    front34: { azim: 2.2, elev: 0.12, radius: 8.4, target: [0.4, 0.32, 0], fov: 28 },
+    rear34: { azim: 0.72, elev: 0.2, radius: 8.2, target: [-0.2, 0.38, 0], fov: 28 },
+    rearwing: { azim: 0.55, elev: 0.3, radius: 3.6, target: [-2.05, 0.62, 0], fov: 28 },
+    frontwing: { azim: 2.35, elev: 0.34, radius: 3.6, target: [2.5, 0.16, 0], fov: 28 },
+    side: { azim: Math.PI / 2, elev: 0.02, radius: 9.6, target: [0.2, 0.45, 0], fov: 26 },
+    top: { azim: Math.PI / 2, elev: 1.53, radius: 9.8, target: [0.2, 0.2, 0], fov: 26 },
+    front: { azim: Math.PI, elev: 0.08, radius: 6.8, target: [0, 0.4, 0], fov: 28 },
+    rear: { azim: 0, elev: 0.12, radius: 6.8, target: [0, 0.42, 0], fov: 28 },
+    floor: { azim: 2.75, elev: 0.0, radius: 7.6, target: [0.1, 0.16, 0], fov: 28 },
   };
   const REF_ASPECT = 1.6, MOVE_MS = 600, EASE = t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
   const SWAY = { amp: 0.16, period: 28 }, MORPH_MS = 450, SM_HOLD_MS = 2600, SM_SWING_MS = 400;
@@ -286,8 +301,11 @@
     const THREE = T();
     if (!container) throw new Error("conceptView.mount: container element required");
     if (!THREE) throw new Error("conceptView.mount: load vendor/three.min.js first");
+    if (!parts && opts && opts.parts && opts.parts.geometry) parts = opts.parts;
     if (!parts) throw new Error("conceptView.mount: load concept/regs.js and concept/parts.js first");
     const o = Object.assign({}, DEFAULTS, opts || {}), rm = reducedMotion();
+    delete o.parts;
+    pickLivery(o, o.livery || (o.design && o.design.livery) || (o.baseline && o.baseline.livery), opts && opts.driver != null ? null : (o.design && o.design.driver) || (o.baseline && o.baseline.driver));
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, preserveDrawingBuffer: false, powerPreference: "high-performance" });
     renderer.setPixelRatio(Math.min(root.devicePixelRatio || 1, o.pixelRatioCap));
@@ -549,6 +567,12 @@
     function setDesign(design, so) {
       if (!design || !design.params) throw new Error("conceptView.setDesign: a Design { params } is required");
       so = so || {};
+      // a livery (so.livery or the design's own) for another team or driver: the car is rebuilt in that livery once
+      if (pickLivery(o, so.livery || design.livery, design.driver) && s.car) {
+        s.car.dispose(); s.car = C.parts3d.createCar(carCtx); s.ghostParts = []; s.car.setHighlight(s.highlight);
+        if (s.mode === "xray-mass") s.car.setXray((id) => rampColor(Math.sqrt(((s.mass && s.mass.byId[id]) || 0) / ((s.mass && s.mass.max) || 1))));
+        s.tween = null; s.design = null;
+      }
       if (so.baseline !== undefined) { s.baseline = so.baseline ? JSON.parse(JSON.stringify(so.baseline)) : null; s.baseMass = s.baseline ? massOf(s.baseline) : null; }
       const prev = s.design; s.design = JSON.parse(JSON.stringify(design));
       s.mass = massOf(s.design, so.mass);
@@ -628,12 +652,58 @@
       _debug: { scene, renderer, camera, s },
     };
   }
+  // ---------------------------------------------------------------- buildCar: the concept car as a standalone THREE.Group
+  // For another scene (e.g. the game's 3D Silverstone): no viewer, renderer, studio, label or camera. The frame is the game car's
+  // (js/carglb.js): metres, x forward, y up, z to the car's right, ground at y = 0, front axle centre at x = +1.75 (fixed), rear axle
+  // at x = 1.75 - wheelbase (m) (= -1.65 at the 3400 mm baseline; the game car's own is -1.85), wheel centres at y = tyre radius
+  // (group.userData.wheelCentreY, about 0.36). Place it like a game car: group.position on the racing line, group.rotation.y = heading.
+  //   const g = EI.conceptView.buildCar(design, { livery?, driver?, baseline?, lod?, straight? })
+  //   g.ready -> Promise<g> (immediately resolved when the game already has the GLB and liveries loaded; otherwise this loads them,
+  //   like mount() does). g.setDesign(design), g.setAero(t 0 = corner .. 1 = straight mode), g.dispose() (geometry, materials, livery
+  //   textures; removes itself from its parent). livery: "redbull-rb22" (default: the design's own, else Red Bull); baseline: a
+  //   Design whose differing parts are drawn as a purple ghost (omit for racing); lod: "hi" (2048 px livery, default) or "lo"
+  //   (1024 px). The paint is MeshPhysical with clear coat: it reads best with scene.environment set (an env map), as in the view.
+  function buildCar(design, bo) {
+    const THREE = T(); bo = bo || {};
+    if (!THREE) throw new Error("conceptView.buildCar: load vendor/three.min.js first");
+    if (!parts && bo.parts && bo.parts.geometry) parts = bo.parts;
+    if (!parts) throw new Error("conceptView.buildCar: load concept/regs.js and concept/parts.js first");
+    if (!design || !design.params) design = C.design ? C.design.baseline("redbull") : baselineDesign();
+    const o = Object.assign({}, DEFAULTS, { liverySize: bo.lod === "lo" ? 1024 : 2048 });
+    if (bo.driver != null) o.driver = bo.driver;
+    pickLivery(o, bo.livery || design.livery || "redbull", bo.driver != null ? null : design.driver);
+    const group = new THREE.Group(); group.name = "concept-car";
+    const carRoot = new THREE.Group(), ghostRoot = new THREE.Group(), hiRoot = new THREE.Group(), mirror = new THREE.Group();   // mirror: not attached (no studio floor here)
+    group.add(carRoot, ghostRoot, hiRoot);
+    let car = null, disposed = false, cur = design, flap = bo.straight ? 1 : 0;
+    const apply = () => {
+      if (!car) return;
+      car.setLayout(layout(cur.params));
+      if (bo.baseline && bo.baseline.params) car.setGhost(layout(bo.baseline.params)); else car.hideGhost();
+      car.setFlaps(flap);
+      let wy = 0; for (const r of car._recs) if (/^wheel_f.*_tyre$/.test(r.name)) { let lo = Infinity, hi = -Infinity; const P = r.base; for (let i = 1; i < P.length; i += 3) { lo = Math.min(lo, P[i]); hi = Math.max(hi, P[i]); } wy = (lo + hi) / 2; break; }
+      group.userData = { units: "m", forward: "+x", up: "+y", right: "+z", ground_y: 0, frontAxleX: GLB.FA, rearAxleX: wx(car._S.L.XR), wheelCentreY: wy, design_id: cur.id || null, team: o.team, driver: o.driver };
+    };
+    const make = () => { if (disposed) return group; car = C.parts3d.createCar({ THREE, o, carRoot, mirror, ghostRoot, hiRoot }); apply(); return group; };
+    const have = !!(EI.CarGLB && EI.CarGLB.ready && EI.CarGLB.cache && EI.CarGLB.cache.hi && C.parts3d && EI.TEAM_BY_ID && EI.LIVERIES);
+    group.ready = have ? Promise.resolve(make()) : ensureAssets().then(make);
+    group.setDesign = (d) => { if (!d || !d.params) throw new Error("buildCar.setDesign: a Design { params } is required"); cur = d; apply(); return group; };
+    group.setAero = (t) => { flap = clamp(+t || 0, 0, 1); if (car) car.setFlaps(flap); return group; };
+    group.dispose = () => {
+      if (disposed) return; disposed = true;
+      if (car) car.dispose(); car = null;
+      for (const g of [carRoot, ghostRoot, hiRoot, mirror]) while (g.children.length) g.remove(g.children[0]);
+      if (group.parent) group.parent.remove(group);
+    };
+    return group;
+  }
+
   function baselineDesign() {
     const params = {}; for (const p of parts.CATALOGUE) { params[p.id] = {}; for (const k of Object.keys(p.params)) params[p.id][k] = p.params[k].base; }
     return { id: "baseline", label: "Baseline", params };
   }
 
-  const api = { mount, layout, LABEL, EFFECTS, VIEWS, FIX, GLB, DEFAULTS, RAMP, REGIONS, reducedMotion, labelText: () => LABEL,
+  const api = { mount, buildCar, layout, LABEL, EFFECTS, VIEWS, FIX, GLB, DEFAULTS, RAMP, REGIONS, reducedMotion, labelText: () => LABEL,
     _internal: { paintMaterial, helmetMaterial, coverMaterial, tyreWallTexture, overlayMaterial, rampColor, wx, srgb, ss, sstep, lerp, clamp, rad, RID } };
   EI.conceptView = api; C.view = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;

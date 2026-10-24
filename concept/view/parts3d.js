@@ -61,10 +61,11 @@
   }
   const FOIL_MAIN = foil(0.075, 0.42, 0.115, 22), FOIL_FLAP = foil(0.095, 0.4, 0.085, 18);
   // element angles (deg) from the wing setting: main plane low, flaps around the setting (their mean = the setting, schematic scale)
-  function elementAngles(n, aoa, mainK) {
+  function elementAngles(n, aoa, mainK, flapK) {
+    flapK = flapK || 1;
     if (n <= 1) return [0.5 * aoa];
     const out = [mainK * aoa], f = n - 1;
-    for (let i = 0; i < f; i++) out.push(aoa * (f === 1 ? 1 : 0.8 + 0.4 * i / (f - 1)));
+    for (let i = 0; i < f; i++) out.push(flapK * aoa * (f === 1 ? 1 : 0.8 + 0.4 * i / (f - 1)));
     return out;
   }
   const SHARES = { 1: [1], 2: [1, 0.62], 3: [1, 0.56, 0.46], 4: [1, 0.5, 0.42, 0.36] };
@@ -97,15 +98,22 @@
   // loft of rings (equal length arrays of [x, y, z] world metres) -> indexed BufferGeometry, smooth normals; closed: wrap each ring
   function loftGeo(THREE, rings, o) {
     o = o || {}; const nR = rings.length, nP = rings[0].length, closed = !!o.closed, caps = !!o.caps;
-    const nV = nR * nP + (caps ? 2 * (nP + 1) : 0), pos = new Float32Array(nV * 3), uv = new Float32Array(nV * 2); let v = 0;
+    const nV = nR * nP + (caps ? 2 * nP : 0), pos = new Float32Array(nV * 3), uv = new Float32Array(nV * 2); let v = 0;
     const put = (p, u, w) => { pos[v * 3] = p[0]; pos[v * 3 + 1] = p[1]; pos[v * 3 + 2] = p[2]; uv[v * 2] = u; uv[v * 2 + 1] = w; return v++; };
     for (let r = 0; r < nR; r++) for (let i = 0; i < nP; i++) put(rings[r][i], i / (nP - 1), r / (nR - 1));
     const idx = [], segs = closed ? nP : nP - 1;
     for (let r = 0; r < nR - 1; r++) for (let i = 0; i < segs; i++) { const a = r * nP + i, b = r * nP + (i + 1) % nP, c = a + nP, e = b + nP; idx.push(a, c, b, b, c, e); }
+    // caps: the end ring triangulated in its own plane (ear clipping, so a concave section such as a floor with its venturi notch
+    // or a diffuser's open tunnel is not filled across), on the two axes the ring spans most
     if (caps) for (const ri of [0, nR - 1]) {
-      const ring = rings[ri], cen = [0, 0, 0]; for (const p of ring) { cen[0] += p[0] / nP; cen[1] += p[1] / nP; cen[2] += p[2] / nP; }
-      const c0 = put(cen, 0.5, 0.5), st = v; for (const p of ring) put(p, 0.5, 0.5);
-      for (let i = 0; i < nP - (closed ? 0 : 1); i++) idx.push(c0, st + i, st + (i + 1) % nP);
+      const ring = rings[ri], lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
+      for (const p of ring) for (let a = 0; a < 3; a++) { lo[a] = Math.min(lo[a], p[a]); hi[a] = Math.max(hi[a], p[a]); }
+      const ext = [0, 1, 2].map(a => hi[a] - lo[a]), drop = ext.indexOf(Math.min(...ext)), ax = [0, 1, 2].filter(a => a !== drop);
+      const pts2 = ring.map(p => new THREE.Vector2(p[ax[0]], p[ax[1]]));
+      const st = v; for (const p of ring) put(p, 0.5, 0.5);
+      let tris = [];
+      try { tris = THREE.ShapeUtils.triangulateShape(pts2, []); } catch (e) { tris = []; }
+      for (const t of tris) idx.push(st + t[0], st + t[1], st + t[2]);
     }
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.BufferAttribute(pos, 3)); g.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
@@ -154,8 +162,8 @@
   function createCar(ctx) {
     const { THREE, o, carRoot, mirror, ghostRoot, hiRoot } = ctx, V = C.view._internal, GLB = C.view.GLB, FIX = C.view.FIX, G = EI.CarGLB;
     const RID = V.RID, wx = V.wx;
-    const team = (EI.TEAM_BY_ID && EI.TEAM_BY_ID[o.team]) || (EI.TEAMS && EI.TEAMS[0]);
-    const drv = (team.drivers || [])[o.driver || 0] || null;
+    const team = (EI.TEAM_BY_ID && (EI.TEAM_BY_ID[o.team] || EI.TEAM_BY_ID.redbull)) || (EI.TEAMS && EI.TEAMS[0]);
+    const ds = team.drivers || [], drv = (typeof o.driver === "string" ? ds.find(d => d.code === o.driver) : ds[o.driver || 0]) || ds[0] || null;
     const car = { team, num: drv ? drv.num : 1, driver: drv, isPlayer: false, name: null };
     const code = G.carCode(car);
     const disposables = [];
@@ -168,7 +176,7 @@
     const helmetM = keep(V.helmetMaterial(car)), coverM = keep(V.coverMaterial(team));
     let sharedCarbon = null; G.cache.hi.traverse((m) => { if (m.isMesh && m.material && m.material.name === "carbon" && !sharedCarbon) sharedCarbon = m.material; });
     const carbon2 = (() => { const m = sharedCarbon.clone(); m.onBeforeCompile = sharedCarbon.onBeforeCompile; m.customProgramCacheKey = sharedCarbon.customProgramCacheKey; m.side = THREE.DoubleSide; m.envMapIntensity = 0.5; return keep(m); })();
-    const floorCarbon = (() => { const m = carbon2.clone(); m.onBeforeCompile = sharedCarbon.onBeforeCompile; m.customProgramCacheKey = sharedCarbon.customProgramCacheKey; m.color = new THREE.Color(0.62, 0.62, 0.66); m.clearcoat = 0.2; m.envMapIntensity = 0.35; return keep(m); })();
+    const floorCarbon = (() => { const m = carbon2.clone(); m.onBeforeCompile = sharedCarbon.onBeforeCompile; m.customProgramCacheKey = sharedCarbon.customProgramCacheKey; m.color = new THREE.Color(0.5, 0.5, 0.54); m.clearcoat = 0; m.roughness = 0.78; m.envMapIntensity = 0.12; return keep(m); })();   // matte: a big flat floor under a clear coat mirrors the overhead softbox as a white sheet
     const solid = (hex, o2) => keep(V.paintMaterial(null, Object.assign({ color: hex }, o2 || {})));
     const fwMainPainted = !!(EI.LIVERIES && EI.LIVERIES.hasFrontWing && EI.LIVERIES.hasFrontWing(team.id));
     const M = {
@@ -377,7 +385,7 @@
     function rwData(L) {
       const rw = L.rw, h = rw.span / 2, NS = 29, st = [];
       for (let j = 0; j < NS; j++) { const t = j / (NS - 1), s = -Math.cos(Math.PI * t); st.push(h * Math.sign(s) * Math.pow(Math.abs(s), 0.85)); }
-      const ang = elementAngles(rw.n, rw.aoa, 0.32), base = chain(rw.n, ang, rw.chord);
+      const ang = elementAngles(rw.n, rw.aoa, 0.5, 1.7), base = chain(rw.n, ang, rw.chord);
       // the stack's top TE sits 30 mm under the endplate top
       let top = -1e9; for (const e of base) top = Math.max(top, e.le[1] + e.c * Math.sin(e.a), e.le[1]);
       const zLE = rw.E - 30 - top - 12;
@@ -581,8 +589,9 @@
 
     // ---- overlays: highlight (amber) on the current geometry, the baseline ghost (purple), the straight-mode outline (white)
     const hiMat = keep(V.overlayMaterial({ color: o.highlightColor, base: 0.22, rim: 0.85, alpha: 0.9 }));
-    const ghostMat = keep(V.overlayMaterial({ color: o.ghostColor, base: 0.16, rim: 1.1, alpha: 0.95 }));
-    const ghostHid = keep(V.overlayMaterial({ color: o.ghostColor, base: 0.05, rim: 0.3, alpha: 0.7, hidden: true }));
+    // the ghost reads as a purple outline (Fresnel rim, faint fill) so the design's own livery stays readable under it
+    const ghostMat = keep(V.overlayMaterial({ color: o.ghostColor, base: 0.02, rim: 1.0, alpha: 0.85, rimPow: 3.2 }));
+    const ghostHid = keep(V.overlayMaterial({ color: o.ghostColor, base: 0.0, rim: 0.3, alpha: 0.3, hidden: true, rimPow: 3.2 }));
     const xrMats = new Map();
     const smLine = keep(new THREE.LineBasicMaterial({ color: V.srgb(0xf2f2f6), transparent: true, opacity: 0.9, depthWrite: false }));
     const ghostLine = keep(new THREE.LineBasicMaterial({ color: V.srgb(o.ghostColor), transparent: true, opacity: 1, depthWrite: false }));
