@@ -32,6 +32,9 @@ window.EI = window.EI || {};
   // start/finish line is at track.sf): Maggotts 3,631 / Becketts 3,875 / Chapel 4,033-4,167 m in js/data/silverstone.js; Monza: Lesmo 1-2.
   // The same numbers as lab/aero.js REF_CORNER (not loaded here). ARCHITECTURE §9's 2,850-3,250 m predates the corner table.
   const LAB_REF_CORNER = { silverstone: [3600, 4200], monza: [2150, 2700] };
+  // PURPLE CONCEPT (docs/concept/RACE.md): ?concept=1 = the concept race page's physics replay; js/conceptrace.js drives the cars along the
+  // physics lap sim's own trace (no AI, no game lap model). Without the flag (or with ?lab=1) CONCEPT is null and nothing of this runs.
+  const CONCEPT = !LAB && EI.ConceptRace && EI.ConceptRace.active ? EI.ConceptRace : null;
   let views = [];   // the cars the cameras and the HUD follow: race.players in the shipped game, the lab's first (baseline) car in broadcast mode
 
   let composer = null, bloomPass = null, fxaaPass = null, speedPass = null, particles = null, skyMesh = null;
@@ -248,7 +251,7 @@ window.EI = window.EI || {};
     EI.HUD.drawTrackPreview(track, $('track-preview')); fillTrackCard(track.data);
     setupMenu(); drawPartnerLogos();
     // the GLB car is optional: hide the loading overlay once it is in (or has failed and we fall back to the procedural car)
-    const hideLoading = () => { $('loading').classList.add('hidden'); loaded = true; if (LAB) labStart(); };
+    const hideLoading = () => { $('loading').classList.add('hidden'); loaded = true; if (LAB) labStart(); else if (CONCEPT) CONCEPT.start(EI.debug); };
     const tp = performance.now(); if (EI.CarGLB) EI.CarGLB.preload().then(() => { timings.preload = Math.round(performance.now() - tp); hideLoading(); }, hideLoading); else hideLoading();
     window.addEventListener('resize', onResize);
     if (U.isTouch()) EI.Input.initTouch($('touch'));
