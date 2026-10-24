@@ -39,4 +39,4 @@ async function main() {
   fs.writeFileSync(a.out.replace(/\.json$/, "-log.json"), JSON.stringify(log, null, 1));
   console.log("rollout exam: adapter answers " + got + "/" + qs.length + " · calls " + log.length + " (provider " + log.filter(r => r.served_by === "provider").length + ") -> " + path.relative(ROOT, a.out));
 }
-main().catch(e => { console.error("rollout exam:", e.status || "", e.message); process.exit(2); });
+if (require.main === module) main().catch(e => { console.error("rollout exam:", e.status || "", e.message); process.exit(2); });
