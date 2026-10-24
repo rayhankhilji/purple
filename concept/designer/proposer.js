@@ -31,7 +31,7 @@
     for (let i = 0; i < str.length; i++) { const c = str.charCodeAt(i); h1 = Math.imul(h1 ^ c, 0x01000193) >>> 0; h2 = Math.imul(h2 ^ c, 0x5bd1e995) >>> 0; }
     return ("0000000" + h1.toString(16)).slice(-8) + ("0000000" + h2.toString(16)).slice(-8);
   }
-  const articlesOf = viol => Array.from(new Set(viol.map(v => scenario.shortArticle(v.article))));
+  const articlesOf = viol => Array.from(new Set(viol.map(v => (v.id && scenario.articleOf ? scenario.articleOf(v.id) : scenario.shortArticle(v.article)))));
   const lapSign = dlap => (dlap > 0.0005 ? 1 : dlap < -0.0005 ? -1 : 0);
   function biggestSector(before, after) {
     if (!before || !after) return null;

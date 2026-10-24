@@ -386,6 +386,8 @@ function createApp(opts) {
     if (b.n > COLLECT_MAX_N) throw new ApiError("BAD_INPUT", "n must be <= " + COLLECT_MAX_N + " per request (budget guard)");
     return ok(c, await collect(b.n, { with_rules: !!b.with_rules, seed: b.seed, circuit: b.circuit, promote_bias: b.promote_bias }));
   });
-  return { app, emit, db, state, setState, runPlan, collect, dryCollect, runExam, statusView, EI };
+  // ---- the concept designer's closed loop with Mubit (server/concept.js, docs/concept/LOOP.md); mock runs never write to data/
+  const concept = require("./concept.js").mount(app, { ok, fail, body, ApiError, mock, dataDir: resolved.dir, mockDir: opts.dataDir ? resolved.dir : path.join(headless.ROOT, "data-mock"), mubit: opts.conceptMubit, log });
+  return { app, emit, db, state, setState, runPlan, collect, dryCollect, runExam, statusView, EI, concept };
 }
 module.exports = { createApp, ApiError, STATUS, seededRng, mockMode, resolveDataDir };
