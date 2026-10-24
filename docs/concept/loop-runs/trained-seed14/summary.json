@@ -1,0 +1,45 @@
+{
+  "mode": "live",
+  "run_id": "loop-01m5pgtszjpz3ntq4z5ph094rp",
+  "session_id": "loop-01m5pgtszjpz3ntq4z5ph094rp",
+  "iterations": 15,
+  "kept": 2,
+  "kept_by_proposer": {
+    "llm": 2
+  },
+  "designer": {
+    "generations": 15,
+    "llm_calls": 15,
+    "llm_accepted": 13,
+    "fallback": 2,
+    "reasons": {
+      "illegal": 1,
+      "duplicate": 1
+    },
+    "designs_seen": 16
+  },
+  "trained": true,
+  "lap_baseline_s": 88.752,
+  "lap_best_s": 88.667,
+  "d_lap_s": -0.085,
+  "gap_to_pole_s": 0.556,
+  "request_ids": [
+    "mreq_01a16d0d71df7440b013b0d62cbf647f",
+    "mreq_01a16d0d7f8a78a2bd9efb3d7aec6d5f",
+    "mreq_01a16d0d8afc77f3a898d39e9805bff3",
+    "mreq_01a16d0d94707f218d92d0895a971ff5",
+    "mreq_01a16d0d9fbc71c2af1409a7cbdaa054",
+    "mreq_01a16d0da9097110a0817741eea1bc7f",
+    "mreq_01a16d0db2ae7a518af305ebf041741f",
+    "mreq_01a16d0dbf02769189ec7d6454246b81",
+    "mreq_01a16d0dc8737d018dc77ae99d5f956c",
+    "mreq_01a16d0dd3167ca19bf704e82e04e8ac",
+    "mreq_01a16d0ddc837b60aca8b26f4f410213",
+    "mreq_01a16d0de6147211bfa4ec8b55ae43a9",
+    "mreq_01a16d0def7e7c22b6455185dbed9a24",
+    "mreq_01a16d0df8827611acfc98d2862e0c6e",
+    "mreq_01a16d0e021e748199704fb13b2ca5b9"
+  ],
+  "label": "physics lap sim · quasi-steady-state point mass · Silverstone OSM centreline · calibrated to 2026 British GP qualifying",
+  "kept_rule": "kept = legal && score_after > score_before (concept/optimize.js; weekend score, monotonic in the simulated lap); the model's output has no verdict field"
+}
