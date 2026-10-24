@@ -11,7 +11,9 @@
 //   POST /run                   { mode: "speed" | "auto" | "engineer", ... } -> { run_id, stream } (one engine run at a time);
 //                               "engineer" = engine v2 (concept/engineer/engine.js, docs/concept/ENGINE_V2.md): llm, trained, confirm,
 //                               confirm_text, max_calls, max_decisions, seed, team, variants, confirm_k (K), explore, patience, stop_after,
-//                               workers, resume_from (a finished engineer run of this process) | resume_state (its final state)
+//                               workers, resume_from (a finished engineer run of this process) | resume_state (its final state),
+//                               record_good (live only: every designer call untrained; a decision whose proposal as proposed is legal
+//                               and faster is re-sent as the identical TRAINED call, SSE "training_example"; concept/engineer/record-good.js)
 //   POST /run/:id/stop          cooperative stop: the run ends after its current batch; the best car so far is re-scored
 //   GET  /run/:id               the run's state;  GET /run/:id/stream: SSE (snapshot first, then live events, then "end")
 //   GET  /runs                  the runs of this process
@@ -33,7 +35,7 @@ const run = require("../concept/campaign/run.js"), space = require("../concept/c
 const { Pool } = require("../concept/campaign/pool.js"), { localSearch } = require("../concept/campaign/local.js");
 const loop = require("../concept/designer/loop.js"), scenario = require("../concept/designer/scenario.js"), designerPrompt = require("../concept/designer/prompt.js");
 const conceptRoutes = require("./concept.js");
-const engineer = require("../concept/engineer/engine.js"), { ScreenPool } = require("../concept/engineer/screen.js"), { Tree } = require("../concept/engineer/tree.js");
+const engineer = require("../concept/engineer/engine.js"), recordGood = require("../concept/engineer/record-good.js"), { ScreenPool } = require("../concept/engineer/screen.js"), { Tree } = require("../concept/engineer/tree.js");
 
 const CIRCUIT = "silverstone";
 const BUDGET_TOTAL = 100000;         // EVAL_GUARDRAILS §4: trained calls, the whole project (research agent + designer); owner raised 250 → 2,500 → 100,000 on 2026-10-24 (own Anthropic key inside Mubit)
@@ -258,7 +260,7 @@ function mount(app, o) {
   const int = (b, k, def, [lo, hi]) => { const v = b[k] == null ? def : b[k]; if (!Number.isInteger(v) || v < lo || v > hi) throw bad(k + " must be an integer " + lo + "-" + hi); return v; };
   const budget = () => trainedBudget(root, [o.dataDir, path.join(root, "data")]);
   const tmpBase = o.tmpDir || path.join(os.tmpdir(), "purple-engine");
-  const view = r => ({ run_id: r.id, mode: r.mode, llm: r.llm || null, trained: !!r.trained, status: r.status, stop_reason: r.stop_reason || null, started_at: r.started_at, finished_at: r.finished_at || null, error: r.error || null, dir: r.dir, opts: r.opts, stream: "/api/concept/engine/run/" + r.id + "/stream" });
+  const view = r => ({ run_id: r.id, mode: r.mode, llm: r.llm || null, trained: !!r.trained, record_good: !!r.record_good, status: r.status, stop_reason: r.stop_reason || null, started_at: r.started_at, finished_at: r.finished_at || null, error: r.error || null, dir: r.dir, opts: r.opts, stream: "/api/concept/engine/run/" + r.id + "/stream" });
 
   function newRun(mode, opts, dir) {
     const id = "eng-" + ulid().toLowerCase();
@@ -438,10 +440,12 @@ function mount(app, o) {
     const mode = b.llm == null ? "mock" : b.llm;
     if (!["mock", "live"].includes(mode)) throw bad("llm must be \"mock\" or \"live\"");
     if (b.trained !== undefined && typeof b.trained !== "boolean") throw bad("trained must be a boolean");
-    const trained = b.trained === true, team = checkTeam(b.team);
-    const max_calls = int(b, "max_calls", trained ? 10 : mode === "live" ? 20 : 40, LIMITS.calls);
+    if (b.record_good !== undefined && typeof b.record_good !== "boolean") throw bad("record_good must be a boolean");
+    const trained = b.trained === true, record_good = b.record_good === true, team = checkTeam(b.team);
+    if (record_good && trained) throw bad("record_good and trained exclude each other: with record_good every designer call is untrained and only physics-approved decisions are re-sent as trained calls");
+    const max_calls = int(b, "max_calls", trained || record_good ? 10 : mode === "live" ? 20 : 40, LIMITS.calls);
     const opts = {
-      llm: mode, trained, team: team || "generic", seed: int(b, "seed", 1, [0, 999999]), max_calls, max_decisions: int(b, "max_decisions", max_calls, LIMITS.iterations),
+      llm: mode, trained, record_good, team: team || "generic", seed: int(b, "seed", 1, [0, 999999]), max_calls, max_decisions: int(b, "max_decisions", max_calls, LIMITS.iterations),
       patience: int(b, "patience", 3, [1, 10]), stop_after: int(b, "stop_after", 15, LIMITS.patience), variants: int(b, "variants", 3000, LIMITS.variants), confirm: int(b, "confirm_k", 24, LIMITS.confirm),
       explore: int(b, "explore", 4, [0, 16]), target_lap_s: b.target_lap_s == null ? null : +b.target_lap_s, pace_ms: int(b, "pace_ms", 0, LIMITS.pace_ms),
       workers: int(b, "workers", o.workers == null ? Math.min(4, os.cpus().length) : o.workers, [0, 16]), resume_from: b.resume_from || null,
@@ -450,8 +454,9 @@ function mount(app, o) {
     if (mode === "live" && o.mock) throw bad("live mode is off: this server runs with MUBIT_MOCK=1 (no Mubit calls). Use llm \"mock\".");
     if (mode === "live" && !o.mubit && !process.env.MUBIT_API_KEY) throw bad("live mode needs MUBIT_API_KEY in server/.env");
     let bud = null;
-    if (trained) {
-      if (mode !== "live") throw bad("trained calls are live calls: set llm \"live\"");
+    // record_good makes at most one trained re-send per decision (= per designer call), so the same guards apply to max_calls
+    if (trained || record_good) {
+      if (mode !== "live") throw bad(record_good ? "record_good sends trained calls, which are live calls: set llm \"live\"" : "trained calls are live calls: set llm \"live\"");
       if (b.confirm !== "trained") throw bad("confirm must be \"trained\": trained designer calls are recorded by Mubit as examples of the designer task");
       if (max_calls > TRAINED_RUN_CAP) throw bad("max_calls for a trained run is capped at " + TRAINED_RUN_CAP + " (hard per-run cap)", { cap: TRAINED_RUN_CAP });
       if (b.confirm_text !== "TRAIN " + max_calls) throw bad("type the confirmation exactly: TRAIN " + max_calls);
@@ -471,17 +476,23 @@ function mount(app, o) {
     }
     if (resume && resume.tree && resume.tree.nodes && resume.tree.nodes[0] && resume.tree.nodes[0].team !== (team || null)) throw bad("resume: the saved run is for another baseline (team)");
     const dir = mode === "live" ? path.join(o.dataDir, "concept-engine") : tmpBase;
-    const r = newRun("engineer", opts, dir); r.llm = mode; r.trained = trained;
-    const calls = { n: 0 };
+    const r = newRun("engineer", opts, dir); r.llm = mode; r.trained = trained; r.record_good = record_good;
+    const calls = { n: 0, trained_examples: 0 };
     const write = (f, row) => { try { fs.appendFileSync(path.join(r.dir, f), JSON.stringify(row) + "\n"); } catch (e) { /* fine */ } };
     fs.writeFileSync(path.join(r.dir, "calls.jsonl"), "");
     const caller = mode === "mock" ? loop.mockCaller(opts.seed + (resume ? resume.decisions.length : 0)) : conceptRoutes.designerLlm(o.mubit, designerPrompt);   // Mubit only through server/mubit.js
+    // record_good: physics-approved decisions re-sent as trained calls (written to calls.jsonl with trained: true, so the budget counts them)
+    const rec = record_good ? recordGood.recorder(caller, {
+      onExample: (ex, res, meta) => { calls.trained_examples++; write("calls.jsonl", { created_at: now(), kind: "design", engine: "engineer-v2", session_id: meta.sessionId, iteration: meta.gen, trained: true, mock: false, record_good: true, mubit_request_id: res.mubit_request_id || null, served_by: res.served_by || null, model: res.model || null, input_tokens: res.input_tokens, output_tokens: res.output_tokens, latency_ms: res.latency_ms, same_answer: ex.same_answer, status: "ok" }); r.push("training_example", Object.assign({ trained_examples: calls.trained_examples }, ex)); },
+      onError: (ex, e, meta) => { write("calls.jsonl", { created_at: now(), kind: "design", engine: "engineer-v2", session_id: meta.sessionId, iteration: meta.gen, trained: true, mock: false, record_good: true, mubit_request_id: (e && e.requestId) || null, status: "error", mubit_code: (e && e.code) || null, http_status: (e && e.status) || null }); r.push("training_example", Object.assign({ trained_examples: calls.trained_examples }, ex)); },
+    }) : null;
     const llm = async (text, meta) => {
       if (calls.n >= max_calls) { const e = new Error("call budget of this run spent"); e.code = "run_cap"; throw e; }
+      if (rec) await rec.before();   // one call in flight per run: a pending trained re-send finishes first
       calls.n++;
       const row = { created_at: now(), kind: "design", engine: "engineer-v2", session_id: meta.sessionId, iteration: meta.gen, trained: !!meta.trained, mock: mode === "mock" };
       const t0 = hr();
-      try { const res = await caller(text, meta); const ms = hr() - t0; timings.add("mubit_call", mode === "mock" ? ms : (res.latency_ms == null ? ms : res.latency_ms), { mode }); write("calls.jsonl", Object.assign(row, { mubit_request_id: res.mubit_request_id, model: res.model, input_tokens: res.input_tokens, output_tokens: res.output_tokens, latency_ms: res.latency_ms == null ? Math.round(ms) : res.latency_ms, status: "ok" })); return res; }
+      try { const res = await caller(text, meta); const ms = hr() - t0; timings.add("mubit_call", mode === "mock" ? ms : (res.latency_ms == null ? ms : res.latency_ms), { mode }); write("calls.jsonl", Object.assign(row, { mubit_request_id: res.mubit_request_id, model: res.model, input_tokens: res.input_tokens, output_tokens: res.output_tokens, latency_ms: res.latency_ms == null ? Math.round(ms) : res.latency_ms, status: "ok" })); if (rec) rec.seen(text, meta, res); return res; }
       catch (e) { write("calls.jsonl", Object.assign(row, { mubit_request_id: e.requestId || null, status: "error", mubit_code: e.code || null, http_status: e.status || null })); throw e; }
     };
     const st = r.state;
@@ -500,17 +511,20 @@ function mount(app, o) {
               st.best.engineer = { lap_s: data.peak.lap_s, node: data.peak.node }; st.laps = data.stats.physics_laps; st.rate = data.stats.laps_per_s;
               write("decisions.jsonl", data.row);
               Object.assign(data, { calls: calls.n, grid_position: gridOf(data.peak.lap_s) });
+              // record_good: "pending" = an approved decision being re-sent as a trained call (its "training_example" event follows)
+              if (rec) data.training_example = rec.decision(data.row) ? "pending" : "not trained";
             }
             if (type === "progress") return r.push("progress", data, false);
             r.push(type, data);
           },
         });
+        if (rec) await rec.drain();   // the last approved decision's re-send settles before the final event
         r.engState = res.state;
         try { fs.writeFileSync(path.join(r.dir, "state.json"), JSON.stringify(res.state) + "\n"); fs.writeFileSync(path.join(r.dir, "tree.json"), JSON.stringify(res.tree.compact(["root", "result", "proposal", "projected", "repaired", "candidate", "explore", "alone"])) + "\n"); } catch (e) { /* fine */ }
         if (!r.stop_reason) r.stop_reason = res.stopped || "decision cap";
         const base0 = design.baseline(team ? { team } : undefined);
         let rs = null; try { rs = rescore(Object.assign(design.clone(base0), { params: res.peak.params }), base0, team); } catch (e) { rs = { error: String(e.message || e) }; }
-        r.final = { summary: engineer.summaryOf(res), calls: calls.n, stop_reason: r.stop_reason, rescore: rs, best_params: res.peak.params, tree: res.tree.compact(), resumable: { resume_from: r.id, decisions: res.decisions.length } };
+        r.final = { summary: engineer.summaryOf(res), calls: calls.n, trained_examples: record_good ? calls.trained_examples : undefined, stop_reason: r.stop_reason, rescore: rs, best_params: res.peak.params, tree: res.tree.compact(), resumable: { resume_from: r.id, decisions: res.decisions.length } };
         r.push("final", Object.assign({ timings: timings.view(), budget: budget() }, r.final));
       } finally { await pool.close(); await sp.close(); }
     });
