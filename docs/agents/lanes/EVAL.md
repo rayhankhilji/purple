@@ -1,8 +1,13 @@
 # Lane EVAL
 
-Status: done P2.T5, P2.T6, P3.T1 prep + scorer + README (PR for the README addendum open); idle until v2 trains. Owner: agent C (session `session_01Ma6U13odw1SA1vFhepRj8u`). Branch: `claude/eval-p3-expect`.
+Status: done through P3.T1 (sheet, scorer, README with real provider baseline; PR open); idle until v2 trains. Owner: agent C (session `session_01Ma6U13odw1SA1vFhepRj8u`). Branch: `claude/eval-p3-expect2`.
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
+
+### 2026-10-24 03:55 London — agent C (EVAL) — Try-models README: real provider answers in "What to expect"
+- Status: done; `npm test` 74/74. Branch `claude/eval-p3-expect2` (from the integration branch after PR #19 and SERVER's exam-details persistence merged). Docs only; no Mubit calls.
+- What: the "What to expect" table now shows the provider's actual answers from `status.exam.details` (snapshot `docs/ledger-snapshot/2026-10-24_02-14-07Z-0350-exam-details/status.json`, exam re-run 20/20 · 10/20): verdict right on all 8 sheet items, next step right only on `exam-rw8`; `rear_wing_deg decrease` on 02, 05, 14, 16, 20, `front_wing_deg increase` on 03, `brake_bias_pct increase` on 15 (truth: `ride_height_mm` on all seven). Reading notes for a live Side-by-side kept; the earlier "not persisted" wording removed.
+- Blockers / questions for Tanuj: none. Next: idle until v2 trains; then `npm run exam:score`.
 
 ### 2026-10-24 02:30 London — agent C (EVAL) — Try-models README "What to expect" (optional item from the integrator)
 - Status: done; `npm test` 74/74. Branch `claude/eval-p3-expect` (from the integration branch after PR #15 merged). No Mubit calls; nothing but `docs/try-models/README.md` and this file changed.

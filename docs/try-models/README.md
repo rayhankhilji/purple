@@ -30,21 +30,25 @@ Timing notes from the docs: the first start of Try models "can take a few minute
 
 Screenshots for the deck (P3.T1): one per model with the Side by side view showing the JSON answer, plus the console's History row with the version's `Passed` result.
 
-## What to expect, item by item (derived, no new calls)
+## What to expect, item by item (the provider's actual answers)
 
-The provider (claude-haiku-4-5, untrained) scored **20/20 verdicts and 10/20 next-steps** on the full exam (`npm run exam`, 2026-10-23 23:27). Its per-item answers were not stored (the calls log keeps ids and token counts, not the reply text), so the table below does not quote them; it lists what is known and what a wrong adapter answer looks like. Because the provider got every verdict right, **the provider's verdict on each sheet item equals the truth column**; a Side-by-side where the adapter's verdict differs from the provider's is a verdict miss by construction.
+The provider (claude-haiku-4-5, untrained, temperature 0) scored **20/20 verdicts and 10/20 next-steps** on the full exam (`npm run exam`, 2026-10-24T02:13:37.626Z; per-item answers persisted in `status.exam.details`, copy in `docs/ledger-snapshot/2026-10-24_02-14-07Z-0350-exam-details/status.json`). On the 8 sheet items its verdict is right every time and its next step is right **only on `exam-rw8`**: it answers `rear_wing_deg decrease` almost everywhere, where the truth is a ride-height move. That is the baseline an adapter has to beat on next steps; on verdicts the bar is 8/8.
 
-| # | id | Δ lap (s) | truth | next step (truth) | a wrong answer looks like |
-|---|---|---|---|---|---|
-| 1 | `exam-rw8` | +0.436 | **reject** | rear_wing_deg decrease | `promote` or `retest` on a +0.436 s candidate (the demo premise: a model that loves downforce says keep the wing); next step anything but `rear_wing_deg decrease` (`front_wing_deg` is v1's habit) |
-| 2 | `exam-03` | +0.037 | **reject** | ride_height_mm decrease | `retest` on Δ +0.037 (just over the 0.03 line: a model that rounds will say retest); next step anything but `ride_height_mm decrease` |
-| 3 | `exam-02` | -0.015 | **retest** | ride_height_mm decrease | `reject` inside the ±0.03 band (-0.015 is inside the retest band); a model that only knows reject will say reject here. Next step: anything but `ride_height_mm decrease` (the candidate is already near the optimum on the parameters it moved; the one lever left is ride height mm) |
-| 4 | `exam-14` | +0.011 | **retest** | ride_height_mm decrease | `reject` inside the ±0.03 band (+0.011 is inside the retest band); a model that only knows reject will say reject here. Next step: anything but `ride_height_mm decrease` (the candidate is already near the optimum on the parameters it moved; the one lever left is ride height mm) |
-| 5 | `exam-15` | +0.009 | **retest** | ride_height_mm decrease | `reject` inside the ±0.03 band (+0.009 is inside the retest band); a model that only knows reject will say reject here. Next step: anything but `ride_height_mm decrease` (the candidate is already near the optimum on the parameters it moved; the one lever left is ride height mm) |
-| 6 | `exam-16` | -0.001 | **retest** | ride_height_mm decrease | `reject` inside the ±0.03 band (-0.001 is inside the retest band); a model that only knows reject will say reject here. Next step: anything but `ride_height_mm decrease` (the candidate is already near the optimum on the parameters it moved; the one lever left is ride height mm) |
-| 7 | `exam-20` | -0.001 | **retest** | ride_height_mm decrease | `reject` inside the ±0.03 band (-0.001 is inside the retest band); a model that only knows reject will say reject here. Next step: anything but `ride_height_mm decrease` (the candidate is already near the optimum on the parameters it moved; the one lever left is ride height mm) |
-| 8 | `exam-05` | +0.071 | **reject** | ride_height_mm increase | `retest` on Δ +0.071 (just over the 0.03 line: a model that rounds will say retest); next step anything but `ride_height_mm increase` |
+| # | id | Δ lap (s) | truth verdict | truth next step | provider verdict | provider next step | next step |
+|---|---|---|---|---|---|---|---|
+| 1 | `exam-rw8` | +0.436 | **reject** | rear_wing_deg decrease | reject ✓ | rear_wing_deg decrease | ✓ hit |
+| 2 | `exam-03` | +0.037 | **reject** | ride_height_mm decrease | reject ✓ | front_wing_deg increase | ✗ miss |
+| 3 | `exam-02` | -0.015 | **retest** | ride_height_mm decrease | retest ✓ | rear_wing_deg decrease | ✗ miss |
+| 4 | `exam-14` | +0.011 | **retest** | ride_height_mm decrease | retest ✓ | rear_wing_deg decrease | ✗ miss |
+| 5 | `exam-15` | +0.009 | **retest** | ride_height_mm decrease | retest ✓ | brake_bias_pct increase | ✗ miss |
+| 6 | `exam-16` | -0.001 | **retest** | ride_height_mm decrease | retest ✓ | rear_wing_deg decrease | ✗ miss |
+| 7 | `exam-20` | -0.001 | **retest** | ride_height_mm decrease | retest ✓ | rear_wing_deg decrease | ✗ miss |
+| 8 | `exam-05` | +0.071 | **reject** | ride_height_mm increase | reject ✓ | rear_wing_deg decrease | ✗ miss |
 
-Reading the eight together: five are **retest** items with Δ inside ±0.03 s. An adapter trained only on rejects (v1 saw 40 reject / 3 retest / 0 promote) will tend to say `reject` on all five, scoring about 3/8 on verdicts; that is the expected v1 picture, not a failure of the sheet. v2 saw 14 promote / 12 retest / 14 reject, so its retest verdicts are the thing to watch. On next steps the honest expectation is low for every model: seven of eight truths are `ride_height_mm decrease`, a lever no model saw rewarded before v2.
+How to read a Side-by-side live:
 
-Follow-up for SERVER (proposed in the EVAL lane file): persist `runExam`'s per-item `details` into `status.json` (`exam.details`) so the next provider run records the actual answers and this section can quote them.
+- **Verdict**: the provider column equals the truth on all eight, so an adapter verdict that differs from the provider's is a miss. Five items are `retest` with Δ inside ±0.03 s; an adapter trained only on rejects (v1 saw 40 reject / 3 retest / 0 promote) will tend to say `reject` on those five and land near 3/8. That is the expected v1 picture. v2 saw 14 promote / 12 retest / 14 reject, so its retest verdicts are the thing to watch.
+- **Next step**: seven of eight truths are `ride_height_mm decrease` (a lever no model saw rewarded before v2); the provider's reflex is `rear_wing_deg decrease`. An adapter that answers `ride_height_mm` on any of items 2–7 has already learned something the provider has not. `front_wing_deg` answers are v1's habit from its front-wing-only data.
+- Off the sheet the provider's next step was also wrong on `exam-09`, `exam-10`, `exam-11` (its 10/20 overall).
+
+Regenerate this table after a provider re-run: the answers are in `status.exam.details` (`GET /api/status`); the sheet's truth column never changes unless `data/exam.json` is rebuilt.
