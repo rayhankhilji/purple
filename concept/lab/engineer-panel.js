@@ -373,7 +373,7 @@
     await loadIndex();
     await loadReplay(qs.get("replay") || ((S.index.runs || [])[0] || {}).name);
     probeLive();
-    if (qs.get("view") !== "noai" && qs.get("autoplay") !== "0" && document.body.classList.contains("eng2-on")) { if (qs.get("autoplay") === "end") skipToEnd(); else play(); }
+    if (qs.get("view") !== "noai" && qs.get("view") !== "exam" && qs.get("autoplay") !== "0" && document.body.classList.contains("eng2-on")) { if (qs.get("autoplay") === "end") skipToEnd(); else play(); }
   }
   // test / demo hook
   EI.engineerPanel = { state: () => ({ mode: S.mode, status: S.status, run: S.runName, shown: S.shown, decisions: S.decisions.length, nodes: S.nodes.length, peak: S.peak, stats: liveStats(), liveOk: S.liveOk, liveWhy: S.liveWhy }), play, pause, skipToEnd, loadReplay, startRun, setView };

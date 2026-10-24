@@ -514,6 +514,9 @@
       if (s.disposed) return;
       s.raf = requestAnimationFrame(frame);
       if (document.hidden) return;
+      // a view inside a hidden panel (display: none, e.g. the concept lab's other views) draws nothing visible: skip the work; the
+      // ResizeObserver re-places the camera (dirty) when it is shown again
+      if (!container.clientWidth || !container.clientHeight) return;
       let moving = false;
       if (s.tween && s.car) {
         const k = clamp((t - (s.tween.t0 == null ? (s.tween.t0 = t) : s.tween.t0)) / MORPH_MS, 0, 1), e = EASE(k);

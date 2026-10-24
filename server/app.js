@@ -12,7 +12,7 @@ const { seededRng } = scenarios;   // the one canonical seeded rng (murmur3-mixe
 const prompt = require("../lab/prompt.js");
 const promptHash = require("./scripts/prompt-hash.js");
 
-const STATUS = { BAD_INPUT: 400, ILLEGAL_SETUP: 422, MUBIT_ERROR: 502, PARSE_ERROR: 502, NOT_FOUND: 404, INTERNAL: 500 };
+const STATUS = { BAD_INPUT: 400, ILLEGAL_SETUP: 422, MUBIT_ERROR: 502, PARSE_ERROR: 502, NOT_FOUND: 404, INTERNAL: 500, TOO_LARGE: 413, BUSY: 429 };
 class ApiError extends Error { constructor(code, message, extra) { super(message); this.code = code; this.extra = extra || {}; } }
 const now = () => new Date().toISOString();
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -389,6 +389,8 @@ function createApp(opts) {
   // ---- the concept designer's closed loop with Mubit (server/concept.js, docs/concept/LOOP.md); mock runs never write to data/
   const concept = require("./concept.js").mount(app, { ok, fail, body, ApiError, mock, dataDir: resolved.dir, mockDir: opts.dataDir ? resolved.dir : path.join(headless.ROOT, "data-mock"), mubit: opts.conceptMubit, log });
   const engine = require("./campaign-route.js").mount(app, { ok, body, ApiError, mock, dataDir: resolved.dir, mubit: opts.conceptMubit, log, root: headless.ROOT, workers: opts.engineWorkers, tmpDir: opts.engineTmpDir });   // the engine dashboard (docs/concept/DASHBOARD.md)
-  return { app, emit, db, state, setState, runPlan, collect, dryCollect, runExam, statusView, EI, concept, engine };
+  // the designer exam's grader (server/exam-route.js, the concept lab's Exam view): physics-sim grading of pasted console replies, no Mubit call
+  const examRoute = require("./exam-route.js").mount(app, { ok, ApiError, root: headless.ROOT, answersDir: opts.examAnswersDir, writable: opts.examWritable, workers: opts.examWorkers, poolFactory: opts.examPoolFactory, log });
+  return { app, emit, db, state, setState, runPlan, collect, dryCollect, runExam, statusView, EI, concept, engine, exam: examRoute };
 }
 module.exports = { createApp, ApiError, STATUS, seededRng, mockMode, resolveDataDir };
