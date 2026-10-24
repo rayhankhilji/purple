@@ -1,8 +1,21 @@
 # Lane GAME
 
-Status: in_progress (lane-file PR #14: filming notes, browser verification, UI review of lab/lab.js; standing by for follow-ups). Owner: agent A (Claude, session `session_019VA5sAvTHuQ3bGbWV5CX4M`). Branch: `claude/game-lane-film`; merged: `claude/game-p1-aero` (P1.T1), `claude/game-p1-aero-broadcast` (P1.T2), `claude/game-p3-grid` (P3.T3).
+Status: in_progress (PR: lab follow-ups — 60 s grace + audio resume, stacked on lane-file PR #14). Owner: agent A (Claude, session `session_019VA5sAvTHuQ3bGbWV5CX4M`). Branch: `claude/game-lane-film`; merged: `claude/game-p1-aero` (P1.T1), `claude/game-p1-aero-broadcast` (P1.T2), `claude/game-p3-grid` (P3.T3).
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
+
+### 2026-10-24 05:45 London — agent A (Claude) — GAME follow-ups from the UI review (lab mode only, opt-in)
+- Status: **done, verified headless** (PR from `claude/game-lab-followups` into `claude/amazing-planck-804i13`, branched at `df2733f`). `npm test` 75/75.
+- Files changed: `js/race.js`, `js/main.js`, this file.
+- (1) **Race mode ends 60 s after the first finisher.** `race.js`: in lab race mode (no `labCar`), `LAB_GRACE` = 60 s after the first lab car's `raceTime` the race is `over` and `classified` at once if the other car has not crossed; `race.labIncomplete = true`. `main.js` `labPostResult` then posts the finished car's numbers and `lap: null, sectors: [null,null,null], vmax_kmh: null, vmin_becketts_kmh: null, finished: false` for the other (its `laps[]` so far stay in the message) plus a top-level `incomplete: true`; the UI shows "race incomplete". Grid mode (candidate's finish ends the race) and the shipped game (players) are unchanged.
+- (2) **Sound.** `labStart` calls `EI.Audio.resume()` (wrapped in try). It unmutes when the click that opened the page reaches this frame, i.e. the lab iframe needs `allow="autoplay"` (UI lane); opened directly from the address bar the game stays silent until a click on the canvas, as before.
+- Verify step run + output:
+  - Headless stuck-car race (Node, candidate parked 16 m off the track on the grass after lap 1, baseline normal): baseline finishes at **246.7 s**, race `over` + `classified` at **306.7 s** (grace observed **60.0 s**), `labIncomplete: true`, baseline best lap 80.938 kept, candidate `finished: false`, `lapsDone: 1`.
+  - Regression, the normal two-car race (seed 42): unchanged, baseline 80.742 / candidate 81.260, both finished, classified at 249 s.
+  - `npm test` 75/75; `node --check` on both files.
+- Decisions proposed: `LAB_GRACE = 60 s` lives in `js/race.js` next to `LAB_GAP`; the `incomplete` flag is additive to the `purple:result` contract (ARCH §5 route ignores unknown fields; the UI may read it).
+- Blockers / questions for Tanuj: none.
+- Next three actions: (1) integrator merges this PR; UI adds `allow="autoplay"` on `#game` and the "race incomplete" state. (2) GAME standing by (nothing left in the lane plan after P3.T3). (3) If time allows: a browser run of the full race on a machine with a GPU for the lane file's AC1 numbers.
 
 ### 2026-10-24 05:15 London — agent A (Claude) — UI review: lab/lab.js "Race it" iframe integration (read-only, no lab/* edits)
 
