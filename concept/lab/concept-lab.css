@@ -215,6 +215,10 @@
 @media (max-width: 560px) {
   .sheet-body { grid-template-columns: 1fr; gap: 8px; }
   .hero-chg { display: none; }
+  /* phone: the view-mode buttons sat on the "ghost = baseline" badge and the lap numbers on the car: stack them, car in between */
+  .hero { min-height: 580px; }
+  .hero-tr { top: 42px; max-width: calc(100% - 24px); }
+  #view3d { top: 96px; bottom: 210px; }
 }
 
 /* ---- Mubit loop drawer (concept/lab/loop-panel.js, docs/concept/LOOP.md): over the lab, below the header, its own scroll */
