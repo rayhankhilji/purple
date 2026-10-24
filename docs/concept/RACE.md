@@ -1,10 +1,11 @@
 # PURPLE · concept race: the concept car on the game's 3D Silverstone
 
 `/concept/race/?design=<base64url JSON Design>&ref=redbull` loads a concept design into Equation I's real 3D Silverstone and shows what
-its numbers mean. Two modes, each labelled on screen with its source:
+its numbers mean. Four modes, each labelled on screen with its source:
 
 | Mode | What drives the cars | Times are | Label |
 |---|---|---|---|
+| **Qualifying lap** (`?mode=quali`; the demo's "Watch the lap on Silverstone" opens it) | every driver's best 2026 British GP qualifying lap (OpenF1 distance / time samples) + PURPLE (the best car's physics-sim trace) + the RB22 baseline sim, replayed kinematically on ONE clock from the same line (ghost laps) | real laps: the classified time (js/data/racepace2026.js, the demo leaderboard's source); PURPLE / RB22: physics-sim seconds | "real 2026 qualifying · OpenF1" / "physics lap sim · model prediction"; "all laps start together; no overtaking or traffic is modelled" |
 | **Physics replay** (default) | the physics lap sim's own speed trace (`concept/sim` `simulateLap`), replayed kinematically | physics-sim seconds | "physics lap sim · Silverstone · <conditions>" |
 | **Game race** | the game's AI + game lap model, concept (candidate) vs the team baseline, `?lab=1` broadcast race | game seconds | "cinematic — game lap model, mixes car and driver" |
 | **2026 grid** | the game's AI + game lap model, the concept aero on HAD's RB22 in the real 2026 field (`?lab=1&mode=grid`) | game seconds | same |
@@ -16,7 +17,8 @@ its numbers mean. Two modes, each labelled on screen with its source:
                &ref=redbull                             (redbull | generic: the reference ghost, baselineCar(ref) in the sim)
                [&conditions=<base64url JSON>]           (merged over the sim's 2026 British GP qualifying conditions)
                [&wind_ms=3&wind_from_deg=105]           (shortcuts; also air_temp_c, air_pressure_hpa)
-               [&mode=replay|race|grid] [&rate=1]       (start mode; replay playback speed 0.25-32)
+               [&mode=replay|quali|race|grid] [&rate=1] (start mode; replay playback speed 0.25-32)
+               [&lap=87.700]                            (the engine's lap for the design: the quali mode checks the re-run against it)
 ```
 
 base64url = standard base64 with `-` / `_`, no padding, of the UTF-8 JSON. The Design needs `params` (+ `team`, `overrides`, `id`,
@@ -76,6 +78,37 @@ Illegal designs get no lap (same rule as the lab) and the page says so; malforme
    is the game's GLB car in Mercedes livery, forced to its one-draw-call LOD and translucent. Wheels are not animated on the buildCar
    bodies. If `buildCar` is missing or fails, the game's car stays (warning in the console). With the flag, `js/conceptrace.js` loads
    `concept/{regs,materials,parts,aeromap,design}.js` and `concept/view/{mesh3d,car3d,parts3d,view3d}.js`.
+
+## Qualifying lap: how it works (truthful to the numbers)
+
+`payload.qualiPayload(replayPayload, { lap_s, racepace, season, telemetry, deleted })` builds it from the physics-replay payload (same
+sim run, same line) and the 22 OpenF1 lap files `concept/data/telemetry/silverstone-2026-q-<code>.json`:
+
+- **Real cars**: each driver's own distance / time samples; the distance axis is scaled onto the sim's line (each lap's own length,
+  5806-5885 m, onto 5824.6 m) and the clock onto the **classified time** from `js/data/racepace2026.js` (the demo leaderboard), so the
+  last sample is exactly (L, lap). 19 of 22 OpenF1 clocks end on the classified time already; RUS (+3 ms), OCO (+5 ms) and PER are
+  flagged "time-scaled". PER: racepace2026 / the demo board list 91.451, which OpenF1 lists as deleted by race control; his OpenF1
+  best valid lap is 91.940, so his trace is time-scaled to 91.451 and the tower says so (the order is the same either way: P21).
+  A driver without telemetry would drive the pole lap's profile scaled to his time (label "ANT profile, time-scaled"); none today.
+- **PURPLE**: the best car's physics-sim trace from the URL's design, ending at its sim lap. `&lap=` carries the lap the demo shows;
+  if a re-run ever differs by > 0.5 ms the trace is time-scaled to the engine's lap and the banner says so (today: 87.700 = 87.700).
+  **RB22**: the baseline sim (88.745), a ghost without a position, shown only when it differs from PURPLE (as on the demo board).
+- **One clock**: every car crosses the control line at t = 0 (2 s run-up = the end of its own lap); the finish is solved exactly
+  inside the replay step (`crossingExact`: bisection of the car's distance function), so each measured finish equals its source
+  lap to < 1 ms at any playback rate. Finish order = `payload.boardRows` (the function the demo board now uses): time, ties PURPLE →
+  RB22 → real. The tower beside the view ranks by distance covered while the lap runs, then by measured finish, and checks the
+  finish order against the demo board at the end.
+- **Same sim as the engine**: the engine runs in Node, where `fit.js derivedOverrides()` reads the RB22 anchor's measured gear
+  ratios, mass (775 kg sheet) and roll-stiffness split from `concept/data/*.json` with fs. The browser could not, so before this
+  change the race page lapped the demo's best car in **87.815 s against the engine's 87.700 s** (and any design that moves the
+  gearbox or roll split differed). `concept/sim/team-overrides.js` (generated by `concept/sim/build-team-overrides.js`; a test
+  fails on drift) now carries those overrides to the browser; the race page loads it before `fit.js`. Browser = Node = 87.700.
+  The concept lab page does not load it yet (its in-browser optimiser still runs the older anchor; integrator's call).
+- **No F1 / FIA marks**: with `?concept=1` the loading splash's F1 logo and championship line are removed and the trackside F1 logo
+  boards draw nothing (EI.Ads painter wrapped from js/conceptrace.js; that page load only).
+
+Test: `test/concept-race-quali.test.js` (finish within 1 ms at 1x / 4x / 16x, order = demo board, missing-telemetry path, lap
+mismatch path, URL). Screenshots: `docs/concept/dashboard-shots/race-*.png`.
 
 ## Game race (cinematic)
 

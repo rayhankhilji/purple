@@ -15,7 +15,7 @@
   const TELEMETRY_PATH = "concept/data/telemetry/silverstone-2026-q-ant.json";   // repo-relative
   const REF_NAMES = { redbull: { name: "RB22 · Red Bull baseline", short: "RB22", team: "redbull", num: 6 }, generic: { name: "Generic 2026 baseline", short: "BASE", team: "williams", num: 98 } };
 
-  // ---- URL contract: /concept/race/?design=<base64url JSON Design>&ref=redbull[&conditions=<base64url JSON>][&wind_ms=3&wind_from_deg=105][&mode=replay|race|grid][&rate=1]
+  // ---- URL contract: /concept/race/?design=<base64url JSON Design>&ref=redbull[&conditions=<base64url JSON>][&wind_ms=3&wind_from_deg=105][&mode=replay|quali|race|grid][&lap=87.700][&rate=1]
   function b64encode(str) {
     if (typeof Buffer !== "undefined" && typeof btoa !== "function") return Buffer.from(str, "utf8").toString("base64");
     return btoa(unescape(encodeURIComponent(str)));
@@ -38,6 +38,7 @@
     p.set("ref", opts.ref || (design && design.team) || "redbull");
     if (opts.conditions) p.set("conditions", encodeParam(opts.conditions));
     if (opts.mode) p.set("mode", opts.mode);
+    if (typeof opts.lap_s === "number" && isFinite(opts.lap_s)) p.set("lap", opts.lap_s.toFixed(3));   // the engine's lap (the quali mode checks it)
     return (opts.base == null ? "/concept/race/" : opts.base) + "?" + p.toString();
   }
   // query string -> { design | null, ref, conditions | null, mode, rate, errors[] }
@@ -55,9 +56,11 @@
       if (!isFinite(v)) { errors.push("?" + k + " is not a number"); continue; }
       conditions = Object.assign({}, conditions || {}, { [k]: v });
     }
-    const mode = ["replay", "race", "grid"].includes(q.get("mode")) ? q.get("mode") : "replay";
+    const mode = ["replay", "quali", "race", "grid"].includes(q.get("mode")) ? q.get("mode") : "replay";
     const rate = Math.min(32, Math.max(0.25, parseFloat(q.get("rate")) || 1));
-    return { design, ref, conditions, mode, rate, errors };
+    let lap_s = null;
+    if (q.get("lap") != null) { const v = parseFloat(q.get("lap")); if (isFinite(v) && v > 0) lap_s = v; else errors.push("?lap is not a lap time"); }
+    return { design, ref, conditions, mode, rate, lap_s, errors };
   }
 
   function conditionsLabel(c, defaults) {
@@ -171,7 +174,88 @@
     };
   }
 
-  const api = { TRACK, POLE_SOURCE, CINEMATIC_LABEL, TELEMETRY_PATH, REF_NAMES, encodeParam, decodeParam, slimDesign, url, parseQuery, conditionsLabel, ersStates, ersNote, simTable, telemetryTable, tAtS, buildPayload, cinematic };
+  // ================================================================ "Qualifying lap" mode (docs/concept/RACE.md): every car's best 2026 British GP
+  // qualifying lap on ONE clock from the same control line, like overlaid ghost laps. Real cars: their own OpenF1 lap (distance / time
+  // samples), the distance axis normalised onto the sim's line (s x L_line / L_lap) and the clock ending at exactly the classified time
+  // (js/data/racepace2026.js, the demo leaderboard's source). A driver without telemetry drives the pole lap's profile scaled to his
+  // time ("time-scaled"). PURPLE / RB22: the physics lap sim's traces from buildPayload, ending at the sim lap (or at the engine's lap
+  // from the URL, scaled and flagged if a re-run ever differs). Nothing here invents a time: every lap_s is a source number.
+  const QUALI_REAL = "real 2026 qualifying · OpenF1";
+  const QUALI_SIM = "physics lap sim · model prediction";
+  const QUALI_GHOST_LINE = "all laps start together; no overtaking or traffic is modelled";
+  const QUALI_FOOT = "Qualifying lap: real laps = real 2026 qualifying · OpenF1 (openf1.org, an independent community project, not associated with Formula 1, the FIA or FOM), times as classified; PURPLE / RB22 = physics lap sim · model prediction, not a real car's lap. A lap-time comparison (ghosts): " + QUALI_GHOST_LINE + ".";
+  const qualiFile = code => "concept/data/telemetry/silverstone-2026-q-" + String(code).toLowerCase() + ".json";
+  const BOARD_RANK = { concept: 0, base: 1, real: 2 };
+  // the demo leaderboard's order (concept/demo/demo.js renderBoard): real qualifying times + PURPLE (+ the RB22 baseline when it differs),
+  // sorted by time, ties: PURPLE, then the baseline, then a real car. The baseline row carries no position.
+  function boardRows(q, best, base) {
+    const rows = Object.keys(q || {}).filter(c => typeof q[c] === "number" && isFinite(q[c])).map(code => ({ key: code, code, s: q[code], kind: "real" }));
+    rows.push({ key: "PRPL", code: "PRPL", s: best, kind: "concept" });
+    if (base != null && Math.abs(base - best) > 1e-9) rows.push({ key: "BASE", code: "BASE", s: base, kind: "base" });
+    rows.sort((a, b) => a.s - b.s || BOARD_RANK[a.kind] - BOARD_RANK[b.kind]);
+    let pos = 0; for (const r of rows) r.pos = r.kind === "base" ? null : ++pos;
+    return rows;
+  }
+  // a distance / time table rescaled: distance onto length L, clock onto lap (the last sample becomes exactly (L, lap))
+  function rescale(tab, L, lap) {
+    const n = tab.s.length, sL = tab.s[n - 1], tL = tab.t[n - 1], ks = L / sL, kt = lap / tL;
+    const s = tab.s.map(x => x * ks), t = tab.t.map(x => x * kt); s[n - 1] = L; t[n - 1] = lap;
+    return Object.assign({}, tab, { s, t, L, lap_length_m: Math.round(sL * 10) / 10, clock_end_s: Math.round(tL * 1000) / 1000, time_scale: kt, distance_scale: ks });
+  }
+  // qualiPayload(replayPayload, { lap_s, racepace: { q, pole }, season: { teams, drivers }, telemetry: { CODE: lapJson }, deleted: [{code, lap_time_s}] })
+  //   -> { ok, errors, notes, payload, order }  (payload.cars[0] = PURPLE, then the RB22 ghost when it differs, then every real driver)
+  function qualiPayload(P, o) {
+    o = o || {};
+    const errors = [], notes = [], q = (o.racepace && o.racepace.q) || {}, tel = o.telemetry || {}, L = P.line.L;
+    const teams = (o.season && o.season.teams) || [], drivers = (o.season && o.season.drivers) || [];
+    const teamOf = code => teams.find(t => (t.drivers || []).includes(code)) || null;
+    const driverOf = code => drivers.find(d => d && d.code === code) || null;
+    const src = P.cars.find(c => c.id === "concept"), ref = P.cars.find(c => c.id === "ref");
+    if (!src) return { ok: false, errors: ["qualifying lap: no PURPLE lap in the payload"] };
+    const pick = (c, keys) => { const x = {}; for (const k of keys) if (c[k] !== undefined) x[k] = c[k]; return x; };
+    const CH = ["s", "t", "v", "gear", "rpm", "aero", "ers", "L", "time_method", "design", "energy", "speed_trap_kmh", "vmax_kmh", "num", "team"];
+    // PURPLE: the sim lap; the engine's lap from the URL must be the same number (3 dp) or the trace is scaled to it and flagged
+    let purple = pick(src, CH), plap = src.lap_s, pscaled = false;
+    if (typeof o.lap_s === "number" && isFinite(o.lap_s) && Math.abs(o.lap_s - src.lap_s) > 0.0005) {
+      purple = rescale(purple, L, o.lap_s); plap = o.lap_s; pscaled = true;
+      notes.push("PURPLE: the re-run sim lap " + src.lap_s.toFixed(3) + " s differs from the engine's " + o.lap_s.toFixed(3) + " s; its trace is time-scaled to the engine's lap");
+    }
+    const cars = [Object.assign(purple, { id: "concept", kind: "concept", name: "PURPLE · RB22 concept", short: "PURPLE", code: "PRPL", color: "#b26cff", ghost: false, delta: false,
+      source: QUALI_SIM + (pscaled ? " · time-scaled to the engine's lap" : ""), lap_s: plap, sectors_s: pscaled ? null : src.sectors_s, time_scaled: pscaled })];
+    if (ref && Math.abs(ref.lap_s - plap) > 1e-9) cars.push(Object.assign(pick(ref, CH), { id: "ref", kind: "base", name: "RB22 baseline (sim)", short: "RB22", code: "RB22", color: "#3671c6", ghost: true, delta: true, source: QUALI_SIM, lap_s: ref.lap_s, sectors_s: ref.sectors_s, time_scaled: false }));
+    const poleCode = (o.racepace && o.racepace.pole && o.racepace.pole.code) || "ANT", poleJ = tel[poleCode];
+    const deleted = {}; for (const x of o.deleted || []) deleted[x.code + ":" + x.lap_time_s] = true;
+    for (const code of Object.keys(q)) {
+      const lap = q[code]; if (typeof lap !== "number" || !isFinite(lap)) continue;
+      const tm = teamOf(code), dr = driverOf(code), j = tel[code];
+      let tab, source, scaled = false, why = null, sectors = null;
+      if (j && j.channels) {
+        tab = rescale(telemetryTable(j), L, lap); const own = j.lap && j.lap.lap_time_s;
+        sectors = j.lap && j.lap.sector_s && Math.abs(own - lap) <= 0.0005 ? j.lap.sector_s.slice() : null;
+        if (Math.abs(tab.clock_end_s - lap) > 0.0015) {
+          scaled = true; why = "OpenF1 lap " + tab.clock_end_s.toFixed(3) + " s, classified " + lap.toFixed(3) + " s" + (deleted[code + ":" + lap] ? " (OpenF1 lists " + lap.toFixed(3) + " as deleted by race control)" : "") + ": trace time-scaled";
+          notes.push(code + ": " + why);
+        }
+        source = QUALI_REAL + (scaled ? " · time-scaled" : "");
+      } else if (poleJ && poleJ.channels) {
+        tab = rescale(telemetryTable(poleJ), L, lap); scaled = true; why = "no telemetry: the pole lap's speed profile scaled to " + lap.toFixed(3) + " s";
+        source = QUALI_REAL + " time · " + poleCode + " profile, time-scaled"; notes.push(code + ": " + why);
+      } else { errors.push(code + ": no telemetry and no pole lap to scale"); continue; }
+      cars.push(Object.assign(tab, { id: code.toLowerCase(), kind: "real", code, short: code, name: (dr && (dr.last || dr.name)) || code, team: tm ? tm.id : null, color: (tm && tm.colors && tm.colors.primary) || "#8a8a94",
+        num: (dr && (dr.number || dr.num)) || null, ghost: true, delta: code === poleCode, source, lap_s: lap, sectors_s: sectors, time_scaled: scaled, scale_note: why }));
+    }
+    const order = boardRows(q, plap, ref ? ref.lap_s : null).map(r => ({ code: r.code === "PRPL" ? "PRPL" : r.code === "BASE" ? "RB22" : r.code, pos: r.pos, s: r.s, kind: r.kind }));
+    for (const c of cars) { const r = order.find(x => x.code === c.code); c.pos = r ? r.pos : null; c.rank = BOARD_RANK[c.kind]; }
+    const payload = Object.assign({}, P, {
+      mode: "quali", label: "Qualifying lap · Silverstone · every car's best lap on one clock",
+      ghost_line: QUALI_GHOST_LINE, foot: QUALI_FOOT, real_label: QUALI_REAL, sim_label_short: QUALI_SIM,
+      car_note: "PURPLE is built from its design parameters (EI.conceptView.buildCar, schematic); the RB22 ghost likewise; real cars are the game's car in team colours, translucent.",
+      order, cars,
+    });
+    return { ok: errors.length === 0, errors, notes, payload, order };
+  }
+
+  const api = { TRACK, POLE_SOURCE, QUALI_REAL, QUALI_SIM, QUALI_GHOST_LINE, QUALI_FOOT, qualiFile, boardRows, rescale, qualiPayload, CINEMATIC_LABEL, TELEMETRY_PATH, REF_NAMES, encodeParam, decodeParam, slimDesign, url, parseQuery, conditionsLabel, ersStates, ersNote, simTable, telemetryTable, tAtS, buildPayload, cinematic };
   C.race = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();

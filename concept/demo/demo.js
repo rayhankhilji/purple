@@ -232,10 +232,15 @@
     const host = $("#dmBoard");
     if (!RP || !RP.q) { host.replaceChildren(el("div", { class: "empty" }, "js/data/racepace2026.js not loaded")); return; }
     const best = S.final ? S.final.lap_s : S.best, base = S.baseline ? S.baseline.lap_s : RB22;
-    const rows = Object.entries(RP.q).filter(([, s]) => isNum(s)).map(([code, s]) => ({ key: code, code, s, team: teamOfCode(code), kind: "real" }));
-    rows.push({ key: "PRPL", code: "PRPL", s: best, kind: "concept", name: "PURPLE · RB22 concept" });
-    if (Math.abs(base - best) > 1e-9) rows.push({ key: "BASE", code: "BASE", s: base, kind: "base", name: "RB22 baseline (sim)" });
-    const rank = { concept: 0, base: 1, real: 2 }; rows.sort((a, b) => a.s - b.s || rank[a.kind] - rank[b.kind]);
+    // the order is concept/race/payload.js boardRows: the race page's "Qualifying lap" finish order is checked against the same function
+    let rows;
+    if (C.race && C.race.boardRows) rows = C.race.boardRows(RP.q, best, base).map(r => Object.assign(r, r.kind === "real" ? { team: teamOfCode(r.code) } : { name: r.kind === "concept" ? "PURPLE · RB22 concept" : "RB22 baseline (sim)" }));
+    else {
+      rows = Object.entries(RP.q).filter(([, s]) => isNum(s)).map(([code, s]) => ({ key: code, code, s, team: teamOfCode(code), kind: "real" }));
+      rows.push({ key: "PRPL", code: "PRPL", s: best, kind: "concept", name: "PURPLE · RB22 concept" });
+      if (Math.abs(base - best) > 1e-9) rows.push({ key: "BASE", code: "BASE", s: base, kind: "base", name: "RB22 baseline (sim)" });
+      const rank = { concept: 0, base: 1, real: 2 }; rows.sort((a, b) => a.s - b.s || rank[a.kind] - rank[b.kind]);
+    }
     // FLIP: rows keep their element, so our car's row slides up the order as it gets faster
     const before = new Map(Array.from(host.children).map(n => [n.dataset.key, n.getBoundingClientRect().top]));
     const old = new Map(Array.from(host.children).map(n => [n.dataset.key, n]));
@@ -297,7 +302,8 @@
     $("#dmMode").replaceChildren(...[badge, line, S.error && S.mode !== "replay" ? el("span", { class: "warn src" }, S.error) : null].filter(Boolean));
   }
   function renderCtl() {
-    const raceHref = () => { const R = C.race; return R && S.bestDesign ? R.url(S.bestDesign, { base: "../race/", ref: "redbull" }) : "../race/"; };
+    // "Qualifying lap" mode: the best car's sim lap (finishing at exactly the lap shown here) against every real 2026 qualifying lap, one clock
+    const raceHref = () => { const R = C.race; return R && S.bestDesign ? R.url(S.bestDesign, { base: "../race/", ref: "redbull", mode: "quali", lap_s: S.final ? S.final.lap_s : S.best }) : "../race/?mode=quali"; };
     const kids = [];
     if (S.mode === "replay") {
       const playing = S.playing;
@@ -310,7 +316,7 @@
     kids.push(S.liveOk
       ? el("button", { type: "button", class: "btn dm-golive", id: "dmGoLive", disabled: S.status === "running" ? true : null, title: "start the engine now: " + LIVE_CALLS + " Mubit calls (Claude Haiku 4.5, untrained); every idea the physics sim approves is re-sent by the server as a trained call, a Mubit training example", onclick: () => startRun("live") }, "Go live")
       : el("a", { class: "btn dm-golive off", id: "dmGoLive", href: S.deploy ? "/api/unlock" : "#", title: "live needs " + (S.liveWhy || "the passcode"), onclick: S.deploy ? null : e => e.preventDefault() }, S.deploy ? "Go live · unlock" : "Go live · off"));
-    kids.push(el("a", { class: "btn dm-race", id: "dmRace", href: raceHref(), title: "the best car's physics-sim lap on the game's 3D Silverstone, with the RB22 and the real 2026 pole lap as ghosts", onclick: e => { e.currentTarget.href = raceHref(); } }, "Watch the lap on Silverstone →"),
+    kids.push(el("a", { class: "btn dm-race", id: "dmRace", href: raceHref(), title: "every car's best 2026 qualifying lap (OpenF1) and the best car's physics-sim lap, on one clock on the game's 3D Silverstone (ghost laps)", onclick: e => { e.currentTarget.href = raceHref(); } }, "Watch the lap on Silverstone →"),
       el("a", { class: "src dm-full", href: "../lab/" + (qs.get("api") ? "?api=" + encodeURIComponent(qs.get("api")) : "") }, "full lab →"));
     $("#dmCtl").replaceChildren(...kids);
   }
