@@ -4,6 +4,13 @@ Status: all items merged; README refresh PR open; idle until v2 trains. Owner: a
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
 
+### 2026-10-24 — helper (model comparison) — designer exam: Haiku 4.5 vs Sonnet 5.5 vs Opus 5.5 vs No AI
+- Status: done locally on `claude/model-compare` (from c6b87a1), not pushed. No live Mubit calls made (loopback stand-in and the scripted mock only); the live columns are the integrator's.
+- Files: `concept/exam/models.json` (new: THE model list, `temperature` 0 = frozen, null = not sent), `concept/exam/run.js` (`--model ID`, `--concurrency 1..8`, per-row `served_by` / `stop_reason` / `error_status` / `error_message`, `calls` summary, `results-base-<slug>[-corrections].json`), `server/mubit.js` (`buildRequest`: `TEMPERATURE === null` leaves the field out; frozen tasks' bytes unchanged), `concept/lab/exam-panel.js` + `.css` ("Model comparison" section), `concept/exam/results-none-corrections.json` (No AI graded on the corrections questions: identical to the plain set, 3/30 kept, as expected since No AI never reads the message), `test/concept-exam-models.test.js` (new).
+- Why temperature: the integrator's live probe got 400 "`temperature` is deprecated for this model" from Sonnet 5.5 and Opus 5.5, so those two run at their default sampling and the view says so. Everything else (system prompt, max_tokens 250, untrained header, metadata) is the frozen designer task; a different model is a different (untrained) task key.
+- Watch for: Sonnet 5.5 / Opus 5.5 think by default and thinking tokens count against max_tokens 250; replies cut at max_tokens are graded as they are (usually unparseable) and the view counts them per column ("n/N replies cut at max_tokens"). Not changed: it would be a second deviation from the frozen task.
+- Blockers / questions: none.
+
 ### 2026-10-24 05:40 London — agent C (EVAL) — README "What to expect" refreshed for the post-fix hardest eight
 - Status: done; `npm test` 82/82. Branch `claude/eval-p3-expect3` (from 1a71b33). Docs only; no Mubit calls.
 - Source: `docs/ledger-snapshot/2026-10-24_02-37-26Z-0530-windcap-exam/status.json` (`npm run exam` re-run after the wind-cap fix: 20/20 · 10/20, identical to the first run). Verified tally on the new sheet (`exam-rw8, 14, 15, 02, 16, 20, 05, 12`): **verdicts 8/8, next steps 2/8** (hits `exam-rw8` and `exam-12`); the 6 misses all have a ride-height truth (provider said `rear_wing_deg decrease` on 5, `brake_bias_pct increase` on `exam-15`). Off-sheet next-step misses: 03, 09, 10, 11. † marks removed (answers now match the current scenario text).

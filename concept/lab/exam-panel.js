@@ -6,6 +6,10 @@
 // shows the adapter beside no AI and regular Claude for the same question, and the scoreboard compares all three on the same k
 // questions. Graded replies persist in this browser (localStorage) and, on a local server, in concept/exam/answers-adapter.json;
 // "Export answers" downloads that same file (the public site is read-only). Scores are n/N, never percentages (G-HON-06).
+// Model comparison (the R&D lab's Haiku / Sonnet / Opus question): one column per model in concept/exam/models.json (the one list)
+// that has a live, untrained results file (concept/exam/results-base-<slug>[-corrections].json, written by run.js --model), plus
+// No AI. The numbers are read from those files as they are; a model without a file says "not run yet", failed calls are shown as
+// failed calls (never as a model's score).
 (function () {
   const EI = (window.EI = window.EI || {});
   const qs = new URLSearchParams(location.search);
@@ -101,12 +105,13 @@
         el("li", null, "Copy the adapter's whole reply (a ```json fence is fine), paste it here under ", el("b", null, "Paste the adapter's reply"), " and press ", el("b", null, "Grade"), ". The provider's reply can go in the second box.")),
       el("p", { class: "ex-note" }, "Try models has a ", el("b", null, "daily limit"), " (it resets at 00:00 UTC). Start with ", el("b", null, "q01–q09"), ": 3 early, 3 mid and 3 late situations. Try models calls do not train the task, and grading here makes no Mubit call."));
     const board = el("section", { class: "panel ex-board", id: "exBoard", "aria-label": "scoreboard" });
+    const models = el("section", { class: "panel ex-models", id: "exModels", "aria-label": "model comparison" }, el("div", { class: "ph" }, el("span", { class: "label", text: "Model comparison" }), el("span", { class: "src", text: "loading…" })));
     const tools = el("div", { class: "ex-tools" },
       el("button", { type: "button", class: "btn primary", id: "exExport", onclick: () => exportAnswers("adapter") }, "Export answers"),
       el("button", { type: "button", class: "btn", id: "exExportP", onclick: () => exportAnswers("provider"), hidden: true }, "Export Claude (Try models)"),
       el("span", { class: "src", id: "exSaveNote" }));
     const list = el("div", { class: "ex-list", id: "exList" });
-    root.append(head, el("div", { class: "ex-grid" }, el("aside", { class: "ex-side" }, howto, board, tools), el("section", { class: "ex-qs", "aria-label": "questions" }, el("div", { class: "ex-qhead" }, el("span", { class: "label", text: "Questions" }), el("span", { class: "src", id: "exListMeta" })), list)));
+    root.append(head, el("div", { class: "ex-grid" }, el("aside", { class: "ex-side" }, howto, board, models, tools), el("section", { class: "ex-qs", "aria-label": "questions" }, el("div", { class: "ex-qhead" }, el("span", { class: "label", text: "Questions" }), el("span", { class: "src", id: "exListMeta" })), list)));
   }
 
   // ---------------------------------------------------------------- scoreboard
@@ -149,6 +154,104 @@
       S.api ? el("span", null, el("span", { class: "dot ok" }), "grader ready" + (S.api.writable ? " · saves on this server to " + S.api.saves :" · this site cannot store answers: they stay in this browser, use Export")) : el("span", { class: "warn" }, el("span", { class: "dot bad" }), S.apiWhy || "checking the grader…"));
     $("#exSaveNote").textContent = S.api && S.api.writable ? "Saved on this server and in this browser." : "Kept in this browser. Export downloads answers-adapter.json for the repo.";
   }
+  // ---------------------------------------------------------------- model comparison (concept/exam/models.json + results files)
+  // A results file counts for a model only if it is a live (not mock), untrained base-column run of exactly that model id on the
+  // chosen question set. Haiku 4.5's earlier run (results-base.json, before --model existed) stands in for its column until a
+  // results-base-claude-haiku-4-5.json exists, and says so.
+  const MC = { variant: "plain", data: {} };
+  const VARIANTS = [{ key: "plain", name: "The engine's message" }, { key: "corrections", name: "+ physics corrections block" }];
+  function median(a) { if (!a.length) return null; const b = a.slice().sort((x, y) => x - y), m = b.length >> 1; return b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2; }
+  function modelStats(doc, isModel) {
+    const rows = Array.isArray(doc && doc.rows) ? doc.rows : [], N = rows.length;
+    const n = f => rows.filter(f).length, sum = f => rows.reduce((s, r) => s + (isNum(f(r)) ? f(r) : 0), 0);
+    const st = { N, direct: n(r => r.direct && r.direct.kept), legal: n(r => r.legal), dgain: N ? sum(r => r.direct && r.direct.gain_s) / N : null, engine: n(r => r.engine && r.engine.kept) };
+    if (!isModel) return st;
+    const ok = rows.filter(r => !r.error && isNum(r.latency_ms));
+    const lat = ok.map(r => r.latency_ms), out = ok.map(r => r.output_tokens).filter(isNum);
+    const codes = {}; for (const r of rows) if (r.error) codes[r.error] = (codes[r.error] || 0) + 1;
+    return Object.assign(st, { answered: ok.length, errors: N - ok.length, codes, latMedS: lat.length ? median(lat) / 1000 : null, outMean: out.length ? out.reduce((s, v) => s + v, 0) / out.length : null, cut: n(r => r.stop_reason === "max_tokens"), returned: Array.from(new Set(ok.map(r => r.model).filter(Boolean))) });
+  }
+  const variantOf = doc => (doc && doc.questions_variant) || "plain";
+  function usableModel(doc, m, variant) {
+    if (!doc || doc.kind !== "purple-designer-exam-results" || doc.column !== "base" || !Array.isArray(doc.rows) || !doc.rows.length) return "not a base-column results file";
+    const meta = doc.meta || {};
+    if (meta.mock !== false) return "a mock run (the scripted mock, not a model)";
+    if (meta.trained !== false) return "not marked untrained";
+    if (meta.model !== m.id) return "a run of " + (meta.model || "an unknown model") + ", not " + m.id;
+    if (variantOf(doc) !== variant) return "another question set";
+    return null;
+  }
+  async function loadModelCols(variant, getJ) {
+    getJ = getJ || optJson;
+    const sfx = variant === "corrections" ? "-corrections" : "";
+    const list = await getJ(DATA + "models.json");
+    if (!list || !Array.isArray(list.models)) throw new Error(DATA + "models.json missing or unreadable");
+    const cols = await Promise.all(list.models.map(async m => {
+      const file = "results-base-" + m.slug + sfx + ".json";
+      const doc = await getJ(DATA + file);
+      const why = doc ? usableModel(doc, m, variant) : "no file";
+      if (!why) return { kind: "model", m, file, doc, st: modelStats(doc, true) };
+      if (m.legacy_file) {
+        const lf = m.legacy_file + sfx + ".json", ld = await getJ(DATA + lf);
+        if (ld && !usableModel(ld, m, variant)) return { kind: "model", m, file: lf, doc: ld, earlier: true, st: modelStats(ld, true) };
+      }
+      return { kind: "model", m, file, doc: null, why: doc ? "ignored " + file + ": " + why : null };
+    }));
+    const nf = "results-none" + sfx + ".json", nd = await getJ(DATA + nf);
+    const noneOk = !!(nd && nd.kind === "purple-designer-exam-results" && nd.column === "none" && Array.isArray(nd.rows) && variantOf(nd) === variant);
+    cols.push({ kind: "none", m: { name: "No AI", id: "a random legal change" }, file: nf, doc: noneOk ? nd : null, st: noneOk ? modelStats(nd, false) : null });
+    return { variant, models: list.models, cols };
+  }
+  function buildModels(data) {
+    const cols = data.cols, shown = cols.filter(c => c.doc);
+    const ran = c => c.kind === "none" || c.st.answered > 0;
+    const nN = (k, c) => c.st[k] + "/" + c.st.N;
+    const METRICS = [
+      { name: "Kept as proposed", lead: true, fmt: c => nN("direct", c), title: "the reply's own change, tested on the sim, is legal and faster than the car it started from" },
+      { name: "Legal as proposed", fmt: c => nN("legal", c), title: "the reply's change passes the 2026 technical rules (FIA Section C) without any repair" },
+      { name: "Mean gain as proposed (s)", fmt: c => f4(c.st.dgain), title: "lap time gained per question (0 when not kept), averaged over the questions" },
+      { name: "Kept with engine", fmt: c => nN("engine", c), title: "the engine's normal treatment of the reply: 3,000 variants around it screened, the best 24 tested on the sim" },
+      { name: "Median latency (s)", fmt: c => (c.kind === "none" ? "—" : isNum(c.st.latMedS) ? c.st.latMedS.toFixed(2) : "—"), title: "one call through Mubit, timed by the caller; median over the calls that answered" },
+      { name: "Mean output tokens", fmt: c => (c.kind === "none" ? "—" : isNum(c.st.outMean) ? String(Math.round(c.st.outMean)) : "—"), title: "output tokens as reported by the provider (includes any thinking), mean over the calls that answered" },
+    ];
+    const thead = el("tr", null, el("th", { scope: "col", class: "m" }, el("span", { class: "label", text: "Per model" })),
+      cols.map(c => el("th", { scope: "col", class: "mc-" + c.kind }, el("span", { class: "cn", text: c.m.name }), el("span", { class: "cs", text: c.m.id }))));
+    const body = METRICS.map(mt => el("tr", { class: mt.lead ? "lead" : null },
+      el("th", { scope: "row", class: "m", title: mt.title || null }, mt.name),
+      cols.map(c => (!c.doc ? el("td", { class: "muted nr" }, "not run yet") : !ran(c) ? el("td", { class: "warn nr" }, "calls failed") : el("td", { class: "mc-" + c.kind }, mt.fmt(c))))));
+    // where each column comes from, and anything that is not a clean answer (failed calls, replies cut at max_tokens)
+    const notes = [];
+    for (const c of cols) {
+      if (!c.doc) { notes.push(c.m.name + ": not run yet (" + c.file + ")" + (c.why ? "; " + c.why : "") + "."); continue; }
+      if (c.kind === "none") { notes.push("No AI: " + c.file + " (a seeded random legal change per question; no model call)."); continue; }
+      const meta = c.doc.meta || {}, st = c.st, bits = [c.file + (c.earlier ? " (the earlier Haiku run, before the comparison)" : "")];
+      bits.push(st.N + " calls" + (isNum(meta.concurrency) ? ", " + meta.concurrency + " in flight" : c.earlier ? ", 2 in flight" : ""));
+      bits.push(meta.temperature === null ? "temperature not sent (default sampling)" : "temperature " + meta.temperature);
+      if (st.returned.length && st.returned.some(x => x !== c.m.id)) bits.push("model as returned: " + st.returned.join(", "));
+      if (st.errors) bits.push(st.errors + "/" + st.N + " calls failed (" + Object.entries(st.codes).map(([k, v]) => k + (v > 1 ? " ×" + v : "")).join(", ") + "), graded as not kept");
+      if (st.cut) bits.push(st.cut + "/" + st.N + " replies cut at max_tokens (" + (meta.max_tokens || 250) + ")");
+      notes.push(c.m.name + ": " + bits.join(" · ") + ".");
+    }
+    const Ns = Array.from(new Set(shown.map(c => c.st.N)));
+    const sha = Array.from(new Set(shown.map(c => c.doc.questions_sha256).filter(Boolean)));
+    const noTemp = data.models.filter(m => m.temperature === null).map(m => m.name), withTemp = data.models.filter(m => m.temperature !== null).map(m => m.name);
+    const sw = el("div", { class: "mc-sw", role: "group", "aria-label": "question set" }, VARIANTS.map(v => el("button", { type: "button", class: "btn sm" + (v.key === data.variant ? " on" : ""), "aria-pressed": v.key === data.variant ? "true" : "false", onclick: () => setVariant(v.key) }, v.name)));
+    return el("div", { class: "mc-body" },
+      el("div", { class: "ph" }, el("span", { class: "label", text: "Model comparison" }), el("span", { class: "src", text: SIM })),
+      el("p", { class: "ex-cap mc-lede" }, "Same " + (Ns.length === 1 ? Ns[0] : 30) + " car situations, same prompt, same physics; only the model changes."),
+      sw,
+      el("div", { class: "ex-tablewrap" }, el("table", { class: "ex-table mc-table" }, el("thead", null, thead), el("tbody", null, body))),
+      noTemp.length ? el("p", { class: "ex-cap src" }, noTemp.join(" and ") + " run at " + (noTemp.length > 1 ? "their" : "its") + " default sampling: " + (noTemp.length > 1 ? "these models do" : "this model does") + " not accept a temperature setting" + (withTemp.length ? " (" + withTemp.join(", ") + ": temperature 0, as frozen)" : "") + ".") : null,
+      Ns.length > 1 || sha.length > 1 ? el("p", { class: "ex-cap warn" }, "The columns are not on the same questions (N = " + Ns.join(", ") + "): compare with care.") : null,
+      el("ul", { class: "ex-cap src mc-notes" }, notes.map(t => el("li", null, t))),
+      el("p", { class: "ex-cap src" }, "All model calls go through Mubit, untrained (they never become training examples). Kept = legal and faster on the sim than the car the question starts from; an illegal change is first moved to the nearest legal car, as the engine does. Latency is one call, timed by the caller. Scores are counts, n/N."));
+  }
+  async function setVariant(v) {
+    MC.variant = v;
+    try { if (!MC.data[v]) MC.data[v] = await loadModelCols(v); renderModels(); }
+    catch (e) { const box = $("#exModels"); if (box) box.replaceChildren(el("div", { class: "ph" }, el("span", { class: "label", text: "Model comparison" })), el("p", { class: "ex-cap warn" }, "could not load the model comparison: " + (e.message || e))); }
+  }
+  function renderModels() { const box = $("#exModels"), d = MC.data[MC.variant]; if (box && d) box.replaceChildren(buildModels(d)); }
   const gradedProvider = () => S.qs.map(q => q.id).filter(id => S.provider[id]);
   function compactIds(ids) {
     const ns = ids.map(id => +id.slice(1)).sort((a, b) => a - b), out = [];
@@ -279,6 +382,7 @@
     if (ex) ex.addEventListener("click", () => show(true));
     for (const id of ["#btnViewEng", "#btnViewNoAI", "#btnViewMubit"]) { const b = $(id); if (b) b.addEventListener("click", () => { if (S.shown) show(false); }); }
     if (qs.get("view") === "exam") show(true);
+    setVariant("plain");   // independent of the questions: a missing results file never blocks the rest of the view
     try { await load(); } catch (e) { $("#exList").replaceChildren(el("div", { class: "empty warn" }, "could not load the exam files (" + DATA + "questions.json, results-*.json): " + (e.message || e))); return; }
     renderList(); renderBoard();
     await probeApi();
@@ -290,6 +394,6 @@
     }
     renderBoard();
   }
-  EI.examPanel = { show, state: () => ({ loaded: S.loaded, graded: gradedIds(), provider: gradedProvider(), api: !!S.api, writable: !!(S.api && S.api.writable) }), grade, score };
+  EI.examPanel = { show, state: () => ({ loaded: S.loaded, graded: gradedIds(), provider: gradedProvider(), api: !!S.api, writable: !!(S.api && S.api.writable) }), grade, score, models: { load: loadModelCols, stats: modelStats, build: buildModels, setVariant } };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();

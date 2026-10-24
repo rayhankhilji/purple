@@ -47,6 +47,21 @@ body:not(.exam-on) .exam { display: none; }
 .ex-table tbody tr:last-child th, .ex-table tbody tr:last-child td { border-bottom: none; }
 .ex-cap { margin: 6px 12px 0; font-size: 11px; line-height: 1.45; }
 .ex-cap:last-child { margin-bottom: 10px; }
+/* model comparison (Haiku / Sonnet / Opus / No AI): same table look as the scoreboard, more columns, so tighter */
+.ex-models .ph .src { font-size: 10.5px; }
+.mc-lede { color: var(--text); font-size: 12px; }
+.mc-sw { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 12px 0; }
+.mc-sw .btn { font-size: 11px; padding: 3px 8px; }
+.mc-sw .btn.on { border-color: var(--purple); color: var(--text); }
+.mc-table th.m { width: 30%; }
+.mc-table td { font-size: 13px; }
+.mc-table tr.lead td { font-size: 18px; }
+.mc-table td.nr { font: italic 400 10.5px/1.25 var(--sans); white-space: normal; color: var(--muted); }
+.mc-table td.nr.warn { color: var(--amber); font-style: normal; }
+.mc-table thead .mc-none .cn { color: var(--muted); }
+.mc-table td.mc-none { color: #8a8a94; }
+.mc-notes { margin-top: 6px; padding-left: 16px; }
+.mc-notes li { margin: 0 0 2px; overflow-wrap: anywhere; }
 .ex-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .ex-tools .src { flex: 1 1 200px; }
 
@@ -104,6 +119,7 @@ body:not(.exam-on) .exam { display: none; }
   .ex-table thead .cn { font-size: 11px; } .ex-table thead .cs { font-size: 9.5px; }
   .ex-table td { font-size: 12px; padding: 6px 3px; }
   .ex-table tr.lead td { font-size: 17px; }
+  .mc-table td { font-size: 11px; } .mc-table tr.lead td { font-size: 14px; }
   .ex-mini { font-size: 10.5px; } .ex-mini td { font-size: 10.5px; } .ex-mini th, .ex-mini td { padding: 4px 3px; }
   .ex-qtop .btn { margin-left: auto; }
 }
