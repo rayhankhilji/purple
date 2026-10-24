@@ -4,7 +4,8 @@
   "built": "2026-10-24",
   "issue_in_force_at_silverstone": "Section C Issue 19 (2026-06-25); Section B Issue 07 (2026-06-25)",
   "coordinates": "Car Coordinate System (C2.1.1): X rearwards, Y to driver's right, Z up, mm. XF=0 / XR=0 = front / rear wheel-centre planes, XA=0 = front of survival cell, Z=0 = bottom of sprung car (plank excluded).",
-  "iss21_check": "For each Issue 19 item, same_in_iss21 says whether Issue 21 (2026-10-19) has the same wording/number. Differences found: C5.2.10 ii (5 -> 4 MJ) and C5.2.8 iii (adds 'during any power limited period')."
+  "iss21_check": "For each Issue 19 item, same_in_iss21 says whether Issue 21 (2026-10-19) has the same wording/number. Differences found: C5.2.10 ii (5 -> 4 MJ) and C5.2.8 iii (adds 'during any power limited period').",
+  "checklist": "docs/concept/FIA_CHECKLIST.md (2026-10-24): items added for the checklist pass (aero: rear_wing_separators_mandatory ... plank_specific_gravity; materials; dimensions: suspension_width_note). Every added quote was matched against the Issue 19 text before writing."
  },
  "docs": {
   "fia_c19": {
@@ -294,6 +295,23 @@
     "verified": true,
     "quote": "The origin of the rear Wheel Coordinate System may not lie outboard of Y=525 when entering Parc Fermé.",
     "same_in_iss21": true
+   },
+   {
+    "key": "suspension_width_note",
+    "value": {
+     "front_origin_max_y": 603,
+     "rear_origin_max_y": 525,
+     "front_track_max_mm_derived": 1540,
+     "rear_track_max_mm_derived": 1470.3
+    },
+    "unit": "mm",
+    "article": "C10.10.1; C2.1.3 a; C10.7.2 a",
+    "doc": "fia_c19",
+    "kind": "official",
+    "verified": true,
+    "quote": "The origin of the front Wheel Coordinate System may not lie outboard of Y=603 when entering Parc Fermé.",
+    "same_in_iss21": true,
+    "note": "Derived (this checklist): wheel centre plane = origin (inboard rim plane) + half the rim overall width (334 / 420.3 mm ref.), so track <= 2 x (603 + 167) = 1540 mm front and 2 x (525 + 210.15) = 1470.3 mm rear. The PhysicalCar uses 1.60 / 1.55 m (docs/concept/FIA_CHECKLIST.md, fix requested)."
    }
   ],
   "wheels_tyres": [
@@ -566,6 +584,131 @@
     "verified": true,
     "quote": "The upper surface of the Plank Assembly must lie at Z = 0",
     "same_in_iss21": true
+   },
+   {
+    "key": "rear_wing_separators_mandatory",
+    "value": [
+     3,
+     5
+    ],
+    "unit": "pairs (forces >= 2 rear-wing volumes)",
+    "article": "C3.11.7 b",
+    "doc": "fia_c19",
+    "kind": "official",
+    "verified": true,
+    "quote": "However, between three and five pairs of “Rear Wing Separators” must be fitted across both sides of the car. Each pair must:",
+    "same_in_iss21": true,
+    "note": "Each pair must intersect both the forwardmost volume of Rear Wing Profiles and RW Flap (b ii), and RW Flap excludes the forwardmost volume (C3.11.6 a i): a rear wing needs at least two volumes. regs.js REG-C-ELEMENTS-MIN."
+   },
+   {
+    "key": "front_wing_profiles_section_yz",
+    "value": [
+     [
+      0,
+      60
+     ],
+     [
+      100,
+      60
+     ],
+     [
+      675,
+      115
+     ],
+     [
+      675,
+      275
+     ],
+     [
+      400,
+      300
+     ],
+     [
+      0,
+      200
+     ]
+    ],
+    "unit": "mm [Y, Z] polygon, extruded along X",
+    "article": "Appendix C2 §22.1",
+    "doc": "fia_c19",
+    "kind": "official",
+    "verified": true,
+    "quote": "[0, 60], [100, 60], [675, 115], [675, 275], [400, 300], [0, 200], [0,60]",
+    "same_in_iss21": true,
+    "note": "Z height of RV-FW-PROFILES: 140 mm at Y=0, 211 mm at Y=400, 160 mm at Y=675; trims §22.3-22.4 are vertical planes. regs.js REG-C-FW-PROFILES-Z."
+   },
+   {
+    "key": "straight_mode_decreases_incidence",
+    "value": "decrease",
+    "unit": null,
+    "article": "C3.10.10 n ii; C3.11.6 c ii",
+    "doc": "fia_c19",
+    "kind": "official",
+    "verified": true,
+    "quote": "a “Straight Mode” position that, when compared to the Corner Mode position, results in a decrease in incidence of RW Flap.",
+    "same_in_iss21": true,
+    "note": "regs.js REG-C-SM-DIRECTION (a negative straight-mode delta is illegal)."
+   },
+   {
+    "key": "rw_flap_straight_mode_exempt_from_profiles_volume",
+    "value": "C3.11.1 not applied to RW Flap adjustments",
+    "unit": null,
+    "article": "C3.11.6 g ii",
+    "doc": "fia_c19",
+    "kind": "official",
+    "verified": true,
+    "quote": "compliance with all bodywork regulations except for Article C3.11.1.",
+    "same_in_iss21": true,
+    "note": "So the rear flap may leave RV-RW-PROFILES in Straight Mode; the front flaps may not (C3.10.10 s i)."
+   },
+   {
+    "key": "plank_hole_positions",
+    "value": {
+     "front_XF": 500,
+     "middle_XC": [
+      -800,
+      -600
+     ],
+     "rear_XPU": [
+      470,
+      630
+     ],
+     "rear_on_or_ahead_of_XR": -500
+    },
+    "unit": "mm",
+    "article": "C3.6.1 c",
+    "doc": "fia_c19",
+    "kind": "official",
+    "verified": true,
+    "quote": "The centres must lie on Y = 0 and have X-locations XF = 500, −600 ≥ XC ≥ −800, and 470 ≤ XPU ≤ 630. Furthermore, the centre of the rearmost hole must lie on or ahead of XR = −500.",
+    "same_in_iss21": true,
+    "note": "Implies XR - XPU >= 970 mm. regs.js REG-C-PLANK-HOLES."
+   },
+   {
+    "key": "sidepod_inlet_aperture_max_mm2_per_side",
+    "value": 80000,
+    "unit": "mm2 per side",
+    "article": "C3.16.9",
+    "doc": "fia_c19",
+    "kind": "official",
+    "verified": true,
+    "quote": "C3.16.9 Sidepod [20, 475, 250] 80,000 Front i. Must lie in its entirety above Z = 275.",
+    "same_in_iss21": true,
+    "note": "Aperture table row (area column, per side per C3.16 d). regs.js REG-C-SIDEPOD-INLET (concept inlet_cm2 is both sides, <= 1600 cm2)."
+   },
+   {
+    "key": "plank_specific_gravity",
+    "value": [
+     1.3,
+     1.45
+    ],
+    "unit": "specific gravity (homogeneous plank)",
+    "article": "C3.6.2 a",
+    "doc": "fia_c19",
+    "kind": "official",
+    "verified": true,
+    "quote": "The material of the Plank is free, but it must be homogeneous with a specific gravity between 1.3 and 1.45",
+    "same_in_iss21": true
    }
   ],
   "power_unit": [
@@ -807,6 +950,177 @@
     "kind": "unverified",
     "verified": false,
     "note": "No maximum race fuel mass was found in Section C Issue 19 or Section B Issue 07 (searched for fuel with kg/MJ). Not confirmed either way."
+   }
+  ],
+  "materials": [
+   {
+    "key": "metallic_specific_modulus_max",
+    "value": 40,
+    "unit": "GPa/(g/cm3)",
+    "article": "C15.1.4",
+    "doc": "fia_c19",
+    "kind": "official",
+    "verified": true,
+    "quote": "No parts of the car may be made from metallic materials that have a specific modulus of elasticity greater than 40 GPa/(g/cm3).",
+    "same_in_iss21": true,
+    "note": "Beryllium (287 GPa / 1.85) = 155, AlBeMet = 93: prohibited. regs.js REG-C-MAT-SPECIFIC-MODULUS."
+   },
+   {
+    "key": "materials_limited_to_list",
+    "value": "C15.2 list plus C15.4 exceptions",
+    "unit": null,
+    "article": "C15.1.1",
+    "doc": "fia_c19",
+    "kind": "official",
+    "verified": true,
+    "quote": "Materials used in the construction of the Formula One car – excluding the Power Unit − are limited to those defined in article C15.2 and to the specific exceptions in article C15.4.",
+    "same_in_iss21": true
+   },
+   {
+    "key": "carbon_fibre_limits",
+    "value": {
+     "precursor": "PAN",
+     "tensile_modulus_GPa_max": 550,
+     "tensile_strength_MPa_max": 7100,
+     "density_g_cm3_max": 1.92
+    },
+    "unit": null,
+    "article": "C15.2.3 b i",
+    "doc": "fia_c19",
+    "kind": "official",
+    "verified": true,
+    "quote": "Carbon fibres manufactured from polyacrylonitrile (PAN) precursor, which have: − A nominal tensile modulus ≤ 550GPa − A nominal tensile strength ≤ 7100 MPa (i.e. up to and including that of Toray T1100 or Mitsubishi MR70) − A density ≤ 1.92 g/cm3",
+    "same_in_iss21": true
+   },
+   {
+    "key": "magnesium_alloys_permitted",
+    "value": [
+     "WE43B",
+     "WE43C",
+     "WE54A",
+     "AZ80A"
+    ],
+    "unit": null,
+    "article": "C15.2.1 c",
+    "doc": "fia_c19",
+    "kind": "official",
+    "verified": true,
+    "quote": "UNS M18432, WE43B ii. UNS M18434, WE43C iii. UNS M18410, WE54A iv. UNS M11800, AZ80A",
+    "same_in_iss21": true
+   },
+   {
+    "key": "copper_beryllium_max_pct",
+    "value": 2.5,
+    "unit": "% Be (outside the PU)",
+    "article": "C15.2.1 f",
+    "doc": "fia_c19",
+    "kind": "official",
+    "verified": true,
+    "quote": "Copper Alloys containing less than 2.5% Beryllium",
+    "same_in_iss21": true
+   },
+   {
+    "key": "al_mmc_permitted",
+    "value": [
+     "SupremEX 225XE",
+     "SupremEX 225XF"
+    ],
+    "unit": null,
+    "article": "C15.2.1 h",
+    "doc": "fia_c19",
+    "kind": "official",
+    "verified": true,
+    "quote": "Particulate Reinforced Aluminium Alloy Matrix Composite i. SupremEX 225XE ii. SupremEX 225XF",
+    "same_in_iss21": true
+   },
+   {
+    "key": "prohibited_outside_pu",
+    "value": [
+     "shape memory (except piezo sensors)",
+     "AM with beryllium",
+     ">5% Pt+Ru+Ir+Re+Au",
+     "foil metallurgy",
+     "intermetallic alloys"
+    ],
+    "unit": null,
+    "article": "C15.3.1-C15.3.2",
+    "doc": "fia_c19",
+    "kind": "official",
+    "verified": true,
+    "quote": "Shape Memory Materials except for piezoelectric materials used in electrical sensors.",
+    "same_in_iss21": true
+   },
+   {
+    "key": "wheel_rim_material",
+    "value": [
+     "AZ70",
+     "AZ80"
+    ],
+    "unit": "magnesium alloy",
+    "article": "C10.7.1",
+    "doc": "fia_c19",
+    "kind": "official",
+    "verified": true,
+    "quote": "Wheel Rims must be made from AZ70 or AZ80 magnesium alloy.",
+    "same_in_iss21": true
+   },
+   {
+    "key": "heat_exchanger_material",
+    "value": "aluminium alloy, not additive manufactured",
+    "unit": null,
+    "article": "C7.4.1 a-b",
+    "doc": "fia_c19",
+    "kind": "official",
+    "verified": true,
+    "quote": "The Heat Exchanger Core and header tanks must be made from aluminium alloy.",
+    "same_in_iss21": true
+   },
+   {
+    "key": "driver_ballast_density_min",
+    "value": 7500,
+    "unit": "kg/m3",
+    "article": "C4.3.2 d",
+    "doc": "fia_c19",
+    "kind": "official",
+    "verified": true,
+    "quote": "Have a density greater than 7500Kg/m3.",
+    "same_in_iss21": true
+   },
+   {
+    "key": "pu_prohibited_materials",
+    "value": [
+     "magnesium alloys",
+     "MMC >2% v/v",
+     "intermetallics",
+     ">5% Pt/Ru/Ir/Re",
+     "Cu >2.2% Be",
+     "other alloys >0.25% Be",
+     "tungsten base alloys",
+     "ceramics and CMC",
+     "Al >1% Li",
+     "nanomaterials",
+     "density >18,400 kg/m3",
+     "Al >1% Ag",
+     "composites not in C15.2.3"
+    ],
+    "unit": null,
+    "article": "C15.6.1",
+    "doc": "fia_c19",
+    "kind": "official",
+    "verified": true,
+    "quote": "Unless explicitly permitted for a specific application, the following materials may not be used on the Power Unit: a. Magnesium based alloys.",
+    "same_in_iss21": true
+   },
+   {
+    "key": "pu_material_density_max",
+    "value": 18400,
+    "unit": "kg/m3",
+    "article": "C15.6.1 l",
+    "doc": "fia_c19",
+    "kind": "official",
+    "verified": true,
+    "quote": "Material with a density exceeding 18,400 kg/m3.",
+    "same_in_iss21": true
    }
   ]
  }
