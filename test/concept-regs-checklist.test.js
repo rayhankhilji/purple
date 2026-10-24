@@ -298,3 +298,26 @@ test("the optimiser never keeps an illegal car: replayed lineage (physics bench,
   assert.equal(bad.kept, 0); assert.equal(bad.best.id, "baseline");
   for (const row of bad.lineage) for (const c of row.candidates) { assert.equal(c.legal, false); assert.ok(c.violations.length > 0); }
 });
+
+// ---------------------------------------------------------------- known conflicts in files this checklist does not own (todo: they
+// do not fail the suite; each names the fix requested in docs/concept/FIA_CHECKLIST.md "Fixes requested")
+test("C10.10.1: the PhysicalCar track widths fit the suspension-width limit (front ≤ 1.540 m, rear ≤ 1.470 m)", { todo: "fix requested: concept/sim/lapsim.js baselineCar tracks 1.60 / 1.55 m and concept/parts.js wheel |y| 790 / 760 mm exceed C10.10.1" }, () => {
+  assert.deepEqual(regs.checkPhysical(physical.physical(B)), []);
+});
+test("C3.5.1(a), App. C2 §4.5/§4.11: the floor throat parameter fits the RV-FLOOR-BODY roof (Z ≤ 75 mm between XF=1775 and XR=−600)", { todo: "fix requested: concept/parts.js floor.throat_mm domain 80-130 'above Z=0' lies above the 75 mm roof" }, () => {
+  assert.ok(parts.BY_ID.floor.params.throat_mm.max <= regs.FLOOR_ROOF_Z);
+});
+test("checkPhysical bites: tracks past C10.10.1 and PU figures past C5.2 are named", () => {
+  const pc = JSON.parse(JSON.stringify(physical.physical(B)));
+  pc.track_front_m = 1.54; pc.track_rear_m = 1.47; assert.deepEqual(regs.checkPhysical(pc), [], "the C10.10.1 maxima themselves are legal");
+  pc.track_front_m = 1.6; pc.track_rear_m = 1.55; assert.deepEqual(regs.checkPhysical(pc).map(v => v.field), ["track_front_m", "track_rear_m"]);
+  pc.track_front_m = 1.5; pc.track_rear_m = 1.45; pc.pu.mguk_kw = 400; assert.deepEqual(regs.checkPhysical(pc).map(v => v.id), ["REG-C-ERS-K"]);
+});
+
+test("checklist files never use the banned words (EVAL_GUARDRAILS G-HON-02)", () => {
+  const fs = require("fs"), path = require("path");
+  const banned = new RegExp(["\\bC" + "FD\\b", "wind" + " tunnel", "valid" + "ated", "aerodynamically" + " tested"].join("|"), "i");
+  for (const f of ["docs/concept/FIA_CHECKLIST.md", "concept/regs.js", "test/concept-regs-checklist.test.js"]) {
+    const m = banned.exec(fs.readFileSync(path.join(__dirname, "..", f), "utf8")); assert.equal(m, null, f + ": " + (m && m[0]));
+  }
+});

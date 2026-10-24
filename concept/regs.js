@@ -5,6 +5,13 @@
 // same in Issue 17 (28/04/2026, the issue this file first cited) apart from wording this model does not use (C5.2.3 adds a
 // 550 MJ/h per-cylinder cap; C5.2.10 adds "no Recharge limit behind the safety car in Low Grip conditions").
 // Anything not read in that document is `verified: false` with its basis stated. Never claims more.
+// FIA checklist pass (2026-10-24, docs/concept/FIA_CHECKLIST.md: one row per article the concept can touch, with the check and the
+// test that covers it): COMBO_RULES (wing X+Z envelope, straight-mode direction, volume minimums, plank holes, sidepod inlet,
+// suspension width, part-mass sanity), MATERIAL_RULES (C15 and the component material articles, against
+// concept/data/materials-2026.json), checkPU (C5.2 figures handed to the lap sims) and NaN-safe comparisons throughout.
+// test/concept-regs-checklist.test.js re-implements every checked limit independently and compares verdicts on random and extreme
+// designs. Issue 21 (19/10/2026) reads the same for every article checked here (it changes C5.2.10(ii), 5 -> 4 MJ, and C5.2.8(iii),
+// neither of which is checked).
 // Dual browser / Node: attaches to window.EI.concept.regs and to module.exports (same pattern as lab/aero.js).
 (function () {
   const root = typeof window !== "undefined" ? window : globalThis;
@@ -402,6 +409,17 @@
     if (!(pu.ice_kw <= 3000 / 3.6 + 1e-9)) out.push(viol("REG-C-FUEL-FLOW", pu.ice_kw, +(3000 / 3.6).toFixed(1)));
     return out;
   }
+  // checkPhysical(pc): a PhysicalCar (concept/physical.js) against the limits the lap sims rely on: its PU block (checkPU) and the
+  // C10.10.1 suspension width through its track widths (wheel centre plane = Wheel Coordinate System origin + half the rim overall
+  // width, C2.1.3(a), C10.7.2(a): front track ≤ 2 × (603 + 167) = 1540 mm, rear ≤ 2 × (525 + 210.15) = 1470.3 mm)
+  function checkPhysical(pc, opts) {
+    const out = checkPU(pc && pc.pu, opts); if (!pc) return out;
+    for (const [k, w] of [["track_front_m", SUSP_WIDTH.wheels_front], ["track_rear_m", SUSP_WIDTH.wheels_rear]]) {
+      if (pc[k] === undefined) continue;
+      const o = (pc[k] * 1000) / 2 - w.half_rim; if (over(o, w.max_y)) out.push(viol("REG-C-SUSP-WIDTH", o, w.max_y + " (" + k + " " + pc[k] + " m)", { field: k }));
+    }
+    return out;
+  }
   // C5.2.8(i)-(ii): ERS-K propulsion power limit (kW) at a car speed (km/h), without / with Overtake
   function mgukLimitKw(v, overtake) {
     const p = overtake ? (v < 355 ? 7100 - 20 * v : 0) : v < 340 ? 1800 - 5 * v : v < 345 ? 6900 - 20 * v : 0;
@@ -498,7 +516,7 @@
   const api = {
     SOURCE, DOC, NOMINAL_TYRE_MASS, QUALI_SESSIONS, SESSIONS, MGUK_TRANSMISSION, FLOOR_BODY_MAX_Y, RULES, MODEL_RULES, COMBO_RULES, MATERIAL_RULES, ALL_RULES, BY_ID,
     PLANK_HOLE, SIDEPOD_INLET_MAX_CM2, SUSP_WIDTH, FLOOR_ROOF_Z, PU_PARTS, isQuali, minMass, fwEnvelopeX, fwChordLimit, fwStraightExtent, fwSectionZ, rwSectionZ,
-    fwProfilesChordLimit, rwProfilesChordLimit, setMaterials, materialTable, findMaterial, classify, materialViolations, materialsOf, checkMaterials, checkPU,
+    fwProfilesChordLimit, rwProfilesChordLimit, setMaterials, materialTable, findMaterial, classify, materialViolations, materialsOf, checkMaterials, checkPU, checkPhysical,
     mgukLimitKw, checkFacts, check, describeViolation,
   };
   C.regs = api;
