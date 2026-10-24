@@ -126,8 +126,9 @@ test("guard 8: cooling margin is not free - PKG-COOLING rule and a linear derate
   const c = inlet => aeromap.evaluate(withParam("sidepods", "inlet_cm2", inlet).params).cooling;
   assert.equal(c(650).power_factor, 1); assert.equal(c(650).margin_ok, true);
   assert.ok(ids(withParam("sidepods", "inlet_cm2", 550)).includes("PKG-COOLING"), "550 cm² was a free 0.18 s before");
-  const just = c(570); assert.equal(just.margin_ok, false); assert.ok(just.power_factor < 0.985, "linear term: " + just.power_factor);
-  assert.ok(!ids(withParam("sidepods", "inlet_cm2", 590)).includes("PKG-COOLING"));
+  // difficulty v1 (parc fermé): the need is the RACE need (0.95 × 1.05 = 0.9975), so the baseline 650 cm² is the smallest legal inlet
+  const just = c(640); assert.equal(just.margin_ok, false); assert.ok(just.power_factor < 0.99, "linear term: " + just.power_factor);
+  assert.ok(!ids(withParam("sidepods", "inlet_cm2", 650)).includes("PKG-COOLING"));
   // the reviewer's case: 550 cm² is now illegal, so no score
   assert.equal(bench.bench(withParam("sidepods", "inlet_cm2", 550)).score, null);
 });

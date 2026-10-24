@@ -162,7 +162,7 @@
   // concept-model constraints: physics/packaging consequences of the regulation, NOT regulation text. Same violation channel.
   const MODEL_RULES = [
     { id: "PKG-WB", article: "concept packaging model v0", kind: "min", unit: "mm", text: "Wheelbase must fit front-axle offset + cockpit + bulkhead gap + ICE + gearbox to the final drive", verified: false, source: "concept packaging model v0 (ICE and gearbox lengths are estimates)" },
-    { id: "PKG-COOLING", article: "concept thermal model v0", kind: "min", value: 1.05, unit: "× the PU's cooling need", text: "Cooling capacity must cover the PU's need with a 5 % margin (ambient and traffic not modelled)", verified: false, source: "concept aero map v0 COOLING.margin (assumption)" },
+    { id: "PKG-COOLING", article: "concept thermal model v0", kind: "min", value: 1.05, unit: "× the PU's cooling need", text: "Cooling capacity must cover the PU's RACE need with a 5 % margin (parc fermé: the qualifying car races; ambient and traffic not modelled)", verified: false, source: "concept aero map v0 COOLING.margin (assumption); race need 0.95 (difficulty v1, REDESIGNS.md §4, assumption)" },
     { id: "PKG-FLOOR-STALL", article: "concept floor model v0", kind: "min", value: 2, unit: "mm above the stall gap", text: "Floor effective gap at the dynamic ride height (static − 5 mm high-speed compression) must stay ≥ 2 mm above the modelled stall onset (porpoising region)", verified: false, source: "concept aero map v0 FLOOR.dyn_compression_mm / stall_margin_mm (assumptions)" },
   ];
   // FIA checklist pass (docs/concept/FIA_CHECKLIST.md, 2026-10-24): combinations of parameters, input sanity and the remaining
@@ -210,7 +210,23 @@
     { id: "REG-C-BRAKE-BALANCE", article: "C11.1.1, C11.1.4, C11.6", kind: "info", text: "One pedal, two master cylinders, one circuit per axle (bores within 3 mm); any change to the brake system on track by the driver's direct input; the rear may be powered (brake-by-wire) up to 1.2 × the driver's rear master-cylinder pressure", verified: true, modelled_as: "setup.brake_bias is one fixed front share for the lap (no driver trim or migration map: conservative); the sim scales the calibrated braking capacity by the fixed-balance capacity ratio and the MGU-K harvests from the rear share" },
     { id: "REG-C-TORQUE-TRANSFER", article: "C9.1.2, C9.9.1", kind: "info", text: "No traction control; no device that transfers torque from a slower to a faster rotating wheel", verified: true, modelled_as: "not a design parameter: the sim's traction is the rear axle's total capacity (a locked-differential idealisation); differential settings act through yaw dynamics a point-mass QSS sim does not have (docs/concept/FACTORS.md)" },
   ];
-  const ALL_RULES = RULES.concat(MODEL_RULES, COMBO_RULES, MATERIAL_RULES, SETUP_RULES);
+  // redesigns v1 (docs/concept/REDESIGNS.md §3): the concept families. Three concept PACKAGING rules (labelled model rules, not FIA
+  // text: they say what each concept physically is) and the Section C articles each concept touches (info: the concept view draws
+  // them inside the volumes, the geometry is not checked here). Kept apart from RULES and COMBO_RULES (the designer's lists).
+  // Integer codes are the contract's (REDESIGNS.md §1): sidepods.concept 1 zeropod, 2 ramp; cooling.layout 1 airbox_gills;
+  // engine_cover.style 1 low_narrow.
+  const CONCEPT_LIMITS = { zeropod_inlet_max_cm2: 760, ramp_undercut_min_mm: 120 };
+  const CONCEPT_RULES = [
+    { id: "PKG-ZEROPOD-INLET", article: "concept packaging model (redesigns v1)", kind: "max", value: CONCEPT_LIMITS.zeropod_inlet_max_cm2, unit: "cm² (both sides)", text: "A zeropod (sidepods.concept 1) is a narrow pod with minimal inlets: its inlet area is at most 760 cm² (both sides)", verified: false, source: "concept assumption (REDESIGNS.md §2): the narrow pod's frontal section cannot carry a larger aperture" },
+    { id: "PKG-RAMP-UNDERCUT", article: "concept packaging model (redesigns v1)", kind: "min", value: CONCEPT_LIMITS.ramp_undercut_min_mm, unit: "mm", text: "A ramp sidepod (sidepods.concept 2) is defined by its deep undercut: undercut depth at least 120 mm", verified: false, source: "concept assumption (REDESIGNS.md §2)" },
+    { id: "PKG-AIRBOX-COVER", article: "concept packaging model (redesigns v1)", kind: "requires", text: "The large airbox + gills cooling layout (cooling.layout 1) needs the full-height engine cover (engine_cover.style 0): a low narrow cover cannot house the extra roll-hoop radiator", verified: false, source: "concept assumption (REDESIGNS.md §2)" },
+    { id: "REG-C-SIDEPOD-VOLUME", article: "C3.8.1, App. C2 §16", kind: "info", text: "Sidepod bodywork inside RV-SIDEPOD (XF 900-1300, Y ≤ 715, Z 125-600), more than 50 mm from the Floor Board", verified: true, modelled_as: "every sidepod concept (downwash, zeropod, ramp) is drawn inside the volume by the concept view; the undercut depth and pod shape are not checked geometrically here" },
+    { id: "REG-C-EC-APERTURES", article: "C3.8.2, C3.16.10-C3.16.12", kind: "info", text: "Engine cover inside RV-EC; louvre and cooling apertures only where Section C permits them", verified: true, modelled_as: "cooling.layout 1 (airbox + gills) and 2 (louvred cover) are aperture layouts; their positions are not checked geometrically here" },
+    { id: "REG-C-FW-ENDPLATE-VOLUMES", article: "C3.10.2-C3.10.9, App. C2 §23-27", kind: "info", text: "Front wing endplate, footplate, diveplane, pylon and strake volumes (endplate within Y 560-900)", verified: true, modelled_as: "front_wing.endplate 0 / 1 and the short high nose's pylons are drawn inside these volumes; not checked geometrically here" },
+    { id: "REG-C-NOSE-IMPACT", article: "concept info (Section C front impact structure and its FIA impact test; article not pinned here)", kind: "info", text: "The nose / front impact structure must pass the FIA frontal impact test whatever its length", verified: false, modelled_as: "nose.concept 1 (short high nose) carries +1.2 kg for a shorter, stiffer crush structure (assumption); the impact test itself is not modelled" },
+    { id: "REG-C-SUSP-ACTUATION", article: "C10.2.2, C10.2.4-C10.2.6", kind: "info", text: "Passive suspension: push or pull rods to rockers are both permitted (springs and dampers the only elements, no adjustment in motion)", verified: true, modelled_as: "suspension.front 0 pushrod / 1 pullrod: mass and CoG of the front suspension, platform stiffness × 1.05 for pullrod (assumption)" },
+  ];
+  const ALL_RULES = RULES.concat(MODEL_RULES, COMBO_RULES, MATERIAL_RULES, SETUP_RULES, CONCEPT_RULES);
   const BY_ID = Object.create(null); for (const r of ALL_RULES) BY_ID[r.id] = Object.assign({ source: SOURCE }, r);
 
   // Minimum Mass for a session ("qualifying" default: the lap model is a pole-lap model). Returns kg and how it was built.
@@ -563,6 +579,11 @@
       const vTop = GEAR_TOP.limit_rpm / gs[gs.length - 1];
       if (under(vTop, GEAR_TOP.need_kmh)) out.push(viol("PKG-GEAR-TOP", vTop, GEAR_TOP.need_kmh));
     }
+    // ---- redesigns v1: concept packaging (CONCEPT_RULES). Codes are the contract's integers; absent = the baseline code (0)
+    const pp = f.params || {}, code = (part, param) => (pp[part] && typeof pp[part][param] === "number" ? Math.round(pp[part][param]) : 0);
+    if (code("sidepods", "concept") === 1 && sp && over(sp.inlet_cm2, CONCEPT_LIMITS.zeropod_inlet_max_cm2)) out.push(viol("PKG-ZEROPOD-INLET", sp.inlet_cm2, CONCEPT_LIMITS.zeropod_inlet_max_cm2));
+    if (code("sidepods", "concept") === 2 && sp && under(sp.undercut_mm, CONCEPT_LIMITS.ramp_undercut_min_mm)) out.push(viol("PKG-RAMP-UNDERCUT", sp.undercut_mm, CONCEPT_LIMITS.ramp_undercut_min_mm));
+    if (code("cooling", "layout") === 1 && code("engine_cover", "style") !== 0) out.push(viol("PKG-AIRBOX-COVER", "engine_cover.style " + code("engine_cover", "style"), "0 (high fin) with cooling.layout 1"));
     const mats = materialsOf(f);
     if (mats) for (const v of checkMaterials(mats)) out.push(v);
     return out;
@@ -586,7 +607,7 @@
   }
 
   const api = {
-    SOURCE, DOC, NOMINAL_TYRE_MASS, QUALI_SESSIONS, SESSIONS, MGUK_TRANSMISSION, FLOOR_BODY_MAX_Y, RULES, MODEL_RULES, COMBO_RULES, MATERIAL_RULES, SETUP_RULES, ALL_RULES, BY_ID,
+    SOURCE, DOC, NOMINAL_TYRE_MASS, QUALI_SESSIONS, SESSIONS, MGUK_TRANSMISSION, FLOOR_BODY_MAX_Y, RULES, MODEL_RULES, COMBO_RULES, MATERIAL_RULES, SETUP_RULES, CONCEPT_RULES, CONCEPT_LIMITS, ALL_RULES, BY_ID,
     GEAR_80KMH_MAX_RPM_PER_KMH, GEAR_TOP,
     PLANK_HOLE, SIDEPOD_INLET_MAX_CM2, SUSP_WIDTH, FLOOR_ROOF_Z, CC_UHS_FTU_MPA, PU_PARTS, PU_LOCK, isQuali, minMass, fwEnvelopeX, fwChordLimit, fwStraightExtent, fwSectionZ, rwSectionZ,
     fwProfilesChordLimit, rwProfilesChordLimit, setMaterials, materialTable, findMaterial, classify, materialViolations, materialsOf, checkMaterials, checkPU, checkPhysical,

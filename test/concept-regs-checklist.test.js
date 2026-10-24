@@ -83,12 +83,18 @@ function oracle(d, opts) {
   const gk = oracleGears(p), worstGear = Math.max(...gk), vTop = 13000 / gk[7];
   add("REG-C-GEAR-80KMH", worstGear * LIM.gear_80kmh_kmh > LIM.gear_80kmh_rpm, worstGear * LIM.gear_80kmh_kmh - LIM.gear_80kmh_rpm);
   add("PKG-GEAR-TOP", vTop < 333.5 - 1e-9, vTop - 333.5);
+  // redesigns v1 concept packaging, typed independently: zeropod (sidepods.concept 1) inlet ≤ 760 cm²; ramp (2) undercut ≥ 120 mm;
+  // airbox + gills (cooling.layout 1) only with the high-fin cover (engine_cover.style 0); an absent code is the baseline 0
+  const cc = (part, k) => (p[part] && typeof p[part][k] === "number" ? p[part][k] : 0);
+  add("PKG-ZEROPOD-INLET", cc("sidepods", "concept") === 1 && p.sidepods.inlet_cm2 > 760, cc("sidepods", "concept") === 1 ? p.sidepods.inlet_cm2 - 760 : null);
+  add("PKG-RAMP-UNDERCUT", cc("sidepods", "concept") === 2 && p.sidepods.undercut_mm < 120, cc("sidepods", "concept") === 2 ? p.sidepods.undercut_mm - 120 : null);
+  add("PKG-AIRBOX-COVER", cc("cooling", "layout") === 1 && cc("engine_cover", "style") !== 0);
   // the PU lock: every PU row as the same design WITHOUT overrides builds it, and the transmission option unchanged
   const ref = parts.massSheet(p, { session: opts && opts.session }).parts;
   add("PKG-PU-FIXED", ["pu_ice", "pu_turbo", "pu_mguk", "pu_es", "pu_electronics"].some(id => { const a = m.parts.find(r => r.id === id), b = ref.find(r => r.id === id); return !a || a.mass_kg !== b.mass_kg || a.x_mm !== b.x_mm || a.z_mm !== b.z_mm; }) || m.mguk_transmission !== parts.PU.mguk_transmission);
   return { ids: out, near };
 }
-const ORACLE_IDS = ["REG-C-WIDTH", "REG-C-WB", "REG-C-FRONT-AXLE", "REG-C-COCKPIT", "REG-C-BULKHEAD", "REG-C-FLOOR-WIDTH", "REG-C-FW-ELEMENTS", "REG-C-RW-ELEMENTS", "REG-C-FW-SPAN", "REG-C-RW-SPAN", "REG-C-FW-CHORD", "REG-C-FW-SM-ENVELOPE", "REG-C-FW-PROFILES-Z", "REG-C-RW-CHORD", "REG-C-RW-ENDPLATE", "REG-C-FW-FLAP", "REG-C-RW-FLAP", "REG-C-SM-DIRECTION", "REG-C-ELEMENTS-MIN", "REG-C-PLANK", "REG-C-PLANK-HOLES", "REG-C-SIDEPOD-INLET", "REG-C-FLOOR-ROOF", "REG-C-MASS-MIN", "REG-C-MASS-FRONT", "REG-C-MASS-REAR", "REG-C-DRIVER-MASS", "REG-C-PU-MASS", "REG-C-ICE-MASS", "REG-C-MGUK-MASS", "REG-C-TC-MASS", "REG-C-ES-MASS", "REG-C-PU-COG", "REG-C-DRIVELINE-MASS", "PKG-WB", "PKG-COOLING", "PKG-FLOOR-STALL", "PKG-PART-MASS", "PKG-PU-FIXED", "REG-C-GEAR-80KMH", "PKG-GEAR-TOP"];
+const ORACLE_IDS = ["REG-C-WIDTH", "REG-C-WB", "REG-C-FRONT-AXLE", "REG-C-COCKPIT", "REG-C-BULKHEAD", "REG-C-FLOOR-WIDTH", "REG-C-FW-ELEMENTS", "REG-C-RW-ELEMENTS", "REG-C-FW-SPAN", "REG-C-RW-SPAN", "REG-C-FW-CHORD", "REG-C-FW-SM-ENVELOPE", "REG-C-FW-PROFILES-Z", "REG-C-RW-CHORD", "REG-C-RW-ENDPLATE", "REG-C-FW-FLAP", "REG-C-RW-FLAP", "REG-C-SM-DIRECTION", "REG-C-ELEMENTS-MIN", "REG-C-PLANK", "REG-C-PLANK-HOLES", "REG-C-SIDEPOD-INLET", "REG-C-FLOOR-ROOF", "REG-C-MASS-MIN", "REG-C-MASS-FRONT", "REG-C-MASS-REAR", "REG-C-DRIVER-MASS", "REG-C-PU-MASS", "REG-C-ICE-MASS", "REG-C-MGUK-MASS", "REG-C-TC-MASS", "REG-C-ES-MASS", "REG-C-PU-COG", "REG-C-DRIVELINE-MASS", "PKG-WB", "PKG-COOLING", "PKG-FLOOR-STALL", "PKG-PART-MASS", "PKG-PU-FIXED", "REG-C-GEAR-80KMH", "PKG-GEAR-TOP", "PKG-ZEROPOD-INLET", "PKG-RAMP-UNDERCUT", "PKG-AIRBOX-COVER"];
 
 // ---------------------------------------------------------------- design generators
 const quantize = (s, v) => +Math.min(s.max, Math.max(s.min, Math.round((v - s.min) / s.step) * s.step + s.min)).toFixed(6);

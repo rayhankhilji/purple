@@ -40,7 +40,8 @@ test("calibration: design changes are relative deltas from the part catalogue an
   const half = physical.physical(withParam(RB, "rear_wing", "sm_delta_deg", 7.5)); assert.ok(half.aero.straight.CDA_m2 > b.aero.straight.CDA_m2 && half.aero.straight.CDA_m2 < b.aero.corner.CDA_m2);
   const low = physical.physical(withParam(RB, "rear_wing", "aoa_deg", 15)); assert.ok(low.aero.straight.CDA_m2 < b.aero.straight.CDA_m2 && low.aero.corner.CDA_m2 < b.aero.corner.CDA_m2);
   // the sim sees those deltas: no flaps costs most of a second (sim v2: Straight Mode CDA ratio 0.82, fitted inside priors-2026; was 0.55), a wider floor gains
-  assert.ok(lap(pf) > lap(b) + 0.5); assert.ok(lap(wide) < lap(b));
+  // (difficulty v1: floor width past 1450 mm counts at half rate, so the sim-visible floor delta is checked on a narrower floor)
+  assert.ok(lap(pf) > lap(b) + 0.5); assert.ok(lap(physical.physical(withParam(RB, "floor", "width_mm", 1400))) > lap(b) + 0.05);
 });
 
 test("energy: regulation semantics (C5.2.9 window + C5.2.10 recharge) and the es_harvest exploit is closed in the bench", () => {

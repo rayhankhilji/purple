@@ -94,7 +94,9 @@ test("gearing in the sim: the rev limiter caps the top speed, and over-revving a
 });
 
 test("interaction (gearing × drag): a lower-drag rear wing buys top speed only up to the limiter, so the two do not add", () => {
-  const vmax = d => sim.simulateLap(PC(d), "silverstone").vmax_kmh;
+  // tyres held at the baseline's: the lower rear wing moves the aero balance outside the driver's window (difficulty v1,
+  // concept/physical.js BALANCE_WINDOW), whose grip loss would lower the exit speeds before the straights; this test isolates drag
+  const vmax = d => sim.simulateLap(Object.assign(PC(d), { tyres: PC(RB).tyres }), "silverstone").vmax_kmh;
   const gainAt = top => vmax(ap(RB, [["gearbox", "top_kmh", top], ["rear_wing", "aoa_deg", 14]])) - vmax(ap(RB, [["gearbox", "top_kmh", top]]));
   const free = gainAt(336), capped = gainAt(292);
   assert.ok(free > 3, "low-drag wing at the RB22 final drive: +" + free.toFixed(1) + " km/h");

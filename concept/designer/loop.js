@@ -47,7 +47,7 @@
   // ---- the scripted mock (reads the previous result)
   const PLAYBOOK = [
     ["rear_wing.sm_delta_deg", 30], ["front_wing.sm_delta_deg", 20], ["floor.ride_height_mm", 30], ["floor.width_mm", 1540],
-    ["rear_wing.chord_mm", 300], ["diffuser.expansion_deg", 17], ["sidepods.inlet_cm2", 570], ["sidepods.undercut_mm", 155],
+    ["rear_wing.chord_mm", 300], ["diffuser.expansion_deg", 17], ["setup.roll_front", 48], ["sidepods.undercut_mm", 140],
     ["front_wing.span_mm", 1350], ["rear_wing.span_mm", 1150], ["rear_wing.endplate_top_mm", 880], ["floor.throat_mm", 80],
     ["rear_wing.aoa_deg", 22], ["front_wing.chord_mm", 520], ["front_wing.aoa_deg", 29],
   ];

@@ -59,14 +59,25 @@ const SENS = {
   "setup.roll_front": { to: 57, expect: { lltd: +1 }, lapm: true },
   "setup.heave_n_mm": { to: 3700, expect: { heave: +1, sm: +1 }, lapm: true },
   "setup.brake_bias": { to: 58, expect: { bias: +1 }, lapm: true },
+  // redesigns v1 (docs/concept/REDESIGNS.md): one concept switch each. The zeropod is measured on a car already on the compact
+  // cooling layout with the inlet that cools it (alone it is short of cooling: PKG-COOLING); the low narrow cover alone is short of
+  // cooling too, so it derates the ICE (ice −1)
+  "sidepods.concept": { to: 1, ctx: [["cooling", "layout", 2], ["sidepods", "inlet_cm2", 730]], expect: { cla: -1, cda: -1, mass: -1 } },
+  "nose.concept": { to: 1, expect: { bal: -1, cog: +1, mass: +1 } },
+  "front_wing.endplate": { to: 1, expect: { cla: -1, bal: +1, cda: +1 } },
+  "rear_wing.style": { to: 2, expect: { cla: +1, bal: -1, cda: +1 } },
+  "floor.edge": { to: 1, expect: { cla: +1, bal: -1, cda: +1 } },
+  "cooling.layout": { to: 1, expect: { cda: +1, cog: +1, mass: +1 } },
+  "engine_cover.style": { to: 1, expect: { cda: -1, cog: -1, ice: -1 } },
+  "suspension.front": { to: 1, expect: { heave: +1, cog: -1 } },
 };
 // the default "regulated" energy plan jumps between nearby cars by up to ~0.07 s (docs/concept/FACTORS.md §4); the set-up rows
 // read the lap with the sim's smooth "marginal" plan so a small mechanism is not drowned by a plan switch
 const lapM = d => sim.simulateLap(physical.physical(d), "silverstone", null, { strategy: "marginal" }).lap_s;
-test("sensitivity: every one of the 28 design parameters moves the physics-sim lap and its PhysicalCar fields in the documented direction", () => {
+test("sensitivity: every design parameter (shape, set-up, gearing, concept families) moves the physics-sim lap and its PhysicalCar fields in the documented direction", () => {
   assert.deepEqual(Object.keys(SENS).sort(), parts.PARAMS.map(s => s.part + "." + s.param).sort(), "every parameter has a row");
   const q = { cla: claT, bal, cda: pc => pc.aero.corner.CDA_m2, cdaS: pc => pc.aero.straight.CDA_m2, wdf: pc => pc.weight_dist_front, cog: pc => pc.cog_height_m, mass: pc => pc.mass_kg,
-    g8: pc => pc.gearing.rpm_per_kmh[7], g2: pc => pc.gearing.rpm_per_kmh[1], lltd: pc => pc.suspension.lltd_front, heave: pc => pc.aero.heave_n_per_mm, sm: pc => pc.aero.stall_margin_mm, bias: pc => pc.brakes.bias_front };
+    g8: pc => pc.gearing.rpm_per_kmh[7], g2: pc => pc.gearing.rpm_per_kmh[1], lltd: pc => pc.suspension.lltd_front, heave: pc => pc.aero.heave_n_per_mm, sm: pc => pc.aero.stall_margin_mm, bias: pc => pc.brakes.bias_front, ice: pc => pc.pu.ice_kw };
   for (const key of Object.keys(SENS)) {
     const [part, param] = key.split("."), row = SENS[key], base = row.ctx ? ap(RB, row.ctx) : RB, d = ap(base, [[part, param, row.to]]);
     const p0 = physical.physical(base), p1 = physical.physical(d);
@@ -113,7 +124,10 @@ test("interactions: the combined effect differs from the sum where the physics c
   // ride height × front wing: a higher car loses front-wing load (ground effect)
   assert.ok(A(ap(RB, [["floor", "ride_height_mm", 45]])).front_wing_ground_effect < 1 && A(ap(RB, [["floor", "ride_height_mm", 30]])).front_wing_ground_effect > 1);
   // sidepod inlet × undercut × cooling: each alone is fine, together they starve the radiators (power derate)
-  const cool = interaction(d => physical.physical(d).pu.ice_kw, [["sidepods", "inlet_cm2", 590]], [["sidepods", "undercut_mm", 160]]);
+  // (difficulty v1: sized for the race need, parc fermé, the RB22 baseline sits at the cooling edge; measured from a 700 cm² car:
+  // 670 cm² alone and a 160 mm undercut alone are fine, together they fall short)
+  const C0 = ap(RB, [["sidepods", "inlet_cm2", 700]]), ice = d => physical.physical(d).pu.ice_kw, i0 = ice(C0);
+  const cool = { va: ice(ap(C0, [["sidepods", "inlet_cm2", 670]])) - i0, vb: ice(ap(C0, [["sidepods", "undercut_mm", 160]])) - i0, vab: ice(ap(C0, [["sidepods", "inlet_cm2", 670], ["sidepods", "undercut_mm", 160]])) - i0 };
   assert.ok(cool.va === 0 && cool.vb === 0 && cool.vab < -10, "cooling interaction " + JSON.stringify(cool));
   // ballast position × ballast mass: moving ballast moves the weight split in proportion to the ballast there is
   const wdf = interaction(d => physical.physical(d).weight_dist_front, [["ballast", "x_frac", 0.9]], [["ballast", "extra_kg", 10]]);

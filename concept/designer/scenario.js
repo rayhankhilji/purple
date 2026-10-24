@@ -88,7 +88,8 @@
   // "front_wing.span_mm 1350 (max 1350 C3.10.1(a))"
   function nearLimits(d, max) {
     const dom = r => ((r.side === "max" ? r.hi_src : r.lo_src) === "domain" ? 1 : 0);
-    return ranges(d).filter(r => r.headroom_frac <= LIMITS.near_frac)
+    // concept families (redesigns v1) are categorical codes: "headroom" means nothing for them, so they are never near-limit lines
+    return ranges(d).filter(r => r.headroom_frac <= LIMITS.near_frac && !(parts.CONCEPTS && parts.CONCEPTS[r.key]))
       .sort((a, b) => dom(a) - dom(b) || a.headroom_frac - b.headroom_frac || (a.key < b.key ? -1 : 1))
       .slice(0, max == null ? LIMITS.near : max)
       .map(r => r.key + " " + r.value + " (" + r.side + " " + (r.side === "max" ? r.hi + " " + r.hi_src : r.lo + " " + r.lo_src) + ")");

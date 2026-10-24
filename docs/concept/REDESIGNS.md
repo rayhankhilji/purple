@@ -3,7 +3,7 @@
 The concept car can change **shape and style on purpose**, not only by slider tweaks: eight parts carry a discrete *concept family*
 parameter (an integer code). Each code changes, consistently, the part's mass and CoG, its aero (downforce per axle, drag, balance,
 ride-height sensitivity, straight-mode effect), cooling capacity, and where relevant its legality. Every number in this file is a
-**model assumption or a sourced estimate, labelled as such**; nothing here is CFD, wind-tunnel or track data. Lap times that come out
+**model assumption or a sourced estimate, labelled as such**; no flow is solved anywhere and nothing here is measured on a car. Lap times that come out
 of it are "reduced-order lap model · calibrated to 2026 pole laps · aero map v1" predictions with their ± band.
 
 ## 1. Contract (shared with the 3D-view helper and the autonomous-engine helper; do not rename)

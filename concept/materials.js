@@ -57,7 +57,7 @@
     brakes_rear: "C11.2.2: callipers must be aluminium (C15.2.1(b)); discs and pads are friction materials (C15.4(c))",
     pu_ice: "C15.6-C15.9: PU materials are listed and approved separately; the C5 mass floors bind", pu_turbo: "C15.8: PU material rules; C5.3.4 mass floor", pu_mguk: "C15.9: PU material rules; C5.18.7 mass floor", pu_es: "C15.9: PU material rules; C5.17.9 mass floor", pu_electronics: "C15.6-C15.9: PU material rules",
     driver_ballast: "C4.3.2: density > 7500 kg/m³, sealed by the FIA (fixed: tungsten heavy alloy)", driver: "the driver's reference mass (C4.5.2)", seat_safety: "harness and safety equipment are standard items (C14)",
-    electronics: "C15.4(d): electrical components are exempt; not modelled", hydraulics: "not modelled", cooling: "not modelled (heat exchangers)", fuel_system: "C15.4(l): the fuel bladder is a regulated material", misc: "paint, fasteners, sealant: not modelled", layout: "no mass of its own", setup: "set-up values (springs, anti-roll bars, brake balance), no mass of their own",
+    electronics: "C15.4(d): electrical components are exempt; not modelled", hydraulics: "not modelled", cooling: "not modelled (heat exchangers)", fuel_system: "C15.4(l): the fuel bladder is a regulated material", misc: "paint, fasteners, sealant: not modelled", layout: "no mass of its own", setup: "set-up values (springs, anti-roll bars, brake balance), no mass of their own", suspension: "suspension architecture (push or pull rods): no mass row of its own (front_suspension carries it)",
   };
   const REF_SPEED_KMH = 250;   // the speed the flex estimates refer to (estimate)
 

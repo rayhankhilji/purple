@@ -60,6 +60,19 @@
   // more-factors v1: roll centres ≈ 40 mm above the ground at both axles (ESTIMATE: F1 wishbone geometry keeps them low; not
   // published), and the platform stiffness the sim was calibrated with (concept/sim/lapsim.js MODEL.heave_n_per_mm, 3500 N/mm)
   const SUSP = Object.freeze({ roll_centre_mm: 40, platform_n_per_mm: 3500 });
+  // difficulty v1 (docs/concept/REDESIGNS.md §4): the DRIVER'S AERO-BALANCE WINDOW. The lap sim is a quasi-steady point mass: it
+  // takes each axle to its limit and has no transient yaw, so it drives an aero balance far from the one the car was set up and
+  // driven with as if the driver could use it. A real car whose high-speed aero balance moves away from its mechanical set-up
+  // understeers or oversteers through the speed range, and the driver backs off. Modelled as a grip loss on both tyre μ when the
+  // corner-mode aero balance (front share of CLA) moves more than `rear` rearwards or `fwd` forwards of the team baseline's:
+  // μ × (1 − k · excess²), floored at `floor`. The forward (oversteer) side is narrower; a car without a shark fin (redesigns
+  // engine_cover.style low_narrow) loses 0.004 more of it (aeromap concepts.window_fwd). ASSUMPTIONS: window ±1.5 / 1.2 points
+  // of balance, k = 20 (2 points outside ≈ 0.8 % of grip, a few tenths a lap), not fitted to any data.
+  const BALANCE_WINDOW = Object.freeze({ rear: 0.015, fwd: 0.012, k: 20, floor: 0.9 });
+  function balanceWindow(dBal, fwdShift) {
+    const fwd = BALANCE_WINDOW.fwd + (fwdShift || 0), excess = Math.max(0, dBal - fwd) + Math.max(0, -BALANCE_WINDOW.rear - dBal);
+    return { balance_shift: dBal, window: [-BALANCE_WINDOW.rear, fwd], excess, grip_factor: Math.max(BALANCE_WINDOW.floor, 1 - BALANCE_WINDOW.k * excess * excess) };
+  }
   const DEFAULT_CALIBRATION = Object.freeze({ cla_scale: 1, cda_scale: 1, power_scale: 1, mu_scale: 1 });
   const r6 = v => Math.round(v * 1e6) / 1e6, r4 = v => Math.round(v * 10000) / 10000;
 
@@ -139,6 +152,8 @@
     // Straight Mode balance: the anchor's, moved by the design's change, blended towards Corner Mode as the flaps close (φ → 0)
     const bal = Q.bal + (a.balance - ra.balance), balS = (1 - phiDf) * bal + phiDf * (Q.balS + (a.balance_sm - ra.balance_sm));
     const corner = { CLA_front_m2: r6(cla * bal), CLA_rear_m2: r6(cla * (1 - bal)), CDA_m2: r6(cda) };
+    // difficulty v1: the driver's aero-balance window (BALANCE_WINDOW); 1 inside the window, so every baseline is unchanged
+    const bw = balanceWindow(a.balance - ra.balance, ((a.concepts && a.concepts.window_fwd) || 0) - ((ra.concepts && ra.concepts.window_fwd) || 0));
     const straight = { CLA_front_m2: r6(claS * balS), CLA_rear_m2: r6(claS * (1 - balS)), CDA_m2: r6(cdaS) };
     const iceKw = base.ice * a.cooling.power_factor * cal.power_scale;
     const out = {
@@ -173,8 +188,12 @@
         balance_corner: r6(bal), front_wing_ground_effect: r6(a.front_wing_ground_effect), material_flex: a.material_flex,
       },
       materials: m.materials,
+      // difficulty v1: the aero-balance window (additive field; its grip factor is already in tyres.mu_x / mu_y)
+      stability: { balance_shift: r6(bw.balance_shift), window: bw.window.map(r4), excess: r6(bw.excess), grip_factor: r6(bw.grip_factor) },
+      // redesigns v1: the concept families in force (ids; their effects are already in the mass sheet and the aero map)
+      concepts: a.concepts ? Object.assign({}, a.concepts.ids) : null,
       pu: { ice_kw: r4(iceKw), mguk_kw: Math.min(ENERGY.mguk_max_kw, parts.BY_ID.pu_mguk.power_kw) * cal.power_scale, es_deploy_mj_per_lap: ENERGY.deploy_mj, es_harvest_mj_per_lap: ENERGY.recharge_max_mj, es_soc_window_mj: ENERGY.soc_window_mj },
-      tyres: Object.assign({ mu_x: r4(base.mu_x * cal.mu_scale), mu_y: r4(base.mu_y * cal.mu_scale), load_sens: base.ls, radius_m: base.radius, compound: "soft" }, base.slip != null ? { slip_angle_rad: base.slip } : {}),
+      tyres: Object.assign({ mu_x: r4(base.mu_x * cal.mu_scale * bw.grip_factor), mu_y: r4(base.mu_y * cal.mu_scale * bw.grip_factor), load_sens: base.ls, radius_m: base.radius, compound: "soft" }, base.slip != null ? { slip_angle_rad: base.slip } : {}),
       brakes: { max_decel_g_mech: base.decel },
       drivetrain_eff: base.eta,
       calibration: cal,
@@ -201,12 +220,15 @@
     const khA = A && A.aero && typeof A.aero.heave_n_per_mm === "number" ? A.aero.heave_n_per_mm : SUSP.platform_n_per_mm;
     out.aero.heave_n_per_mm = r4(khA * parts.heaveRatio(p) / parts.heaveRatio(R.design.params));
     out.aero.dyn_compression_mm = r4(a.dyn_compression_mm);
+    // redesigns v1: crosswind yaw sensitivity of a concept (engine_cover low_narrow: no fin) relative to its reference; only set when
+    // the design has more than the reference, so every baseline maps onto its anchor exactly (the sim's default is 0)
+    { const ys = ((a.concepts && a.concepts.yaw_sens) || 0) - ((ra.concepts && ra.concepts.yaw_sens) || 0); if (ys > 0) out.aero.yaw_sens = r6(ys); }
     // brake balance: declared with its reference, so the sim brakes the reference car exactly as calibrated
     out.brakes.bias_front = r6(parts.val(p, "setup", "brake_bias") / 100); out.brakes.bias_ref = r6(parts.val(R.design.params, "setup", "brake_bias") / 100);
     return out;
   }
 
-  const api = { LABEL, LABEL_V0, REF, REF_V0, ENERGY, SUSP, SOURCES, DEFAULT_CALIBRATION, physical, anchor, reference, flapDeployment, straightValue, sim };
+  const api = { LABEL, LABEL_V0, REF, REF_V0, ENERGY, SUSP, BALANCE_WINDOW, balanceWindow, SOURCES, DEFAULT_CALIBRATION, physical, anchor, reference, flapDeployment, straightValue, sim };
   C.physical = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();
