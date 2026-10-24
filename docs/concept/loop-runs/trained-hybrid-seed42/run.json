@@ -1,0 +1,437 @@
+{
+  "run_id": "eng-01m5pynf4nmrb8x16fzkwjf2q6",
+  "mode": "auto",
+  "llm": "live",
+  "trained": true,
+  "status": "done",
+  "stop_reason": "no improvement for 8 iterations",
+  "started_at": "2026-10-24T12:37:42.679Z",
+  "finished_at": "2026-10-24T12:40:05.839Z",
+  "error": null,
+  "dir": "/home/user/purple/data/concept-engine/eng-01m5pynf4nmrb8x16fzkwjf2q6",
+  "opts": {
+    "llm": "live",
+    "trained": true,
+    "team": "redbull",
+    "seed": 42,
+    "max_calls": 200,
+    "max_iterations": 200,
+    "patience": 8,
+    "target_lap_s": null,
+    "search_budget": 600,
+    "scope": "wide",
+    "pace_ms": 0,
+    "workers": 4,
+    "start": "baseline"
+  },
+  "stream": "/api/concept/engine/run/eng-01m5pynf4nmrb8x16fzkwjf2q6/stream",
+  "final": {
+    "summary": {
+      "run_id": "eng-01m5pynf4nmrb8x16fzkwjf2q6",
+      "session_id": "eng-01m5pynf4nmrb8x16fzkwjf2q6",
+      "iterations": 18,
+      "kept": 6,
+      "stopped": "no improvement for 8 iterations",
+      "kept_by_proposer": {
+        "fallback": 4,
+        "llm": 2
+      },
+      "designer": {
+        "generations": 18,
+        "llm_calls": 18,
+        "llm_accepted": 10,
+        "fallback": 8,
+        "reasons": {
+          "illegal": 7,
+          "duplicate": 1
+        },
+        "designs_seen": 25
+      },
+      "trained": true,
+      "lap_baseline_s": 88.763,
+      "lap_best_s": 87.683,
+      "d_lap_s": -1.08,
+      "gap_to_pole_s": -0.428,
+      "request_ids": [
+        "mreq_01a16deac8447291a29a0de773dfc708",
+        "mreq_01a16deb030976a3b9ebef3bef66e1ef",
+        "mreq_01a16deb24e07760aeb87c182dcf0980",
+        "mreq_01a16deb447a70238b95deb8532f8cb0",
+        "mreq_01a16deb6098715099e6abb04c1701f6",
+        "mreq_01a16deb800c7a02b5ef15ce8cd95bf0",
+        "mreq_01a16deb9d337883b11b6431ed140133",
+        "mreq_01a16debb3a977e19e475a5aced9f12b",
+        "mreq_01a16debcc5d7121b224b6103a1c2a6c",
+        "mreq_01a16debe63771b08cfce16ba4f0fed4",
+        "mreq_01a16debfdc472428b4b00f866a41979",
+        "mreq_01a16dec128074908abfe9b20ebd16b2",
+        "mreq_01a16dec28ce70239ff2d8b41a68aeb0",
+        "mreq_01a16dec40b176c3bd2b5408c27ba688",
+        "mreq_01a16dec5f0d7f11aed6d25c7533f6f3",
+        "mreq_01a16dec7d29717298115634e353a327",
+        "mreq_01a16deca4cb7323b40a7642aa6db9f9",
+        "mreq_01a16decc7d37392aa3ca9efc0533cfa"
+      ],
+      "label": "physics lap sim · quasi-steady-state point mass · Silverstone OSM centreline · calibrated to 2026 British GP qualifying",
+      "kept_rule": "kept = legal && score_after > score_before (concept/optimize.js; weekend score, monotonic in the simulated lap); the model's output has no verdict field"
+    },
+    "calls": 18,
+    "laps": 10818,
+    "stop_reason": "no improvement for 8 iterations",
+    "rescore": {
+      "legal": true,
+      "source": "re-scored: a direct sim.simulateLap call, equal to the bench lap · physics lap sim · quasi-steady-state point mass · Silverstone OSM centreline · calibrated to 2026 British GP qualifying · Silverstone · 2026 British GP qualifying conditions",
+      "direct_sim_lap_s": 87.683,
+      "label": "physics lap sim · quasi-steady-state point mass · Silverstone OSM centreline · calibrated to 2026 British GP qualifying",
+      "lap_s": 87.683,
+      "sectors_s": [
+        28.365,
+        35.423,
+        23.895
+      ],
+      "speed_trap_kmh": 310,
+      "energy": {
+        "deployed_mj": 7.936,
+        "harvested_mj": 3.936,
+        "harvested_braking_mj": 1.65,
+        "harvested_superclip_mj": 2.192,
+        "harvested_part_throttle_mj": 0.093,
+        "recharge_cap_mj": 6.5,
+        "superclip_share": null,
+        "superclip_fill": null,
+        "energy_limited": true,
+        "soc_start_mj": 4,
+        "soc_min_mj": 0,
+        "soc_end_mj": 0,
+        "strategy": "regulated",
+        "deploy_ceiling_kmh": null
+      },
+      "mass_kg": 770,
+      "baseline": {
+        "lap_s": 88.763,
+        "sectors_s": [
+          28.616,
+          35.865,
+          24.282
+        ],
+        "label": "Red Bull Racing RB22 · Red Bull Ford DM01 (concept shape on the inferred RB22 car)"
+      },
+      "delta_to_baseline_s": -1.08,
+      "delta_to_pole_s": -0.428,
+      "delta_to_had_s": -1.063,
+      "pole": {
+        "code": "ANT",
+        "s": 88.111
+      },
+      "had_s": 88.746,
+      "sigma_s": 0.105,
+      "band95_s": [
+        87.476,
+        87.89
+      ],
+      "components": {
+        "transfer_s": 0.105,
+        "transfer_k": 0.164,
+        "sector_change_s": [
+          -0.251,
+          -0.442,
+          -0.387
+        ],
+        "fit_residual_rms_s": 0.008,
+        "sim_noise_s": 0.005,
+        "surrogate_s": 0
+      },
+      "verdict_pole": {
+        "target_s": 88.111,
+        "side": "faster",
+        "inside": false,
+        "text": "faster than 88.111 s and the whole 95 % band (87.476–87.890 s) is below it: outside the model's uncertainty"
+      },
+      "verdict_had": {
+        "target_s": 88.746,
+        "side": "faster",
+        "inside": false,
+        "text": "faster than 88.746 s and the whole 95 % band (87.476–87.890 s) is below it: outside the model's uncertainty"
+      },
+      "grid_position": 1,
+      "grid_range_95": [
+        1,
+        1
+      ],
+      "pu_identical": true,
+      "changes": [
+        {
+          "part": "layout",
+          "param": "wheelbase_mm",
+          "from": 3400,
+          "to": 3375,
+          "delta": -25,
+          "unit": "mm",
+          "domain_frac": -0.0357,
+          "text": "Overall layout · Wheelbase 3400 mm → 3375 mm"
+        },
+        {
+          "part": "survival_cell",
+          "param": "front_axle_offset_mm",
+          "from": 75,
+          "to": 85,
+          "delta": 10,
+          "unit": "mm",
+          "domain_frac": 0.04,
+          "text": "Survival cell · Front axle behind cell front (XA→XF) 75 mm → 85 mm"
+        },
+        {
+          "part": "survival_cell",
+          "param": "cockpit_len_mm",
+          "from": 1930,
+          "to": 1960,
+          "delta": 30,
+          "unit": "mm",
+          "domain_frac": 0.0857,
+          "text": "Survival cell · Cell front to cockpit rear (XA→XC) 1930 mm → 1960 mm"
+        },
+        {
+          "part": "survival_cell",
+          "param": "bulkhead_gap_mm",
+          "from": 380,
+          "to": 360,
+          "delta": -20,
+          "unit": "mm",
+          "domain_frac": -0.0667,
+          "text": "Survival cell · Cockpit rear to ICE face (XC→XPU) 380 mm → 360 mm"
+        },
+        {
+          "part": "front_wing",
+          "param": "span_mm",
+          "from": 1300,
+          "to": 1350,
+          "delta": 50,
+          "unit": "mm",
+          "domain_frac": 0.1,
+          "text": "Front wing assembly · Span 1300 mm → 1350 mm"
+        },
+        {
+          "part": "front_wing",
+          "param": "chord_mm",
+          "from": 580,
+          "to": 565,
+          "delta": -15,
+          "unit": "mm",
+          "domain_frac": -0.03,
+          "text": "Front wing assembly · Mean chord (planform / span, X extent) 580 mm → 565 mm"
+        },
+        {
+          "part": "front_wing",
+          "param": "aoa_deg",
+          "from": 25,
+          "to": 25.5,
+          "delta": 0.5,
+          "unit": "°",
+          "domain_frac": 0.0167,
+          "text": "Front wing assembly · Wing setting (lab front_wing_deg units) 25° → 25.5°"
+        },
+        {
+          "part": "front_wing",
+          "param": "sm_delta_deg",
+          "from": 4,
+          "to": 11.5,
+          "delta": 7.5,
+          "unit": "°",
+          "domain_frac": 0.375,
+          "text": "Front wing assembly · Straight-mode flap incidence reduction 4° → 11.5°"
+        },
+        {
+          "part": "rear_wing",
+          "param": "span_mm",
+          "from": 1100,
+          "to": 1080,
+          "delta": -20,
+          "unit": "mm",
+          "domain_frac": -0.05,
+          "text": "Rear wing assembly · Span 1100 mm → 1080 mm"
+        },
+        {
+          "part": "rear_wing",
+          "param": "chord_mm",
+          "from": 420,
+          "to": 360,
+          "delta": -60,
+          "unit": "mm",
+          "domain_frac": -0.2,
+          "text": "Rear wing assembly · Chord (X extent) 420 mm → 360 mm"
+        },
+        {
+          "part": "rear_wing",
+          "param": "aoa_deg",
+          "from": 20,
+          "to": 23,
+          "delta": 3,
+          "unit": "°",
+          "domain_frac": 0.1,
+          "text": "Rear wing assembly · Wing setting (lab rear_wing_deg units) 20° → 23°"
+        },
+        {
+          "part": "rear_wing",
+          "param": "endplate_top_mm",
+          "from": 860,
+          "to": 880,
+          "delta": 20,
+          "unit": "mm",
+          "domain_frac": 0.1,
+          "text": "Rear wing assembly · Endplate top (Z) 860 mm → 880 mm"
+        },
+        {
+          "part": "rear_wing",
+          "param": "sm_delta_deg",
+          "from": 15,
+          "to": 28.5,
+          "delta": 13.5,
+          "unit": "°",
+          "domain_frac": 0.45,
+          "text": "Rear wing assembly · Straight-mode flap incidence reduction 15° → 28.5°"
+        },
+        {
+          "part": "floor",
+          "param": "width_mm",
+          "from": 1450,
+          "to": 1540,
+          "delta": 90,
+          "unit": "mm",
+          "domain_frac": 0.18,
+          "text": "Floor · Floor body width (2 × max |Y|) 1450 mm → 1540 mm"
+        },
+        {
+          "part": "floor",
+          "param": "throat_mm",
+          "from": 60,
+          "to": 75,
+          "delta": 15,
+          "unit": "mm",
+          "domain_frac": 0.4286,
+          "text": "Floor · Venturi throat roof height above Z=0 (≤ 75: RV-FLOOR-BODY roof, C3.5.1(a)) 60 mm → 75 mm"
+        },
+        {
+          "part": "floor",
+          "param": "ride_height_mm",
+          "from": 35,
+          "to": 26.5,
+          "delta": -8.5,
+          "unit": "mm",
+          "domain_frac": -0.17,
+          "text": "Floor · Static ride height at the plank 35 mm → 26.5 mm"
+        },
+        {
+          "part": "diffuser",
+          "param": "expansion_deg",
+          "from": 14,
+          "to": 16,
+          "delta": 2,
+          "unit": "°",
+          "domain_frac": 0.1429,
+          "text": "Diffuser · Diffuser expansion angle 14° → 16°"
+        },
+        {
+          "part": "sidepods",
+          "param": "inlet_cm2",
+          "from": 650,
+          "to": 590,
+          "delta": -60,
+          "unit": "cm²",
+          "domain_frac": -0.075,
+          "text": "Sidepods · Cooling inlet area (both sides) 650 cm² → 590 cm²"
+        },
+        {
+          "part": "sidepods",
+          "param": "undercut_mm",
+          "from": 100,
+          "to": 140,
+          "delta": 40,
+          "unit": "mm",
+          "domain_frac": 0.1818,
+          "text": "Sidepods · Undercut depth 100 mm → 140 mm"
+        },
+        {
+          "part": "ballast",
+          "param": "x_frac",
+          "from": 0.05,
+          "to": 1,
+          "delta": 0.95,
+          "unit": "× WB",
+          "domain_frac": 0.95,
+          "text": "Ballast · Ballast position along the wheelbase 0.05 × WB → 1 × WB"
+        }
+      ],
+      "checks": {
+        "rules": 57,
+        "fails": 0
+      },
+      "honesty": "model prediction ± band (physics lap sim's own measured errors; the concept aero map's coefficients are estimates and are not inside the band), not a real car's lap"
+    },
+    "from_start": null,
+    "best_params": {
+      "layout": {
+        "wheelbase_mm": 3375
+      },
+      "survival_cell": {
+        "front_axle_offset_mm": 85,
+        "cockpit_len_mm": 1960,
+        "bulkhead_gap_mm": 360
+      },
+      "nose": {},
+      "halo": {},
+      "rear_impact": {},
+      "front_wing": {
+        "span_mm": 1350,
+        "chord_mm": 565,
+        "aoa_deg": 25.5,
+        "elements": 3,
+        "sm_delta_deg": 11.5
+      },
+      "rear_wing": {
+        "span_mm": 1080,
+        "chord_mm": 360,
+        "aoa_deg": 23,
+        "elements": 2,
+        "endplate_top_mm": 880,
+        "sm_delta_deg": 28.5
+      },
+      "floor": {
+        "width_mm": 1540,
+        "throat_mm": 75,
+        "ride_height_mm": 26.5
+      },
+      "diffuser": {
+        "expansion_deg": 16
+      },
+      "sidepods": {
+        "inlet_cm2": 590,
+        "undercut_mm": 140
+      },
+      "engine_cover": {},
+      "pu_ice": {},
+      "pu_turbo": {},
+      "pu_mguk": {},
+      "pu_es": {},
+      "pu_electronics": {},
+      "gearbox": {},
+      "front_suspension": {},
+      "rear_suspension": {},
+      "wheels_front": {},
+      "wheels_rear": {},
+      "brakes_front": {},
+      "brakes_rear": {},
+      "cooling": {},
+      "fuel_system": {},
+      "hydraulics": {},
+      "electronics": {},
+      "misc": {},
+      "driver": {},
+      "driver_ballast": {},
+      "seat_safety": {},
+      "ballast": {
+        "x_frac": 1,
+        "extra_kg": 0
+      }
+    }
+  }
+}
