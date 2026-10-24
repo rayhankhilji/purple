@@ -23,12 +23,21 @@ const MAX_ITERATIONS = 30, MAX_PACE_MS = 3000;
 const now = () => new Date().toISOString();
 const newRunId = () => "loop-" + ulid().toLowerCase();
 
+// the designer tasks (both frozen): "v1" = concept/designer/prompt.js (the default, the website's), "compact" = the "changes only"
+// task concept/designer/prompt-compact.js (one change, no hypothesis; a separate Mubit task). task: a name, a task module, or null (v1)
+const TASKS = { v1: designerPrompt, compact: require("../concept/designer/prompt-compact.js") };
+function taskOf(task) {
+  if (task == null) return designerPrompt;
+  if (typeof task === "string") { if (!Object.prototype.hasOwnProperty.call(TASKS, task)) throw new Error("designer task must be \"v1\" or \"compact\""); return TASKS[task]; }
+  return task;
+}
 // (text, meta) -> the exact request this call sends (stub fetch in server/mubit.js; nothing leaves the process)
-const previewer = task => (text, meta) => mubitReal.captureRequest({ userContent: text, sessionId: meta.sessionId, trained: !!meta.trained, task: task || designerPrompt });
-// the live designer call: one Mubit call per iteration, kind "design", the designer task (not the research agent's)
+const previewer = task => (text, meta) => mubitReal.captureRequest({ userContent: text, sessionId: meta.sessionId, trained: !!meta.trained, task: taskOf(task) });
+// the live designer call: one Mubit call per iteration, kind "design", the designer task (not the research agent's). Every call of
+// the returned caller (an untrained proposal and its trained re-send alike) uses the SAME task.
 function designerLlm(mubit, task) {
-  const m = mubit || mubitReal;
-  return (text, meta) => m.callMubit({ userContent: text, sessionId: meta.sessionId, trained: !!meta.trained, kind: "design", task: task || designerPrompt });
+  const m = mubit || mubitReal, t = taskOf(task);
+  return (text, meta) => m.callMubit({ userContent: text, sessionId: meta.sessionId, trained: !!meta.trained, kind: "design", task: t });
 }
 
 // mount(app, { ok, fail, body, ApiError, mock, dataDir, mockDir, mubit, log })
@@ -125,4 +134,4 @@ function mount(app, o) {
   return { runs, start, active: () => active };
 }
 
-module.exports = { mount, designerLlm, previewer, MAX_ITERATIONS, newRunId };
+module.exports = { mount, designerLlm, previewer, taskOf, TASKS, MAX_ITERATIONS, newRunId };

@@ -9,6 +9,8 @@
 // }
 // Strict JSON: prose before or after the object is a rejection; unknown keys are a rejection (so a model-made "verdict" or "kept"
 // can never sneak in). One tolerance: a single ```json fence around the object is stripped (Haiku adds one; HANDOVER §5).
+// The "changes only" task (concept/designer/prompt-compact.js) is read by validateCompact: { changes: [exactly one change] } and
+// nothing else (no hypothesis / expected needed); validatorFor(task) picks the validator of a task module.
 // Legality is NOT checked here (concept/regs.js does that on the applied design). Every rejection names the field.
 // Dual browser / Node: window.EI.concept.designerSchema and module.exports.
 (function () {
@@ -34,16 +36,10 @@
     return isObj(obj) ? { ok: true, value: obj } : fail("json", "must be an object");
   }
 
-  // validate(input) -> { ok: true, value: { changes: [{ part, param, to, clamped }], hypothesis, expected }, clamped?, trimmed?, normalised? }
-  //                  | { ok: false, field, message, error }
-  function validate(input) {
-    const p = parse(input); if (!p.ok) return p;
-    const obj = p.value;
-    for (const k of KEYS) if (!(k in obj)) return fail(k, "missing");
-    for (const k of Object.keys(obj)) if (!KEYS.includes(k)) return fail(k, "unexpected key");
-    const ch = obj.changes;
+  // the changes array -> { ok, changes: [{ part, param, to, clamped }], clamped: [keys] } | fail (shared by validate and validateCompact)
+  function changeList(ch, min, max) {
     if (!Array.isArray(ch)) return fail("changes", "must be an array");
-    if (ch.length < LIMITS.changes_min || ch.length > LIMITS.changes_max) return fail("changes", "must hold 1-3 changes (has " + ch.length + ")");
+    if (ch.length < min || ch.length > max) return fail("changes", "must hold " + (min === max ? "exactly " + min + " change" + (min === 1 ? "" : "s") : min + "-" + max + " changes") + " (has " + ch.length + ")");
     const changes = [], clamped = [], seen = new Set();
     for (let i = 0; i < ch.length; i++) {
       const c = ch[i], f = "changes[" + i + "]";
@@ -58,6 +54,18 @@
       if (cl) clamped.push(key);
       changes.push({ part: c.part, param: c.param, to, clamped: cl });
     }
+    return { ok: true, changes, clamped };
+  }
+
+  // validate(input) -> { ok: true, value: { changes: [{ part, param, to, clamped }], hypothesis, expected }, clamped?, trimmed?, normalised? }
+  //                  | { ok: false, field, message, error }
+  function validate(input) {
+    const p = parse(input); if (!p.ok) return p;
+    const obj = p.value;
+    for (const k of KEYS) if (!(k in obj)) return fail(k, "missing");
+    for (const k of Object.keys(obj)) if (!KEYS.includes(k)) return fail(k, "unexpected key");
+    const cl0 = changeList(obj.changes, LIMITS.changes_min, LIMITS.changes_max); if (!cl0.ok) return cl0;
+    const { changes, clamped } = cl0;
     if (typeof obj.hypothesis !== "string") return fail("hypothesis", "must be a string");
     const e = obj.expected;
     if (!isObj(e)) return fail("expected", "must be an object");
@@ -78,7 +86,25 @@
     return out;
   }
 
-  const api = { KEYS, CHANGE_KEYS, EXPECTED_KEYS, LIMITS, parse, validate };
+  // the "changes only" task (concept/designer/prompt-compact.js, OUTPUT "compact"): exactly { changes: [ ONE { part, param, to } ] }.
+  // No hypothesis / expected (their absence is not a failure); any other key, prose or a second change is a rejection, so only
+  // answers in the task's own format can become training examples. Same JSON / fence / quantisation rules as validate.
+  // -> { ok: true, value: { changes: [{ part, param, to, clamped }], hypothesis: null, expected: null }, clamped? } | fail
+  const COMPACT_KEYS = ["changes"], COMPACT_LIMITS = { changes_min: 1, changes_max: 1 };
+  function validateCompact(input) {
+    const p = parse(input); if (!p.ok) return p;
+    const obj = p.value;
+    for (const k of COMPACT_KEYS) if (!(k in obj)) return fail(k, "missing");
+    for (const k of Object.keys(obj)) if (!COMPACT_KEYS.includes(k)) return fail(k, "unexpected key (the compact task answers changes only)");
+    const cl0 = changeList(obj.changes, COMPACT_LIMITS.changes_min, COMPACT_LIMITS.changes_max); if (!cl0.ok) return cl0;
+    const out = { ok: true, value: { changes: cl0.changes, hypothesis: null, expected: null } };
+    if (cl0.clamped.length) out.clamped = cl0.clamped;
+    return out;
+  }
+  // the validator of a designer task module: OUTPUT "compact" -> validateCompact; anything else (v1, no OUTPUT) -> validate
+  const validatorFor = task => (task && task.OUTPUT === "compact" ? validateCompact : validate);
+
+  const api = { KEYS, CHANGE_KEYS, EXPECTED_KEYS, LIMITS, COMPACT_KEYS, COMPACT_LIMITS, parse, validate, validateCompact, validatorFor };
   C.designerSchema = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();
