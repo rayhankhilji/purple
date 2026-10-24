@@ -20,7 +20,7 @@ Replace the two FILL boxes with the Mubit console numbers, or cut that line.
 - Second seed: 87.815 ± 0.111 s. Without Mubit (optimiser only): 87.646 ± 0.130 s, so on one track a plain optimiser matches it — that is why we are moving to the season.
 - Trained calls: 763 in total (664 designer + 99 research task; counted from the call logs). Console: kept examples **FILL**, adapter **FILL**.
 
-**Next (tonight):** the season. one concept locked for the year, per-track setup, Claude as technical director, scored in championship points vs the real 2026 field at five tracks.
+**Next (tonight):** the season. One concept locked for the year, per-track setup, Claude as technical director, scored in championship points vs the real 2026 field at five tracks.
 
 **Honest limits:** point-mass physics model (held-out speed error ~10 km/h); aero gains are estimates (halve them and the optimiser's best no longer beats pole); results are model predictions, not claims about a real car.
 ---
