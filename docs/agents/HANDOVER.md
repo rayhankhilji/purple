@@ -20,7 +20,7 @@ Living document. Owned by the **integrator** (whoever merges lane branches). Lan
 | SERVER | `session_01Tq3p158ophv4wuU2ibcJbj` | all routes done. Next: `server/scripts/snapshot.js` (ledger freeze), review `lab/lab.js` fetches when UI's PR lands |
 | EVAL | `session_01Ma6U13odw1SA1vFhepRj8u` | exam, sheet, rng done. Next: `--score` for hand-entered Try-models answers, `docs/try-models/README.md` |
 | UI | `session_01LerQvr7T9YvRQxL76EErVH` | **P2.T1 + P2.T6 merged (PR #16/#17).** Lab page at http://127.0.0.1:8788/lab/ with `npm run dev`. Next: re-verify in a real browser against the merged CORS/CAR3D/GAME, then P3.T2 polish. Decisions D-U1..D-U4 in its lane file still to copy into TASK_LOG; SERVER to review lab.js fetches |
-| CAR3D | `session_01DoxHh5Ynx2BDWZsPvLCyDR` | P2.T2 + P3.T2 part 1 merged. Next: hero polish part 2 against the merged lab page |
+| CAR3D | `session_01DoxHh5Ynx2BDWZsPvLCyDR` | P2.T2 + P3.T2 done (self-loading liveries fixed the black panel). Idle |
 | DEMO | `session_01UAY6ykh3dQkf9GfJoZ9BTy` | demo-script.md rewritten (3:00, measured numbers) and merged; deck sources / shot list: see docs/deck/. Numbers owed list in its lane file |
 
 **Human (Tanuj) items:** Discord `/team create`; console screenshots of Tasks (expect ≈ 80 kept) and Adapters (v1 result; if Below target / Prompt only → collect 30 more now); `/checkin` #1 by 12:00 from `docs/checkins/checkin-1.md`; `/checkin` #2 12:00–18:00; merge PR #1 at tag points; Try models by hand (P3.T1) with `docs/try-models/sheet.md`; record the video; `/submit` by Sat 23:59; rotate the Mubit key after the hackathon.
