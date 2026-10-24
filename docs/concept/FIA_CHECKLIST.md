@@ -46,6 +46,14 @@ edges); it fails if a single check drifts by a few mm (tried: +3 mm on the front
 Gaps found in this pass and closed in `regs.js` (each with a test): 14 (listed under "Gaps fixed"). Fixes requested in files this
 checklist does not own: 7 (listed under "Fixes requested"); two are regulation conflicts, kept visible as `todo` tests.
 
+> **Update 2026-10-24 (integrator, after `claude/sim-v3-fia`):** all 7 requested fixes are applied and both `todo` tests are now
+> ordinary passing tests. C3.5.1(a): `floor.throat_mm` is 40–75 mm above Z=0 (new = 0.6 × old; `design.migrate`) and
+> `REG-C-FLOOR-ROOF` is enforced (row D moves from "not checked" to "checked"). C10.10.1: tracks 1.540 / 1.470 m everywhere, the mass
+> sheet's wheel rows carry `y_mm`, `REG-C-SUSP-WIDTH` runs in the bench (`PHYSICAL_SKIP = []`). C15.5.1(f): the survival cell needs a
+> CC-UHS fibre (Ftu > 6250 MPa), so T800S is rejected there and T1100G passes. Materials table corrected (WE43C, KC60 only, CC-UHS is
+> woven, tungsten's PU exclusion is C15.6.1(g)); the front wing takes laminates only (PL-ANTISPLINTER endplates); `design.mutate`
+> draws only materials legal for the part. The per-section counts above are from the first pass and are not re-tallied.
+
 ## A. Dimensions and layout (C2)
 
 | Article | Rule | Touches | Check (regs.js) | Test | Status |
