@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 380" width="720" height="380" font-family="system-ui,-apple-system,Segoe UI,sans-serif" font-size="12">
+<style>.bg{fill:#fff}.fg{fill:#1b1b1f}.mut{fill:#6b6b76}.grid{stroke:#e4e4ea}.ax{stroke:#9a9aa5}@media (prefers-color-scheme:dark){.bg{fill:#16161a}.fg{fill:#ececf1}.mut{fill:#a0a0ab}.grid{stroke:#2c2c33}.ax{stroke:#5a5a64}}</style>
+<rect class="bg" width="720" height="380"/>
+<text class="fg" x="64" y="22" font-size="14" font-weight="600">HAD lateral acceleration vs speed (μy 2.54, ClA 2.85 m²)</text>
+<line class="grid" x1="64" x2="64" y1="36" y2="332"/><text class="mut" x="64" y="348" text-anchor="middle">60</text>
+<line class="grid" x1="113.23076923076923" x2="113.23076923076923" y1="36" y2="332"/><text class="mut" x="113.23076923076923" y="348" text-anchor="middle">80</text>
+<line class="grid" x1="162.46153846153845" x2="162.46153846153845" y1="36" y2="332"/><text class="mut" x="162.46153846153845" y="348" text-anchor="middle">100</text>
+<line class="grid" x1="211.6923076923077" x2="211.6923076923077" y1="36" y2="332"/><text class="mut" x="211.6923076923077" y="348" text-anchor="middle">120</text>
+<line class="grid" x1="260.9230769230769" x2="260.9230769230769" y1="36" y2="332"/><text class="mut" x="260.9230769230769" y="348" text-anchor="middle">140</text>
+<line class="grid" x1="310.1538461538462" x2="310.1538461538462" y1="36" y2="332"/><text class="mut" x="310.1538461538462" y="348" text-anchor="middle">160</text>
+<line class="grid" x1="359.3846153846154" x2="359.3846153846154" y1="36" y2="332"/><text class="mut" x="359.3846153846154" y="348" text-anchor="middle">180</text>
+<line class="grid" x1="408.6153846153846" x2="408.6153846153846" y1="36" y2="332"/><text class="mut" x="408.6153846153846" y="348" text-anchor="middle">200</text>
+<line class="grid" x1="457.84615384615387" x2="457.84615384615387" y1="36" y2="332"/><text class="mut" x="457.84615384615387" y="348" text-anchor="middle">220</text>
+<line class="grid" x1="507.0769230769231" x2="507.0769230769231" y1="36" y2="332"/><text class="mut" x="507.0769230769231" y="348" text-anchor="middle">240</text>
+<line class="grid" x1="556.3076923076924" x2="556.3076923076924" y1="36" y2="332"/><text class="mut" x="556.3076923076924" y="348" text-anchor="middle">260</text>
+<line class="grid" x1="605.5384615384615" x2="605.5384615384615" y1="36" y2="332"/><text class="mut" x="605.5384615384615" y="348" text-anchor="middle">280</text>
+<line class="grid" x1="654.7692307692308" x2="654.7692307692308" y1="36" y2="332"/><text class="mut" x="654.7692307692308" y="348" text-anchor="middle">300</text>
+<line class="grid" x1="704" x2="704" y1="36" y2="332"/><text class="mut" x="704" y="348" text-anchor="middle">320</text>
+<line class="grid" x1="64" x2="704" y1="332" y2="332"/><text class="mut" x="58" y="336" text-anchor="end">0</text>
+<line class="grid" x1="64" x2="704" y1="289.7142857142857" y2="289.7142857142857"/><text class="mut" x="58" y="293.7142857142857" text-anchor="end">1</text>
+<line class="grid" x1="64" x2="704" y1="247.42857142857144" y2="247.42857142857144"/><text class="mut" x="58" y="251.42857142857144" text-anchor="end">2</text>
+<line class="grid" x1="64" x2="704" y1="205.14285714285717" y2="205.14285714285717"/><text class="mut" x="58" y="209.14285714285717" text-anchor="end">3</text>
+<line class="grid" x1="64" x2="704" y1="162.85714285714286" y2="162.85714285714286"/><text class="mut" x="58" y="166.85714285714286" text-anchor="end">4</text>
+<line class="grid" x1="64" x2="704" y1="120.57142857142856" y2="120.57142857142856"/><text class="mut" x="58" y="124.57142857142856" text-anchor="end">5</text>
+<line class="grid" x1="64" x2="704" y1="78.2857142857143" y2="78.2857142857143"/><text class="mut" x="58" y="82.2857142857143" text-anchor="end">6</text>
+<line class="grid" x1="64" x2="704" y1="36" y2="36"/><text class="mut" x="58" y="40" text-anchor="end">7</text>
+<line class="ax" x1="64" x2="704" y1="332" y2="332"/><line class="ax" x1="64" x2="64" y1="36" y2="332"/>
+<text class="mut" x="384" y="370" text-anchor="middle">speed, km/h</text><text class="mut" transform="translate(16 184) rotate(-90)" text-anchor="middle">lateral acceleration, g</text>
+<circle cx="187.8" cy="213.3" r="4" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="128.7" cy="207.9" r="4" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="319.4" cy="157.6" r="4" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="193.8" cy="193.9" r="4" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="606.1" cy="103.1" r="4" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="442.5" cy="125.3" r="4" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="470.6" cy="123.6" r="4" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="175.2" cy="233.4" r="4" fill="#2a6fdb" fill-opacity="0.75"/>
+<rect x="72" y="38" width="12" height="8" fill="#2a6fdb"/><text class="fg" x="88" y="46">corner minima (fit)</text>
+<circle cx="679.0" cy="114.1" r="4" fill="#e0662f" fill-opacity="0.75"/>
+<circle cx="668.8" cy="104.3" r="4" fill="#e0662f" fill-opacity="0.75"/>
+<circle cx="620.4" cy="147.7" r="4" fill="#e0662f" fill-opacity="0.75"/>
+<circle cx="487.0" cy="193.2" r="4" fill="#e0662f" fill-opacity="0.75"/>
+<circle cx="604.6" cy="146.3" r="4" fill="#e0662f" fill-opacity="0.75"/>
+<circle cx="538.8" cy="190.7" r="4" fill="#e0662f" fill-opacity="0.75"/>
+<circle cx="395.3" cy="203.5" r="4" fill="#e0662f" fill-opacity="0.75"/>
+<circle cx="456.7" cy="186.0" r="4" fill="#e0662f" fill-opacity="0.75"/>
+<rect x="215.60000000000002" y="38" width="12" height="8" fill="#e0662f"/><text class="fg" x="231.60000000000002" y="46">flat-out corners (lower bound)</text>
+<path d="M64.0,218.2L73.8,217.4L83.7,216.4L93.5,215.4L103.4,214.3L113.2,213.2L123.1,212.0L132.9,210.8L142.8,209.5L152.6,208.2L162.5,206.8L172.3,205.3L182.2,203.8L192.0,202.2L201.8,200.6L211.7,198.9L221.5,197.1L231.4,195.3L241.2,193.5L251.1,191.5L260.9,189.5L270.8,187.5L280.6,185.4L290.5,183.3L300.3,181.1L310.2,178.8L320.0,176.5L329.8,174.1L339.7,171.6L349.5,169.1L359.4,166.6L369.2,164.0L379.1,161.3L388.9,158.6L398.8,155.8L408.6,153.0L418.5,150.1L428.3,147.1L438.2,144.1L448.0,141.0L457.8,137.9L467.7,134.7L477.5,131.5L487.4,128.2L497.2,124.8L507.1,121.4L516.9,117.9L526.8,114.4L536.6,110.8L546.5,107.2L556.3,103.5L566.2,99.7L576.0,95.9L585.8,92.0L595.7,88.1L605.5,84.1L615.4,80.0L625.2,75.9L635.1,71.8L644.9,67.6L654.8,63.3L664.6,59.0L674.5,54.6L684.3,50.1L694.2,45.6L704.0,41.1" fill="none" stroke="#2f9e6a" stroke-width="1.8"/>
+<rect x="429.6" y="38" width="12" height="3" fill="#2f9e6a"/><text class="fg" x="445.6" y="46">μy(g + ½ρClA v²/m)</text>
+</svg>

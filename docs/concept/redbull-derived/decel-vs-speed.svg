@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 380" width="720" height="380" font-family="system-ui,-apple-system,Segoe UI,sans-serif" font-size="12">
+<style>.bg{fill:#fff}.fg{fill:#1b1b1f}.mut{fill:#6b6b76}.grid{stroke:#e4e4ea}.ax{stroke:#9a9aa5}@media (prefers-color-scheme:dark){.bg{fill:#16161a}.fg{fill:#ececf1}.mut{fill:#a0a0ab}.grid{stroke:#2c2c33}.ax{stroke:#5a5a64}}</style>
+<rect class="bg" width="720" height="380"/>
+<text class="fg" x="64" y="22" font-size="14" font-weight="600">HAD braking deceleration vs speed (μx 2.09, ClA 2.85 m²)</text>
+<line class="grid" x1="64" x2="64" y1="36" y2="332"/><text class="mut" x="64" y="348" text-anchor="middle">80</text>
+<line class="grid" x1="117.33333333333333" x2="117.33333333333333" y1="36" y2="332"/><text class="mut" x="117.33333333333333" y="348" text-anchor="middle">100</text>
+<line class="grid" x1="170.66666666666666" x2="170.66666666666666" y1="36" y2="332"/><text class="mut" x="170.66666666666666" y="348" text-anchor="middle">120</text>
+<line class="grid" x1="224" x2="224" y1="36" y2="332"/><text class="mut" x="224" y="348" text-anchor="middle">140</text>
+<line class="grid" x1="277.3333333333333" x2="277.3333333333333" y1="36" y2="332"/><text class="mut" x="277.3333333333333" y="348" text-anchor="middle">160</text>
+<line class="grid" x1="330.6666666666667" x2="330.6666666666667" y1="36" y2="332"/><text class="mut" x="330.6666666666667" y="348" text-anchor="middle">180</text>
+<line class="grid" x1="384" x2="384" y1="36" y2="332"/><text class="mut" x="384" y="348" text-anchor="middle">200</text>
+<line class="grid" x1="437.33333333333337" x2="437.33333333333337" y1="36" y2="332"/><text class="mut" x="437.33333333333337" y="348" text-anchor="middle">220</text>
+<line class="grid" x1="490.66666666666663" x2="490.66666666666663" y1="36" y2="332"/><text class="mut" x="490.66666666666663" y="348" text-anchor="middle">240</text>
+<line class="grid" x1="544" x2="544" y1="36" y2="332"/><text class="mut" x="544" y="348" text-anchor="middle">260</text>
+<line class="grid" x1="597.3333333333334" x2="597.3333333333334" y1="36" y2="332"/><text class="mut" x="597.3333333333334" y="348" text-anchor="middle">280</text>
+<line class="grid" x1="650.6666666666666" x2="650.6666666666666" y1="36" y2="332"/><text class="mut" x="650.6666666666666" y="348" text-anchor="middle">300</text>
+<line class="grid" x1="704" x2="704" y1="36" y2="332"/><text class="mut" x="704" y="348" text-anchor="middle">320</text>
+<line class="grid" x1="64" x2="704" y1="332" y2="332"/><text class="mut" x="58" y="336" text-anchor="end">0</text>
+<line class="grid" x1="64" x2="704" y1="282.6666666666667" y2="282.6666666666667"/><text class="mut" x="58" y="286.6666666666667" text-anchor="end">1</text>
+<line class="grid" x1="64" x2="704" y1="233.33333333333334" y2="233.33333333333334"/><text class="mut" x="58" y="237.33333333333334" text-anchor="end">2</text>
+<line class="grid" x1="64" x2="704" y1="184" y2="184"/><text class="mut" x="58" y="188" text-anchor="end">3</text>
+<line class="grid" x1="64" x2="704" y1="134.66666666666669" y2="134.66666666666669"/><text class="mut" x="58" y="138.66666666666669" text-anchor="end">4</text>
+<line class="grid" x1="64" x2="704" y1="85.33333333333331" y2="85.33333333333331"/><text class="mut" x="58" y="89.33333333333331" text-anchor="end">5</text>
+<line class="grid" x1="64" x2="704" y1="36" y2="36"/><text class="mut" x="58" y="40" text-anchor="end">6</text>
+<line class="ax" x1="64" x2="704" y1="332" y2="332"/><line class="ax" x1="64" x2="64" y1="36" y2="332"/>
+<text class="mut" x="384" y="370" text-anchor="middle">speed, km/h</text><text class="mut" transform="translate(16 184) rotate(-90)" text-anchor="middle">deceleration, g</text>
+<circle cx="413.9" cy="177.9" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="385.6" cy="182.3" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="359.6" cy="192.9" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="334.0" cy="205.4" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="311.8" cy="220.8" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="291.6" cy="234.9" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="272.4" cy="248.3" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="255.5" cy="259.0" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="210.1" cy="273.7" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="190.4" cy="260.4" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="169.0" cy="268.5" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="149.4" cy="281.5" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="138.3" cy="296.6" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="128.1" cy="301.3" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="118.4" cy="305.5" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="531.6" cy="217.7" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="513.1" cy="220.9" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="496.8" cy="227.4" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="482.4" cy="235.4" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="468.9" cy="242.8" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="457.1" cy="248.7" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="447.6" cy="255.2" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="437.5" cy="259.0" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="426.6" cy="261.3" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="414.7" cy="259.7" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="401.8" cy="262.4" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="389.4" cy="266.5" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="377.7" cy="271.7" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="257.0" cy="270.5" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="241.0" cy="276.0" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="230.0" cy="285.1" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="220.9" cy="292.9" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="212.8" cy="297.9" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="204.0" cy="299.4" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="194.9" cy="301.3" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="569.8" cy="270.1" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="562.9" cy="271.1" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="556.3" cy="271.9" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="549.4" cy="273.1" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="542.0" cy="273.8" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="533.9" cy="274.0" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="525.2" cy="273.4" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="515.4" cy="272.1" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="506.0" cy="272.3" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="497.0" cy="276.1" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="378.7" cy="167.3" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="348.3" cy="164.9" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="311.6" cy="177.4" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="273.8" cy="187.9" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="246.2" cy="216.7" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="226.1" cy="244.5" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<rect x="72" y="38" width="12" height="8" fill="#2a6fdb"/><text class="fg" x="88" y="46">measured (fit window of each zone)</text>
+<path d="M64.0,219.7L74.7,218.4L85.3,217.0L96.0,215.5L106.7,214.0L117.3,212.5L128.0,210.9L138.7,209.2L149.3,207.4L160.0,205.6L170.7,203.7L181.3,201.8L192.0,199.7L202.7,197.7L213.3,195.5L224.0,193.3L234.7,191.1L245.3,188.7L256.0,186.3L266.7,183.9L277.3,181.3L288.0,178.8L298.7,176.1L309.3,173.4L320.0,170.6L330.7,167.8L341.3,164.9L352.0,161.9L362.7,158.9L373.3,155.8L384.0,152.6L394.7,149.4L405.3,146.1L416.0,142.7L426.7,139.3L437.3,135.8L448.0,132.3L458.7,128.7L469.3,125.0L480.0,121.3L490.7,117.5L501.3,113.6L512.0,109.7L522.7,105.7L533.3,101.6L544.0,97.5L554.7,93.3L565.3,89.1L576.0,84.8L586.7,80.4L597.3,75.9L608.0,71.4L618.7,66.9L629.3,62.2L640.0,57.5L650.7,52.8L661.3,48.0L672.0,43.1L682.7,38.1L693.3,36.0L704.0,36.0" fill="none" stroke="#e0662f" stroke-width="1.8"/>
+<rect x="311.6" y="38" width="12" height="3" fill="#e0662f"/><text class="fg" x="327.6" y="46">model, straight-line limit</text>
+<text class="mut" x="700" y="324" text-anchor="end">measured decel is smoothed over ±0.45 s and includes the lateral share in curved zones</text>
+</svg>
