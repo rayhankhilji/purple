@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 354" width="720" height="354" font-family="system-ui, sans-serif" font-size="12">
+<style>.bg{fill:#fcfcfb}.t1{fill:#0b0b0b}.t2{fill:#52514e}.grid{stroke:#e4e3df}.zero{stroke:#8a8984}.s0{fill:#2a78d6;stroke:#2a78d6}.s1{fill:#eb6834;stroke:#eb6834}.ring{stroke:#fcfcfb}
+@media (prefers-color-scheme: dark){.bg{fill:#1a1a19}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.grid{stroke:#383835}.zero{stroke:#8a8984}.s0{fill:#3987e5;stroke:#3987e5}.s1{fill:#d95926;stroke:#d95926}.ring{stroke:#1a1a19}}</style>
+<rect class="bg" width="720" height="354"/>
+<text class="t1" x="16" y="24" font-size="15" font-weight="600">Lap time error, in-sample vs leave-one-circuit-out</text>
+<text class="t2" x="16" y="42">mean (sim − real) over the circuit's checked laps · QSS sim on each lap's own path</text>
+<circle class="s0 ring" cx="156" cy="58" r="5" stroke-width="2"/><text class="t2" x="166" y="62">in-sample</text>
+<circle class="s1 ring" cx="356" cy="58" r="5" stroke-width="2"/><text class="t2" x="366" y="62">held out (trim refit on corners)</text>
+<line class="grid" x1="194.60238731843836" x2="194.60238731843836" y1="66" y2="304"/><text class="t2" x="194.60238731843836" y="320" text-anchor="middle">-3</text>
+<line class="grid" x1="283.28923078944433" x2="283.28923078944433" y1="66" y2="304"/><text class="t2" x="283.28923078944433" y="320" text-anchor="middle">-2</text>
+<line class="grid" x1="371.97607426045033" x2="371.97607426045033" y1="66" y2="304"/><text class="t2" x="371.97607426045033" y="320" text-anchor="middle">-1</text>
+<line class="grid" x1="460.6629177314563" x2="460.6629177314563" y1="66" y2="304"/><text class="t2" x="460.6629177314563" y="320" text-anchor="middle">0</text>
+<line class="grid" x1="549.3497612024622" x2="549.3497612024622" y1="66" y2="304"/><text class="t2" x="549.3497612024622" y="320" text-anchor="middle">1</text>
+<line class="grid" x1="638.0366046734682" x2="638.0366046734682" y1="66" y2="304"/><text class="t2" x="638.0366046734682" y="320" text-anchor="middle">2</text>
+<line class="zero" x1="460.6629177314563" x2="460.6629177314563" y1="66" y2="304" stroke-width="1.5"/>
+<text class="t1" x="140" y="87" text-anchor="end">Silverstone</text>
+<circle class="s0 ring" cx="424.4786855952858" cy="79.5" r="4.5" stroke-width="2"><title>Silverstone · in-sample: -0.408</title></circle>
+<circle class="s1 ring" cx="422.2615145085107" cy="86.5" r="4.5" stroke-width="2"><title>Silverstone · held out (trim refit on corners): -0.433</title></circle>
+<text class="t1" x="140" y="113" text-anchor="end">Red Bull Ring</text>
+<circle class="s0 ring" cx="260.5853988608668" cy="105.5" r="4.5" stroke-width="2"><title>Red Bull Ring · in-sample: -2.256</title></circle>
+<circle class="s1 ring" cx="218.54783505561" cy="112.5" r="4.5" stroke-width="2"><title>Red Bull Ring · held out (trim refit on corners): -2.73</title></circle>
+<text class="t1" x="140" y="139" text-anchor="end">Hungaroring</text>
+<circle class="s0 ring" cx="253.40176453971532" cy="131.5" r="4.5" stroke-width="2"><title>Hungaroring · in-sample: -2.337</title></circle>
+<circle class="s1 ring" cx="520.7039107613273" cy="138.5" r="4.5" stroke-width="2"><title>Hungaroring · held out (trim refit on corners): 0.677</title></circle>
+<text class="t1" x="140" y="165" text-anchor="end">Monaco</text>
+<circle class="s0 ring" cx="395.5667746237379" cy="157.5" r="4.5" stroke-width="2"><title>Monaco · in-sample: -0.734</title></circle>
+<circle class="s1 ring" cx="223.95773250734135" cy="164.5" r="4.5" stroke-width="2"><title>Monaco · held out (trim refit on corners): -2.669</title></circle>
+<text class="t1" x="140" y="191" text-anchor="end">Montreal</text>
+<circle class="s0 ring" cx="280.8946860157272" cy="183.5" r="4.5" stroke-width="2"><title>Montreal · in-sample: -2.027</title></circle>
+<circle class="s1 ring" cx="326.21366302941124" cy="190.5" r="4.5" stroke-width="2"><title>Montreal · held out (trim refit on corners): -1.516</title></circle>
+<text class="t1" x="140" y="217" text-anchor="end">Monza</text>
+<circle class="s0 ring" cx="434.3229252205675" cy="209.5" r="4.5" stroke-width="2"><title>Monza · in-sample: -0.297</title></circle>
+<circle class="s1 ring" cx="187.24137931034485" cy="216.5" r="4.5" stroke-width="2"><title>Monza · held out (trim refit on corners): -3.083</title></circle>
+<text class="t1" x="140" y="243" text-anchor="end">Singapore</text>
+<circle class="s0 ring" cx="210.92076651710346" cy="235.5" r="4.5" stroke-width="2"><title>Singapore · in-sample: -2.816</title></circle>
+<circle class="s1 ring" cx="222.0953087944502" cy="242.5" r="4.5" stroke-width="2"><title>Singapore · held out (trim refit on corners): -2.69</title></circle>
+<text class="t1" x="140" y="269" text-anchor="end">Spa</text>
+<circle class="s0 ring" cx="581.4543985389664" cy="261.5" r="4.5" stroke-width="2"><title>Spa · in-sample: 1.362</title></circle>
+<circle class="s1 ring" cx="652.7586206896551" cy="268.5" r="4.5" stroke-width="2"><title>Spa · held out (trim refit on corners): 2.166</title></circle>
+<text class="t1" x="140" y="295" text-anchor="end">Suzuka</text>
+<circle class="s0 ring" cx="528.4196661433048" cy="287.5" r="4.5" stroke-width="2"><title>Suzuka · in-sample: 0.764</title></circle>
+<circle class="s1 ring" cx="603.6261094067179" cy="294.5" r="4.5" stroke-width="2"><title>Suzuka · held out (trim refit on corners): 1.612</title></circle>
+<text class="t2" x="420" y="342" text-anchor="middle">lap time error (s)</text>
+</svg>

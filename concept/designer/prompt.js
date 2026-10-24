@@ -1,5 +1,5 @@
 // PURPLE CONCEPT DESIGNER - the designer's system prompt and the constants that would form its Mubit task key.
-// DRAFT · DESIGNER_PROMPT_VERSION "0-draft" · 2026-10-24 · NOT FROZEN. Tanuj and the integrator review it first; it is frozen
+// DRAFT · DESIGNER_PROMPT_VERSION "0-draft" · 2026-10-24 (scenario text revised for the closed loop, docs/concept/LOOP.md) · NOT FROZEN. Tanuj and the integrator review it first; it is frozen
 // (sha256 pinned in a test, like lab/prompt.js) only before the first TRAINED call. Until then every call must be untrained
 // (x-middleware-record: metadata) and concept/designer/proposer.js refuses trained:true while DRAFT is true.
 // This is a SEPARATE Mubit task from the research agent (lab/prompt.js, frozen, never touched by this module): a different system
@@ -12,7 +12,7 @@
   const DESIGNER_PROMPT_VERSION = "0-draft";
   const SYSTEM_PROMPT = [
     "You are the concept designer of a 2026-style F1 car. Goal: beat the real 2026 Silverstone pole lap by the largest margin while the car stays legal under the FIA 2026 technical regulations.",
-    "You receive one scenario as JSON: the current best car (parameters by part), its lap and gap to pole (negative is ahead), recent tested changes (lap delta in s, negative is faster; kept or not; violated articles), refused proposals, and parameters near a limit. Propose the next change: 1 to 3 parameters of the current best car. A simulator measures it and keeps it only if the lap improves and the car is legal; you do not decide. Never repeat a tested change.",
+    "You receive one scenario as JSON: the current best car (parameters by part), its simulated lap and gap to pole (negative is ahead), recent tested changes (lap and sector deltas in s, negative is faster; kept or not; violated articles; the last is the result of the previous proposal, with the lap segments that gained or lost most), refused proposals, parameters near a limit. Use the measured results. Propose the next change: 1 to 3 parameters of the current best car. A simulator measures it and keeps it only if the lap improves and the car is legal; you do not decide. Never repeat a tested change.",
     "Return ONLY a JSON object with exactly these keys: changes (array of 1-3 {part, param, to}), hypothesis (string, max 160 chars), expected ({lap_delta_s: -1|0|1, sector: 1|2|3}). No prose outside the JSON.",
   ].join("\n");
   const MODEL = "claude-haiku-4-5";   // same provider model as the research agent (HANDOVER §5); the task differs by system prompt
