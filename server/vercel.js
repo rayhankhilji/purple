@@ -298,7 +298,8 @@ function create() {
     // engine v2 resume: the state is too large for a stream ticket, so a resumed run is only served by the instance that took the POST
     if (b.mode === "engineer" && (b.resume_state != null || b.resume_from != null) && live) return envelope(c, 400, "BAD_INPUT", "resuming a LIVE engineer run is not available on Vercel (a live run starts where its stream is opened, and the saved state does not fit in the stream ticket): resume it locally with npm run dev, or start a new live run");
     if (b.mode === "speed" || b.mode === "auto" || b.mode === "engineer") { const no = reserve(c, "cpu", 1); if (no) return no; }
-    if (live) { const no = reserve(c, "live", isInt(b.max_calls) ? b.max_calls : b.trained === true ? 10 : 20); if (no) return no; }
+    // record_good: up to one trained re-send per designer call, so twice the calls are reserved
+    if (live) { const no = reserve(c, "live", (isInt(b.max_calls) ? b.max_calls : b.trained === true || b.record_good === true ? 10 : 20) * (b.mode === "engineer" && b.record_good === true ? 2 : 1)); if (no) return no; }
     const tb = b.mode === "engineer" && (b.resume_state != null || b.resume_from != null) ? Object.assign({}, b, { resume_state: undefined, resume_from: undefined, resumed_elsewhere: true }) : b;
     const res = await forward(c, { body: JSON.stringify(b), edit: withTicket("engine", tb, live), live, note: b.mode === "speed" ? "speed run on one vCPU, time-boxed to " + LIMITS.time_box_s + " s on Vercel (stops cleanly and re-scores the best car so far)" : b.mode === "engineer" ? "engine v2 on one vCPU, time-boxed to " + LIMITS.time_box_s + " s on Vercel: it stops cleanly between decisions; the final event carries a resumable state" : undefined });
     const j = await res.clone().json().catch(() => null);

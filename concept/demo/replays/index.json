@@ -1,0 +1,24 @@
+{
+ "format": "purple-replay/1",
+ "built_at": "2026-10-24T18:17:32.049Z",
+ "note": "the demo page plays the newest recorded LIVE corrections run (built by node concept/engineer/replay.js from docs/concept/loop-runs/trained-corrections-seed12); falls back to concept/lab/replays/",
+ "runs": [
+  {
+   "name": "trained-corrections-seed12",
+   "kind": "engineer-v2",
+   "engine": "engine v2 · autonomous engineer: Mubit decides the subspace → surrogate screen → physics confirm → interactions → kept / reverted by the numbers",
+   "recorded_at": "2026-10-24T16:24:47.152Z",
+   "calls": 117,
+   "trained": true,
+   "model": "claude-haiku-4-5-20251001",
+   "decisions": 117,
+   "baseline_lap_s": 88.745,
+   "peak_lap_s": 87.7,
+   "gap_to_pole_s": -0.411,
+   "directed_gain_share": 1,
+   "first_request_id": "mreq_01a16ebaa21673b3b1e5f04c7e9836c7",
+   "last_request_id": "mreq_01a16ebffdaf7e40be28032af8b3e722",
+   "file": "trained-corrections-seed12.json"
+  }
+ ]
+}

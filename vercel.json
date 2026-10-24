@@ -20,7 +20,7 @@
   "redirects": [
     {
       "source": "/",
-      "destination": "/concept/lab/?api=/",
+      "destination": "/concept/demo/?api=/",
       "permanent": false
     },
     {
@@ -48,6 +48,22 @@
         }
       ],
       "destination": "/lab/?api=/",
+      "permanent": false
+    },
+    {
+      "source": "/concept/demo",
+      "destination": "/concept/demo/?api=/",
+      "permanent": false
+    },
+    {
+      "source": "/concept/demo/",
+      "missing": [
+        {
+          "type": "query",
+          "key": "api"
+        }
+      ],
+      "destination": "/concept/demo/?api=/",
       "permanent": false
     },
     {

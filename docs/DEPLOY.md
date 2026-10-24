@@ -5,7 +5,8 @@ Production: **https://purple-wine.vercel.app** · Vercel project `purple` (`prj_
 
 | Page | URL |
 |---|---|
-| Concept lab (the product; the site root redirects here) | `/` → `/concept/lab/?api=/` |
+| Demo (the site root redirects here): the car, the real 2026 Silverstone qualifying order, the lap chart and the Mubit feed; replays a recorded live Mubit run, LIVE after the passcode (engine v2 with `record_good`: physics-approved decisions re-sent as trained calls) | `/` → `/concept/demo/?api=/` |
+| Concept lab (the full lab; "full lab →" on the demo) | `/concept/lab/?api=/` |
 | The game (Equation I, pre-existing) | `/index.html` |
 | Research lab | `/lab/` (redirects to `/lab/?api=/` so the page talks to this site's API, not 127.0.0.1:8787) |
 | Concept lab (Mubit loop drawer, Engine dashboard) | `/concept/lab/` (same redirect; `?engine=1` etc. are kept) |
@@ -77,7 +78,7 @@ stdin (`printf %s "$VALUE" | npx vercel@65.2.0 env add NAME production --sensiti
 
 | Limit | Value | Notes |
 |---|---|---|
-| live Mubit calls per IP | 30 / hour | reserved up front: concept loop = `iterations`, engine auto = `max_calls` (default 20, trained 10), `/api/plan` = 2, exam = 20, collect = `n` |
+| live Mubit calls per IP | 30 / hour | reserved up front: concept loop = `iterations`, engine auto = `max_calls` (default 20, trained 10), engine v2 with `record_good` = 2 × `max_calls` (one trained re-send per approved decision at most; the demo's Go live asks for 12), `/api/plan` = 2, exam = 20, collect = `n` |
 | live Mubit calls, whole site | 120 / hour | |
 | engine runs (speed or auto) per IP / whole site | 6 / 30 per hour | CPU: each can use a whole function invocation |
 | exam grades (`POST /api/concept/exam/grade`) per IP / whole site | 90 / 300 per hour | CPU, ~1-4 s of one vCPU each (concept/exam/grade.js on one worker thread, in-process if workers fail); defaults are 15× / 10× the engine-run limits; no Mubit call; nothing is stored on the site (the page keeps grades in the browser and exports `answers-adapter.json`) |

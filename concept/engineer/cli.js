@@ -18,7 +18,7 @@
 "use strict";
 const fs = require("fs"), os = require("os"), path = require("path");
 const ROOT = path.join(__dirname, "..", "..");
-const prompt = require("../designer/prompt.js"), loop = require("../designer/loop.js"), engine = require("./engine.js");
+const prompt = require("../designer/prompt.js"), loop = require("../designer/loop.js"), engine = require("./engine.js"), recordGood = require("./record-good.js");
 const B = require("../benchmark/baselines.js"), F = require("../benchmark/fixation.js"), conceptCli = require("../cli.js");
 
 function parseArgs(argv) {
@@ -83,22 +83,27 @@ async function main(argv, io) {
   const append = (f, row) => fs.appendFileSync(path.join(dir, f), JSON.stringify(row) + "\n");
   const llmName = a.mode === "live" ? "live" : "mock";
   const caller = live ? live.call : a.mock === "fixation" ? F.fixationLlm(a.seed) : loop.mockCaller(a.seed);
-  let n = 0, errRun = 0, abort = null, lastText = null, lastMeta = null;
+  let n = 0, errRun = 0, abort = null;
   // --record-good: every designer call is untrained; a decision whose proposal, exactly as proposed, is legal and faster on physics is
-  // sent again as a TRAINED call (same request; temperature 0, so the same answer): only physics-approved decisions become Mubit examples
-  const good = [], lastAnswer = {};
+  // sent again as a TRAINED call (same request; temperature 0, so the same answer): only physics-approved decisions become Mubit examples.
+  // The logic is shared with the engine route (concept/engineer/record-good.js).
+  const rec = a.recordGood && live ? recordGood.recorder(caller, {
+    onExample: (g, o, meta) => { append("calls.jsonl", { created_at: new Date().toISOString(), kind: "design", engine: "engineer-v2", session_id: meta.sessionId, iteration: meta.gen, trained: true, mock: false, corrections: a.corrections, record_good: true, mubit_request_id: o.mubit_request_id || null, served_by: o.served_by || null, model: o.model || null, input_tokens: o.input_tokens, output_tokens: o.output_tokens, latency_ms: o.latency_ms, same_answer: g.same_answer });
+      append("good.jsonl", { decision: g.decision, d_lap_s: g.d_lap_s, untrained_id: g.untrained_request_id, trained_id: g.trained_request_id, served_by: g.served_by }); },
+    onError: g => append("good.jsonl", { decision: g.decision, error: g.error }),
+  }) : null;
   const llm = async (text, meta) => {
     if (abort) { const e = new Error(abort); e.code = "run_cap"; throw e; }
-    if (good.length) await Promise.all(good);   // one call in flight per process: a pending re-send finishes before the next decision's call
+    if (rec) await rec.before();   // one call in flight per process: a pending re-send finishes before the next decision's call
     // --mix 2: the model directs every other decision; the others take the engine's own blind step (the no-AI proposer), no call
     if (a.mix > 1 && (meta.gen || 0) % a.mix === 1) { const e = new Error("mix: engine step this decision"); e.code = "no_ai"; throw e; }
-    n++; lastText = text; lastMeta = meta;
+    n++;
     const row = { created_at: new Date().toISOString(), kind: "design", engine: "engineer-v2", session_id: meta.sessionId, iteration: meta.gen, trained: !!meta.trained, mock: !live, corrections: a.corrections };
     try {
       const r = await caller(text, meta);
       const o = typeof r === "string" ? { text: r } : r;
       append("calls.jsonl", Object.assign(row, { mubit_request_id: o.mubit_request_id || null, served_by: o.served_by || null, model: o.model || null, input_tokens: o.input_tokens == null ? null : o.input_tokens, output_tokens: o.output_tokens == null ? null : o.output_tokens, latency_ms: o.latency_ms == null ? null : o.latency_ms, status: "ok" }));
-      errRun = 0; lastAnswer[meta.gen] = o.text; return o;
+      errRun = 0; if (rec) rec.seen(text, meta, o); return o;
     } catch (e) {
       append("calls.jsonl", Object.assign(row, { mubit_request_id: e.requestId || null, status: "error", mubit_code: e.code || null, http_status: e.status || null }));
       if (++errRun >= 5) abort = "5 designer calls failed in a row (last: " + (e.code || e.message) + ")";
@@ -112,12 +117,7 @@ async function main(argv, io) {
     if (type === "decision") {
       append("decisions.jsonl", data.row);
       const r = data.row;
-      if (a.recordGood && live && r.by === "mubit" && lastText && r.as_proposed && r.as_proposed.legal && typeof r.as_proposed.d_lap_s === "number" && r.as_proposed.d_lap_s < -0.0005) {
-        const text = lastText, meta = Object.assign({}, lastMeta, { trained: true });
-        good.push(caller(text, meta).then(o => { append("calls.jsonl", { created_at: new Date().toISOString(), kind: "design", engine: "engineer-v2", session_id: meta.sessionId, iteration: meta.gen, trained: true, mock: false, corrections: a.corrections, record_good: true, mubit_request_id: o.mubit_request_id || null, served_by: o.served_by || null, model: o.model || null, input_tokens: o.input_tokens, output_tokens: o.output_tokens, latency_ms: o.latency_ms, same_answer: o.text === lastAnswer[r.decision] });
-          const g = { decision: r.decision, d_lap_s: r.as_proposed.d_lap_s, untrained_id: r.mubit_request_id, trained_id: o.mubit_request_id, served_by: o.served_by || null }; append("good.jsonl", g); return g; },
-          e => { append("good.jsonl", { decision: r.decision, error: String(e && (e.code || e.message)) }); return null; }));
-      }
+      if (rec) rec.decision(r);
       io.err("#" + String(r.decision).padStart(3) + " " + (r.mubit_request_id || "-").slice(0, 16) + " " + r.by.padEnd(6) + (r.kept ? " kept " : " -    ") + "peak " + data.peak.lap_s.toFixed(3) + " · laps " + data.stats.physics_laps + " · " + (r.as_proposed && r.as_proposed.legal === false ? "ILLEGAL " : "") + (r.proposal_change || "") + "\n");
     }
   };
@@ -125,7 +125,7 @@ async function main(argv, io) {
   const opts = { llm: llmName, mock: a.mock, trained: a.trained, team: a.team, seed: a.seed, corrections: a.corrections, budget: a.budget, max_calls: a.maxDecisions, max_decisions: a.maxDecisions, patience: 3, stop_after: null, ...require("../benchmark/baselines.js").SCREENS[a.screen], segments: true, workers: a.workers };
   io.out("PURPLE engine v2 · " + (live ? "LIVE through Mubit · " + (a.trained ? "TRAINED" : "untrained (x-middleware-record: metadata)") : "MOCK (" + a.mock + ", not a model; no network)") + " · corrections " + (a.corrections ? "on" : "off") + " · seed " + a.seed + " · budget " + a.budget + " physics laps · ≤ " + a.maxDecisions + " decisions · session " + runId + (live && live.budget ? " · trained budget " + live.budget.remaining + " of " + live.budget.total + " left" : "") + "\n");
   const r = await B.runEngine({ seed: a.seed, team: a.team === "generic" ? null : a.team, budget: a.budget, workers: a.workers, llm, mock: !live, corrections: a.corrections, segments: true, trained: a.trained && !a.recordGood, runId, onEvent, maxDecisions: a.maxDecisions, maxCalls: a.maxDecisions, screen: a.screen });
-  const goodRows = (await Promise.all(good)).filter(Boolean);
+  const goodRows = rec ? (await rec.drain()).filter(g => !g.error) : [];
   if (a.recordGood) io.err("record-good: " + goodRows.length + " physics-approved decisions recorded as trained calls");
   const res = r.result; delete r.result;
   const ids = res.decisions.map(d => (d.call ? d.call.mubit_request_id : null));
