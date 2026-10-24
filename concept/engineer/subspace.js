@@ -59,10 +59,11 @@ function expand(head, changes, opts) {
   const maxDims = opts.maxDims || MAX_DIMS;
   const proposed = [], coupled = [];
   for (const ch of changes || []) { const k = ch.part + "." + ch.param; if (byKey.has(k) && !proposed.includes(k)) proposed.push(k); }
-  for (const k of proposed) {
-    const part = k.split(".")[0];
-    for (const g of COUPLING[part] || [part]) for (const c of expandGroup(g, cat)) if (!proposed.includes(c.key) && !coupled.includes(c.key)) coupled.push(c.key);
-  }
+  // named cross-part couplings first (e.g. a rear-wing change -> the front-wing setting that keeps the balance), then whole groups:
+  // with more parameters per part (redesigns' concept families) the same-part list would otherwise crowd them out of MAX_DIMS
+  const add = c => { if (!proposed.includes(c.key) && !coupled.includes(c.key)) coupled.push(c.key); };
+  for (const pass of [g => g.includes("."), g => !g.includes(".")])
+    for (const k of proposed) { const part = k.split(".")[0]; for (const g of (COUPLING[part] || [part]).filter(pass)) for (const c of expandGroup(g, cat)) add(c); }
   const keys = proposed.concat(coupled).slice(0, Math.max(maxDims, proposed.length));
   const axes = keys.map(k => {
     const c = byKey.get(k), [part, param] = k.split("."), h = head.params[part][param];
