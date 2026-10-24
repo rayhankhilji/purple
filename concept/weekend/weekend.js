@@ -5,8 +5,12 @@
 // optimiser maximises. Competitors run the same fuel/tyre model on their own real race pace (EI.RACEPACE.silverstone r), so the
 // model is relative and calibrated to the real field. A reduced-order model: no flow is solved, no car is "simulated" beyond the
 // pluggable lap sim. docs/concept/WEEKEND.md documents every parameter (source or "assumption") and the calibration.
-// The lap sim is pluggable: sim(physicalCar, trackId, conditions) -> { lap_s, label, ... } (concept/bench.js contract). Default:
-// bench.simV0 (the game's lap model, real seconds). The concept/sim/ physics sim plugs in through the same `sim` argument.
+// The lap sim is pluggable: sim(physicalCar, trackId, conditions) -> { lap_s, label, ... } (concept/bench.js contract), or "physics"
+// / "v0" / "auto". Default "auto": the concept/sim/ physics lap sim (bench.simPhysics) when it is loaded, else bench.simV0.
+// With the physics sim (WEEKEND.md §6): the fuel effect is the physics sim's own fuel-mass slope on the anchor car, applied to every
+// car (so the field calibration stays consistent), and the real qualifying field is placed in the sim's frame through the fitted
+// team cars (concept/sim fitted(): each real lap moves by its team's fit residual, ≤ 0.05 s), so our sim lap is compared with laps
+// in the same model. scoreLap(lap_s, opts) scores a lap the bench already ran (no second sim call).
 // Dual browser / Node: window.EI.concept.weekend and module.exports. Pure and deterministic.
 (function () {
   const root = typeof window !== "undefined" ? window : globalThis;
@@ -20,7 +24,7 @@
   const PARAMS = {
     laps: { value: 52, status: "official", basis: "2026 British GP race distance, 52 laps (formula1.com circuit page; FIA final race classification). Read from concept/data/silverstone-2026-weekend.json circuit.race_laps when that file is present" },
     pit_loss_s: { value: 20.0, status: "reported", basis: "formula1.com 'Need to know … ahead of the 2026 British Grand Prix': 'Pit stop time loss – 20 seconds (includes 2.5s stop)' (2025 preview: 19.9 s). A pre-event estimate, not measured in this race" },
-    quali_fuel_kg: { value: 10, status: "assumption", basis: "qualifying fuel load, concept/physical.js REF.fuel_kg (estimate); the sim's quali lap and the real q laps are taken to be at this load" },
+    quali_fuel_kg: { value: 8, status: "assumption", basis: "qualifying fuel load: the physics lap sim's assumption (concept/sim priorCar fuel_kg 8; concept/physical.js uses the anchor car's); the sim's quali lap and the real q laps are taken to be at this load" },
     start_fuel_kg: { value: 70, status: "assumption", basis: "race start fuel. 2026 cars are widely reported to carry ≈ 70 kg of fuel (down from ≈ 100–110 kg); not in Section C" },
     end_fuel_kg: { value: 1, status: "assumption", basis: "fuel left at the flag (sample for the FIA); burn per lap = (start − end) / laps, constant" },
     fuel_s_per_kg: { value: 0.03, status: "assumption", basis: "lap-time cost of fuel mass, ≈ 0.03 s/kg, the common rule of thumb (CONCEPT.md quotes it; sim v0 itself charges ≈ 0.013 s/kg). Used for every car unless fuel: 'sim'" },
@@ -82,6 +86,70 @@
     return p;
   }
 
+  // ---- the lap sim. o.sim: a function, "physics", "v0" or "auto" (default: physics when concept/sim/ is loaded). o.sim_kind names
+  // the sim that ran a lap passed in as { lap_s } (scoreLap); a bare { lap_s } with neither is a "given" lap (real field, coefficient).
+  function simOf(o) { return bench().resolveSim(o && o.sim); }
+  function kindOf(car, o) {
+    if (o && o.sim_kind) return o.sim_kind;
+    const given = typeof car === "number" || (car && typeof car.lap_s === "number" && !car.aero);
+    if (given && !(o && o.sim)) return "given";
+    return simOf(o).kind || "custom";
+  }
+  // the physics sim's fuel-mass slope (s/kg) on the anchor car (concept/physical.js anchor(team)): lap at start fuel vs quali fuel.
+  // Two sim laps, cached per team and conditions; applied to every car so the field calibration stays consistent.
+  const slopeCache = {};
+  function physicsFuelSlope(team, conditions, p) {
+    const key = (team || "generic") + "|" + JSON.stringify(conditions || null) + "|" + p.quali_fuel_kg + "|" + p.start_fuel_kg;
+    if (slopeCache[key] != null) return slopeCache[key];
+    const B = bench(), ph = req("physical", "../physical.js"), car = ph.anchor(team || null);
+    if (!car || !B.physicsSim()) return null;
+    const lap = f => B.simPhysics(Object.assign({}, car, { fuel_kg: f }), CIRCUIT, conditions || null).lap_s;
+    return (slopeCache[key] = +((lap(p.start_fuel_kg) - lap(p.quali_fuel_kg)) / (p.start_fuel_kg - p.quali_fuel_kg)).toFixed(5));
+  }
+  // the qualifying field's frame. "real": the real 2026 laps. "sim": each real lap moved by its team's residual in the physics sim's
+  // team fit (q_sim − q_real of the fitted driver, applied to both team drivers; concept/sim fitted().teams), so the field and our
+  // sim lap sit in the same model. Default: "sim" when the physics sim ran the lap, else "real".
+  let seasonCache;
+  function season() {
+    if (EI.SEASON) return EI.SEASON;
+    if (seasonCache !== undefined) return seasonCache;
+    seasonCache = null;
+    if (typeof require === "function") {
+      try {
+        const fs = require("fs"), path = require("path"), vm = require("vm"), sb = {}; sb.window = sb;
+        vm.runInNewContext(fs.readFileSync(path.join(__dirname, "..", "..", "js", "data", "season2026.js"), "utf8"), sb, { filename: "js/data/season2026.js" });
+        seasonCache = sb.EI.SEASON || null;
+      } catch (e) { seasonCache = null; }
+    }
+    return seasonCache;
+  }
+  let shiftCache;
+  function simFieldShift() {
+    if (shiftCache !== undefined) return shiftCache;
+    shiftCache = null;
+    const S = bench().physicsSim(), F = S && S.fitted ? S.fitted() : null, SE = season();
+    if (!F || !F.teams || !SE || !SE.teams) return null;
+    const out = {};
+    for (const t of F.teams) {
+      const st = SE.teams.find(x => x.id === t.team), d = +(t.q_sim_s - t.q_real_s).toFixed(3);
+      for (const code of (st && st.drivers) || [t.driver]) out[code] = { shift_s: d, team: t.team, fitted_driver: t.driver };
+    }
+    return (shiftCache = out);
+  }
+  // options for one weekend: the field frame and, with the physics sim, its fuel slope for every car (into o.params so that the
+  // calibration sees it too)
+  function prepare(car, o) {
+    o = Object.assign({}, o || {}); const kind = kindOf(car, o);
+    const base = params(withLaps(o));
+    o.field = o.field || (kind === "physics" && simFieldShift() ? "sim" : "real");
+    if (kind === "physics" && o.fuel !== "coefficient" && o.fuel !== "sim" && !(o.params && o.params.fuel_s_per_kg != null)) {
+      const slope = physicsFuelSlope(o.team || (car && car.team) || null, o.conditions || null, base);
+      if (slope != null) { o.params = Object.assign({}, o.params || {}, { fuel_s_per_kg: slope }); o.fuel_basis = "physics sim (anchor car, every car)"; }
+    }
+    o.sim_kind = kind;
+    return o;
+  }
+
   // ---- the car -> our sim laps. car: a PhysicalCar, a Design (converted with concept/physical.js), or { lap_s } (a lap already run)
   function toPhysical(car) {
     if (car && car.aero && car.pu && car.tyres) return car;
@@ -90,34 +158,36 @@
   }
   function carLaps(car, o, p) {
     if (typeof car === "number") car = { lap_s: car };
+    const basis0 = o.fuel_basis || "coefficient";
     if (car && typeof car.lap_s === "number" && !car.aero) {
-      return { quali_lap_s: car.lap_s, fuel_s_per_kg: p.fuel_s_per_kg, fuel_basis: "coefficient", sim_label: car.label || "given lap" };
+      return { quali_lap_s: car.lap_s, fuel_s_per_kg: p.fuel_s_per_kg, fuel_basis: basis0, sim_label: car.label || o.sim_label || "given lap" };
     }
     const pc = toPhysical(car); if (!pc) throw new Error("concept weekend: car must be a PhysicalCar, a Design or { lap_s }");
-    const sim = o.sim || bench().simV0, cond = o.conditions || null;
+    const sim = simOf(o), cond = o.conditions || null;
     const q = sim(Object.assign({}, pc, { fuel_kg: p.quali_fuel_kg, tyres: Object.assign({}, pc.tyres, { compound: "soft" }) }), CIRCUIT, cond);
     if (!q || !(q.lap_s > 0)) throw new Error("concept weekend: the sim returned no lap");
-    let slope = p.fuel_s_per_kg, basis = "coefficient";
-    if (o.fuel === "sim") {   // the sim's own fuel-mass sensitivity: lap at start fuel vs quali fuel, linear in between
+    let slope = p.fuel_s_per_kg, basis = basis0;
+    if (o.fuel === "sim") {   // the sim's own fuel-mass sensitivity for THIS car: lap at start fuel vs quali fuel (our car only)
       const full = sim(Object.assign({}, pc, { fuel_kg: p.start_fuel_kg, tyres: Object.assign({}, pc.tyres, { compound: "soft" }) }), CIRCUIT, cond);
       slope = (full.lap_s - q.lap_s) / (p.start_fuel_kg - p.quali_fuel_kg); basis = "sim";
     }
     return { quali_lap_s: q.lap_s, fuel_s_per_kg: slope, fuel_basis: basis, sim_label: q.label || "sim", sim_result: q };
   }
 
-  // ---- qualifying: our lap among the real 2026 qualifying laps (best lap per driver across Q1-Q3, as concept/bench.js weekend())
+  // ---- qualifying: our lap among the real 2026 qualifying laps (best lap per driver across Q1-Q3, as concept/bench.js weekend()),
+  // in the frame o.field ("real" | "sim", see simFieldShift)
   function realQuali(o) {
-    const RP = racepace(), ex = new Set([].concat(o && o.replace || []));
-    return Object.keys(RP.q).filter(c => RP.q[c] > 0 && !ex.has(c)).map(c => ({ code: c, lap_s: RP.q[c] })).sort((a, b) => a.lap_s - b.lap_s || (a.code < b.code ? -1 : 1));
+    const RP = racepace(), ex = new Set([].concat(o && o.replace || [])), sh = o && o.field === "sim" ? simFieldShift() || {} : {};
+    return Object.keys(RP.q).filter(c => RP.q[c] > 0 && !ex.has(c)).map(c => ({ code: c, lap_s: r3(RP.q[c] + (sh[c] ? sh[c].shift_s : 0)), real_s: RP.q[c] })).sort((a, b) => a.lap_s - b.lap_s || (a.code < b.code ? -1 : 1));
   }
   function qualiFrom(lap, o) {
     const field = realQuali(o), best = field[0];
     const pos = 1 + field.filter(x => x.lap_s < lap - 1e-9).length;   // a tie goes to our car, as in bench.weekend()
     const grid = field.slice(); grid.splice(pos - 1, 0, { code: "CONCEPT", lap_s: lap });
-    return { lap_s: r3(lap), pos, field_size: grid.length, pole_s: best.lap_s, pole_code: best.code, gap_to_pole_s: r3(lap - best.lap_s), grid: grid.map((g, i) => ({ pos: i + 1, code: g.code, lap_s: g.lap_s })) };
+    return { lap_s: r3(lap), pos, field_size: grid.length, pole_s: best.lap_s, pole_code: best.code, gap_to_pole_s: r3(lap - best.lap_s), field: (o && o.field) || "real", grid: grid.map((g, i) => ({ pos: i + 1, code: g.code, lap_s: g.lap_s, real_s: g.real_s })) };
   }
   function qualifying(car, o) {
-    o = o || {}; const p = params(o.params), L = carLaps(car, o, p), q = qualiFrom(L.quali_lap_s, o);
+    o = prepare(car, o); const p = params(withLaps(o)), L = carLaps(car, o, p), q = qualiFrom(L.quali_lap_s, o);
     q.label = label(L.sim_label); return q;
   }
 
@@ -243,7 +313,7 @@
   }
   const withLaps = o => Object.assign({}, o.params, o.laps ? { laps: o.laps } : {});
   function race(car, o) {
-    o = o || {}; const po = withLaps(o), p = params(po), L = carLaps(car, o, p);
+    o = prepare(car, o); const po = withLaps(o), p = params(po), L = carLaps(car, o, p);
     const r = raceFrom(L, Object.assign({}, o, { params: po }), p);
     r.label = label(L.sim_label); return r;
   }
@@ -252,7 +322,7 @@
   //   weekend_score = w_q · (best real quali lap − our quali lap) + w_r · (best real race total − our race total) / laps
   // with w_q = 0.4, w_r = 0.6. The race term uses the best real competitor's total in OUR simulated race (traffic included).
   function score(car, o) {
-    o = o || {}; const t0 = Date.now();
+    const t0 = Date.now(); o = prepare(car, o);
     const po = withLaps(o), p = params(po), L = carLaps(car, o, p);
     const oo = Object.assign({}, o, { params: po });
     const q = qualiFrom(L.quali_lap_s, oo), r = raceFrom(L, oo, p), w = p.weights;
@@ -260,7 +330,8 @@
     const ws = r3(w.quali * qm + w.race * rm);
     const lab = label(L.sim_label);
     return {
-      quali: { lap_s: q.lap_s, pos: q.pos, field_size: q.field_size, gap_to_pole_s: q.gap_to_pole_s, pole_code: q.pole_code },
+      quali: { lap_s: q.lap_s, pos: q.pos, field_size: q.field_size, gap_to_pole_s: q.gap_to_pole_s, pole_code: q.pole_code, pole_s: q.pole_s, grid: q.grid },
+      field: { frame: q.field, replaced: [].concat(o.replace || []), sim: o.sim_kind, fuel_s_per_kg: +L.fuel_s_per_kg.toFixed(5), fuel_basis: L.fuel_basis, note: q.field === "sim" ? "real 2026 qualifying laps moved by their team's fit residual in the physics sim (concept/sim fitted().teams, ≤ 0.05 s)" : "real 2026 qualifying laps" },
       race: { total_s: r.total_s, pos: r.pos, field_size: r.field_size, grid: r.grid, gap_to_winner_s: r.gap_to_winner_s, gap_to_best_other_s: r.gap_to_best_other_s, winner: r.winner, strategy: r.strategy, pace: r.pace, classification: r.classification },
       weekend_score: ws,
       components: { quali_margin_s: r3(qm), race_margin_s_per_lap: r3(rm), weights: w, definition: "weekend_score = " + w.quali + " × (best real 2026 quali lap − our quali lap) + " + w.race + " × (best real competitor's race time − our race time) / " + p.laps + " laps; seconds per lap, positive = beating every real 2026 car" },
@@ -269,8 +340,10 @@
     };
   }
   function label(simLabel) { return "concept weekend model · " + simLabel + " · " + DATA_LABEL; }
+  // a lap the bench already ran: opts.sim_kind ("physics" | "v0" | ...) and opts.sim_label say which sim made it
+  function scoreLap(lap_s, o) { o = o || {}; return score({ lap_s, label: o.sim_label }, o); }
 
-  const api = { VERSION, PARAMS, params, strategies, calibration, qualifying, race, score, tyreLoss, fuelAt, weekendData, label };
+  const api = { VERSION, PARAMS, params, strategies, calibration, qualifying, race, score, scoreLap, physicsFuelSlope, simFieldShift, tyreLoss, fuelAt, weekendData, label };
   C.weekend = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();

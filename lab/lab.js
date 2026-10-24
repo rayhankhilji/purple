@@ -8,7 +8,7 @@
   const LAPS = 3;                                   // F-04.AC1: three laps, no input
   const SHEET_N = 8;                                // G-HON-06: v1 / v2 Try models scores are out of the 8-item sheet unless exam.v1_total says otherwise
   const FLAT = 0.03;                                // DeltaCell: |Δ| ≤ 0.03 s is grey (the prompt's own retest band)
-  const TRACE_MAX = 200, BACKFILL = 12;
+  const TRACE_MAX = 200, BACKFILL = 12, LEDGER_N = 50, LEDGER_ALL = 500;
   const RACE_TIMEOUT_MS = 6 * 60 * 1000;             // EVAL_GUARDRAILS §6: no purple:result within 6 minutes -> "No result received"
   const $ = (s, root) => (root || document).querySelector(s);
   const isNum = v => typeof v === "number" && Number.isFinite(v);
@@ -41,6 +41,19 @@
   const pname = k => (PARAM[k] ? PARAM[k][0] : k);
   const punit = k => (PARAM[k] ? PARAM[k][1] : "");
   const fmtSetupV = (k, v) => (k === "ers_deploy" ? (+v).toFixed(1) : String(v));
+  // QA3 S-2: one wording for a change everywhere (DESIGN, corner badge, ledger, trace): "rear wing −4°, ERS +0.2" with U+2212 and units.
+  // Built from candidate − baseline; a row without both falls back to the server's raw "rear_wing_deg -4" string, re-worded key by key.
+  const CHG = { front_wing_deg: ["front wing", "°"], rear_wing_deg: ["rear wing", "°"], ride_height_mm: ["ride height", " mm"], brake_bias_pct: ["brake bias", " %"], ers_deploy: ["ERS", ""] };
+  const chgPart = (k, d) => { const c = CHG[k] || [k, ""]; return c[0] + " " + (d < 0 ? "−" : "+") + (k === "ers_deploy" ? Math.abs(d).toFixed(1) : String(Math.round(Math.abs(d)))) + c[1]; };
+  function fmtChange(x) {
+    if (x && typeof x === "object" && x.candidate && x.baseline) {
+      const parts = Object.keys(CHG).filter(k => isNum(x.candidate[k]) && isNum(x.baseline[k]) && Math.abs(x.candidate[k] - x.baseline[k]) > 1e-9).map(k => chgPart(k, x.candidate[k] - x.baseline[k]));
+      return parts.join(", ") || "no change";
+    }
+    const raw = typeof x === "string" ? x : x && x.change;
+    if (!raw) return null;
+    return raw.split(/\s*,\s*/).map(p => { const m = /^(\w+)\s+([+\-−]?\d+(?:\.\d+)?)$/.exec(p); return m && CHG[m[1]] ? chgPart(m[1], parseFloat(m[2].replace("−", "-"))) : p; }).join(", ");
+  }
   // Honesty audit A: the evaluator's 80.800 s is the game's time scale; the real 2026 pole maps onto it linearly (lab/evaluator.js MODEL_LABEL is pinned by tests, so the scale note lives here)
   const GAME_SCALE = { silverstone: "real 2026 pole 88.111 s = 80.800 s (×1.090)", monza: "real 2026 pole 81.786 s = 76.650 s (×1.067)" };
   const GAME_SCALE_SHORT = { silverstone: "real 2026 pole 88.111 s = 80.800 s", monza: "real 2026 pole 81.786 s = 76.650 s" };   // EVALUATE label row: one extra line at 1280×800 (QA B1)
@@ -104,6 +117,7 @@
   }
   const errBody = (e, extra) => [el("div", { class: "err", text: e.code + " · " + e.endpoint + (e.extra && e.extra.mubit_code ? " · " + e.extra.mubit_code : "") }), el("p", { text: e.message }), extra];
   const windy = x => !!(x && x.conditions && +x.conditions.wind_ms > 0);
+  const condShort = (x, circuit) => { const c = (x && x.conditions) || {}; return circuit + " · " + (c.wet ? "wet" : "dry") + " · " + (+c.wind_ms > 0 ? c.wind_ms + " m/s from " + (c.wind_from_deg || 0) + "°" : "no wind"); };
   // G-HON-01: the game has no wind model; a windy experiment races in still air while the evaluator's numbers include the wind
   const windNote = x => (windy(x) ? el("div", { class: "row" }, el("span", { class: "badge amber", text: "still air" }), el("span", { class: "sans muted", text: "raced in still air (the game has no wind); evaluator numbers include the wind, " + x.conditions.wind_ms + " m/s from " + (x.conditions.wind_from_deg || 0) + "°" })) : null);
   const btn = (label, onclick, o) => el("button", Object.assign({ class: "btn" + (o && o.cls ? " " + o.cls : ""), type: "button", onclick, disabled: !!(o && o.disabled), title: o && o.title }, {}), label);
@@ -123,6 +137,8 @@
     if (e) {
       const viol = e.extra && Array.isArray(e.extra.violations) ? e.extra.violations : null;
       const extra = viol ? el("div", {}, viol.map(id => el("div", { class: "row" }, el("span", { class: "badge " + (id === "TD-01" ? "td" : "red"), text: id }), el("span", { class: "sans muted", text: EI.aero && EI.aero.describeViolation ? EI.aero.describeViolation(id) : id })))) : null;
+      // QA3 N-5: retrying an ILLEGAL_SETUP would re-send the same illegal candidate; Run drops it and asks for the agent's next step, Clear only drops it
+      if (e.code === "ILLEGAL_SETUP") return card("design", { state: "error", stateLabel: "illegal", body: errBody(e, extra), foot: [btn("Run", () => runPlan(), { cls: "primary", disabled: !!S.busy.plan, title: "drop the illegal candidate and run the next experiment" }), btn("Clear", clearIllegal, { cls: "small", title: "drop the illegal candidate; back to the last experiment" })] });
       return card("design", { state: "error", body: errBody(e, extra), foot: [btn("Retry", e.retry, { cls: "primary" }), randomBtn] });
     }
     if (!x) return card("design", { state: "empty", body: [el("p", { text: "No plan yet. Run asks the research agent for a verdict on a candidate setup and the single next experiment." })], foot: [runBtn("Run")] });
@@ -132,7 +148,8 @@
     const sm = x.overrule ? "sm" : null;   // agent verdict → engineer verdict + rule chip on one line; "promoted" is the state label (and LEARN's, and the ledger status)
     body.push(el("div", { class: "row", title: "experiment " + x.id + " · seed " + x.seed + (x.status === "promoted" ? " · promoted: the candidate is the new baseline" : "") }, p ? verdictPill(p.verdict, sm) : el("span", { class: "verdict reject", text: x.error ? x.error.code : "parse_error" }),
       x.overrule ? [el("span", { class: "sans muted", text: "→" }), verdictPill(x.overrule.verdict, sm), el("span", { class: "chip rule", title: x.overrule.reason, text: x.overrule.rule_id })] : null));
-    body.push(el("div", { class: "one sans", title: "candidate · " + (x.change || "no change"), text: "candidate · " + (x.change || "no change") }));
+    const chg = fmtChange(x) || "no change";
+    body.push(el("div", { class: "one sans", title: "candidate · " + chg, text: "candidate · " + chg }));
     if (p) {
       const sign = p.direction === "decrease" ? "−" : "+";
       body.push(el("div", { class: "kvl", title: "next: " + pname(p.next_parameter) + " " + p.direction + " by " + fmtSetupV(p.next_parameter, p.magnitude) + punit(p.next_parameter) }, el("span", { class: "k", text: "next" }),
@@ -174,7 +191,8 @@
       el("div", { class: "one", title: "top speed, candidate vs baseline" }, el("span", { class: "muted", text: "vmax " }), el("span", { class: "num " + settle, text: Math.round(ev.vmax_kmh) }), el("span", { class: "muted", text: " vs " + Math.round(base.vmax_kmh) + " km/h" })),
       el("div", { class: "one", title: "minimum speed through " + vminName + ", candidate vs baseline" }, el("span", { class: "muted", text: "vmin " }), el("span", { class: "num " + settle, text: Math.round(ev.vmin_kmh) }), el("span", { class: "muted", text: " vs " + Math.round(base.vmin_kmh) + " km/h" })),
     ];
-    card("evaluate", { state: "success", body, src: (ev.model || "reduced-order lap model") + " · vmin at " + vminName + " · " + gameScaleShort(circuit), foot: [btn("Race it", raceIt, { cls: "primary", disabled: !!S.racing }), btn("Promote", promote, { disabled: !!S.busy.learn || x.status === "promoted" })] });
+    // QA3 S-4: the experiment's own circuit and conditions lead the label, so a selected Monza/wet row never reads as the bar's Silverstone/dry
+    card("evaluate", { state: "success", body, src: condShort(x, circuit) + " · " + (ev.model || "reduced-order lap model") + " · vmin at " + vminName + " · " + gameScaleShort(circuit), foot: [btn("Race it", raceIt, { cls: "primary", disabled: !!S.racing }), btn("Promote", promote, { disabled: !!S.busy.learn || x.status === "promoted" })] });
   }
 
   // ---- RACE: baseline vs candidate in the game iframe; measured deltas and agreement_pct from POST /api/race/result
@@ -272,12 +290,13 @@
     if (!racing && game.getAttribute("src")) game.removeAttribute("src");
     const corner = $("#mainCorner"); corner.classList.toggle("racing", racing);
     // QA S4: an illegal candidate (422) wins over the previous experiment in the badge and the 3D view, as it already does in the setup table
-    const ill = S.illegalCandidate, base = (S.state && S.state.baseline) || null;
+    // QA3 S-5: the ghost is the baseline the setup table shows (S.state.baseline), so after a Promote both agree (candidate = baseline: no ghost)
+    const ill = S.illegalCandidate, base = (S.state && S.state.baseline) || (EI.aero && EI.aero.BASELINE) || null;
     const illBadge = () => { const v = illegalViolations(), ch = EI.aero ? EI.aero.KEYS.filter(k => base && Math.abs(ill[k] - base[k]) > 1e-9).map(k => pname(k) + " " + fmtSetupV(k, ill[k]) + punit(k)) : [];
       return el("span", { class: "badge red", text: "illegal candidate · " + (ch.join(", ") || "setup") + " · " + (v.join(", ") || "ILLEGAL_SETUP") }); };
-    corner.replaceChildren(...(racing ? (S.racing ? [] : [btn("Back to 3D view", cancelRace, { cls: "small" })]) : [ill ? illBadge() : el("span", { class: "badge", text: x ? "candidate · " + (x.change || "no change") : "baseline" })]));
+    corner.replaceChildren(...(racing ? (S.racing ? [] : [btn("Back to 3D view", cancelRace, { cls: "small" })]) : [ill ? illBadge() : el("span", { class: "badge", text: x ? (x.status === "promoted" ? "promoted · " : "candidate · ") + (fmtChange(x) || "no change") : "baseline" })]));
     const setup = ill || (x ? x.candidate : base);
-    const ghost = ill ? base : x ? x.baseline : null;
+    const ghost = ill || x ? base : null;
     if (EI.labCar3D && !racing) {
       try {
         if (!S.car3dMounted) { EI.labCar3D.mount(car); S.car3dMounted = true; }
@@ -289,9 +308,8 @@
       }
       empty.hidden = S.car3dMounted && !S.car3dError;
     } else empty.hidden = racing;
-    // QA N-D: the same words as the in-view label (lab/car3d.js labelText(), which names the display gain); the setup table carries the real values
-    const carLabel = EI.labCar3D && typeof EI.labCar3D.labelText === "function" ? EI.labCar3D.labelText() : "wing angles and ride height from the setup · geometry, not a measurement";
-    $("#mainSrc").textContent = racing ? "" : S.car3dMounted ? "procedural car · " + carLabel : "aero map v1 · regulation subset ranges";
+    // QA3 N-2: the in-view label (lab/car3d.js labelText(): display gain, "not a measurement") is the 3D view's label; this line names the car and the table's ranges
+    $("#mainSrc").textContent = racing ? "" : (S.car3dMounted ? "procedural car · Equation I model · " : "") + "ranges: aero map v1 · regulation subset";
     $("#setupBox").replaceChildren(racing ? el("span") : setupTable());   // while racing the game's HUD owns the frame
   }
   function setupTable() {
@@ -357,7 +375,10 @@
   // ---- LedgerTable: GET /api/ledger?limit=50 newest first; overruled rows carry the rule-id chip
   function renderLedger() {
     const wrap = $("#ledgerWrap"), L = S.ledger;
-    $("#ledgerMeta").textContent = L.length ? S.ledgerTotal + " experiment" + (S.ledgerTotal === 1 ? "" : "s") + " · newest first" : "";
+    // QA3 N-6: the newest LEDGER_N by default; "show all" fetches up to the server's 500 (plain rows, no virtual list)
+    const more = S.ledgerTotal > L.length || S.ledgerAll;
+    $("#ledgerMeta").replaceChildren(...(L.length ? [S.ledgerTotal + " experiment" + (S.ledgerTotal === 1 ? "" : "s") + (S.ledgerTotal > L.length ? " · showing " + L.length : "") + " · newest first",
+      more ? el("button", { class: "linkbtn", type: "button", onclick: () => { S.ledgerAll = !S.ledgerAll; refreshLedger(); }, text: S.ledgerAll ? "newest " + LEDGER_N : "show all" }) : null] : []).filter(Boolean));
     // the scale note follows the circuits of the rows on screen (one note per circuit)
     const circuits = [...new Set(L.map(x => x.circuit || (x.conditions && x.conditions.circuit) || "silverstone"))];
     const scaleNote = circuits.length === 1 ? gameScale(circuits[0]) : "game time scale · " + circuits.map(c => c + ": " + (GAME_SCALE[c] || "game seconds")).join(" · ") + " · Δ in game seconds";
@@ -370,8 +391,8 @@
       const ra = x.rules_applied || [];
       const ruleCell = x.overrule ? el("span", { class: "chip rule", title: x.overrule.reason, text: x.overrule.rule_id }) : (ra.length ? el("span", { class: "chip", title: "rules in the agent's input: " + ra.join(", "), text: ra[0] + (ra.length > 1 ? " +" + (ra.length - 1) : "") }) : el("span", { class: "muted", text: "—" }));
       return el("tr", { class: "row-x" + (S.current && S.current.id === x.id ? " current" : ""), tabindex: "0", title: x.id, onclick: () => select(x), onkeydown: ev => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); select(x); } } },
-        el("td", { class: "num muted", text: total - i }), el("td", { class: "change", title: x.change, text: x.change || "—" }),
-        el("td", {}, delta(x.evaluation && x.evaluation.delta_lap)), el("td", {}, delta(m.measured_delta)), el("td", { class: "num", text: x.measured ? fmtPct(m.agreement_pct) : "—" }),
+        el("td", { class: "num muted", text: total - i }), el("td", { class: "change", title: fmtChange(x) || "", text: fmtChange(x) || "—" }),
+        el("td", {}, delta(x.evaluation && x.evaluation.delta_lap)), el("td", {}, delta(m.measured_delta)), el("td", { class: "num" + (x.measured && m.agreement_pct != null ? "" : " muted"), text: x.measured ? fmtPct(m.agreement_pct) : "—" }),
         el("td", { class: x.overrule ? "vd2" : null, title: x.overrule ? "agent " + v + " → engineer " + x.overrule.verdict : v }, el("span", { class: "vd " + (x.plan ? v : "err"), text: v }), x.overrule ? el("span", { class: "ovd", text: "→ " + x.overrule.verdict }) : null),
         el("td", {}, ruleCell), el("td", { title: x.status }, el("span", { class: "st " + x.status, text: x.status })));
     });
@@ -379,6 +400,7 @@
     const heads = [["#", "#"], ["change", "change"], ["pred Δ", "predicted Δ, evaluator"], ["meas Δ", "measured Δ, race"], ["agree", "agreement_pct"], ["verdict", "verdict"], ["rule", "rule"], ["status", "status"]];
     wrap.replaceChildren(el("table", {}, el("colgroup", {}, cols), el("thead", {}, el("tr", {}, heads.map(([h, t]) => el("th", { text: h, title: t })))), el("tbody", {}, rows)));
   }
+  function clearIllegal() { S.illegalCandidate = null; delete S.err.design; clearBanner(); renderAll(); }
   function select(x) { S.current = x; S.illegalCandidate = null; delete S.err.design; clearBanner(); renderAll(); }   // QA N-C: the old ILLEGAL_SETUP banner goes too
 
   // ---- TraceStream: one TraceLine per SSE event; the pending line pulses at 1 Hz while /api/plan is in flight
@@ -409,7 +431,7 @@
       verdict: v, error: x.plan ? null : (x.error ? (x.error.mubit_code ? x.error.code + " · " + x.error.mubit_code : x.error.code) : x.status), trained: x.trained, note: note || null });
     if (x.overrule) trace({ kind: "overrule", key: "overrule:" + x.id + ":" + x.overrule.rule_id, at: x.overrule.at, session: x.session_id,
       note: "agent " + (v || "—") + " → engineer " + x.overrule.verdict + " · " + x.overrule.rule_id });
-    if (x.status === "promoted") trace({ kind: "promote", key: "promote:" + x.id, at: x.promoted_at, session: x.session_id, note: "candidate → new baseline · " + (x.change || "no change") });
+    if (x.status === "promoted") trace({ kind: "promote", key: "promote:" + x.id, at: x.promoted_at, session: x.session_id, note: "candidate → new baseline · " + (fmtChange(x) || "no change") });
     return line;
   }
 
@@ -444,7 +466,7 @@
   }
   function scheduleLedger() { clearTimeout(ledgerTimer); ledgerTimer = setTimeout(refreshLedger, 150); }
   async function refreshLedger() {
-    try { const L = await api("GET", "/api/ledger?limit=50"); S.ledger = L; S.ledgerTotal = Math.max(L.length, (S.status && S.status.experiments) || 0); renderLedger(); }
+    try { const L = await api("GET", "/api/ledger?limit=" + (S.ledgerAll ? LEDGER_ALL : LEDGER_N)); S.ledger = L; S.ledgerTotal = Math.max(L.length, (S.status && S.status.experiments) || 0); renderLedger(); }
     catch (e) { /* the SSE line already said what happened; the banner belongs to actions */ }
   }
   async function refreshRules() { try { S.rules = await api("GET", "/api/rules"); renderLearn(); } catch (e) { /* same */ } }
@@ -596,7 +618,7 @@
   async function init() {
     renderWidget(false); wireConditions(); renderAll();
     connectStream();
-    const got = await Promise.allSettled([api("GET", "/api/status"), api("GET", "/api/state"), api("GET", "/api/ledger?limit=50"), api("GET", "/api/rules")]);
+    const got = await Promise.allSettled([api("GET", "/api/status"), api("GET", "/api/state"), api("GET", "/api/ledger?limit=" + LEDGER_N), api("GET", "/api/rules")]);
     const [status, state, ledger, rules] = got.map(r => (r.status === "fulfilled" ? r.value : null));
     const failed = got.find(r => r.status === "rejected"); if (failed) banner(failed.reason);
     if (status) { S.status = status; S.lastStatusKey = JSON.stringify([status.kept_examples, status.adapter_version, status.test_result, status.exam]); }

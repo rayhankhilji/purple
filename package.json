@@ -26,7 +26,12 @@
     "snapshot": "node server/scripts/snapshot.js",
     "exam:score": "node server/scenarios.js --score docs/try-models/sheet.md",
     "concept": "node concept/cli.js",
-    "test:concept": "node --test test/concept.test.js test/concept-bench.test.js"
+    "test:concept": "node --test test/concept.test.js test/concept-bench.test.js",
+    "test:sim": "node --test test/concept-sim.test.js",
+    "sim:line": "node concept/sim/build-line.js",
+    "sim:fit": "node concept/sim/build-fit.js",
+    "sim:fit:check": "node concept/sim/build-fit.js --check",
+    "sim:plot": "node concept/sim/plot-trace.js ANT HAD SAI"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.137.0",

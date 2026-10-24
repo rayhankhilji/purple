@@ -69,13 +69,15 @@ test("concept mass: the parts sum, ballast tops the car up to the C4.1 minimum, 
   assert.ok(Math.abs(m.parts_kg + m.ballast_kg - m.total_kg) < 0.02);
   assert.equal(regs.minMass().kg, 726 + regs.NOMINAL_TYRE_MASS.value); assert.equal(regs.minMass("race").kg, 724 + regs.NOMINAL_TYRE_MASS.value);
   assert.equal(m.min_kg, 770); assert.equal(m.total_kg, 770); assert.ok(m.ballast_kg > 0 && m.ballast_kg < 15, "ballast " + m.ballast_kg);
+  const noFlap = withParam("rear_wing", "sm_delta_deg", 0); noFlap.params.front_wing.sm_delta_deg = 0;
+  assert.ok(Math.abs(design.facts(noFlap).mass.ballast_kg - m.ballast_kg - 1.8) < 0.02, "the baseline's flap actuators (0.8 + 1.0 kg) come out of the ballast");
   assert.ok(Math.abs(m.front_kg + m.rear_kg - m.total_kg) < 0.02);
   assert.ok(m.front_share >= 0.44 && m.front_share <= 0.46, "front " + m.front_share);
   assert.ok(m.driver_kg >= 82 && m.pu_kg >= 185);
   // a heavier part eats ballast first (total stays at the minimum), and only then makes the car heavier
   const heavy = d => design.facts(d).mass;
-  const gb = m.parts.find(p => p.id === "gearbox").mass_kg;
-  const h1 = heavy(withOverride("gearbox", { mass_kg: gb + 1 })); assert.equal(h1.total_kg, 770); assert.ok(Math.abs(h1.ballast_kg - (m.ballast_kg - 1)) < 0.02);
+  const gb = m.parts.find(p => p.id === "gearbox").mass_kg, eat = Math.round(m.ballast_kg * 50) / 100;   // half the ballast
+  const h1 = heavy(withOverride("gearbox", { mass_kg: gb + eat })); assert.equal(h1.total_kg, 770); assert.ok(Math.abs(h1.ballast_kg - (m.ballast_kg - eat)) < 0.02);
   const h20 = heavy(withOverride("gearbox", { mass_kg: gb + 20 })); assert.equal(h20.ballast_kg, 0); assert.ok(Math.abs(h20.total_kg - (m.parts_kg + 20)) < 0.02);
   // the minimum can never be undercut by a design (ballast is automatic): lighter wings -> more ballast, same total
   const light = heavy(Object.assign(withParam("rear_wing", "chord_mm", 300), {})); assert.equal(light.total_kg, 770); assert.ok(light.ballast_kg > m.ballast_kg);
@@ -112,7 +114,10 @@ test("concept design: validate catches domain and type errors; mutate stays in t
 
 test("concept aero map v0: the baseline is 1.0 and its local slopes match the lab's aero map v1 (lab/aero.js SENS) within 3 %", () => {
   const a = aeromap.evaluate(B.params);
-  for (const k of ["df", "cd", "df_sm", "cd_sm"]) assert.ok(Math.abs(a[k] - 1) < 1e-12, k + " " + a[k]);
+  for (const k of ["df", "cd"]) assert.ok(Math.abs(a[k] - 1) < 1e-12, k + " " + a[k]);
+  assert.ok(a.df_sm < 1 && a.cd_sm < 1, "the baseline carries its reference Straight Mode flap (front 4°, rear 15°)");
+  const flat = withParam("rear_wing", "sm_delta_deg", 0); flat.params.front_wing.sm_delta_deg = 0; const af = aeromap.evaluate(flat.params);
+  for (const k of ["df", "cd", "df_sm", "cd_sm"]) assert.ok(Math.abs(af[k] - 1) < 1e-12, "no flap: " + k + " " + af[k]);
   const slope = (part, param, key, h) => (aeromap.evaluate(withParam(part, param, B.params[part][param] + h).params)[key] - aeromap.evaluate(withParam(part, param, B.params[part][param] - h).params)[key]) / (2 * h);
   const near = (got, want, what) => assert.ok(Math.abs(got - want) <= Math.abs(want) * 0.03, what + ": " + got + " vs lab " + want);
   near(slope("rear_wing", "aoa_deg", "df", 0.5), aero.SENS.rear_wing_deg.df, "rear wing df/deg");
@@ -127,7 +132,7 @@ test("concept aero map v0: the baseline is 1.0 and its local slopes match the la
 test("concept aero map v0: straight mode lowers drag only with a flap; stall and cooling behave", () => {
   const sm = withParam("rear_wing", "sm_delta_deg", 10), a = aeromap.evaluate(sm.params);
   assert.ok(a.cd_sm < a.cd && a.df_sm < a.df); assert.ok(Math.abs(a.cd - 1) < 1e-12);
-  const one = withParam("rear_wing", "elements", 1); one.params.rear_wing.sm_delta_deg = 10;
+  const one = withParam("rear_wing", "elements", 1); one.params.rear_wing.sm_delta_deg = 10; one.params.front_wing.sm_delta_deg = 0;
   const b = aeromap.evaluate(one.params); assert.equal(b.cd_sm, b.cd, "a single-volume rear wing has no flap to move");
   const lift = x => aeromap.evaluate(withParam("rear_wing", "aoa_deg", x).params).df;
   assert.ok(lift(26) > lift(20)); assert.ok(lift(35) - lift(33) < lift(22) - lift(20), "past the stall onset each degree gives less load");

@@ -46,7 +46,7 @@ test("G-MUBIT-06: the designer never calls a provider itself (no gateway URL, no
 
 // ---------------------------------------------------------------- scenario
 test("scenario: baseline scenario carries the current car, gap to pole and near-limit parameters; ≤ 350 tokens", () => {
-  const d = design.baseline(), r = bench.bench(d, { circuit: "silverstone" });
+  const d = design.baseline(), r = bench.bench(d, { circuit: "silverstone", sim: "v0" });   // v0: the baseline sits on the real pole
   const f = S.fit({ design: d, summary: optimize.summary(r), history: [], refused: [] });
   assert.equal(f.dropped, 0); assert.ok(f.tokens <= 350, f.tokens + " tokens");
   const sc = JSON.parse(f.text);

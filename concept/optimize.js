@@ -72,16 +72,18 @@
     if (!r) return null;
     const s = { legal: r.legal, score: r.score, mass_kg: r.mass && r.mass.total_kg, ballast_kg: r.mass && r.mass.ballast_kg, front_share: r.mass && r.mass.front_share, df: r.aero && r.aero.df, cd: r.aero && r.aero.cd, cd_sm: r.aero && r.aero.cd_sm };
     if (r.weekend) { s.lap_s = r.weekend.lap_s; s.gap_to_pole_s = r.weekend.gap_to_pole_s; s.grid_position = r.weekend.grid_position; }
+    if (r.weekend_model) s.race_position = r.weekend_model.race_pos;
     s.circuits = {}; for (const c of Object.keys(r.circuits || {})) { const x = r.circuits[c]; s.circuits[c] = { lap_s: x.lap_s, sectors_s: x.sectors_s, vmax_kmh: x.vmax_kmh, speed_trap_kmh: x.speed_trap_kmh, vmin_kmh: x.vmin_kmh }; }
     if (!r.legal) s.violations = (r.violations || []).map(v => v.id).concat(r.errors || []);
     return s;
   }
-  const OBJECTIVE = "maximise the Silverstone weekend score (margin to the real 2026 pole, s); legality is a hard constraint";
+  const OBJECTIVE = "maximise the Silverstone weekend score (weekend model: 0.4 × quali margin + 0.6 × race margin per lap vs the real 2026 field, s; the pole margin when the weekend model is off); legality is a hard constraint";
 
+  // opts.team: start from that team's baseline (design.baseline({ team })) when no opts.start is given
   function init(opts) {
     opts = Object.assign({ gens: 200, seed: 1, lambda: 8, sigma: 0.08, patience: 60, until: "gens", history_limit: 50 }, opts || {});
     const benchOpts = Object.assign({ circuit: "silverstone" }, opts.bench || {});
-    const start = opts.start ? design.clone(opts.start) : design.baseline();
+    const start = opts.start ? design.clone(opts.start) : design.baseline(opts.team ? { team: opts.team } : undefined);
     const startResult = benchMod.bench(start, benchOpts);
     if (!startResult.legal) throw new Error("concept optimize: the starting design is illegal (" + summary(startResult).violations.join(", ") + ")");
     return {
@@ -97,19 +99,23 @@
     };
   }
   const historyOf = st => JSON.parse(JSON.stringify(st.lineage.slice(-st.opts.history_limit)));
-  // measure one generation's proposals and decide (numbers only); returns the lineage row
-  function settle(st, raw) {
+  // one generation's proposals -> candidates (applied designs or errors); measured one at a time (sync) or with yields (async)
+  function candidates(st, raw) {
     const props = (Array.isArray(raw) ? raw : raw ? [raw] : []);
-    const cands = [];
-    props.forEach((p, i) => {
+    const cands = props.map((p, i) => {
       const id = "g" + st.gen + "." + i;
       let applied;
       try { applied = design.applyChanges(st.parent, (p && p.changes) || [], { id, parent: st.parent.id, label: "generation " + st.gen + " candidate " + i }); }
-      catch (e) { cands.push({ id, error: String(e.message || e) }); return; }
-      if (!applied.changes.length) { cands.push({ id, error: "no change" }); return; }
-      const r = benchMod.bench(applied.design, st.benchOpts);
-      cands.push({ id, design: applied.design, changes: applied.changes, hypothesis: (p.hypothesis && String(p.hypothesis).slice(0, 200)) || hypothesize(applied.changes), result: r });
+      catch (e) { return { id, error: String(e.message || e) }; }
+      if (!applied.changes.length) return { id, error: "no change" };
+      return { id, design: applied.design, changes: applied.changes, hypothesis: (p.hypothesis && String(p.hypothesis).slice(0, 200)) || hypothesize(applied.changes), result: null };
     });
+    return { props, cands };
+  }
+  // batch measure: the bench caches by design, so a duplicate inside a generation (or of an earlier design) costs nothing
+  function measure(st, c) { if (c.design && !c.result) c.result = benchMod.bench(c.design, st.benchOpts); }
+  // decide on measured candidates (numbers only); returns the lineage row
+  function decide(st, props, cands) {
     const legal = cands.filter(c => c.result && c.result.legal);
     let best = null; for (const c of legal) if (!best || c.result.score > best.result.score + 1e-12) best = c;
     const before = st.parentResult.score, kept = !!best && best.result.score > before + 1e-9;
@@ -131,9 +137,20 @@
     if (st.opts.onGeneration) st.opts.onGeneration(row);
     return row;
   }
+  function settle(st, raw) { const { props, cands } = candidates(st, raw); for (const c of cands) measure(st, c); return decide(st, props, cands); }
+  // async: opts.yield (async fn) is awaited before each measured candidate once opts.slice_ms (default 12) of work has passed since
+  // the last yield, so a page stays responsive while ~10-40 ms physics laps run. The order of work is unchanged: same lineage.
+  async function settleAsync(st, raw) {
+    const { props, cands } = candidates(st, raw), y = st.opts.yield, slice = st.opts.slice_ms == null ? 12 : st.opts.slice_ms;
+    for (const c of cands) {
+      if (y && c.design && Date.now() - (st.lastYield || 0) >= slice) { await y(); st.lastYield = Date.now(); }
+      measure(st, c);
+    }
+    return decide(st, props, cands);
+  }
   function outcome(r, p) {
-    const w = r.weekend, pw = p.weekend;
-    return "Silverstone " + w.lap_s.toFixed(3) + " s (" + (w.lap_s - pw.lap_s >= 0 ? "+" : "") + (w.lap_s - pw.lap_s).toFixed(3) + " vs parent), P" + w.grid_position + ", mass " + r.mass.total_kg + " kg, front " + (r.mass.front_share * 100).toFixed(1) + " %";
+    const w = r.weekend, pw = p.weekend, m = r.weekend_model;
+    return "Silverstone " + w.lap_s.toFixed(3) + " s (" + (w.lap_s - pw.lap_s >= 0 ? "+" : "") + (w.lap_s - pw.lap_s).toFixed(3) + " vs parent), P" + w.grid_position + (m ? " (quali P" + m.quali_pos + ", race P" + m.race_pos + ")" : "") + ", mass " + r.mass.total_kg + " kg, front " + (r.mass.front_share * 100).toFixed(1) + " %";
   }
   function done(st) { return st.gen >= st.opts.gens || (st.opts.until === "converged" && st.stale >= st.opts.patience); }
   function finish(st) {
@@ -142,11 +159,13 @@
       best: st.parent, best_result: st.parentResult, baseline: st.baseline, baseline_result: st.baselineResult,
       lineage: st.lineage, generations: st.gen, kept: st.lineage.filter(r => r.kept).length, stopped: st.stopped,
       diff: design.diff(st.baseline, st.parent), seed: st.opts.seed, proposer: st.proposer.name, objective: OBJECTIVE, label: benchMod.LABEL,
+      sim: st.baselineResult.sim, sim_label: st.baselineResult.sim_label, team: st.baseline.team || null,
     };
   }
   // optimize(opts) -> { best, best_result, baseline, baseline_result, lineage, generations, kept, stopped, diff, ... }
-  // opts: { gens = 200, seed = 1, lambda = 8, sigma = 0.08, until: "gens" | "converged", patience = 60, start?: Design,
-  //         proposer?: Proposer, bench?: { circuit, circuits, sim, calibration, mass_weight }, onGeneration?(row) }
+  // opts: { gens = 200, seed = 1, lambda = 8, sigma = 0.08, until: "gens" | "converged", patience = 60, start?: Design, team?: id,
+  //         proposer?: Proposer, bench?: { circuit, circuits, sim: "auto" | "physics" | "v0" | fn, objective: "weekend" | "quali",
+  //         calibration, mass_weight }, onGeneration?(row), yield?: async fn, slice_ms? (optimizeAsync) }
   function optimize(opts) {
     const st = init(opts);
     while (!done(st)) {
@@ -159,7 +178,7 @@
   }
   async function optimizeAsync(opts) {
     const st = init(opts);
-    while (!done(st)) { st.gen++; settle(st, await st.proposer.propose(historyOf(st), design.clone(st.parent), ctxOf(st))); }
+    while (!done(st)) { st.gen++; await settleAsync(st, await st.proposer.propose(historyOf(st), design.clone(st.parent), ctxOf(st))); }
     return finish(st);
   }
 

@@ -100,7 +100,7 @@ function createApp(opts) {
   function statusView() {
     const s = db.readStatus(), calls = db.readCalls();
     return Object.assign({ task_name: prompt.TASK_NAME_HINT + "…", kept_examples: 0, adapter_version: null, test_result: null, exam: { provider: null, v1: null, v2: null }, updated_at: null, last_console_read_at: null }, s,
-      { model: prompt.MODEL, prompt_version: prompt.PROMPT_VERSION, prompt_hash: PROMPT_HASH, calls_total: calls.length, calls_trained: calls.filter(x => x.trained).length, experiments: db.readLedger().length, budget: budgetView(calls, now()) });
+      { model: prompt.MODEL, prompt_version: prompt.PROMPT_VERSION, prompt_hash: PROMPT_HASH, calls_total: calls.filter(x => x.kind !== "illegal").length, calls_trained: calls.filter(x => x.trained).length, experiments: db.readLedger().length, budget: budgetView(calls, now()) });
   }
 
   // ---- one experiment (ARCHITECTURE §6). input: { scenario_overrides: { circuit, conditions, candidate, baseline, seed }, with_rules, random }
