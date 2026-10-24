@@ -7,7 +7,8 @@ title: PURPLE — Night Shift deck
 style: |
   /* DESIGN_SYSTEM.md tokens: a pit-wall timing screen, not a dashboard */
   :root { --bg:#0a0a0c; --panel:#121216; --line:#26262c; --text:#e8e8ec; --muted:#8a8a94; --purple:#b26cff; --purple-dim:#3a2460; --green:#4ade80; --amber:#fbbf24; --red:#f0506e; --mubit:#ff4500; }
-  section { background: var(--bg); color: var(--text); font-family: "Inter", system-ui, sans-serif; font-size: 23px; padding: 48px 64px 64px; }
+  section { background: var(--bg); color: var(--text); font-family: "Inter", system-ui, sans-serif; font-size: 21px; padding: 40px 56px 84px; }
+  section.dense { font-size: 18px; } section.dense li { margin: 4px 0; }
   h1 { color: var(--text); font-size: 40px; font-weight: 600; margin-bottom: 8px; }
   h1 small, .label { display:block; color: var(--muted); font-size: 13px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 20px; }
   h2 { color: var(--purple); font-size: 26px; font-weight: 600; }
@@ -19,9 +20,10 @@ style: |
   th { color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: .08em; font-size: 12px; }
   td, th { border: 1px solid var(--line); padding: 4px 12px; }
   .purple { color: var(--purple); } .red { color: var(--red); } .amber { color: var(--amber); } .muted { color: var(--muted); } .mubit { color: var(--mubit); }
-  .src { position: absolute; left: 64px; bottom: 28px; color: var(--muted); font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 12px; }
+  .src { position: absolute; left: 56px; right: 96px; bottom: 24px; color: var(--muted); font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 12px; }
   section::after { color: var(--muted); font-family: "JetBrains Mono", monospace; font-size: 12px; }
   img[alt~="shot"] { border: 1px solid var(--line); border-radius: 6px; }
+  .fill { background: var(--amber); color: #000; font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 0.8em; font-weight: 700; padding: 1px 6px; border-radius: 4px; }
   section.lead h1 { font-size: 64px; } section.lead .tag { color: var(--purple); font-size: 28px; }
 ---
 
@@ -45,21 +47,24 @@ Speaker notes: The recurring task is the research agent's experiment decision: v
 
 ---
 
+<!-- _class: dense -->
+
 # 2 · What Mubit does here
 <small>One frozen task, every call recorded</small>
 
 - Mubit task **"Research engineer of F1"**: `claude-haiku-4-5`, frozen prompt v1, temperature 0, server-side only.
-- Input: baseline setup + lap, candidate setup, the evaluator's lap and sector deltas, active pit-wall rules, last 3 experiments. Output: strict JSON, verdict + next experiment.
-- Friday: **57 trained requests → 43 kept examples**, Training v1. Saturday 01:50: **+41 trained calls** with the engineer's rule in every input → v2. Kept after v2: **[≈ 80, from Tasks]**. v1: **[result]**, v2: **[result]** (Adapters tab).
-- Corrections do not patch the prompt; they enter the task input as rules, and Mubit trains the next version from the recorded calls.
+- Input: baseline and candidate setups, the evaluator's lap and sector deltas, active pit-wall rules, last 3 experiments. Output: strict JSON, verdict + next experiment.
+- **99 trained calls**: Friday **57 → 43 kept examples** (Training v1), the demo experiment, Saturday **41** with the engineer's rule in every input, collected for v2. **61 untrained** (smoke test, exam runs) train nothing.
+- Kept examples after v2: <span class="fill">FILL kept-after-v2</span> · adapter v1: <span class="fill">FILL v1-result</span> · v2: <span class="fill">FILL v2-result</span>
+- Corrections never patch the prompt: they enter the task input as rules; Mubit trains the next version from the recorded calls.
 - **Disclosure:** PURPLE sits on Equation I, our team's pre-existing browser F1 game. The lab, evaluator wrapper and Mubit agent are new tonight.
 
-<span class="src">Mubit console → Tasks / Adapters · data/calls.jsonl (every call with its mreq_ id) · frozen prompt sha 6c5be1a3</span>
+<span class="src">kept examples, adapter results: Mubit console → Tasks / Adapters · call counts: data/calls.jsonl (every call with its mreq_ id) · frozen prompt sha 6c5be1a3</span>
 
 ![shot bg right:36% fit](shots/console-tasks.png)
 
 <!--
-Speaker notes: Equation I is ours and predates the weekend; everything under lab/ and server/ is new. The prompt is frozen by a hash check in the test suite. Figure: console Tasks page showing the task name, 57 requests, 43 kept, Training v1. Owed: the v1 result line from Adapters.
+Speaker notes: Equation I is ours and predates the weekend; everything under lab/ and server/ is new. The prompt is frozen by a hash check in the test suite. Figure: console Tasks page (task name, requests, kept examples, status), shot after v2. Owed: the three amber FILL values from Tasks and Adapters.
 -->
 
 ---
@@ -72,7 +77,7 @@ Speaker notes: Equation I is ours and predates the weekend; everything under lab
 | DESIGN | agent proposes a setup change; `mreq_` id in the trace | Mubit |
 | EVALUATE | reduced-order lap model scores it in ms: lap, sectors, vmax, Becketts vmin, legality | evaluator |
 | RACE | baseline vs candidate, identical neutral bots, same seed, broadcast camera | the game |
-| LEARN | engineer overrules → pit-wall rule → every later task input → adapter v2 | engineer + Mubit |
+| LEARN | engineer overrules → pit-wall rule → every later task input → next adapter version | engineer + Mubit |
 
 - Evaluator calibrated so the neutral car laps Silverstone in **80.800 s**, the game's 2026-pole-anchored limit lap.
 - The race is the check on the evaluator; the exam is the check on the agent.
@@ -109,19 +114,21 @@ Speaker notes: Two identical neutral bots, seed 42, three laps. The model predic
 
 ---
 
+<!-- _class: dense -->
+
 # 5 · v1 vs v2
 <small>The story is the next experiment, not the verdict</small>
 
-- Held-out exam, 20 scenarios, truth from the evaluator. Provider: **verdicts 20/20 · next experiment 10/20**; on the 8 hard ones, **8/8 and 2/8**. On all 6 misses the truth is a **ride-height** change; the provider proposes rear wing (5) or brake bias (1) instead.
-- **v1 learned from our mistake:** a seeding bug made 94 % of Friday's candidates front-wing moves (39 of 43 answers: "front wing"). Fixed before v2.
-- **v2 learns the engineer's rule:** *"Weigh straight-line drag against corner gain; judge on full-lap delta."* in every input; 40 scenarios over all five parameters, verdicts agreeing with the evaluator 38 of 39, ride height proposed 13 times. **Rule-conditioned learning.**
+- Held-out exam, 20 scenarios, truth from the evaluator. Provider (untrained): **verdicts 20/20 · next experiment 10/20**; on the 8 hardest **8/8 and 2/8**. All 6 misses wanted **ride height**; the provider proposed rear wing (5) or brake bias (1).
+- **v1 learned from our mistake:** a seeding bug made 94 % of Friday's candidates front-wing moves (50 of 53 rows); the agent answered "front wing" 39 times in 43. Fixed before v2.
+- **v2's examples carry the engineer's rule** *"Weigh straight-line drag against corner gain; judge on full-lap delta."* in all 40 inputs, over all five parameters: verdicts agree with the evaluator 38 of 39, ride height proposed 13 times. **Rule-conditioned learning.** Whether v2 beats v1 is the table.
 
 | 8 held-out scenarios (Try models) | provider | v1 | v2 |
 |---|---|---|---|
-| next experiment | **2/8** | [n/8] | [n/8] |
-| verdict | 8/8 | [n/8] | [n/8] |
+| next experiment | **2/8** | <span class="fill">FILL v1-next</span> | <span class="fill">FILL v2-next</span> |
+| verdict | 8/8 | <span class="fill">FILL v1-verdict</span> | <span class="fill">FILL v2-verdict</span> |
 
-<span class="src">held-out exam data/exam.json · truth from the reduced-order lap model · provider scored by untrained calls (snapshot 0530-windcap-exam) · v1/v2 hand-entered from Try models · counts, never %</span>
+<span class="src">held-out exam data/exam.json · truth: reduced-order lap model · calibrated to 2026 pole laps · aero map v1 · provider: untrained calls (snapshot 0530-windcap-exam) · v1 data, v2 answers: data/ledger.jsonl · v1/v2 cells: Try models by hand, npm run exam:score · counts, never %</span>
 
 ![shot bg right:34% fit](shots/try-models-side-by-side.png)
 
@@ -134,7 +141,7 @@ Speaker notes: Same unseen scenario to provider, v1 and v2 in Try models. On the
 # 6 · Fast refresh
 <small>When the rules or the circuit change, the task keeps collecting</small>
 
-- **Technical directive TD-01** caps the rear wing at 20°. One toggle in the lab.
+- **Technical directive TD-01** (a demo directive we wrote, not an FIA document) caps the rear wing at 20°. One toggle in the lab.
 - A 25° proposal is refused before it reaches the model: <span class="red">"Technical directive TD-01: rear wing capped at 20°"</span>, an `illegal` trace line, no Mubit call spent.
 - The next legal candidate goes out as usual; new examples count toward the next adapter version.
 - **Circuit switch:** at Monza the same rear wing +8° costs <span class="red">+0.757 s</span> (vs +0.436 s at Silverstone). Same task, same prompt, new objective.
@@ -152,7 +159,7 @@ Speaker notes: Regulation changes are the normal case in F1. The directive is a 
 # 7 · What this is and is not
 <small>Honesty slide</small>
 
-- The evaluator is a **reduced-order lap model, calibrated to 2026 pole laps, aero map v1**. It is not a high-fidelity aerodynamic simulation; the race is our only check on it (19 % on the demo candidate).
+- The evaluator is a **reduced-order lap model, calibrated to 2026 pole laps, aero map v1**. It is not a high-fidelity aerodynamic simulation; the race is our only check on it (19 % apart on the demo candidate, measured in race, seed 42).
 - Corrections are **rule-conditioned learning**: the rule enters the task input, the provider's answers change, those kept examples train the next adapter version. There is no gradient from the engineer's click.
 - Exam scores are **counts** (n/20, n/8), never percentages; truth comes from the evaluator, not from us. v1's data was skewed by our seeding bug; we say so.
 - Equation I (game, physics, circuits, drivers) is **pre-existing**; `lab/`, `server/`, the aero map and the Mubit agent are new tonight.
@@ -164,6 +171,8 @@ Speaker notes: We would rather be judged on a small true thing than a large clai
 
 ---
 
+<!-- _class: dense -->
+
 # 8 · Next
 <small>What a week would add</small>
 
@@ -171,7 +180,7 @@ Speaker notes: We would rather be judged on a small true thing than a large clai
 - **Richer objective:** wind and wet already in the scenario; add tyre temperature and a stint, not a lap.
 - **Grid race as the proving ground:** today Verstappen in the candidate car on the real 2026 British GP grid is a cinematic (P7 → P14 at seed 42, labelled); next, a stint model to make it a measurement.
 - **Any team's priors:** the pit-wall rules are plain text; a Formula Student or sim-racing team can train their own research engineer from their own corrections.
-- Repo: `github.com/rayhankhilji/purple` · every Mubit request id, ledger row and rule frozen in `docs/ledger-snapshot/`
+- `github.com/rayhankhilji/purple` · every Mubit request id, ledger row and rule frozen in `docs/ledger-snapshot/`
 
 <span class="src">grid race: cinematic · mixes car and driver · headless run, seed 42 · wind and wet: reduced-order lap model · aero map v1</span>
 
