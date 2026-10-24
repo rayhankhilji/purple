@@ -490,7 +490,7 @@ function mount(app, o) {
       const pool = new Pool(opts.workers), sp = new ScreenPool(opts.workers);
       try {
         const res = await engineer.runEngineer({
-          llm, mock: mode === "mock", trained, team, seed: opts.seed, runId: r.id, maxCalls: max_calls, maxDecisions: (resume ? resume.decisions.length : 0) + opts.max_decisions, patience: opts.patience, stopAfter: opts.stop_after,
+          llm, mock: mode === "mock", trained, team, seed: opts.seed, runId: r.id, maxCalls: (resume ? resume.calls || 0 : 0) + max_calls, maxDecisions: (resume ? resume.decisions.length : 0) + opts.max_decisions, patience: opts.patience, stopAfter: opts.stop_after,
           variants: opts.variants, confirm: opts.confirm, explore: opts.explore, target_lap_s: opts.target_lap_s, pace_ms: opts.pace_ms, pool, screenPool: sp, resume,
           preview: conceptRoutes.previewer(designerPrompt),
           shouldStop: () => (r.stopRequested ? (r.stop_reason = r.stop_reason || "stopped by user") : null),
