@@ -39,7 +39,7 @@ style: |
 - Today that judgement lives in a senior engineer's head and leaves with them.
 - **PURPLE**: a research agent that **proposes experiments**, is **graded by a deterministic evaluator**, is **checked by a race**, and **learns from the engineer's corrections** through Mubit.
 
-![shot bg right:38% fit](shots/lab-stage-rail.png)
+![shot bg right:46% fit](shots/lab-full.png)
 
 <!--
 Speaker notes: The recurring task is the research agent's experiment decision: verdict on the last experiment plus the single next experiment. The evaluator is deterministic, so every decision has a ground truth and "did the correction help?" is a number, not an opinion. Figure: the lab's stage rail, DESIGN EVALUATE RACE LEARN.
