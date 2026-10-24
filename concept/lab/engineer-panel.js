@@ -235,7 +235,7 @@
     const share = st.directed_gain_share;
     const v1 = S.replay && S.replay.kind !== "engineer-v2" && S.mode === "replay";
     stats.replaceChildren(
-      chip("peak lap", f3(pk) + " s", "Δ baseline " + sg(isNum(pk) && isNum(base) ? pk - base : null) + " · pole " + sg(isNum(pk) ? pk - POLE : null) + " · P" + (gridOf(pk) || "—"), "hero", "the fastest legal car of the run on the " + SIM + "; pole = the real 2026 British GP pole " + POLE + " s"),
+      chip("peak lap", f3(pk) + " s", "Δ baseline " + sg(isNum(pk) && isNum(base) ? pk - base : null) + " · pole " + sg(isNum(pk) ? pk - POLE : null) + " · P" + (gridOf(pk) || "—"), "e2-pk", "the fastest legal car of the run on the " + SIM + "; pole = the real 2026 British GP pole " + POLE + " s"),
       chip("decisions", int(st.decisions), int(st.calls) + " Mubit calls" + (S.mode === "mock" ? " (mock)" : "")),
       chip("kept gains directed by " + (S.mode === "mock" ? "the mock" : "Mubit"), isNum(share) ? Math.round(share * 100) + " %" : "—", v1 ? "engine v1: the rest came from its seeded fallback" : "the rest: engine fallback after parse / LLM errors", isNum(share) ? (share >= 0.5 ? "good" : "bad") : "", "share of the lap time gained by kept decisions whose direction the model chose (seconds, not counts)"),
       chip("cars measured", int(st.cars_measured != null ? st.cars_measured : st.physics_laps), "physics laps (FIA-checked)"),
