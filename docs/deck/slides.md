@@ -54,6 +54,8 @@ Speaker notes: The recurring task is the research agent's experiment decision: v
 - Corrections do not patch the prompt; they enter the task input as rules, and Mubit trains the next version from the recorded calls.
 - **Disclosure:** PURPLE sits on Equation I, our team's pre-existing browser F1 game. The lab, evaluator wrapper and Mubit agent are new tonight.
 
+<span class="src">Mubit console → Tasks / Adapters · data/calls.jsonl (every call with its mreq_ id) · frozen prompt sha 6c5be1a3</span>
+
 ![shot bg right:36% fit](shots/console-tasks.png)
 
 <!--
@@ -78,7 +80,7 @@ Speaker notes: Equation I is ours and predates the weekend; everything under lab
 <span class="src">reduced-order lap model · calibrated to 2026 pole laps · aero map v1</span>
 
 <!--
-Speaker notes: Each stage is a card in the lab and a line in the ledger. The evaluator is the game's own speed-profile lap model with an aero map on top; we label it exactly that, never more. The race measures what the model predicted. Figure: this table, or the lab page with all four cards lit.
+Speaker notes: Each stage is a card in the lab and a line in the ledger. The evaluator is the game's own speed-profile lap model with an aero map on top; we label it exactly that, never more. The race measures what the model predicted. Figure: this table, or the lab page with all four cards lit (reference frame docs/agents/integrator-screens/lab-1440-0505-merged.png; re-shoot on the real ledger so the widget is not zeros).
 -->
 
 ---
@@ -118,6 +120,8 @@ Speaker notes: Two identical neutral bots, seed 42, three laps. The model predic
 |---|---|---|---|
 | next experiment | **1/8** | [n/8] | [n/8] |
 | verdict | 8/8 | [n/8] | [n/8] |
+
+<span class="src">held-out exam data/exam.json · truth from the reduced-order lap model · provider scored by untrained calls (snapshot 0350-exam-details) · v1/v2 hand-entered from Try models · counts, never %</span>
 
 ![shot bg right:34% fit](shots/try-models-side-by-side.png)
 
@@ -168,6 +172,8 @@ Speaker notes: We would rather be judged on a small true thing than a large clai
 - **Grid race as the proving ground:** today Verstappen in the candidate car on the real 2026 British GP grid is a cinematic (P7 → P14 at seed 42, labelled); next, a stint model to make it a measurement.
 - **Any team's priors:** the pit-wall rules are plain text; a Formula Student or sim-racing team can train their own research engineer from their own corrections.
 - Repo: `github.com/rayhankhilji/purple` · every Mubit request id, ledger row and rule frozen in `docs/ledger-snapshot/`
+
+<span class="src">grid race: cinematic · mixes car and driver · headless run, seed 42 · wind and wet: reduced-order lap model · aero map v1</span>
 
 ![shot bg right:36% fit](shots/ledger-row.png)
 
