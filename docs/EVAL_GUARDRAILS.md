@@ -18,7 +18,7 @@ A task is done when its verify step in `TESTING_GUIDE.md` passes and `TASK_LOG.m
 | G-MUBIT-02 | Every non-decision call (smoke, exam, debugging) carries `x-middleware-record: metadata` | `calls.jsonl` rows with `kind != plan` have `trained: false` |
 | G-MUBIT-03 | One session ID per experiment (`metadata.user_id = exp-<ulid>`) | ledger `session_id` unique |
 | G-MUBIT-04 | Scenario ≤ 350 tokens; history ≤ 3 items | schema test |
-| G-MUBIT-05 | Concurrency ≤ 2; honour `retry-after`; retry once | collect script code review |
+| G-MUBIT-05 | Concurrency ≤ 10 across processes (owner decision 2026-10-24 17:30Z; was 2), ≤ 2 per process; honour `retry-after`; retry once | collect script code review |
 | G-MUBIT-06 | Mubit is called only from `server/mubit.js` | `grep -r "api.mubit.ai" --include=*.js .` returns one file |
 
 ## 3. Security

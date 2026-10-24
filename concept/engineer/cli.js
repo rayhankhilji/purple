@@ -89,6 +89,7 @@ async function main(argv, io) {
   const good = [], lastAnswer = {};
   const llm = async (text, meta) => {
     if (abort) { const e = new Error(abort); e.code = "run_cap"; throw e; }
+    if (good.length) await Promise.all(good);   // one call in flight per process: a pending re-send finishes before the next decision's call
     // --mix 2: the model directs every other decision; the others take the engine's own blind step (the no-AI proposer), no call
     if (a.mix > 1 && (meta.gen || 0) % a.mix === 1) { const e = new Error("mix: engine step this decision"); e.code = "no_ai"; throw e; }
     n++; lastText = text; lastMeta = meta;
