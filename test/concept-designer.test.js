@@ -22,8 +22,8 @@ function replayDesigns(lineage) {
 }
 
 // ---------------------------------------------------------------- prompt
-test("designer prompt: DRAFT 0-draft, ≤ 1,000 chars, goal + schema + the simulator decides, no tools, separate from the research task", () => {
-  assert.equal(prompt.DRAFT, true); assert.equal(prompt.DESIGNER_PROMPT_VERSION, "0-draft");
+test("designer prompt: frozen v1, ≤ 1,000 chars, goal + schema + the simulator decides, no tools, separate from the research task", () => {
+  assert.equal(prompt.DRAFT, false); assert.equal(prompt.DESIGNER_PROMPT_VERSION, "1");   // frozen 2026-10-24 (test/concept-designer-frozen.test.js)
   assert.ok(prompt.SYSTEM_PROMPT.length <= 1000, "prompt is " + prompt.SYSTEM_PROMPT.length + " chars");
   assert.match(prompt.SYSTEM_PROMPT, /Silverstone pole/); assert.match(prompt.SYSTEM_PROMPT, /legal/);
   assert.match(prompt.SYSTEM_PROMPT, /simulator measures it and keeps it only if/); assert.match(prompt.SYSTEM_PROMPT, /you do not decide/);
@@ -149,7 +149,8 @@ test("guard: an illegal proposal is refused before the bench with its article an
 });
 test("guard: trained calls are refused while the prompt is DRAFT; a frozen prompt passes trained through; maxCalls caps the budget", async () => {
   const llm = async () => answer([{ part: "floor", param: "throat_mm", to: 95 }]);
-  assert.throws(() => designer.llmProposer({ llm, trained: true }), /DRAFT/);
+  const draft = Object.assign({}, prompt, { DRAFT: true, DESIGNER_PROMPT_VERSION: "0-draft" });
+  assert.throws(() => designer.llmProposer({ llm, trained: true, prompt: draft }), /DRAFT/);
   assert.throws(() => designer.llmProposer({}), /llm/);
   const metas = [];
   const frozen = Object.assign({}, prompt, { DRAFT: false, DESIGNER_PROMPT_VERSION: "1" });
@@ -190,7 +191,7 @@ test("mock LLM loop: same seed -> identical lineage; the mock exercises parse, i
 test("CLI: --mock writes lineage, calls and best outside data/; refuses to run without --mock and refuses data/ and data-mock/", () => {
   const out = fs.mkdtempSync(path.join(os.tmpdir(), "purple-designer-test-"));
   const r = spawnSync(process.execPath, [path.join(ROOT, "concept", "designer", "cli.js"), "--mock", "--gens", "6", "--seed", "1", "--out", out, "--quiet"], { encoding: "utf8" });
-  assert.equal(r.status, 0, r.stderr); assert.match(r.stdout, /MOCK LLM \(no network\)/); assert.match(r.stdout, /0-draft \(DRAFT\)/);
+  assert.equal(r.status, 0, r.stderr); assert.match(r.stdout, /MOCK LLM \(no network\)/); assert.match(r.stdout, /prompt 1\b/); assert.doesNotMatch(r.stdout, /DRAFT/);
   const rows = fs.readFileSync(path.join(out, "lineage.jsonl"), "utf8").trim().split("\n").map(JSON.parse);
   assert.equal(rows.length, 6); assert.ok(rows.every(x => x.designer && ["llm", "fallback"].includes(x.proposer)));
   const calls = fs.readFileSync(path.join(out, "calls.jsonl"), "utf8").trim().split("\n").map(JSON.parse);

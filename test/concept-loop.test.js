@@ -139,7 +139,8 @@ test("(d) research-task requests are byte-identical to before the server/mubit.j
     assert.equal(cap.body, lb.seen[2].body); assert.equal(cap.url, lb.url + "/v1/messages"); assert.equal(cap.headers["x-api-key"], "<MUBIT_API_KEY>");
     for (const h of Object.keys(cap.headers)) assert.ok(h in lb.seen[2].headers, "captured header " + h + " was sent too");
     // a trained call on the DRAFT task throws before anything is sent
-    await assert.rejects(mubit.callMubit({ userContent: user, sessionId: "loop-x", trained: true, kind: "design", task: designerPrompt }), e => e.code === "draft_prompt");
+    const draftTask = Object.assign({}, designerPrompt, { DRAFT: true, DESIGNER_PROMPT_VERSION: "0-draft" });
+    await assert.rejects(mubit.callMubit({ userContent: user, sessionId: "loop-x", trained: true, kind: "design", task: draftTask }), e => e.code === "draft_prompt");
     assert.equal(lb.seen.length, 3, "nothing reached the server for the refused trained call");
   } finally { lb.srv.close(); delete process.env.MUBIT_BASE_URL; }
   // and the frozen research prompt file itself is untouched (test/prompt-frozen.test.js pins its sha256)
@@ -152,8 +153,9 @@ test("(e) untrained by default: every captured request carries x-middleware-reco
   const res = await loop.runLoop({ iterations: 3, seed: 3, runId: "loop-e", llm: loop.mockCaller(3), preview: async (t, m) => { const r = await mubit.captureRequest({ userContent: t, sessionId: m.sessionId, trained: m.trained, task: designerPrompt }); heads.push(r.headers); return r; } });
   assert.equal(heads.length, 3); assert.ok(heads.every(h => h["x-middleware-record"] === "metadata"));
   assert.ok(res.calls.every(c => c.trained === false) && res.lineage.every(r => r.loop.trained === false));
-  await assert.rejects(loop.runLoop({ iterations: 1, runId: "loop-e2", llm: loop.mockCaller(1), trained: true }), /DRAFT/);
-  assert.equal(designerPrompt.DRAFT, true, "the designer prompt stays a DRAFT");
+  const draft = Object.assign({}, designerPrompt, { DRAFT: true, DESIGNER_PROMPT_VERSION: "0-draft" });
+  await assert.rejects(loop.runLoop({ iterations: 1, runId: "loop-e2", llm: loop.mockCaller(1), trained: true, prompt: draft }), /DRAFT/);
+  assert.equal(designerPrompt.DRAFT, false, "the designer prompt is frozen (v1); trained calls still need confirm: \"trained\"");
   assert.ok(designerPrompt.SYSTEM_PROMPT.length <= 1000);
 });
 
@@ -203,9 +205,12 @@ test("server: guards (bad input, trained needs confirm + frozen prompt, live ref
   const post = async b => { const res = await app.request("/api/concept/loop", { method: "POST", headers: H, body: JSON.stringify(b) }); return { status: res.status, j: await res.json() }; };
   for (const b of [{ iterations: 0 }, { iterations: 31 }, { iterations: 2.5 }, { seed: -1 }, { mode: "real" }, { trained: "yes" }, { team: "ferrari" }, { pace_ms: 99999 }]) assert.equal((await post(b)).status, 400, JSON.stringify(b));
   assert.match((await post({ trained: true })).j.error.message, /confirm must be "trained"/);
-  assert.match((await post({ trained: true, confirm: "trained" })).j.error.message, /DRAFT/);
   const key = process.env.MUBIT_API_KEY; delete process.env.MUBIT_API_KEY;
-  try { assert.match((await post({ mode: "live" })).j.error.message, /MUBIT_API_KEY/); } finally { process.env.MUBIT_API_KEY = key; }
+  try {
+    assert.match((await post({ mode: "live" })).j.error.message, /MUBIT_API_KEY/);
+    // the designer prompt is frozen (v1): trained + confirm passes the prompt guard and stops only at the missing key
+    assert.match((await post({ mode: "live", trained: true, confirm: "trained" })).j.error.message, /MUBIT_API_KEY/);
+  } finally { if (key == null) delete process.env.MUBIT_API_KEY; else process.env.MUBIT_API_KEY = key; }
   const prev = process.env.MUBIT_MOCK; process.env.MUBIT_MOCK = "1";
   try { const m = createApp({ dataDir: tmp(), log: () => {} }); const res = await m.app.request("/api/concept/loop", { method: "POST", headers: H, body: JSON.stringify({ mode: "live" }) }); assert.match((await res.json()).error.message, /MUBIT_MOCK=1/); }
   finally { if (prev == null) delete process.env.MUBIT_MOCK; else process.env.MUBIT_MOCK = prev; }
@@ -240,7 +245,7 @@ test("CLI --dry-run prints the exact request of every iteration (no key, untrain
   assert.equal((r.stdout.match(/^x-middleware-record: metadata$/gm) || []).length, 3);
   assert.equal((r.stdout.match(/metadata \{"user_id":"loop-cli-test"\}/g) || []).length, 3);
   assert.match(r.stdout, /^x-api-key: <MUBIT_API_KEY>$/m); assert.doesNotMatch(r.stdout + r.stderr, /mbt_SHOULD_NOT_APPEAR/);
-  assert.match(r.stdout, /0-draft \(DRAFT\)/); assert.match(r.stdout, /"tested":\[\{"change":"/, "iteration 2+ carries tested results");
+  assert.match(r.stdout, /prompt 1 /); assert.doesNotMatch(r.stdout, /DRAFT/); assert.match(r.stdout, /"tested":\[\{"change":"/, "iteration 2+ carries tested results");
   const rows = fs.readFileSync(path.join(out, "lineage.jsonl"), "utf8").trim().split("\n").map(JSON.parse);
   assert.equal(rows.length, 3); assert.ok(rows.every(x => x.loop.session_id === "loop-cli-test" && x.loop.mubit_request_id));
   const json = spawnSync(process.execPath, [path.join(ROOT, "concept", "designer", "loop-cli.js"), "--dry-run", "--json", "--iterations", "1", "--run-id", "loop-cli-json", "--out", tmp()], { encoding: "utf8", env, timeout: 120000 });
@@ -250,7 +255,7 @@ test("CLI --dry-run prints the exact request of every iteration (no key, untrain
   bad(["--mock", "--confirm-trained"], {}, /only applies to --live/);
   bad(["--live"], { MUBIT_API_KEY: "" }, /MUBIT_API_KEY/);
   bad(["--live"], { MUBIT_MOCK: "1" }, /MUBIT_MOCK/);
-  bad(["--live", "--confirm-trained"], {}, /DRAFT/);
+  bad(["--live", "--confirm-trained"], { MUBIT_API_KEY: "" }, /MUBIT_API_KEY/);   // frozen prompt (v1): only the key stops it
   bad(["--iterations", "2"], {}, /--dry-run, --mock or --live/);
   bad(["--mock", "--out", path.join(ROOT, "data", "loop")], {}, /refusing/);
 });
