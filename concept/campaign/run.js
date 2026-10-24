@@ -265,6 +265,26 @@ async function report(ctx, final, seeds, refineOut) {
     const pB = phys.physical(ctx.base), pX = phys.physical(best), lerp = (a, z, t) => a + t * (z - a), half = JSON.parse(JSON.stringify(pX));
     for (const mode of ["corner", "straight"]) for (const k of Object.keys(pX.aero[mode])) half.aero[mode][k] = lerp(pB.aero[mode][k], pX.aero[mode][k], 0.5);
     const hl = sim.simulateLap(bench.guardEnergy(half), CIRCUIT, cond).lap_s;
+    // where the time comes from, by part group: revert ONE group to the baseline, keep the rest, re-lap (physics sim). A revert that
+    // makes the car illegal (e.g. a flap left on a single-volume wing) is reported as such, not lapped.
+    const GROUPS = [
+      ["Straight Mode flap angles", ["front_wing.sm_delta_deg", "rear_wing.sm_delta_deg"]],
+      ["front wing (span, chord, setting, volumes)", ["front_wing.span_mm", "front_wing.chord_mm", "front_wing.aoa_deg", "front_wing.elements"]],
+      ["rear wing (span, chord, setting, volumes, endplate)", ["rear_wing.span_mm", "rear_wing.chord_mm", "rear_wing.aoa_deg", "rear_wing.elements", "rear_wing.endplate_top_mm"]],
+      ["floor and diffuser (width, throat, ride height, expansion)", ["floor.width_mm", "floor.throat_mm", "floor.ride_height_mm", "diffuser.expansion_deg"]],
+      ["sidepods (inlet, undercut)", ["sidepods.inlet_cm2", "sidepods.undercut_mm"]],
+      ["packaging (wheelbase, survival cell)", ["layout.wheelbase_mm", "survival_cell.front_axle_offset_mm", "survival_cell.cockpit_len_mm", "survival_cell.bulkhead_gap_mm"]],
+      ["ballast (position, extra)", ["ballast.x_frac", "ballast.extra_kg"]],
+      ["materials", "materials"],
+    ];
+    const M = require("../materials.js");
+    sens.revert_group = GROUPS.map(([name, keys]) => {
+      const ch = keys === "materials"
+        ? parts.MATERIAL_PARTS.filter(p => M.materialOf(best.params, p) !== M.materialOf(ctx.base.params, p)).map(p => ({ part: p, param: "material", to: M.materialOf(ctx.base.params, p) }))
+        : keys.map(k => { const [p, q] = k.split("."); return { part: p, param: q, to: ctx.base.params[p][q] }; });
+      const d2 = design.applyChanges(best, ch).design, x = bench.bench(d2, Object.assign({}, ctx.benchOpts, { cache: false }));
+      return { group: name, changed: design.diff(d2, best).length, lap_s: x.legal ? x.circuits[CIRCUIT].lap_s : null, cost_s: x.legal ? r3(x.circuits[CIRCUIT].lap_s - c.lap_s) : null, illegal: x.legal ? null : x.violations.map(v => v.id) };
+    });
     sens.aero_half = { lap_s: hl, delta_vs_baseline_s: r3(hl - b.lap_s), basis: "what-if: the final car with its aero coefficient changes (corner and Straight Mode CLA front/rear, CDA) halved, mass and CoG as designed; physics sim" };
   }
   const H = bench.homologatedPU(ctx.team);
@@ -351,6 +371,11 @@ function summaryMarkdown(out) {
     if (r.sensitivity.wind) {
       const ds = r.sensitivity.wind.rows.map(w => w.delta_s);
       L.push("Sensitivity (physics sim): wind " + r.sensitivity.wind.wind_ms + " m/s from 8 directions moves best − baseline between " + sg(Math.min(...ds)) + " and " + sg(Math.max(...ds)) + " s (still air " + sg(r.best.delta_to_baseline_s) + "). Strategy: " + r.sensitivity.strategy.map(s => s.strategy + (s.calibrated ? " (calibrated)" : "") + " best " + f3(s.best_s) + " / baseline " + f3(s.baseline_s) + " (Δ " + sg(s.delta_s) + ")").join("; ") + ". Aero-map gains halved: " + f3(r.sensitivity.aero_half.lap_s) + " s (Δ " + sg(r.sensitivity.aero_half.delta_vs_baseline_s) + " vs baseline). Surrogate on the final car: " + f3(r.surrogate && r.surrogate.lap_s) + " s (" + (r.surrogate && r.surrogate.minus_physics_s != null ? sg(r.surrogate.minus_physics_s) : "—") + " vs physics, information only).", "");
+    }
+    if (r.sensitivity.revert_group) {
+      L.push("| Revert one group to the baseline (rest kept) | Lap (s) | Time the group is worth (s) |", "|---|---|---|");
+      for (const g of r.sensitivity.revert_group) L.push("| " + g.group + (g.changed ? "" : " (unchanged)") + " | " + (g.lap_s == null ? "illegal (" + g.illegal.join(", ") + ")" : f3(g.lap_s)) + " | " + (g.cost_s == null ? "—" : sg(-g.cost_s)) + " |");
+      L.push("");
     }
     const fails = r.legality.filter(x => x.status === "FAIL");
     L.push("Legality: " + (fails.length ? fails.length + " FAIL" : "every check passes") + " (" + r.legality.filter(x => x.status === "pass").length + " checks pass, " + r.legality.filter(x => /^info/.test(x.status)).length + " info rules recorded). Runtime " + r.runtime_s + " s, " + r.physics_laps + " physics laps.", "");

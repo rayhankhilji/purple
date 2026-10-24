@@ -59,7 +59,7 @@ function convergenceSvg(res) {
   });
   // legend
   keys.forEach((k, i) => {
-    const c = SLOT[k] || 1, y = M.t + 8 + i * 18, x = M.l + pw - 230;
+    const c = SLOT[k] || 1, y = M.t + ph - 14 - (keys.length - 1 - i) * 18, x = M.l + 14;   // bottom left: the curves start high and end right
     out.push('<line class="s' + c + '" stroke-width="2" x1="' + x + '" x2="' + (x + 22) + '" y1="' + y + '" y2="' + y + '"/><text class="ink" x="' + (x + 28) + '" y="' + (y + 4) + '" font-size="11">' + esc(name(k) + " (" + res.results[k].trace.length + " seeds)") + "</text>");
   });
   out.push("</svg>");
