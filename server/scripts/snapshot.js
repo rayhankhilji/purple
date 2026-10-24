@@ -1,4 +1,4 @@
-// PURPLE - node server/scripts/snapshot.js [--out docs/ledger-snapshot] [--label freeze] [--data data]
+// PURPLE - node server/scripts/snapshot.js [--out docs/ledger-snapshot] [--label freeze] [--data data]   (PURPLE_DATA_DIR is ignored on purpose: pass --data)
 // P3.T6 freeze step: copies the ledger judges will see (data/ledger.jsonl, calls.jsonl, rules.json, status.json, exam.json, state.json)
 // into docs/ledger-snapshot/<UTC timestamp>[-label]/ with a README.md of row counts, so the numbers in the deck and the video are
 // reproducible from the repo. Read-only on data/ (copies only); never deletes anything; refuses to overwrite an existing snapshot dir.
@@ -13,7 +13,7 @@ const count = (arr, f) => arr.filter(f).length;
 // { dir, files: [{ name, bytes, rows }], counts } -> README text; exported for the test
 function snapshot(opts) {
   opts = opts || {};
-  const dataDir = abs(opts.data || process.env.PURPLE_DATA_DIR || "data"), outRoot = abs(opts.out || "docs/ledger-snapshot");
+  const dataDir = abs(opts.data || "data"), outRoot = abs(opts.out || "docs/ledger-snapshot");
   const at = opts.at || new Date(), stamp = at.toISOString().replace(/[:.]/g, "-").replace("T", "_").slice(0, 19) + "Z";
   const name = stamp + (opts.label ? "-" + String(opts.label).replace(/[^A-Za-z0-9_-]+/g, "-") : ""), dir = path.join(outRoot, name);
   if (fs.existsSync(dir)) throw new Error("snapshot dir exists, refusing to overwrite: " + dir);

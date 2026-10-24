@@ -3,10 +3,11 @@ const path = require("path");
 require("dotenv").config({ path: process.env.PURPLE_ENV_FILE || path.join(__dirname, "..", ".env") });
 const { ulid } = require("ulid");
 const headless = require("../game-headless.js"), store = require("../store.js"), prompt = require("../../lab/prompt.js");
-const mubit = process.env.MUBIT_MOCK === "1" ? require("../../test/mocks/mubit.js") : require("../mubit.js");   // MUBIT_MOCK=1: the drill / the trained:false test, no network
+const { mockMode, resolveDataDir } = require("../app.js");   // the same MUBIT_MOCK validation and data-dir rule as the server
+const mubit = mockMode() ? require("../../test/mocks/mubit.js") : require("../mubit.js");   // MUBIT_MOCK=1: the drill / the trained:false test, no network
 (async () => {
   const EI = headless.load(); const { aero, schema, evaluator } = EI;
-  const dataDir = process.env.PURPLE_DATA_DIR || (mubit.CANNED ? "data-mock" : "data"); const db = store.open(path.isAbsolute(dataDir) ? dataDir : path.join(headless.ROOT, dataDir));
+  const rd = resolveDataDir({ mock: !!mubit.CANNED }); if (rd.redirected) console.error("smoke: MUBIT_MOCK=1 with the real data/ -> using data-mock/ instead"); const db = store.open(rd.dir);
   const circuit = "silverstone", conditions = { circuit, wet: false, wind_ms: 0, wind_from_deg: 0 }, baseline = aero.BASELINE, candidate = Object.assign({}, baseline, { rear_wing_deg: 28 });
   const evaluation = evaluator.evaluate(circuit, candidate, conditions, { baseline });
   const scenario = schema.buildScenario({ circuit, conditions, baseline, baselineEval: evaluation.baseline, candidate, evaluation, rules: [], history: [] });
