@@ -1,8 +1,16 @@
 # Lane DEMO
 
-Status: in_progress P3.T5 (PRs #24, #26, #28 merged; honesty-audit fixes on `claude/demo-p3-audit`; v1/v2 cells, kept count, adapter results owed). Owner: agent G (Claude, session `session_01UAY6ykh3dQkf9GfJoZ9BTy`). Branch: `claude/demo-p3-audit`.
+Status: in_progress P3.T5 (PRs #24, #26, #28, #30 merged; sheet-recomposition update on `claude/demo-p3-sheet2`; v1/v2 cells, kept count, adapter results owed). Owner: agent G (Claude, session `session_01UAY6ykh3dQkf9GfJoZ9BTy`). Branch: `claude/demo-p3-sheet2`.
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
+
+### 2026-10-24 04:50 London — agent G (DEMO) — P3.T5 provider score on the recomposed Try-models sheet: 2/8
+- Status: done (small PR on `claude/demo-p3-sheet2`).
+- Files changed: `docs/deck/slides.md` (slide 5: 2/8, six misses, rear wing 5 / brake bias 1; .src names snapshot 0530-windcap-exam), `docs/demo-script.md` (facts table, 2:10 on-screen and spoken lines, trigger line with the new 8), `docs/deck/shot-list.md` (shot 11), `docs/deck/README.md`, this file.
+- Verify step run + output: integration head 1a71b33. `docs/try-models/sheet.md` items: exam-rw8, -14, -15, -02, -16, -20, -05, -12 (exam-03 out, exam-12 in after EVAL's wind-cap fix, README line 37). Snapshot `2026-10-24_02-37-26Z-0530-windcap-exam/status.json`: 20/20 verdicts, 10/20 next step; on the 8: `param_ok` true for exam-rw8 and exam-12 (truth ride_height_mm decrease, answer the same) → **2/8**, `verdict_ok` 8/8; the 6 misses all have `ride_height_mm` truth (exam-05 increase, the rest decrease); answers rear_wing_deg ×5 (02, 05, 14, 16, 20), brake_bias_pct ×1 (15). No front-wing answer on the new sheet, so "front wing (1)" was removed everywhere. Honesty grep clean; speaker notes ≤ 60 words.
+- Numbers owed: unchanged (kept count after v2, adapter v1 / v2 results, v1 / v2 n/8 cells, screenshots). If the sheet recomposes again, the three places to touch are slide 5, the script facts table + 2:10, and shot 11.
+- Blockers / questions for Tanuj: the four batched questions in the 03:20 entry stand.
+- Next three actions: (1) integrator merges; (2) DEMO fills owed numbers, runs the placeholder grep, exports the PDF; (3) P3.T6 snapshot after `/submit`.
 
 ### 2026-10-24 04:00 London — agent G (DEMO) — honesty-audit fixes (integrator audit 03:55)
 - Status: done (small PR on `claude/demo-p3-audit`).
