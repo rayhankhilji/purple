@@ -66,7 +66,7 @@ test("scenario: tested rows map lineage (lap delta = -delta_score, kept, illegal
   assert.equal(sc.tested.length, 3); assert.equal(sc.tested[1].change, "front_wing.span_mm 1300->1400");
   assert.deepEqual(sc.refused, [{ change: "b", why: "illegal C2.3.1" }]);
 });
-test("scenario: measured worst case (3 illegal 3-change rows with every article, 3-change refused, 6 near lines) fits ≤ 400 tokens (LIMITS.chars 1,600 since the closed loop, LOOP.md)", () => {
+test("scenario: measured worst case (3 illegal 3-change rows with every article, 3-change refused, 9 near lines) fits ≤ 450 tokens (LIMITS.chars 1,800 since live run 2, LOOP.md)", () => {
   const d = design.baseline(); for (const s of parts.PARAMS) d.params[s.part][s.param] = s.max - s.step;   // everything past or near a limit
   d.params.ballast.x_frac = 0.37; d.params.floor.ride_height_mm = 24.5;
   const longest = parts.PARAMS.slice().sort((a, b) => (b.part + b.param).length - (a.part + a.param).length).slice(0, 3);
@@ -76,13 +76,13 @@ test("scenario: measured worst case (3 illegal 3-change rows with every article,
   const o = { design: d, summary: { lap_s: 87.12345, gap_to_pole_s: -0.98765, mass_kg: 770.25, front_share: 0.44567 }, history: [row, row, row], refused: [{ change: S.describeChanges(ch), why: "illegal " + every.map(id => regs.BY_ID[id].article).join(" ") }] };
   const raw = S.fit(Object.assign({}, o, { limits: { chars: 1e9 } }));
   const f = S.fit(o);
-  assert.ok(f.chars <= S.LIMITS.chars && f.tokens <= 400, "worst case " + f.tokens + " tokens (" + f.chars + " chars; untrimmed " + raw.tokens + ")");
+  assert.ok(f.chars <= S.LIMITS.chars && f.tokens <= 450, "worst case " + f.tokens + " tokens (" + f.chars + " chars; untrimmed " + raw.tokens + ")");
   assert.equal(JSON.parse(f.text).tested.length >= 1, true, "the latest tested row survives");
   assert.equal(JSON.parse(f.text).refused.length, 1, "the refused entry survives");
   assert.ok(JSON.parse(raw.text).tested.every(t => t.illegal.length <= S.LIMITS.articles + 1), "articles capped");
   // an even more absurd input still fits (fit trims until it does)
   const absurd = S.fit(Object.assign({}, o, { history: Array(10).fill(row) }));
-  assert.ok(absurd.tokens <= 400);
+  assert.ok(absurd.tokens <= 450);
 });
 
 // ---------------------------------------------------------------- schema

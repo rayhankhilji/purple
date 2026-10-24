@@ -21,7 +21,7 @@
   const req = (name, file) => C[name] || (typeof require === "function" ? require(file) : null);
   const parts = req("parts", "../parts.js"), regs = req("regs", "../regs.js");
 
-  const LIMITS = { tested: 3, refused: 1, near: 6, articles: 3, near_frac: 0.10, chars: 1600, moves: 2 };   // tested ≤ 3 like the research agent's history (G-MUBIT-04); 1,600 chars ≈ 400 tokens (LOOP.md: measured sectors + segments)
+  const LIMITS = { tested: 3, refused: 1, near: 9, articles: 3, near_frac: 0.10, chars: 1800, moves: 2 };   // tested ≤ 3 like the research agent's history (G-MUBIT-04); 1,800 chars ≈ 450 tokens (LOOP.md: measured sectors + segments; 9 near lines since live run 2 showed combined floor-stall refusals)
   const approxTokens = s => Math.ceil(String(s).length / 4);
   const short = article => String(article).split(",")[0].trim();   // "C3.10.1(a), App. C2 §22.1" -> "C3.10.1(a)"
   // a violated rule as one space-free token: the FIA article ("C3.10.1(a)") or, for the model's own packaging checks whose "article"
@@ -48,20 +48,36 @@
       "front_wing.elements": { min: [1, art("REG-C-ELEMENTS-MIN")], max: [B["REG-C-FW-ELEMENTS"].value, art("REG-C-FW-ELEMENTS")] },
       "rear_wing.span_mm": { max: [B["REG-C-RW-SPAN"].value, art("REG-C-RW-SPAN")] },
       "rear_wing.chord_mm": { max: [B["REG-C-RW-CHORD"].value, art("REG-C-RW-CHORD")] },
-      "rear_wing.elements": { min: [2, art("REG-C-ELEMENTS-MIN")], max: [B["REG-C-RW-ELEMENTS"].value, art("REG-C-RW-ELEMENTS")] },
+      "rear_wing.elements": { min: [2, "C3.11.7(b)"], max: [B["REG-C-RW-ELEMENTS"].value, art("REG-C-RW-ELEMENTS")] },
       "rear_wing.endplate_top_mm": { max: [B["REG-C-RW-ENDPLATE"].value, art("REG-C-RW-ENDPLATE")] },
       "floor.width_mm": { max: [2 * B["REG-C-WIDTH"].value, art("REG-C-WIDTH")] },
       "floor.ride_height_mm": { min: [plankMin, art("REG-C-PLANK")] },
     };
   }
   // effective legal range of every parameter for this design: [{ key, value, lo, hi, lo_src, hi_src, headroom_frac, side }]
+  // the last legal value between v (legal) and bound, stepping by the parameter's step, or null if bound itself is legal
+  function legalEdge(d, s, v, bound) {
+    const viol = x => { const c = { params: Object.assign({}, d.params, { [s.part]: Object.assign({}, d.params[s.part], { [s.param]: x }) }) }; return regs.check(Object.assign({}, d, c)); };
+    if (bound === v) return null;
+    const atBound = viol(bound); if (!atBound.length) return null;
+    const dir = bound > v ? 1 : -1, n = Math.round(Math.abs(bound - v) / s.step);
+    let ok = 0, bad = n, why = atBound;
+    while (bad - ok > 1) { const m = (ok + bad) >> 1, w = viol(v + dir * m * s.step); if (w.length) { bad = m; why = w; } else ok = m; }
+    return { value: v + dir * ok * s.step, src: art(why[0].id) };
+  }
   function ranges(d) {
-    const rb = regBounds(d.params), out = [];
+    const rb = regBounds(d.params), out = [], legalNow = regs.check(d).length === 0;
     for (const s of parts.PARAMS) {
       const key = s.part + "." + s.param, v = d.params[s.part][s.param], b = rb[key] || {};
       let lo = s.min, lo_src = "domain", hi = s.max, hi_src = "domain";
       if (b.min && b.min[0] > lo) { lo = b.min[0]; lo_src = b.min[1]; }
       if (b.max && b.max[0] < hi) { hi = b.max[0]; hi_src = b.max[1]; }
+      // combined limits (e.g. the front wing's X+Z envelope ties its setting to its chord; ride height to floor stall): the furthest
+      // legal value of this parameter with every other parameter held, found by bisection on regs.check
+      if (legalNow) {
+        const h = legalEdge(d, s, v, hi); if (h) { hi = h.value; hi_src = h.src; }
+        const l = legalEdge(d, s, v, lo); if (l) { lo = l.value; lo_src = l.src; }
+      }
       const up = hi - v, down = v - lo, w = s.max - s.min;
       const side = up <= down ? "max" : "min";
       out.push({ key, value: v, lo: fmt(s, lo), hi: fmt(s, hi), lo_src, hi_src, side, headroom_frac: +(Math.min(up, down) / w).toFixed(4) });
