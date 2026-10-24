@@ -201,3 +201,5 @@ Exit criteria: **all true at 23:58 London** (six verifies, task named from the p
 
 ### 2026-10-24 03:30 — integrator — merged: claude/eval-p3-expect claude/server-p2-status-merge
 - SERVER PR #20: POST /api/status deep-merges one level (test). SERVER's review of lab/lab.js (docs/agents/lanes/SERVER.md "UI review"): forwarded to UI; items 1 (retry must reuse x-client-id or a lost response double-spends a trained call), 2 (widget should show last_console_read_at), 4 (race relay: null lap → show "race incomplete" + Race again, not a 400 banner) are must-fix. EVAL PR #19: docs/try-models/README "What to expect" table; provider per-item exam answers are not persisted → SERVER to store runExam details as status.exam.details. CAR3D PR #18: hero camera fits the frame aspect.
+
+### 2026-10-24 03:35 — integrator — merged SERVER PR #21: MUBIT_MOCK → data-mock/ everywhere (createApp default, smoke, collect/exam/collect-dry --data), tests. 76 tests.

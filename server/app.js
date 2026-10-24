@@ -22,8 +22,13 @@ function createApp(opts) {
   opts = opts || {};
   const EI = headless.load();
   const { aero, schema, evaluator, U } = EI;
-  const dataDir = opts.dataDir || process.env.PURPLE_DATA_DIR || path.join(headless.ROOT, "data");
-  const db = store.open(path.isAbsolute(dataDir) ? dataDir : path.join(headless.ROOT, dataDir));
+  // the mock planner must never write into the real ledger (integrator rule): without an explicit dataDir / PURPLE_DATA_DIR,
+  // MUBIT_MOCK=1 uses data-mock/ (gitignored). Every createApp() caller (server, collect, exam, collect-dry) inherits this.
+  const dataDir = opts.dataDir || process.env.PURPLE_DATA_DIR || path.join(headless.ROOT, process.env.MUBIT_MOCK === "1" ? "data-mock" : "data");
+  let dataDirAbs = path.isAbsolute(dataDir) ? dataDir : path.join(headless.ROOT, dataDir);
+  // the mock planner never writes into the real ledger, even when .env points PURPLE_DATA_DIR at ./data (PURPLE_ALLOW_MOCK_IN_DATA=1 overrides)
+  if (process.env.MUBIT_MOCK === "1" && !opts.mubit && path.resolve(dataDirAbs) === path.resolve(headless.ROOT, "data") && !process.env.PURPLE_ALLOW_MOCK_IN_DATA) { dataDirAbs = path.join(headless.ROOT, "data-mock"); console.error("PURPLE: MUBIT_MOCK=1 with the real data/ -> using data-mock/ instead"); }
+  const db = store.open(dataDirAbs);
   // G-MUBIT-02 invariant: only real plan calls may train. Any other calls.jsonl row must say trained: false; a bug here would cost task integrity, so it throws.
   const rawAppendCall = db.appendCall; db.appendCall = row => { if (row.kind !== "plan" && row.trained !== false) throw new Error("G-MUBIT-02: calls.jsonl row kind " + row.kind + " must have trained: false"); return rawAppendCall(row); };
   const mubit = opts.mubit || (process.env.MUBIT_MOCK === "1" ? require("../test/mocks/mubit.js") : require("./mubit.js"));

@@ -333,6 +333,23 @@ test("POST /api/collect accepts promote_bias (0..1) and rejects others; npm run 
   const rows = fs.readFileSync(path.join(dir, "ledger.jsonl"), "utf8").trim().split("\n").map(JSON.parse); assert.equal(rows.length, 4); assert.ok(rows.every(x => ["random", "random-biased"].includes(x.candidate_source)));
   const badCli = spawnSync(process.execPath, [path.join(__dirname, "..", "server", "scripts", "collect.js"), "--n", "1", "--promote-bias", "3"], { env, encoding: "utf8", timeout: 30000 }); assert.equal(badCli.status, 1); assert.match(badCli.stderr, /--promote-bias must be/);
 });
+test("MUBIT_MOCK=1 without PURPLE_DATA_DIR -> data-mock/ (never the real ledger): createApp default, server startup line, scripts' --data flag", async () => {
+  const ROOT = path.join(__dirname, ".."); const env0 = { PURPLE_DATA_DIR: process.env.PURPLE_DATA_DIR, MUBIT_MOCK: process.env.MUBIT_MOCK };
+  try {
+    delete process.env.PURPLE_DATA_DIR; process.env.MUBIT_MOCK = "1"; assert.equal(createApp({ mubit: mock, log: () => {} }).db.dir, path.join(ROOT, "data-mock"));
+    delete process.env.MUBIT_MOCK; assert.equal(createApp({ mubit: mock, log: () => {} }).db.dir, path.join(ROOT, "data"));
+    process.env.MUBIT_MOCK = "1"; process.env.PURPLE_DATA_DIR = "/tmp/purple-explicit"; assert.equal(createApp({ mubit: mock, log: () => {}, dataDir: tmp() }).db.dir.startsWith(os.tmpdir()), true); assert.equal(createApp({ mubit: mock, log: () => {} }).db.dir, "/tmp/purple-explicit");
+  } finally { for (const k of Object.keys(env0)) { if (env0[k] == null) delete process.env[k]; else process.env[k] = env0[k]; } }
+  assert.match(fs.readFileSync(path.join(ROOT, ".gitignore"), "utf8"), /^data-mock\/$/m);
+  const { spawn } = require("child_process"); const env = Object.assign({}, process.env, { MUBIT_MOCK: "1", PURPLE_PORT: "0", PURPLE_ENV_FILE: "/nonexistent/.env" }); delete env.PURPLE_DATA_DIR;
+  const k = spawn(process.execPath, [path.join(ROOT, "server", "index.js")], { env }); let out = "";
+  await new Promise((res, rej) => { const t = setTimeout(() => rej(new Error("no startup line: " + out)), 15000); k.stdout.on("data", d => { out += d; if (/PURPLE server http/.test(out)) { clearTimeout(t); res(); } }); k.on("exit", c => rej(new Error("exited " + c + ": " + out))); });
+  k.kill(); assert.match(out, new RegExp("data " + path.join(ROOT, "data-mock").replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s"));
+  // --data on the CLIs wins over PURPLE_DATA_DIR
+  const dir = tmp(), other = tmp(); const cli = spawnSync(process.execPath, [path.join(ROOT, "server", "scripts", "collect.js"), "--n", "1", "--seed", "1", "--data", dir], { env: Object.assign({}, env, { PURPLE_DATA_DIR: other }), encoding: "utf8", timeout: 30000 });
+  assert.equal(cli.status, 0, cli.stderr); assert.match(cli.stdout, new RegExp("data=" + dir.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))); assert.ok(fs.existsSync(path.join(dir, "ledger.jsonl"))); assert.equal(fs.existsSync(path.join(other, "ledger.jsonl")), false);
+  const dry = spawnSync(process.execPath, [path.join(ROOT, "server", "scripts", "collect-dry.js"), "--n", "1", "--data", other], { env, encoding: "utf8", timeout: 30000 }); assert.equal(dry.status, 0, dry.stderr); assert.match(dry.stdout, new RegExp("nothing written to " + other.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+});
 test("server without MUBIT_API_KEY refuses to start (exit 1) when MUBIT_MOCK is unset", () => {
   const env = Object.assign({}, process.env); delete env.MUBIT_API_KEY; delete env.MUBIT_MOCK; env.PURPLE_ENV_FILE = "/nonexistent/.env";
   const r = spawnSync(process.execPath, [path.join(__dirname, "..", "server", "index.js")], { env, encoding: "utf8", timeout: 15000 });
@@ -348,4 +365,11 @@ test("CORS: the lab page on 127.0.0.1:8788 may call the API on :8787 (preflight 
   assert.ok(pre.status === 204 || pre.status === 200); assert.equal(pre.headers.get("access-control-allow-origin"), "http://127.0.0.1:8788"); assert.match(pre.headers.get("access-control-allow-headers") || "", /x-client-id/i);
   const res = await app.request("/api/status", { headers: { origin: "http://localhost:8788" } }); assert.equal(res.headers.get("access-control-allow-origin"), "http://localhost:8788");
   const other = await app.request("/api/status", { headers: { origin: "https://evil.example" } }); assert.equal(other.headers.get("access-control-allow-origin"), null);
+});
+test("MUBIT_MOCK never writes into the real data/: a data dir resolving to <repo>/data is redirected to data-mock/ unless PURPLE_ALLOW_MOCK_IN_DATA=1", () => {
+  const prev = { m: process.env.MUBIT_MOCK, a: process.env.PURPLE_ALLOW_MOCK_IN_DATA }; process.env.MUBIT_MOCK = "1"; delete process.env.PURPLE_ALLOW_MOCK_IN_DATA;
+  try {
+    const a = createApp({ dataDir: path.join(__dirname, "..", "data") }); assert.equal(path.basename(a.db.dir), "data-mock");
+    process.env.PURPLE_ALLOW_MOCK_IN_DATA = "1"; const b = createApp({ dataDir: path.join(__dirname, "..", "data") }); assert.equal(path.basename(b.db.dir), "data");
+  } finally { if (prev.m == null) delete process.env.MUBIT_MOCK; else process.env.MUBIT_MOCK = prev.m; if (prev.a == null) delete process.env.PURPLE_ALLOW_MOCK_IN_DATA; else process.env.PURPLE_ALLOW_MOCK_IN_DATA = prev.a; }
 });

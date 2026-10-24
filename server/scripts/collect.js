@@ -1,9 +1,10 @@
-// PURPLE - npm run collect -- --n 50 [--with-rules] [--seed 7] [--circuit silverstone] [--promote-bias 0.3] : scenario generator -> /api/plan, concurrency 2.
+// PURPLE - npm run collect -- --n 50 [--with-rules] [--seed 7] [--circuit silverstone] [--promote-bias 0.3] [--data data] : scenario generator -> /api/plan, concurrency 2.
 // Trained calls (no metadata header): these are the examples the Mubit task learns from. Check the console's Tasks page after.
 const path = require("path");
 require("dotenv").config({ path: process.env.PURPLE_ENV_FILE || path.join(__dirname, "..", ".env") });
 const args = process.argv.slice(2); const arg = (k, d) => { const i = args.indexOf("--" + k); return i >= 0 ? args[i + 1] : d; }; const flag = k => args.includes("--" + k);
 if (!process.env.MUBIT_API_KEY && process.env.MUBIT_MOCK !== "1") { console.error("collect: MUBIT_API_KEY missing (server/.env)"); process.exit(1); }
+const dataArg = (() => { const a = process.argv.slice(2), i = a.indexOf("--data"); return i >= 0 ? a[i + 1] : null; })(); if (dataArg) process.env.PURPLE_DATA_DIR = dataArg;   // --data <dir> wins over PURPLE_DATA_DIR; MUBIT_MOCK=1 without either -> data-mock/
 const { createApp } = require("../app.js");
 (async () => {
   const n = parseInt(arg("n", "50"), 10), seed = parseInt(arg("seed", String(Date.now() % 100000)), 10), promote_bias = parseFloat(arg("promote-bias", "0"));
