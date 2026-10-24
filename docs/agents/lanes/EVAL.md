@@ -1,8 +1,16 @@
 # Lane EVAL
 
-Status: done through P3.T1 (sheet, scorer, README with real provider baseline; PR open); idle until v2 trains. Owner: agent C (session `session_01Ma6U13odw1SA1vFhepRj8u`). Branch: `claude/eval-p3-expect2`.
+Status: done through P3.T1 + audit item (newest-3 rules; PR open); idle until v2 trains. Owner: agent C (session `session_01Ma6U13odw1SA1vFhepRj8u`). Branch: `claude/eval-p3-rules`.
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
+
+### 2026-10-24 04:35 London — agent C (EVAL) — guardrail audit item: newest 3 active rules in the scenario (lab/schema.js)
+- Status: done; `npm test` 80/80. Branch `claude/eval-p3-rules` (from the integration branch at 2578d34). No Mubit calls; `lab/prompt.js` untouched (rules are user-message content, not the task key).
+- Files changed: `lab/schema.js` (`selectRules`, `LIMITS.rules = 3`, `LIMITS.rule_chars = 160`), `test/schema.test.js` (+2), this file.
+- What changed: `buildScenario` used `rules.slice(0, 5)` = the five OLDEST rules, so a sixth correction never reached the agent, and five 160-char rules pushed the input to ≈ 384 tokens (> 350). Now `schema.selectRules(rules)`: drop `active: false`, sort by `created_at` (array order when absent, so plain strings still work), keep the NEWEST `LIMITS.rules` (3), oldest first so the agent reads them in the order they were given; rule text is cut to 160 chars as a last guard (the overrule route already trims). `app.js` passes `db.readRules().filter(r => r.active)` and needs no change.
+- Verify: `npm test` 80/80; worst case (3 maximal 160-char rules + 3 history items + wet + wind + two-parameter candidate) serialises to **1,216 chars ≈ 304 tokens** (< 1,400 / 350); a test pins it. Selection test: six rules with the third inactive → `rule 4, rule 5, rule 6` regardless of array order.
+- Decision proposed (for TASK_LOG): the agent sees the newest 3 active rules, oldest first; a fourth active rule silently drops the oldest from the input (it stays in `rules.json` and the UI). If the team wants more than 3, the budget is ~55 tokens per rule; 4 rules fit (≈ 345 tokens worst case) but with no margin. Reversible (`LIMITS.rules`).
+- Blockers / questions for Tanuj: none. Next: idle until v2 trains; `npm run exam:score` then.
 
 ### 2026-10-24 03:55 London — agent C (EVAL) — Try-models README: real provider answers in "What to expect"
 - Status: done; `npm test` 74/74. Branch `claude/eval-p3-expect2` (from the integration branch after PR #19 and SERVER's exam-details persistence merged). Docs only; no Mubit calls.

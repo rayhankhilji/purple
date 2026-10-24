@@ -45,3 +45,23 @@ test("G-MUBIT-04 scenario serialiser stays under 1,400 chars (≈350 tokens) wit
   assert.ok(s.length < schema.LIMITS.scenario_chars, "chars " + s.length); assert.equal(sc.history.length, 3); assert.ok(schema.approxTokens(s) <= 350);
   assert.equal(schema.describeChange(aero.BASELINE, Object.assign({}, aero.BASELINE, { rear_wing_deg: 24, ers_deploy: 0.3 })), "rear_wing_deg +4, ers_deploy -0.2");
 });
+
+test("rules in the scenario: the NEWEST 3 active rules by created_at, oldest first; inactive skipped; strings accepted (decision 2026-10-24)", () => {
+  const mk = (n, h) => ({ id: "R-0" + n, text: "rule " + n, created_at: "2026-10-24T0" + h + ":00:00Z", active: true });
+  const rules = [mk(1, 1), mk(2, 2), Object.assign(mk(3, 3), { active: false }), mk(4, 4), mk(5, 5), mk(6, 6)];
+  assert.deepEqual(schema.selectRules(rules), ["rule 4", "rule 5", "rule 6"]);
+  assert.deepEqual(schema.selectRules(rules.slice().reverse()), ["rule 4", "rule 5", "rule 6"], "order comes from created_at, not the array");
+  assert.deepEqual(schema.selectRules(["a", "b", "c", "d"]), ["b", "c", "d"], "strings: array order is age order");
+  assert.deepEqual(schema.selectRules([]), []); assert.deepEqual(schema.selectRules(undefined), []);
+  assert.equal(schema.selectRules([{ text: "x".repeat(200) }])[0].length, schema.LIMITS.rule_chars);
+  assert.equal(schema.LIMITS.rules, 3);
+});
+test("G-MUBIT-04 worst case: 3 maximal 160-char rules + 3 history items + wind + two-parameter candidate stays under 1,400 chars", () => {
+  const ev = { lap: 81.001, sectors: [27.104, 31.56, 22.337], vmax_kmh: 321.4, vmin_kmh: 133.2, delta_lap: -0.188, delta_sectors: [-0.094, -0.311, -0.029], legal: true, baseline: { lap: 80.813, sectors: [27.198, 31.249, 22.366], vmax_kmh: 328.2 } };
+  const rules = [1, 2, 3, 4, 5, 6].map(n => ({ text: ("Rule " + n + ": weigh straight-line drag against corner gain and judge only on the full-lap delta, never on one sector. ").padEnd(160, "x").slice(0, 160), created_at: "2026-10-24T0" + n + ":00:00Z", active: true }));
+  const history = [{ change: "front_wing_deg -3, ride_height_mm +2", delta_lap: -0.012 }, { change: "rear_wing_deg +4, brake_bias_pct -2", delta_lap: 0.071 }, { change: "ride_height_mm -5, ers_deploy +0.3", delta_lap: -0.121 }, { change: "rear_wing_deg -8", delta_lap: 0.309 }];
+  const sc = schema.buildScenario({ circuit: "silverstone", conditions: { wet: true, wind_ms: 12, wind_from_deg: 300 }, baseline: aero.BASELINE, baselineEval: ev.baseline, candidate: Object.assign({}, aero.BASELINE, { rear_wing_deg: 28, ride_height_mm: 30 }), evaluation: ev, rules, history });
+  const s = schema.serializeScenario(sc);
+  assert.equal(sc.rules.length, 3); assert.equal(sc.history.length, 3); assert.ok(sc.rules.every(r => r.length === 160));
+  assert.ok(s.length < schema.LIMITS.scenario_chars, "chars " + s.length); assert.ok(schema.approxTokens(s) <= 350, "tokens " + schema.approxTokens(s));
+});
