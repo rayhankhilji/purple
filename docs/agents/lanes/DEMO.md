@@ -1,8 +1,45 @@
 # Lane DEMO
 
-Status: in_progress P3.T4 + P3.T5 (script done; deck and shot list on stacked branches). Owner: agent G (Claude, session `session_01UAY6ykh3dQkf9GfJoZ9BTy`). Branches: `claude/demo-p3-script` (script) → `claude/demo-p3-deck` (deck, stacked) → `claude/demo-p3-shots` (shot list, stacked). Merge in that order; each later diff shrinks after the previous merge.
+Status: in_progress P3.T4 + P3.T5 (script v2.1, deck sources, shot list on `claude/demo-p3-deck`, PR into the integration branch). Owner: agent G (Claude, session `session_01UAY6ykh3dQkf9GfJoZ9BTy`). Branch: `claude/demo-p3-deck` (from the integration branch after the script merge).
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
+
+### 2026-10-24 03:20 London — agent G (DEMO) — P3.T5 deck sources + P3.T4 shot list + script v2.1 (after the PRNG correction)
+- Status: **done** on `claude/demo-p3-deck`, one PR into `claude/amazing-planck-804i13` with three commits (P3.T4 script fix, P3.T5 deck, P3.T4 shot list). No code, no Mubit calls, `lab/prompt.js` untouched. `npm test` on the branch base: 74/74.
+- Files changed: `docs/demo-script.md` (v2.1), `docs/deck/slides.md` (new, 8 slides), `docs/deck/README.md` (new), `docs/deck/shot-list.md` (new, 15 shots), `docs/deck/shots/.gitkeep`, this file.
+- What changed since the 02:10 entry (integrator messages 23:41 and 02:04, TASK_LOG 01:45–03:05):
+  1. **The front-wing line is no longer told as fixation.** 50 of 53 v1 ledger rows touched `front_wing_deg` because of the generator's PRNG seeding (fixed 01:45). Script 1:35, slide 5 and shot 9 now say: v1 learned from skewed data (our mistake, fixed), the clean next-step measure is the exam (10/20), v2 was collected over all five parameters with R-01 in every input (verdicts agreed with the evaluator 38/39; next parameter rh 13 / rw 11 / fw 7 / bb 6 / ers 2). "Do not say" line added to the script.
+  2. **Lab page facts:** P2.T1 has no candidate editor (D-U3), so the demo candidate and the 25° TD-01 candidate go in through `EI.lab.run({ candidate, seed })`, pre-typed in a second window; the buttons used on camera are Run next / Run random / Race it / Overrule. The screen descriptions match `docs/agents/lanes/ui-screens/03-plan-success.png`.
+  3. **Grid race (P3.T3) exists:** shot 15 and the close use GAME.md "How to film it" Shot B (`?lab=1&mode=grid&driver=VER&seed=42&laps=2`, VER P7 → P14 headless); the game draws the "Cinematic · mixes car and driver · …" caption itself, so no burned-in caption is needed. Shot A is the race b-roll (shots 5–7).
+  4. **Try models:** the 8 items are EVAL's sheet (exam-rw8, -03, -02, -14, -15, -16, -20, -05; five retests), not my margin list; the side-by-side screenshot is on `exam-rw8` (the demo premise); scores come from `npm run exam:score`. Steps per `docs/try-models/README.md` (paste the user message only; only a `Passed` version can be tried).
+  5. Deck: no cover slide (8 pages exactly, disclosure on slide 2). Slide 2 now carries the v2 collection line and owes the kept count after v2.
+- Verify step run + output:
+  - `grep -niE "cfd|wind tunnel|validated|aerodynamically tested" docs/deck/*.md docs/demo-script.md` → only the two lines that quote the rule itself (README honesty check, script self-check). The honesty slide says "not a high-fidelity aerodynamic simulation" instead of naming the banned words.
+  - Spoken text 477 words (about 3:00); shot durations sum to 180 s.
+  - Marp export in the cloud container: `CHROME_PATH=<chromium> npx -y @marp-team/marp-cli@latest docs/deck/slides.md --pdf --allow-local-files` → 8-page PDF; PNG check of slides 4 and 5 (tables fit, dark theme, source label at the foot). Speaker notes all ≤ 57 words.
+- **Numbers owed** (unchanged owners; status after the integrator's updates):
+
+  | Number | Where | Who | Status |
+  |---|---|---|---|
+  | Kept examples after v2 (expect ≈ 80) | slide 2, script 0:00 widget, shot 10 | Tanuj (console → Tasks) → widget ✎ / `POST /api/status` | owed |
+  | Adapter **v1 result** | slide 2, script 1:35, shot 10, checkin-1 | Tanuj (Adapters → History) | owed |
+  | Adapter **v2 status / result** | slide 2, script 1:35, shot 10 | v2 examples in since 01:50; Tanuj reads Adapters | owed (training) |
+  | **Try models v1 / v2 / provider, next-step n/8 and verdict n/8** | slide 5 table, script 2:10, shot 11 | Tanuj fills `docs/try-models/sheet.md`; integrator runs `npm run exam:score` and posts status | owed (needs a `Passed` version) |
+  | Grid-race footage | shot 15 | GAME P3.T3 merged; Tanuj records Shot B | ready to film |
+  | Console screenshots `console-tasks.png`, `console-adapters.png`, `try-models-side-by-side.png` | slides 2, 5 | Tanuj | owed |
+  | Lab screenshots `lab-stage-rail.png`, `lab-race-card.png`, `lab-design-td01.png`, `ledger-row.png` | slides 1, 4, 6, 8 | Tanuj on the demo laptop with the real ledger restored (UI merged) | owed |
+- Decisions proposed (for the integrator to log in TASK_LOG):
+  1. D-D4 The demo narrative states the PRNG finding openly ("v1 learned from our mistake, v2 learns the engineer's rule") rather than omitting it; the exam is the only next-step number quoted as a measure of the agent.
+  2. D-D5 Try-models screenshot and live beat use `exam-rw8` (in EVAL's 8) so the deck's one scenario is the same experiment the race measured.
+- Blockers / questions for Tanuj (batched; none block the docs):
+  1. Chrome or Edge on the recording laptop for Marp? Otherwise Route B (Google Slides) in `docs/deck/README.md`.
+  2. UI lane (P3.T2): a "Run demo candidate" preset (rear wing 28°, seed 42) and a "25° under TD-01" preset would take the DevTools hook out of shots 3, 12 and 14. Optional; the hook works.
+  3. For shots 5–8: film Shot A from the plain game page (GAME.md) and show the lab's RACE card with the ledger race; or run Race it live and wait 4 min 20 s. The script supports both.
+  4. The live Overrule on camera creates a second rule identical to R-01. Fine to leave both active (same text), or toggle R-01 off before the take so the chip that appears is the one being created.
+- Next three actions:
+  1. Integrator merges `claude/demo-p3-deck`.
+  2. DEMO: when kept count, v1/v2 results and the Try-models scores land, replace the placeholders, re-run the honesty grep, export `docs/deck/purple-deck.pdf`, commit it.
+  3. DEMO: P3.T6 after `/submit`: `npm run snapshot -- --label submitted`, and point slide 8 and the README at that folder.
 
 ### 2026-10-24 02:10 London — agent G (DEMO) — P3.T4 demo script, P3.T5 deck sources, P3.T4 shot list
 - Status: **P3.T4 script done** (`claude/demo-p3-script`); **P3.T5 deck sources done** (`claude/demo-p3-deck`, stacked); **P3.T4 shot list done** (`claude/demo-p3-shots`, stacked). No code, no Mubit calls, `lab/prompt.js` untouched. Video recording (P3.T4 proper) and `/submit` (P3.T6) are Tanuj's.
