@@ -51,14 +51,14 @@
   // ---------------------------------------------------------------- shaders (onBeforeCompile patches of MeshPhysicalMaterial)
   const PAINT_VS = ["attribute vec3 aRef; varying vec3 vRef; varying vec3 vONrm;", "vRef = aRef; vONrm = normal;"];
   const PAINT_FS = [
-    "uniform sampler2D livery; uniform vec4 tL; uniform vec4 tR; uniform vec4 tT; uniform vec4 rS; uniform vec4 rT; uniform float hasSide; uniform float hasTop; varying vec3 vRef; varying vec3 vONrm;",
+    "uniform sampler2D livery; uniform vec4 tL; uniform vec4 tR; uniform vec4 tT; uniform vec4 rS; uniform vec4 rT; uniform float hasSide; uniform float hasTop; uniform float sideOut; uniform vec2 topEdge; varying vec3 vRef; varying vec3 vONrm;",
     "vec4 cvRect(vec4 t, vec2 uv) { if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) return vec4(0.0); return texture2D(livery, vec2(t.x + uv.x * t.z, 1.0 - (t.y + uv.y * t.w))); }",
     "vec3 cvDec(vec4 s) { return s.a < 0.002 ? vec3(0.0) : s.rgb / s.a; }",
   ].join("\n");
   const PAINT_FRAG = [
-    "{ vec3 n = normalize(vONrm); float wT = hasTop * smoothstep(0.32, 0.72, n.y); vec3 c = pow(max(diffuseColor.rgb, vec3(0.0)), vec3(1.0 / 2.2));",   // composite in sRGB, like the canvas the designs were drawn for
+    "{ vec3 n = normalize(vONrm); float wT = hasTop * smoothstep(topEdge.x, topEdge.y, n.y); vec3 c = pow(max(diffuseColor.rgb, vec3(0.0)), vec3(1.0 / 2.2));",   // composite in sRGB, like the canvas the designs were drawn for
     "  if (hasSide > 0.5) { float uS = vRef.z < 0.0 ? (rS.y - vRef.x) / (rS.y - rS.x) : (vRef.x - rS.x) / (rS.y - rS.x); float vS = (rS.w - vRef.y) / (rS.w - rS.z);",
-    "    vec4 s = vRef.z < 0.0 ? cvRect(tL, vec2(uS, vS)) : cvRect(tR, vec2(uS, vS)); c = mix(c, cvDec(s), s.a * (1.0 - wT)); }",
+    "    vec4 s = vRef.z < 0.0 ? cvRect(tL, vec2(uS, vS)) : cvRect(tR, vec2(uS, vS)); float wO = mix(1.0, smoothstep(-0.12, 0.2, n.z * sign(vRef.z)), sideOut); c = mix(c, cvDec(s), s.a * (1.0 - wT) * wO); }",
     "  if (hasTop > 0.5) { vec4 s = cvRect(tT, vec2((vRef.x - rT.x) / (rT.y - rT.x), (vRef.z - rT.z) / (rT.w - rT.z))); c = mix(c, cvDec(s), s.a * wT); }",
     "  diffuseColor.rgb = pow(c, vec3(2.2)); }",
   ].join("\n");
@@ -84,8 +84,8 @@
   ].join("\n");
 
   function makePaint(THREE, opts) {
-    const m = new THREE.MeshPhysicalMaterial({ color: opts.color, metalness: 0.08, roughness: opts.rough != null ? opts.rough : 0.4, clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 1, side: THREE.DoubleSide });
-    m.userData.u = { livery: { value: opts.tex || null }, tL: { value: new THREE.Vector4() }, tR: { value: new THREE.Vector4() }, tT: { value: new THREE.Vector4() }, rS: { value: new THREE.Vector4(0, 1, 0, 1) }, rT: { value: new THREE.Vector4(0, 1, 0, 1) }, hasSide: { value: 0 }, hasTop: { value: 0 } };
+    const m = new THREE.MeshPhysicalMaterial({ color: opts.color, metalness: 0.08, roughness: opts.rough != null ? opts.rough : 0.4, clearcoat: opts.coat != null ? opts.coat : 1, clearcoatRoughness: 0.03, envMapIntensity: 1, side: THREE.DoubleSide });
+    m.userData.u = { livery: { value: opts.tex || null }, tL: { value: new THREE.Vector4() }, tR: { value: new THREE.Vector4() }, tT: { value: new THREE.Vector4() }, rS: { value: new THREE.Vector4(0, 1, 0, 1) }, rT: { value: new THREE.Vector4(0, 1, 0, 1) }, hasSide: { value: 0 }, hasTop: { value: 0 }, sideOut: { value: 0 }, topEdge: { value: new THREE.Vector2(0.32, 0.72) } };
     m.extensions = { derivatives: true };
     m.onBeforeCompile = (sh) => {
       Object.assign(sh.uniforms, m.userData.u);
@@ -167,6 +167,18 @@
     out.tex = tex; out.rect = rect; out.canvas = c;
     return out;
   }
+  // the RB22 atlas (concept/view/livery-rb22.js paints every tile in the concept car's frame)
+  function buildAtlasRB22(THREE, LR, car, code, size) {
+    const c = document.createElement("canvas"); c.width = c.height = size; const g = c.getContext("2d");
+    const draw = () => { g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, size, size); try { LR.paint(g, size, { num: car.num, code, driver: car.driver }); } catch (e) { console.warn("conceptView: RB22 livery skipped", e); } };
+    draw();
+    const tex = new THREE.CanvasTexture(c); tex.premultiplyAlpha = true; tex.anisotropy = 8; tex.generateMipmaps = true;
+    const rect = (t) => { const [x, y, w, h] = LR.TILES[t]; return new THREE.Vector4(x / 4096, y / 4096, w / 4096, h / 4096); };
+    // partner artwork (EI.Ads) can arrive after the first paint (the view waits at most 3.5 s for it): paint again once it is in
+    const A = EI.Ads, artIn = () => !!(A && A.hasPartner && A.hasPartner("oracle") && A.hasPartner("redbullbull"));
+    const late = !artIn() && A && A.ready ? Promise.race([A.ready(), new Promise((r) => setTimeout(r, 20000))]).then(() => { if (!tex.cvGone && artIn()) { draw(); tex.needsUpdate = true; return true; } return false; }) : Promise.resolve(false);
+    return { kind: "rb22", has: true, ep: true, halo: false, fw: true, tex, rect, canvas: c, late };
+  }
   function helmetTexture(THREE, car) {
     const c = document.createElement("canvas"); c.width = 512; c.height = 256; const g = c.getContext("2d"), d = car.driver || {};
     g.fillStyle = d.helmet || car.team.helmet || car.team.accent || "#dddddd"; g.fillRect(0, 0, 512, 256);
@@ -199,9 +211,16 @@
     const code = drv && drv.code ? drv.code : String(team.short || "EI").slice(0, 3).toUpperCase();
     const disposables = [], keep = (x) => { disposables.push(x); return x; };
     const Mats = C.materials || null;
-    const pc = (EI.LIVERIES && EI.LIVERIES.partColours) ? EI.LIVERIES.partColours(team) : { body: team.primary, fwFlap: team.secondary, fwEnd: team.primary, rwMain: team.primary, rwEnd: team.secondary, rwFlap: team.secondary, halo: null, mirror: team.primary, fin: team.secondary };
-    const atlas = buildAtlas(THREE, team, car.num, code, Math.max(1024, Math.min(4096, (o.liverySize || 2048) * 2)));
+    // the RB22 livery (concept/view/livery-rb22.js) is painted in the concept car's own frame; other teams use the game's livery
+    // designs (js/liveries.js), drawn for the game car's proportions and mapped through the design's anchors
+    const LR = team.id === "redbull" && C.liveryRB22 ? C.liveryRB22 : null;
+    const pc = LR ? LR.BODY : (EI.LIVERIES && EI.LIVERIES.partColours) ? EI.LIVERIES.partColours(team) : { body: team.primary, fwFlap: team.secondary, fwEnd: team.primary, rwMain: team.primary, rwEnd: team.secondary, rwFlap: team.secondary, halo: null, mirror: team.primary, fin: team.secondary };
+    const atlasSize = Math.max(1024, Math.min(4096, (o.liverySize || 2048) * 2));
+    const atlas = LR ? buildAtlasRB22(THREE, LR, car, code, atlasSize) : buildAtlas(THREE, team, car.num, code, atlasSize);
     keep(atlas.tex);
+    // resolves once the livery is final (after a late repaint with the partner artwork); ctx.onRepaint asks the view for a frame
+    const liveryReady = (atlas.late || Promise.resolve(false)).then((did) => { if (did && ctx.onRepaint) ctx.onRepaint(); });
+    const matte = o.finish === "matte";   // the 2026 RB22 is gloss (photos; Red Bull's launch notes); `finish: "matte"` for the 2022-25 look
     const lin = (hex) => new THREE.Color(hex).convertSRGBToLinear();
 
     // ---- materials (cached)
@@ -210,13 +229,23 @@
     function paintMat(role, proj) {
       return cached("paint:" + role + ":" + proj, () => {
         const col = role === "halo" ? (pc.halo || "#15161a") : role === "fwMain" ? (pc.fwFlap || pc.body) : (pc[role] || pc.body || team.primary);
-        const m = makePaint(THREE, { color: lin(col), tex: atlas.tex, rough: 0.38 }), u = m.userData.u;
+        const m = makePaint(THREE, { color: lin(col), tex: atlas.tex, rough: matte ? 0.62 : 0.3, coat: matte ? 0 : 1 }), u = m.userData.u;
+        // broad, near-horizontal wing surfaces mirror the studio's overhead light box: a softer reflection keeps their livery legible
+        if (/^(fwFlap|fwMain|fwEnd|rwMain|rwFlap)$/.test(role)) { m.envMapIntensity = /^rw/.test(role) ? 0.12 : 0.4; m.roughness = Math.max(m.roughness, /^rw/.test(role) ? 0.78 : 0.48); m.metalness = /^rw/.test(role) ? 0 : m.metalness; m.clearcoat = Math.min(m.clearcoat, /^rw/.test(role) ? 0 : 0.3); m.clearcoatRoughness = 0.2; }
         const set = (sKey, tKey, R) => { if (sKey) { u.tL.value.copy(atlas.rect(sKey + "L")); u.tR.value.copy(atlas.rect(sKey + "R")); u.rS.value.set(R.s[0], R.s[1], R.s[2], R.s[3]); u.hasSide.value = 1; } if (tKey) { u.tT.value.copy(atlas.rect(tKey)); u.rT.value.set(R.t[0], R.t[1], R.t[2], R.t[3]); u.hasTop.value = 1; } };
-        if (atlas.has) {
-          if (proj === "main") set("side", "top", RANGES.main);
-          else if (proj === "top") set(null, "top", RANGES.main);
+        if (atlas.kind === "rb22") {
+          const R = LR.RANGES;
+          if (role === "mirror" || role === "halo") { /* plain black */ }
+          else if (proj === "main") { set("side", "top", R.main); u.topEdge.value.set(0.62, 0.9); }   // the side graphics (the bull) reach up the cover's sloping flanks
+          else if (proj === "rwTop") set(null, "rwT", R.rw);
+          else if (proj === "rwEnd") { set("epR", null, R.epR); u.sideOut.value = 1; }   // the outer faces only (no mirrored decals inside)
+          else if (proj === "fwEnd") { set("epF", null, R.epF); u.sideOut.value = 1; }
+          else if (proj === "fwTop") set(null, "fwT", R.fw);
+        } else if (atlas.has) {
+          if (proj === "main" || proj === "rwEnd") set("side", "top", RANGES.main);
+          else if (proj === "top" || proj === "rwTop") set(null, "top", RANGES.main);
           else if (proj === "fwEnd") set(atlas.ep ? "ep" : "side", null, atlas.ep ? RANGES.ep : RANGES.main);
-          else if (proj === "fwTop" && atlas.fw) set(null, "fwT", RANGES.fw);
+          else if (proj === "fwTop" && role === "fwMain" && atlas.fw) set(null, "fwT", RANGES.fw);
           else if (proj === "halo") { if (atlas.halo) set("halo", "haloT", RANGES.halo); }
         }
         return m;
@@ -240,6 +269,10 @@
       tcam: () => new THREE.MeshPhysicalMaterial({ color: lin(drv && ds.indexOf(drv) === 1 ? "#f2d300" : "#101012"), roughness: 0.35, metalness: 0.1, clearcoat: 1, clearcoatRoughness: 0.05 }),
       helmet: () => new THREE.MeshPhysicalMaterial({ map: helmetTex, roughness: 0.3, metalness: 0.15, clearcoat: 1, clearcoatRoughness: 0.03 }),
       disc: () => makeLook(THREE, LOOKS.carbon_carbon),
+      // RB22 wheels (photos): satin-black rims, a thin blue band on the outer lip, fluorescent yellow wheel nuts
+      rimPaint: () => new THREE.MeshPhysicalMaterial({ color: lin("#0e0f12"), roughness: 0.42, metalness: 0.35, clearcoat: 0.5, clearcoatRoughness: 0.25 }),
+      rimLip: () => new THREE.MeshPhysicalMaterial({ color: lin(LR ? "#1d3fb8" : team.primary || "#1d3fb8"), roughness: 0.3, metalness: 0.2, clearcoat: 1, clearcoatRoughness: 0.05, side: THREE.DoubleSide }),
+      nut: () => new THREE.MeshPhysicalMaterial({ color: lin("#d8f000"), emissive: lin("#2a3000"), roughness: 0.3, metalness: 0.1, clearcoat: 1, clearcoatRoughness: 0.05 }),
     };
     const raw = (k) => cached("raw:" + k, RAW[k]);
 
@@ -260,20 +293,24 @@
         const id = lookIdOf(it); return id ? lookMat(id, false) : raw("suit");
       }
       switch (it.mat) {
-        case "paint": if (it.role === "fwMain" && !atlas.fw && !(EI.LIVERIES && EI.LIVERIES.hasFrontWing && EI.LIVERIES.hasFrontWing(team.id))) return lookMat(lookIdOf(it), false); return paintMat(it.role || "body", it.proj || "main");
+        case "paint": if (it.role === "fwMain" && (LR || (!atlas.fw && !(EI.LIVERIES && EI.LIVERIES.hasFrontWing && EI.LIVERIES.hasFrontWing(team.id))))) return lookMat(lookIdOf(it), !!LR); return paintMat(it.role || "body", it.proj || "main");
         case "carbon": return lookMat(lookIdOf(it), it.carbon === "matte");
         case "metal": return lookMat(it.look || lookIdOf(it), false);
-        case "rim": return lookMat(lookIdOf(it), false);
+        case "rim": return LR ? raw("rimPaint") : lookMat(lookIdOf(it), false);
+        case "rimLip": return LR ? raw("rimLip") : lookMat(lookIdOf(it), false);
+        case "nut": return LR ? raw("nut") : lookMat(it.look || "ti64", false);
         case "disc": return raw("disc");
         default: return RAW[it.mat] ? raw(it.mat) : lookMat("cfrp_t800s", false);
       }
     }
 
     // ---- livery reference coordinates: the design's x mapped through the anchors onto the livery designs' car (js/liveries.js)
-    const LREF = { RA: -1.85, XPU: -0.485, XC: -0.105, XA: 1.825, tip: 3.04, ride: 52 };
+    // (RB22 livery: its own frame = the RB22 baseline's anchors, so the baseline maps 1:1 and a changed design is stretched between them)
+    const LREF = LR ? (() => { const A = LR.ANCHORS, w = (X) => 1.75 - X / 1000; return { RA: w(A.XR), XPU: w(A.XPU), XC: w(A.XC), XA: w(A.XA), tip: w(A.tip), ride: A.rh }; })()
+      : { RA: -1.85, XPU: -0.485, XC: -0.105, XA: 1.825, tip: 3.04, ride: 52 };
     function refMapper(sp) {
       const wx = (X) => 1.75 - X / 1000;
-      const xs = [wx(sp.XR), wx(sp.XPU), wx(sp.XC), wx(sp.XA), wx(C3.DIM.noseTip)], ys = [LREF.RA, LREF.XPU, LREF.XC, LREF.XA, LREF.tip];
+      const xs = [wx(sp.XR), wx(sp.XPU), wx(sp.XC), wx(sp.XA), wx(sp.noseTip != null ? sp.noseTip : C3.DIM.noseTip)], ys = [LREF.RA, LREF.XPU, LREF.XC, LREF.XA, LREF.tip];
       const f = M3.monoCubic(xs, ys, 1).f, dy = (LREF.ride - sp.rh) / 1000;
       return (x, y, z, out, i) => { out[i] = f(x); out[i + 1] = y + dy; out[i + 2] = z; };
     }
@@ -298,10 +335,10 @@
       built.items.forEach((it, k) => {
         const geo = withOverlayAttrs(toGeo(it.geo));
         if (it.mat === "paint") { const P = it.geo.pos, R = new Float32Array(P.length); for (let i = 0; i < P.length; i += 3) mapRef(P[i], P[i + 1], P[i + 2], R, i); geo.setAttribute("aRef", new THREE.BufferAttribute(R, 3)); }
-        const rec = { it, geo, part: it.part };
+        const rec = { it, geo, part: it.part, sig: geoSig(it.geo) };
         // straight-mode end state (same topology): positions / normals to blend toward
         const it1 = built1 && built1.byName[it.name];
-        if (it1 && it.flap && it1.geo.count === it.geo.count) { rec.p0 = it.geo.pos; rec.n0 = it.geo.nrm; rec.p1 = it1.geo.pos; rec.n1 = it1.geo.nrm; geo.attributes.position.setUsage(THREE.DynamicDrawUsage); }
+        if (it1 && it.flap && it1.geo.count === it.geo.count) { rec.p0 = it.geo.pos.slice(); rec.n0 = it.geo.nrm.slice(); rec.p1 = it1.geo.pos; rec.n1 = it1.geo.nrm; geo.attributes.position.setUsage(THREE.DynamicDrawUsage); }
         rec.mesh = new THREE.Mesh(geo, S.xray ? xrMat(it.part) : matFor(it)); rec.mesh.castShadow = !S.xray && it.mat !== "tyreWall"; rec.mesh.receiveShadow = false; rec.mesh.name = it.name; rec.mesh.userData.part = it.part;
         carRoot.add(rec.mesh);
         rec.mir = new THREE.Mesh(geo, rec.mesh.material); mirror.add(rec.mir);
@@ -358,10 +395,19 @@
 
     // ---- highlight / flash
     function setHighlight(set) { S.highlight = set || new Set(); for (const id of Object.keys(S.groups)) for (const r of S.groups[id].items) r.hi.visible = S.highlight.has(r.part); }
-    function flash(groupIds, now) {
+    // geometry signature of an item (vertex count + a strided positional checksum): which items a change really moved
+    function geoSig(g) { const P = g.pos, st = Math.max(3, Math.floor(P.length / 3 / 400) * 3); let s = 0; for (let i = 0; i < P.length; i += st) s += P[i] * 1.3 + P[i + 1] * 2.7 + P[i + 2] * 3.1; return g.count + ":" + s.toFixed(4); }
+    function snapshot() { const m = new Map(); for (const id of Object.keys(S.groups)) for (const r of S.groups[id].items) m.set(r.it.name, r.sig); return m; }
+    // flash the rebuilt groups; with `since` (a snapshot()) only the items whose geometry differs from it (a nose change flashes the
+    // nose and its pylons, not the whole wing)
+    function flash(groupIds, now, since) {
       const t = now != null ? now : performance.now();
-      for (const id of groupIds || []) if (S.groups[id]) S.flashes.push({ id, t0: t });
-      for (const id of groupIds || []) if (S.groups[id]) for (const r of S.groups[id].items) r.fl.visible = true;
+      for (const id of groupIds || []) {
+        const G = S.groups[id]; if (!G) continue;
+        const hit = since ? G.items.filter(r => since.get(r.it.name) !== r.sig) : G.items;
+        if (!hit.length) continue;
+        S.flashes.push({ id, t0: t }); for (const r of hit) r.fl.visible = true;
+      }
     }
     function tick(now) {
       if (!S.flashes.length) return false;
@@ -427,11 +473,11 @@
       for (const id of Object.keys(S.groups)) unmountGroup(S.groups[id]); S.groups = {};
       clearGhost();
       for (const m of xrMats.values()) m.dispose(); xrMats.clear();
-      for (const x of disposables) x && x.dispose && x.dispose();
+      atlas.tex.cvGone = true; for (const x of disposables) x && x.dispose && x.dispose();
     }
     return {
-      setLayout, setGhost, hideGhost, setFlaps, setHighlight, setXray, setMode, flash, tick, partCentre, materialsUsed, stats, dispose,
-      spec: () => S.spec, _S: S, team, driver: drv,
+      setLayout, setGhost, hideGhost, setFlaps, setHighlight, setXray, setMode, flash, snapshot, tick, partCentre, materialsUsed, stats, dispose,
+      spec: () => S.spec, _S: S, team, driver: drv, liveryReady,
     };
   }
 
