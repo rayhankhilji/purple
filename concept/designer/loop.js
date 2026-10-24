@@ -163,7 +163,7 @@
       emit("link", { iteration: k - 1, fed_to: prev.loop.fed_to });
     }
 
-    const p = designer.llmProposer({ llm, trained: !!opts.trained, runId, sessionId: () => sessionId, prompt: P, maxCalls: opts.maxCalls == null ? Infinity : opts.maxCalls, scenarioLimits: opts.scenarioLimits });
+    const p = designer.llmProposer(Object.assign({ llm, trained: !!opts.trained, runId, sessionId: () => sessionId, prompt: P, maxCalls: opts.maxCalls == null ? Infinity : opts.maxCalls, scenarioLimits: opts.scenarioLimits }, opts.maxConsecutiveFailures != null ? { maxConsecutiveFailures: opts.maxConsecutiveFailures } : {}));
     const proposer = {
       name: "llm-designer (loop)",
       async propose(history, d, ctx) {

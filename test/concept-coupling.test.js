@@ -15,8 +15,8 @@ const lap = d => sim.simulateLap(physical.physical(d), "silverstone").lap_s;
 const claT = pc => pc.aero.corner.CLA_front_m2 + pc.aero.corner.CLA_rear_m2;
 const bal = pc => pc.aero.corner.CLA_front_m2 / claT(pc);
 
-test("baseline: physical(baseline) is still exactly the anchor car, and laps the same time (generic 88.107 s, RB22 88.763 s on sim v3)", () => {
-  for (const [d, team, want] of [[GEN, null, 88.107], [RB, "redbull", 88.763]]) {
+test("baseline: physical(baseline) is still exactly the anchor car, and laps the same time (generic 88.100 s, RB22 88.745 s: sim v3 refit with the RB22 data sheet, more-factors v1)", () => {
+  for (const [d, team, want] of [[GEN, null, 88.100], [RB, "redbull", 88.745]]) {
     const pc = physical.physical(d), A = physical.anchor(team);
     assert.equal(pc.mass_kg, A.mass_kg); assert.equal(pc.cog_height_m, A.cog_height_m); assert.equal(pc.weight_dist_front, A.weight_dist_front);
     for (const k of ["CLA_front_m2", "CLA_rear_m2", "CDA_m2"]) assert.ok(Math.abs(pc.aero.corner[k] - A.aero.corner[k]) < 2e-6 && Math.abs(pc.aero.straight[k] - A.aero.straight[k]) < 2e-6, k);
@@ -53,15 +53,25 @@ const SENS = {
   "sidepods.undercut_mm": { to: 120, expect: { cda: -1, cla: +1 } },
   "ballast.x_frac": { to: 0.5, ctx: [["ballast", "extra_kg", 10]], expect: { wdf: -1 } },
   "ballast.extra_kg": { to: 5, expect: { mass: +1 } },
+  // more-factors v1 (docs/concept/FACTORS.md): the lap is measured with the smooth "marginal" energy plan (see LAPM)
+  "gearbox.top_kmh": { to: 346, expect: { g8: -1 }, lapm: true },
+  "gearbox.step": { to: 1.16, expect: { g2: +1 }, lapm: true },
+  "setup.roll_front": { to: 57, expect: { lltd: +1 }, lapm: true },
+  "setup.heave_n_mm": { to: 3700, expect: { heave: +1, sm: +1 }, lapm: true },
+  "setup.brake_bias": { to: 58, expect: { bias: +1 }, lapm: true },
 };
-test("sensitivity: every one of the 23 shape parameters moves the physics-sim lap and its PhysicalCar fields in the documented direction", () => {
+// the default "regulated" energy plan jumps between nearby cars by up to ~0.07 s (docs/concept/FACTORS.md §4); the set-up rows
+// read the lap with the sim's smooth "marginal" plan so a small mechanism is not drowned by a plan switch
+const lapM = d => sim.simulateLap(physical.physical(d), "silverstone", null, { strategy: "marginal" }).lap_s;
+test("sensitivity: every one of the 28 design parameters moves the physics-sim lap and its PhysicalCar fields in the documented direction", () => {
   assert.deepEqual(Object.keys(SENS).sort(), parts.PARAMS.map(s => s.part + "." + s.param).sort(), "every parameter has a row");
-  const q = { cla: claT, bal, cda: pc => pc.aero.corner.CDA_m2, cdaS: pc => pc.aero.straight.CDA_m2, wdf: pc => pc.weight_dist_front, cog: pc => pc.cog_height_m, mass: pc => pc.mass_kg };
+  const q = { cla: claT, bal, cda: pc => pc.aero.corner.CDA_m2, cdaS: pc => pc.aero.straight.CDA_m2, wdf: pc => pc.weight_dist_front, cog: pc => pc.cog_height_m, mass: pc => pc.mass_kg,
+    g8: pc => pc.gearing.rpm_per_kmh[7], g2: pc => pc.gearing.rpm_per_kmh[1], lltd: pc => pc.suspension.lltd_front, heave: pc => pc.aero.heave_n_per_mm, sm: pc => pc.aero.stall_margin_mm, bias: pc => pc.brakes.bias_front };
   for (const key of Object.keys(SENS)) {
     const [part, param] = key.split("."), row = SENS[key], base = row.ctx ? ap(RB, row.ctx) : RB, d = ap(base, [[part, param, row.to]]);
     const p0 = physical.physical(base), p1 = physical.physical(d);
     for (const f of Object.keys(row.expect)) { const dv = q[f](p1) - q[f](p0); assert.ok(Math.sign(dv) === row.expect[f] && Math.abs(dv) > 1e-9, key + ": " + f + " moved " + dv); }
-    const dl = lap(d) - lap(base); assert.ok(Math.abs(dl) >= 0.001, key + ": the lap must move (Δ " + dl + " s)");
+    const L = row.lapm ? lapM : lap, dl = L(d) - L(base); assert.ok(Math.abs(dl) >= 0.001, key + ": the lap must move (Δ " + dl + " s)");
   }
 });
 
@@ -76,8 +86,11 @@ test("smoothness: a 1 mm cockpit move is a 1 mm move, not a staircase (physical(
 test("interactions: the combined effect differs from the sum where the physics couples the terms", () => {
   const A = d => aeromap.evaluate(d.params);
   const interaction = (f, a, b) => { const v0 = f(RB), va = f(ap(RB, a)) - v0, vb = f(ap(RB, b)) - v0, vab = f(ap(RB, a.concat(b))) - v0; return { va, vb, vab, int: vab - va - vb }; };
-  // front vs rear wing through the axle balance (the sim limits each axle): far from additive on the lap
-  const wings = interaction(lap, [["front_wing", "aoa_deg", 27]], [["rear_wing", "aoa_deg", 22]]);
+  // front vs rear wing through the axle balance (the sim limits each axle): far from additive on the lap near the balance point.
+  // With the RB22 sheet's 55 % front roll split the car sits clearly front-limited (int −0.02 s); trimmed to 45 % it sits at the
+  // balance and the wings interact strongly (more-factors v1, FACTORS.md)
+  const T = ap(RB, [["setup", "roll_front", 45]]), l0 = lap(T), wa = lap(ap(T, [["front_wing", "aoa_deg", 27]])) - l0, wb = lap(ap(T, [["rear_wing", "aoa_deg", 22]])) - l0;
+  const wings = { va: wa, vb: wb, int: lap(ap(T, [["front_wing", "aoa_deg", 27], ["rear_wing", "aoa_deg", 22]])) - l0 - wa - wb };
   assert.ok(Math.abs(wings.int) > 0.05, "front × rear wing lap interaction " + JSON.stringify(wings));
   // floor: throat × ride height (ground effect 1/(rh + k·throat)^β is not separable)
   assert.ok(Math.abs(interaction(d => A(d).df, [["floor", "throat_mm", 54]], [["floor", "ride_height_mm", 32]]).int) > 1e-3);

@@ -126,10 +126,15 @@
   }
   // floor: planform × ground effect (G^β) × stall × diffuser × undercut. flexMm: extra in-service floor flex from the floor's
   // material (concept/materials.js; 0 for the baseline material) - it adds to the dynamic compression, so it eats stall margin.
+  // HEAVE (more-factors v1, docs/concept/FACTORS.md): the dynamic compression scales inversely with the platform stiffness (heave
+  // springs + packers in series with the tyres, concept/parts.js heaveRatio; 1 at the reference set-up), so a softer car squats
+  // more under the same aero load: 5 mm at the reference becomes 5 / ratio. Designs without setup parameters read the reference.
+  let partsMod = null;
+  const heaveRatio = p => { const P = partsMod || (partsMod = C.parts || (typeof require === "function" ? require("./parts.js") : null)); return P && P.heaveRatio ? P.heaveRatio(p) : 1; };
   function floorLoad(p, wb, flexMm) {
     const area = ((wb - 300) / FLOOR.base_len_mm) * (p.floor.width_mm / FLOOR.base_width_mm);
     const c = FLOOR.throat_k * p.floor.throat_mm, c0 = FLOOR.throat_k * FLOOR.base_throat, h = p.floor.ride_height_mm + c;
-    const comp = FLOOR.dyn_compression_mm + (flexMm || 0);
+    const comp = FLOOR.dyn_compression_mm / heaveRatio(p) + (flexMm || 0);
     const hd = h - comp;   // effective gap at the dynamic ride height
     const hd0 = FLOOR.base_rh + c0 - FLOOR.dyn_compression_mm;
     const G = Math.pow((FLOOR.base_rh + c0) / h, FLOOR.ge_beta);
@@ -139,7 +144,7 @@
     const pk = DIFFUSER.lin / (2 * DIFFUSER.quad) + DIFFUSER.peak_per_mm * (hd - hd0);   // best expansion (above 14°) at this gap
     const D = 1 + DIFFUSER.quad * (2 * pk * e - e * e);
     const U = 1 + UNDERCUT.df_per_mm * (p.sidepods.undercut_mm - UNDERCUT.base);
-    return { df: area * G * S * D * U, cd: area * (1 + DIFFUSER.drag_per_deg * e) * (0.7 + 0.3 * G * S), stalled: hd < stallAt, gap_mm: h, gap_dyn_mm: hd, stall_onset_mm: stallAt, stall_margin_mm: hd - stallAt, dynamic_ride_height_mm: p.floor.ride_height_mm - comp, diffuser_peak_deg: DIFFUSER.base + pk };
+    return { df: area * G * S * D * U, cd: area * (1 + DIFFUSER.drag_per_deg * e) * (0.7 + 0.3 * G * S), stalled: hd < stallAt, gap_mm: h, gap_dyn_mm: hd, stall_onset_mm: stallAt, stall_margin_mm: hd - stallAt, dynamic_ride_height_mm: p.floor.ride_height_mm - comp, dyn_compression_mm: comp - (flexMm || 0), diffuser_peak_deg: DIFFUSER.base + pk };
   }
   function cooling(p) {
     const u = p.sidepods.undercut_mm, eta = 1 - Math.max(0, u - UNDERCUT.cool_free_mm) * UNDERCUT.cool_per_mm;
@@ -188,7 +193,7 @@
       df, df_sm: dfs, cd, cd_sm: cds, balance: front / df, balance_sm: dfs > 0 ? frontS / dfs : 0,
       floor_gap_mm: fl.gap_mm, floor_gap_dyn_mm: fl.gap_dyn_mm, floor_stalled: fl.stalled, stall_margin_mm: fl.stall_margin_mm, dynamic_ride_height_mm: fl.dynamic_ride_height_mm,
       flap_share: { front_wing: flapShare("front_wing", params.front_wing), rear_wing: flapShare("rear_wing", params.rear_wing) },
-      stall_onset_mm: fl.stall_onset_mm, diffuser_peak_deg: fl.diffuser_peak_deg, front_wing_ground_effect: fw.ground_effect, front_shares: FR, material_flex: mf,
+      stall_onset_mm: fl.stall_onset_mm, dyn_compression_mm: fl.dyn_compression_mm, diffuser_peak_deg: fl.diffuser_peak_deg, front_wing_ground_effect: fw.ground_effect, front_shares: FR, material_flex: mf,
       cooling: cool, breakdown, version: VERSION,
     };
   }
@@ -205,7 +210,7 @@
     return best;
   }
 
-  const api = { VERSION, DF_SHARE, CD_SHARE, FRONT, LEVER, FW_GE, ENDPLATE, WING, FLOOR, DIFFUSER, UNDERCUT, COOLING, frontShares, endplateE, materialFlex, evaluate, rideSensitivity, rideOptimum, wing, flapShare, floorLoad, cooling };
+  const api = { VERSION, heaveRatio, DF_SHARE, CD_SHARE, FRONT, LEVER, FW_GE, ENDPLATE, WING, FLOOR, DIFFUSER, UNDERCUT, COOLING, frontShares, endplateE, materialFlex, evaluate, rideSensitivity, rideOptimum, wing, flapShare, floorLoad, cooling };
   C.aeromap = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();

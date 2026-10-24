@@ -14,7 +14,7 @@ const strip = r => JSON.parse(JSON.stringify(r, (k, v) => (k === "runtime_s" || 
 
 test("space: the box is the catalogue domain tightened by the single-number FIA limits; encode/decode round-trips the baseline", () => {
   const v = k => space.VARS.find(x => x.key === k);
-  assert.equal(space.N, 23);
+  assert.equal(space.N, 28);   // 23 shape parameters + 5 gearing / set-up parameters (more-factors v1)
   assert.equal(v("floor.width_mm").hi, regs.BY_ID["REG-C-FLOOR-WIDTH"].value);
   assert.equal(v("layout.wheelbase_mm").hi, 3400); assert.deepEqual([v("survival_cell.cockpit_len_mm").lo, v("survival_cell.cockpit_len_mm").hi], [1830, 2030]);
   assert.equal(v("rear_wing.chord_mm").hi, 465); assert.equal(v("front_wing.elements").hi, 3);

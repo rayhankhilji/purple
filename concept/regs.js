@@ -192,7 +192,25 @@
     { id: "REG-C-MAT-COMPONENT", article: "C10.7.1, C7.4.1(a)-(b), C11.2.2, C15.5.3, C3.19.1, C12.4.2, C3.6.2(a), C3.6.3(d), C15.3.3, C15.3.4, C9.6.4, C9.10", kind: "requires", text: "Component-specific materials: rims AZ70/AZ80 magnesium; heat-exchanger cores aluminium, not additive manufactured; brake calipers aluminium; survival cell carbon-composite homologated laminates; front wing endplate PL-ANTISPLINTER laminate; halo the FIA-designated titanium part; plank SG 1.30-1.45; skids Ti6Al4V or 17-4PH; uprights listed Al/Ti/MMC grades; primary roll structure no particulate reinforcement; gear pairs and driveshafts steel", verified: true },
     { id: "REG-C-MAT-DENSITY", article: "C4.3.2(d), C5.5.8(d)", kind: "min", value: 7500, unit: "kg/m³", text: "Driver ballast (and ICE ballast) must have a density greater than 7500 kg/m³", verified: true },
   ];
-  const ALL_RULES = RULES.concat(MODEL_RULES, COMBO_RULES, MATERIAL_RULES);
+  // more-factors v1 (docs/concept/FACTORS.md): gearing, suspension set-up and brake balance. Kept apart from RULES and COMBO_RULES
+  // (the proposer context and the designer scenario's lists) so their budgets are unchanged.
+  // C9.8.2 (Issue 19 p. C106): one gear change is permitted after a start before 80 km/h "provided every gear fitted to the car is
+  // capable of achieving at least 80km/h at 15 000rpm": every forward ratio ≤ 15000 / 80 = 187.5 rpm per km/h.
+  const GEAR_80KMH_MAX_RPM_PER_KMH = 15000 / 80;
+  // PKG-GEAR-TOP: C9.6.2 fixes the nominated ratio set for the season (one change in 2026), so the top gear must reach the
+  // highest speed the car meets anywhere before its rev limiter: the RB22's best 2026 trap is 333.5 km/h (Monza race, FIA timing;
+  // concept/data/redbull-2026.json season monza_top_speed_kmh). Rev limiter 13 000 rpm: the sim's estimate (concept/sim/lapsim.js
+  // MODEL.rev.limit_rpm; Section C has no rev cap, C5.14 only a 750 rpm band).
+  const GEAR_TOP = { need_kmh: 333.5, limit_rpm: 13000 };
+  const SETUP_RULES = [
+    { id: "REG-C-GEAR-80KMH", article: "C9.8.2", kind: "max", value: GEAR_80KMH_MAX_RPM_PER_KMH, unit: "rpm per km/h (every forward gear)", text: "Every gear fitted to the car must be capable of at least 80 km/h at 15 000 rpm (the condition for the one gear change allowed at a start)", verified: true, modelled_as: "the design's eight ratios (concept/parts.js gearSet: the RB22's measured rpm per km/h scaled by the final drive and spread by the ratio step) each ≤ 187.5 rpm per km/h" },
+    { id: "PKG-GEAR-TOP", article: "concept gearing model (C9.6.2: one nominated ratio set for the season)", kind: "min", value: GEAR_TOP.need_kmh, unit: "km/h in 8th at the 13 000 rpm limiter", text: "The season's single ratio set must reach the car's highest 2026 trap speed (333.5 km/h, Monza race) in 8th gear before the rev limiter", verified: false, source: "C9.6.2 (verified: one set per season, one change in 2026); 333.5 km/h FIA timing via concept/data/redbull-2026.json; 13 000 rpm limiter an estimate (concept/sim/lapsim.js MODEL.rev)" },
+    { id: "REG-C-GEARS", article: "C9.6.1-C9.6.2, C9.8.4", kind: "info", value: 8, unit: "forward ratios", text: "Eight forward ratios, no CVT; nominated to the FIA before the first Competition; in 2026 the set (pairs and final drive) may be changed once; up-changes ≤ 200 ms, down-changes ≤ 300 ms", verified: true, modelled_as: "gearbox.top_kmh (final drive) and gearbox.step (gear pairs) set all eight ratios; the sim's 30 ms up-shift torque cut is inside the 200 ms limit" },
+    { id: "REG-C-SUSP-PASSIVE", article: "C10.2.2, C10.2.4-C10.2.6, C10.4.3", kind: "info", text: "Passive suspension only: each axle independent of the other, no powered device, no adjustment while the car is in motion, springs (monotonic, no fluid medium) and dampers as the only elements, no inerters, no ride-height control", verified: true, modelled_as: "setup.roll_front (anti-roll bars and springs: a front/rear split of roll stiffness, legal on each axle) and setup.heave_n_mm (springs + packers of both axles, independent per axle) are fixed for the lap" },
+    { id: "REG-C-BRAKE-BALANCE", article: "C11.1.1, C11.1.4, C11.6", kind: "info", text: "One pedal, two master cylinders, one circuit per axle (bores within 3 mm); any change to the brake system on track by the driver's direct input; the rear may be powered (brake-by-wire) up to 1.2 × the driver's rear master-cylinder pressure", verified: true, modelled_as: "setup.brake_bias is one fixed front share for the lap (no driver trim or migration map: conservative); the sim scales the calibrated braking capacity by the fixed-balance capacity ratio and the MGU-K harvests from the rear share" },
+    { id: "REG-C-TORQUE-TRANSFER", article: "C9.1.2, C9.9.1", kind: "info", text: "No traction control; no device that transfers torque from a slower to a faster rotating wheel", verified: true, modelled_as: "not a design parameter: the sim's traction is the rear axle's total capacity (a locked-differential idealisation); differential settings act through yaw dynamics a point-mass QSS sim does not have (docs/concept/FACTORS.md)" },
+  ];
+  const ALL_RULES = RULES.concat(MODEL_RULES, COMBO_RULES, MATERIAL_RULES, SETUP_RULES);
   const BY_ID = Object.create(null); for (const r of ALL_RULES) BY_ID[r.id] = Object.assign({ source: SOURCE }, r);
 
   // Minimum Mass for a session ("qualifying" default: the lap model is a pole-lap model). Returns kg and how it was built.
@@ -537,6 +555,14 @@
         out.push(viol("PKG-PU-FIXED", id + " " + r.mass_kg + " kg at x " + r.x_mm + ", z " + r.z_mm, ref.kg + " kg at " + ref.at + "+" + ref.dx + ", z " + ref.z, { part: id }));
     }
     if (m.mguk_transmission !== PU_LOCK.mguk_transmission) out.push(viol("PKG-PU-FIXED", "transmission option " + m.mguk_transmission, PU_LOCK.mguk_transmission, { part: "pu_mguk" }));
+    // ---- more-factors v1: gearing (SETUP_RULES). f.gearing comes from design.facts (concept/parts.js gearSet); absent = not checked
+    const gs = f.gearing && Array.isArray(f.gearing.rpm_per_kmh) ? f.gearing.rpm_per_kmh : null;
+    if (gs) {
+      const worst = Math.max.apply(null, gs.map(k => (typeof k === "number" ? k : NaN)));
+      if (over(worst, GEAR_80KMH_MAX_RPM_PER_KMH)) out.push(viol("REG-C-GEAR-80KMH", worst, GEAR_80KMH_MAX_RPM_PER_KMH));
+      const vTop = GEAR_TOP.limit_rpm / gs[gs.length - 1];
+      if (under(vTop, GEAR_TOP.need_kmh)) out.push(viol("PKG-GEAR-TOP", vTop, GEAR_TOP.need_kmh));
+    }
     const mats = materialsOf(f);
     if (mats) for (const v of checkMaterials(mats)) out.push(v);
     return out;
@@ -560,7 +586,8 @@
   }
 
   const api = {
-    SOURCE, DOC, NOMINAL_TYRE_MASS, QUALI_SESSIONS, SESSIONS, MGUK_TRANSMISSION, FLOOR_BODY_MAX_Y, RULES, MODEL_RULES, COMBO_RULES, MATERIAL_RULES, ALL_RULES, BY_ID,
+    SOURCE, DOC, NOMINAL_TYRE_MASS, QUALI_SESSIONS, SESSIONS, MGUK_TRANSMISSION, FLOOR_BODY_MAX_Y, RULES, MODEL_RULES, COMBO_RULES, MATERIAL_RULES, SETUP_RULES, ALL_RULES, BY_ID,
+    GEAR_80KMH_MAX_RPM_PER_KMH, GEAR_TOP,
     PLANK_HOLE, SIDEPOD_INLET_MAX_CM2, SUSP_WIDTH, FLOOR_ROOF_Z, CC_UHS_FTU_MPA, PU_PARTS, PU_LOCK, isQuali, minMass, fwEnvelopeX, fwChordLimit, fwStraightExtent, fwSectionZ, rwSectionZ,
     fwProfilesChordLimit, rwProfilesChordLimit, setMaterials, materialTable, findMaterial, classify, materialViolations, materialsOf, checkMaterials, checkPU, checkPhysical,
     mgukLimitKw, checkFacts, check, describeViolation,

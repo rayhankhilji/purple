@@ -157,3 +157,31 @@ Already there and still unread by the sim: `wheelbase_m` (longitudinal load tran
   directions are unchanged (the sensitivity test passes as before). `PhysicalCar.tyres.slip_angle_rad` (new) is copied from
   the anchor.
 
+
+## more-factors v1 (2026-10-24): gearing and set-up (docs/concept/FACTORS.md)
+
+Five parameters join the 23 (28 in all), with the RB22 data sheet's values as baselines. The same pass refit the sim (RB22 sheet
+mass 775 kg and measured ratios, energy-plan smoothing): `physical(design.baseline())` now laps **88.100 s** (was 88.107) and
+`physical(design.baseline({ team: "redbull" }))` **88.745 s** (was 88.763); both still map exactly onto their anchors (tested).
+Measured as §2 (RB22 anchor, one change at a time, −10 % / +10 % of the baseline; for `gearbox.step` ±10 % of `step − 1`), on the
+default `"regulated"` energy plan and, in brackets, on the `"marginal"` plan. † = illegal.
+
+| Parameter | Base ± step | PhysicalCar fields moved (+) | Mechanism | Expected effect | Δlap −/+ regulated (marginal) | Generic anchor (regulated) | Status |
+|---|---|---|---|---|---|---|---|
+| gearbox.top_kmh | 336 ± 34 km/h | gearing.rpm_per_kmh ↓ (all eight) | rpm at speed: C5.2.4 fuel-flow ramp below 10 500 rpm, up-shift count × 30 ms cut, over-rev loss and 13 000 rpm limiter | too short: limiter caps vmax; otherwise small | +0.049† / +0.001 (−0.234† / −0.001) | +0.042† / −0.010 | new; PKG-GEAR-TOP makes < 309 illegal; plan-dependent staircase |
+| gearbox.step | 1.156 ± 0.0156 | low-gear rpm_per_kmh ↑ (8th fixed) | spread about 8th: closer → slow corners at low rpm; wider → post-shift rpm below 10 500, C9.8.2 in 1st | interior optimum near the RB22's | +0.003 / +0.035 (+0.026 / +0.057) | 0.000 / +0.027 | new |
+| setup.roll_front | 55 ± 5.5 % front | suspension.lltd_front ↑ | per-axle lateral load transfer with load-sensitive tyres; rear traction utilisation (RK) | the front-limited RB22 gains from less front transfer until the rear (and traction) limits | −0.073 / +0.101 (−0.091 / +0.095) | −0.013 / +0.056 | new; the trim §6 asked for |
+| setup.heave_n_mm | 3500 ± 350 N/mm | aero.heave_n_per_mm ↑, aero.stall_margin_mm ↑, aero.dyn_compression_mm ↓ | platform stiffness → squat → ride-height downforce; stall margin in the design layer | softer: more downforce at speed, less stall margin (PKG-FLOOR-STALL) | −0.001 / +0.005 (−0.015 / +0.009) | −0.001 / +0.003 | new; small, monotone |
+| setup.brake_bias | 57 ± 5.75 % front | brakes.bias_front ↑ | fixed-balance braking capacity min(F_f/b, F_r/(1−b)) relative to 57 %; harvest from the rear share | broad optimum 55-59 %; front-heavy clearly slower | +0.074 / +0.120 (−0.004 / +0.144) | +0.061 / +0.121 | new |
+
+Interactions: roll split × aero balance (best split moves with the front wing; the front × rear wing interaction of §3 is now
+measured at a 45 % split, where the RB22 sits at the balance point), brake balance × CoG height, heave × ride height (stall margin,
+legality AND), final drive × drag (limiter caps the top-speed gain); numbers in FACTORS.md §3, tests in `test/concept-factors.test.js`.
+
+**§5 contract, added:** `suspension: { lltd_front (read by the sim), roll_stiffness_front, elastic_share, heave_n_mm }`,
+`aero.heave_n_per_mm` (now set by the design; read), `aero.dyn_compression_mm` (not read), `brakes.bias_front` and
+`brakes.bias_ref` (read), `gearing.rpm_per_kmh` now design-dependent. **`concept/bench.js simKey` must add `pc.suspension`**
+(brakes, gearing and `aero.heave_n_per_mm` are already in the key).
+
+**§6 update:** the axle-balance kink now has its trim (`setup.roll_front`); the RB22's sheet split (55 %) puts it front-limited, so
+rear-wing changes are no longer "slower both ways" at the baseline (front wing +2°: −0.25 s).

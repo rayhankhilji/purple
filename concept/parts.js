@@ -44,6 +44,20 @@
   // two groups; it is a fixed design decision, not an optimiser parameter. The ICE "PU Mass group" is ICE + TC + Powerbox
   // (App. C3 Drawing 9): pu_ice (118.5 kg, ICE + Powerbox) + pu_turbo (12 kg) = 130.5 kg.
   const PU = { mguk_transmission: "a" };
+  // GEARS (more-factors v1, docs/concept/FACTORS.md): the RB22's eight forward ratios as rpm per km/h (overall ratio ÷ tyre rolling
+  // radius) = 1000 / km/h per 1000 rpm, measured on all 25 Red Bull laps (17 qualifying laps at 9 circuits + 8 Silverstone race
+  // laps; steady gear, no brake, rpm > 6000): concept/data/redbull-2026.json driveline.red_bull kmh_per_1000rpm_by_gear_all_RB_laps
+  // (RB22 data sheet tx.gear1-8, docs/concept/RB22_SHEET.md). The design picks the final drive (gearbox.top_kmh: 8th-gear speed at
+  // 12,000 rpm; RB22 12000 / 35.75 = 335.7 ≈ 336 km/h) and the spacing (gearbox.step: mean ratio step 4th→8th; RB22
+  // (63.96 / 35.75)^(1/4) = 1.1565 ≈ 1.156; the measured low gears are wider). Ratios of gear g (1..8): ref_g × (336 / top) ×
+  // (step / 1.156)^(8 − g): the measured pattern, scaled and spread. C9.6.1: eight ratios, fixed.
+  const GEARS = { ref_rpm_per_kmh: [8.417, 10.546, 12.971, 15.636, 18.605, 21.838, 25, 27.975].map(k => +(1000 / k).toFixed(4)), top_ref_kmh: 336, step_ref: 1.156, at_rpm: 12000, source: "concept/data/redbull-2026.json (kmh_per_1000rpm_by_gear_all_RB_laps, all 25 Red Bull laps)" };
+  // SETUP (more-factors v1): the RB22 set-up estimates of the RB22 data sheet (concept/data/rb22-sheet.json; none is published by the
+  // team): front share of roll stiffness 55 % (setup.roll_stiffness_front_share, range 45-65), whole-car heave stiffness at the tyre
+  // contact 3500 N/mm (setup.heave_stiffness, range 2000-6000: the sim's platform, ~5 mm of squat under ~17 kN; an effective value
+  // of the model: a physical series rate of springs and tyres would sit below 4 × ~330 N/mm of tyre rate), brake balance 57 % front
+  // (brake.balance_front, range 52-62). concept/physical.js maps each relative to the reference design onto the anchor car.
+  const SETUP = { roll_front_ref: 55, heave_ref_n_mm: 3500, bias_ref: 57, source: "concept/data/rb22-sheet.json (setup.*, brake.balance_front; estimates)" };   // roll and bias in % front
 
   // shape parameters: min/max = model domain, base = baseline car, step = mutation quantum, int = integer count
   const P = (min, max, base, step, unit, label, extra) => Object.assign({ min, max, base, step, unit, label }, extra || {});
@@ -79,9 +93,15 @@
     { id: "pu_es", name: "PU · energy store (incl. CU-K and DC-DC)", group: "power_unit", params: {}, kind: REGK, sources: ["FIA-C-ISS20", "MCLAREN-SPEC", "RACETECH-SPECS"], basis: "35 kg: the C5.17.9 ES Main Enclosure floor; App. C4 items 39 (CU-K) and 40 (DC-DC) are inside it" },
     { id: "pu_electronics", name: "PU items outside the mass groups (tailpipe, intake upstream of the compressor, breather, studs)", group: "power_unit", params: {}, kind: EST, sources: ["FIA-C-ISS20"], basis: "5.7 kg (MASS.md; App. C4 items 72-76)" },
     // ---- transmission, suspension, wheels
-    { id: "gearbox", name: "Gearbox, differential, driveshafts, oil", group: "transmission", params: {}, kind: REP, sources: ["GPFANS-WEIGHT", "MOTORSPORT-ES-WEIGHT"], basis: "48.6 kg (MASS.md: gearbox ≈ 40 kg reported, plus driveshafts and oil; C9.5.2 floor for driveline + gear change is 22 kg) + 0.012 kg/mm of spacer when the wheelbase exceeds the packaging minimum" },
+    { id: "gearbox", name: "Gearbox, differential, driveshafts, oil", group: "transmission",
+      params: { top_kmh: P(290, 380, 336, 1, "km/h", "Final drive: 8th-gear speed at 12,000 rpm (RB22 336, all RB laps)"), step: P(1.08, 1.24, 1.156, 0.002, "×", "Gear pairs: mean ratio step 4th→8th (RB22 1.156, all RB laps)") },
+      kind: REP, sources: ["GPFANS-WEIGHT", "MOTORSPORT-ES-WEIGHT"], basis: "48.6 kg (MASS.md: gearbox ≈ 40 kg reported, plus driveshafts and oil; C9.5.2 floor for driveline + gear change is 22 kg) + 0.012 kg/mm of spacer when the wheelbase exceeds the packaging minimum" },
     { id: "front_suspension", name: "Front suspension and steering (incl. steering wheel)", group: "suspension", params: {}, kind: EST, sources: ["GPFANS-WEIGHT", "MOTORSPORT-ES-WEIGHT"], basis: "30.7 kg (MASS.md: uprights, wishbones, push/pull rods, rockers, dampers, rack, 1.3 kg steering wheel)" },
     { id: "rear_suspension", name: "Rear suspension", group: "suspension", params: {}, kind: EST, sources: [], basis: "27.2 kg (MASS.md)" },
+    // set-up (more-factors v1, docs/concept/FACTORS.md): passive springs, anti-roll bars and the brake balance; no mass of its own
+    { id: "setup", name: "Suspension and brake set-up (springs, anti-roll bars, brake balance)", group: "suspension",
+      params: { roll_front: P(30, 80, 55, 0.5, "% front", "Front share of roll stiffness (anti-roll bars + springs; RB22 sheet 55)"), heave_n_mm: P(1500, 8000, 3500, 50, "N/mm", "Whole-car heave stiffness at the tyre contact (RB22 sheet 3500)"), brake_bias: P(50, 66, 57, 0.25, "% front", "Brake balance (front share of brake force; RB22 sheet 57)") },
+      kind: null, sources: [], basis: "no mass of its own; baselines = the RB22 data sheet's set-up estimates (concept/data/rb22-sheet.json; not published by the team)" },
     { id: "wheels_front", name: "Front wheels and tyres (×2)", group: "wheels", params: {}, kind: EST, sources: ["FIA-C-ISS20", "MCLAREN-SPEC", "MERCEDES-TYRES", "PIRELLI-2026", "RACEFANS-HORNER"], basis: "2 × 10.0 kg magnesium rim (C10.7 dimensions) + 45.5 % of the Nominal Tyre Mass estimate (split by tyre cross-section); unsprung: centre at the loaded radius above the ground" },
     { id: "wheels_rear", name: "Rear wheels and tyres (×2)", group: "wheels", params: {}, kind: EST, sources: ["FIA-C-ISS20", "MERCEDES-TYRES", "PIRELLI-2026", "RACEFANS-HORNER"], basis: "2 × 11.4 kg magnesium rim (C10.7 dimensions) + 54.5 % of the Nominal Tyre Mass estimate; unsprung: centre at the loaded radius above the ground" },
     { id: "brakes_front", name: "Front brakes (×2)", group: "wheels", params: {}, kind: REP, sources: ["THERACE-BRAKES", "THEDRIVE-BREMBO", "GASGOO-BREMBO"], basis: "11.9 kg (MASS.md: reported 2026 disc 2.0 kg, caliper ≈ 2.0 kg, ≈ 4.5 kg per corner, plus ducts)" },
@@ -122,6 +142,20 @@
     };
   }
   const plankWear = rh => Math.max(0, PLANK.free_mm - rh) * PLANK.wear_per_mm;
+  // a parameter's value, or its catalogue base when the design predates it (designs saved before more-factors v1 carry no
+  // gearbox / setup parameters: they mean the baseline set-up, so every consumer reads them through this)
+  function val(params, part, key) {
+    const p = params && params[part], v = p && typeof p[key] === "number" ? p[key] : undefined;
+    return v !== undefined ? v : BY_ID[part].params[key].base;
+  }
+  // the design's eight forward ratios (rpm per km/h, 1st..8th) and its scale factors relative to the RB22 reference set (GEARS)
+  function gearSet(params) {
+    const top = val(params, "gearbox", "top_kmh"), step = val(params, "gearbox", "step");
+    const f = GEARS.top_ref_kmh / top, s = step / GEARS.step_ref;
+    return { rpm_per_kmh: GEARS.ref_rpm_per_kmh.map((k, i) => k * f * Math.pow(s, 7 - i)), scale: f, spread: s, top_speed_kmh: top, ratio_step: step };
+  }
+  // whole-car heave (platform) stiffness relative to the reference set-up (1 at the RB22 sheet's 3500 N/mm)
+  function heaveRatio(params) { return val(params, "setup", "heave_n_mm") / SETUP.heave_ref_n_mm; }
 
   // the mass sheet: every part's mass (kg), x/z/|y| (mm), and the totals the regulations and the lap model need
   // material factor of a part's material-able mass share (concept/materials.js; exactly 1 for the baseline material and when the
@@ -235,7 +269,7 @@
     };
   }
 
-  const api = { MASS_LABEL, MASS_SOURCE, PACK, PLANK, WHEEL, UNSPRUNG, PU, CATALOGUE, MATERIAL_PARTS, materialSpec, matFactor, BY_ID, PARAMS, geometry, plankWear, massSheet };
+  const api = { MASS_LABEL, MASS_SOURCE, PACK, PLANK, WHEEL, UNSPRUNG, PU, GEARS, SETUP, CATALOGUE, MATERIAL_PARTS, materialSpec, matFactor, BY_ID, PARAMS, geometry, plankWear, val, gearSet, heaveRatio, massSheet };
   C.parts = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();

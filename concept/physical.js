@@ -38,7 +38,7 @@
   const REF_V0 = { CLA_m2: 3.8, CDA_m2: 1.1, sm_cla_ratio: 0.6, sm_cda_ratio: 0.8, fuel_kg: 8, mass_kg: 770, track_front_m: 1.54, track_rear_m: 1.47, cog_height_m: 0.325, weight_dist_front: 0.4492, mu_x: 1.75, mu_y: 1.8, load_sens: 0.04, drivetrain_eff: 0.95, ice_kw: 400, decel_g: 5 };
   const REF = REF_V0;   // kept for callers of the v0 API
   const SOURCES = {
-    mass_kg: { verified: false, basis: "the anchor car's mass (physics sim: 768 kg, C4.1 726 kg + reported tyre mass) + the design's mass-sheet change from its baseline (concept part-mass estimates + automatic ballast to the C4.1 minimum; the C4.1 check itself uses the mass sheet, 770 kg in qualifying)" },
+    mass_kg: { verified: false, basis: "the anchor car's mass (physics sim: generic 770 kg = C4.1 726 kg + 44 kg Nominal Tyre Mass estimate; RB22 775 kg, the RB22 data sheet's mass.car_no_fuel, concept/data/rb22-sheet.json) + the design's mass-sheet change from its baseline (concept part-mass estimates + automatic ballast to the C4.1 minimum; the C4.1 check itself uses the mass sheet, 770 kg in qualifying)" },
     fuel_kg: { verified: false, basis: "8 kg qualifying-run fuel: the physics sim's assumption; fuel is outside Car Mass (Section C definitions)" },
     wheelbase_m: { verified: true, basis: "design parameter; C2.3.3 caps it at 3.400 m (the sim's point mass does not use it; sim v0 does)" },
     track_m: { verified: true, basis: "the anchor car's track widths: 1.540 / 1.470 m, the widest C10.10.1 allows (Wheel Coordinate System origin at |Y| ≤ 603 / 525 mm + half the C10.7.2(a) rim overall width; concept/parts.js wheel centres at |y| 770 / 735 mm)" },
@@ -53,8 +53,13 @@
     unsprung_kg: { verified: false, basis: "wheels + brakes + 40 % of each suspension group (uprights, hubs, half the links; estimate) from the mass sheet; the physics sim does not read it yet" },
     cog_x_m: { verified: false, basis: "mass-sheet CoG behind the front axle (absolute; weight_dist_front is the anchored quantity the sim reads)" },
     materials: { verified: false, basis: "concept materials v1 (concept/materials.js, concept/data/materials-2026.json): a non-baseline material re-gauges the part's walls to keep its baseline stiffness and strength (within gauge limits; estimates), so it changes part mass (→ ballast, CoG, axle split) and, through the stiffness ratio, wing wash-out and floor flex" },
-    gearing: { verified: false, basis: "the anchor's gearing: measured rpm per km/h on the pole lap (generic) or HAD's Q lap (concept/data/redbull-2026.json; Node only, the browser uses the generic ratios: 0.001 s on the RB22 lap)" },
+    gearing: { verified: false, basis: "the anchor's gearing (measured rpm per km/h on the pole lap (generic) or on all 25 Red Bull laps (RB22), concept/data/redbull-2026.json kmh_per_1000rpm_by_gear_all_RB_laps; Node only, the browser uses the generic ratios: 0.001 s on the RB22 lap) × the design's final drive (gearbox.top_kmh) and ratio spread (gearbox.step) relative to its baseline; shift rpm the anchor's (PU locked)" },
+    suspension: { verified: false, basis: "more-factors v1: lltd_front = anchor lltd + weight-split change + (roll stiffness front share − baseline share) × elastic share (anchor: RB22 = weight split + (0.55 − weight split) × elastic, the sheet's split; generic = its weight split); elastic share = sprung mass × (sprung CoG − 40 mm roll centre, estimate) / (mass × CoG height) from the mass sheet; heave_n_mm the design's whole-car heave stiffness (RB22 sheet 3500 N/mm; aero.heave_n_per_mm carries the platform stiffness the sim reads, anchor × design change)" },
+    brakes_bias: { verified: false, basis: "more-factors v1: brakes.bias_front = the design's brake balance (% front / 100), bias_ref = its baseline's (57 % front, RB22 sheet brake.balance_front); the sim scales the calibrated braking capacity by the fixed-balance capacity ratio" },
   };
+  // more-factors v1: roll centres ≈ 40 mm above the ground at both axles (ESTIMATE: F1 wishbone geometry keeps them low; not
+  // published), and the platform stiffness the sim was calibrated with (concept/sim/lapsim.js MODEL.heave_n_per_mm, 3500 N/mm)
+  const SUSP = Object.freeze({ roll_centre_mm: 40, platform_n_per_mm: 3500 });
   const DEFAULT_CALIBRATION = Object.freeze({ cla_scale: 1, cda_scale: 1, power_scale: 1, mu_scale: 1 });
   const r6 = v => Math.round(v * 1e6) / 1e6, r4 = v => Math.round(v * 10000) / 10000;
 
@@ -175,11 +180,33 @@
       calibration: cal,
       sources: SOURCES,
     };
-    if (base.gearing) out.gearing = base.gearing;
+    // ---- more-factors v1 (docs/concept/FACTORS.md): gearing, roll stiffness split, heave rate, brake balance
+    // gearing: the anchor's measured ratios × the design's final-drive scale and spread relative to the reference design (the
+    // anchor's own pattern of steps is kept); the shift rpm is the anchor's (the PU and its calibration are locked)
+    if (base.gearing) {
+      const gs = parts.gearSet(p), gr = parts.gearSet(R.design.params);
+      out.gearing = Object.assign({}, base.gearing, { rpm_per_kmh: base.gearing.rpm_per_kmh.map((k, i, a) => r4(k * (gs.scale / gr.scale) * Math.pow(gs.spread / gr.spread, a.length - 1 - i))) });
+    }
+    // lateral load transfer distribution: the elastic share of the transfer moment follows the roll stiffness split, the rest
+    // (unsprung mass, roll-centre / geometric transfer) follows the axle masses: lltd = weight split + (roll share − weight split)
+    // × elastic, elastic = m_s (h_s − h_rc) / (m h) from the mass sheet (roll centres SUSP.roll_centre_mm, ESTIMATE). Mapped
+    // onto the anchor: the anchor's own lltd (the RB22 car carries the sheet's 55 % split, concept/sim/fit.js; the generic car none,
+    // i.e. lltd = its weight split) + the design's change of weight split + (share − reference share) × elastic.
+    const kRoll = parts.val(p, "setup", "roll_front") / 100, kRoll0 = parts.val(R.design.params, "setup", "roll_front") / 100;   // % front -> share
+    const hS = mx.sprung_cog_height_mm, hT = mx.cog_height_mm, mS = mx.total_kg - mx.unsprung_front_kg - mx.unsprung_rear_kg;
+    const elastic = Math.max(0, Math.min(1, (mS * Math.max(0, hS - SUSP.roll_centre_mm)) / (mx.total_kg * hT)));
+    const lltdA = A && A.suspension && typeof A.suspension.lltd_front === "number" ? A.suspension.lltd_front : base.wdf;
+    out.suspension = { roll_stiffness_front: kRoll, elastic_share: r4(elastic), lltd_front: r6(lltdA + (out.weight_dist_front - base.wdf) + (kRoll - kRoll0) * elastic), heave_n_mm: parts.val(p, "setup", "heave_n_mm") };
+    // heave: the anchor's platform stiffness (the sim's 3500 N/mm when it carries none) × the design's change of whole-car stiffness
+    const khA = A && A.aero && typeof A.aero.heave_n_per_mm === "number" ? A.aero.heave_n_per_mm : SUSP.platform_n_per_mm;
+    out.aero.heave_n_per_mm = r4(khA * parts.heaveRatio(p) / parts.heaveRatio(R.design.params));
+    out.aero.dyn_compression_mm = r4(a.dyn_compression_mm);
+    // brake balance: declared with its reference, so the sim brakes the reference car exactly as calibrated
+    out.brakes.bias_front = r6(parts.val(p, "setup", "brake_bias") / 100); out.brakes.bias_ref = r6(parts.val(R.design.params, "setup", "brake_bias") / 100);
     return out;
   }
 
-  const api = { LABEL, LABEL_V0, REF, REF_V0, ENERGY, SOURCES, DEFAULT_CALIBRATION, physical, anchor, reference, flapDeployment, straightValue, sim };
+  const api = { LABEL, LABEL_V0, REF, REF_V0, ENERGY, SUSP, SOURCES, DEFAULT_CALIBRATION, physical, anchor, reference, flapDeployment, straightValue, sim };
   C.physical = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();

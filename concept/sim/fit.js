@@ -333,7 +333,10 @@
     for (let i = 0; i < nT; i++) { lb.push(Math.log(B.cla[0]), Math.log(B.cda[0])); ub.push(Math.log(B.cla[1]), Math.log(B.cda[1])); }
     for (let k = 0; k < pus.length; k++) { lb.push(Math.log(B.pu[0])); ub.push(Math.log(B.pu[1])); }
     let x = new Array(nP).fill(0);
-    const sim = (t, i, x) => S.simulateLap(scaledCar(base, { cla_scale: Math.exp(x[2 * i]), cda_scale: Math.exp(x[2 * i + 1]), pu_scale: Math.exp(x[idxPU(t)]) }), trackId, cond, { cal });
+    // each team is fitted with its own measured inputs merged in (derivedOverrides: gearing, mass, roll split from its dossier and
+    // data sheet), so the stored scales reproduce the team's lap with the car teamCar() returns (opts.overrides === false: off)
+    const ovr = {}; for (const t of targets) ovr[t.team] = opts.overrides === false ? null : derivedOverrides(t.team);
+    const sim = (t, i, x) => { const c = scaledCar(base, { cla_scale: Math.exp(x[2 * i]), cda_scale: Math.exp(x[2 * i + 1]), pu_scale: Math.exp(x[idxPU(t)]) }); if (ovr[t.team]) deepMerge(c, JSON.parse(JSON.stringify(ovr[t.team]))); return S.simulateLap(c, trackId, cond, { cal }); };
     // residual vector: 2 data terms per team, then one prior term per parameter
     function residuals(x, sims) {
       const r = [];
@@ -408,7 +411,10 @@
       const fo = path.join(dir, teamId + "-2026.json");
       if (fs.existsSync(fo)) {
         const j = JSON.parse(fs.readFileSync(fo, "utf8")), rows = [].concat(...Object.values((j.driveline || {})).filter(Array.isArray));
-        const g = rows.find(r => /^rpm_per_kmh_by_gear/.test(r.key || "")), pk = rows.find(r => /^peak_rpm/.test(r.key || ""));
+        // ratios: prefer the row measured on all of a team's laps (km/h per 1000 rpm, every gear; RB22 data sheet tx.gear1-8) over
+        // the single-lap rpm-per-km/h row (gears 4-8 only, 1-3 extrapolated: up to 23 % off in 1st, RB22_SHEET.md)
+        const all = rows.find(r => /^kmh_per_1000rpm_by_gear/.test(r.key || "") && r.value && typeof r.value === "object");
+        const g = all ? { key: all.key, value: Object.keys(all.value).reduce((o, k) => { o[k] = +(1000 / all.value[k]).toFixed(4); return o; }, {}) } : rows.find(r => /^rpm_per_kmh_by_gear/.test(r.key || "")), pk = rows.find(r => /^peak_rpm/.test(r.key || ""));
         if (g && g.value && pk && pk.value) {
           const known = Object.keys(g.value).map(Number).sort((a, b) => a - b), k = new Array(8).fill(null);
           for (const n of known) k[n - 1] = g.value[n];
@@ -417,15 +423,29 @@
           out = Object.assign(out || {}, { gearing: { rpm_per_kmh: k, shift_rpm: pk.value, source: "concept/data/" + teamId + "-2026.json (" + g.key + ")" } });
         }
       }
+      // the team's data sheet (concept/data/rb22-sheet.json for redbull): measured / reconciled inputs that contradict the generic
+      // prior. Mass with driver, no fuel (mass.car_no_fuel, 775 ± 4 kg) and the roll stiffness split (setup.roll_stiffness_front_share,
+      // 0.55: lltd = weight split + (share − weight split) × 0.715, the elastic share of the concept mass sheet at the baseline,
+      // concept/physical.js). Heave 3500 N/mm and brake balance 0.57 equal the sim's own values.
+      const sheetFile = { redbull: "rb22-sheet.json" }[teamId];
+      if (sheetFile && fs.existsSync(path.join(dir, sheetFile))) {
+        const sh = JSON.parse(fs.readFileSync(path.join(dir, sheetFile), "utf8")), ent = id => (sh.entries || []).find(e => e.id === id);
+        const m = ent("mass.car_no_fuel"), rs = ent("setup.roll_stiffness_front_share"), wf = S.priorCar().weight_dist_front;
+        if (m && isFinite(+m.value)) out = Object.assign(out || {}, { mass_kg: +m.value });
+        if (rs && isFinite(+rs.value)) out = Object.assign(out || {}, { suspension: { lltd_front: +(wf + (+rs.value - wf) * ELASTIC_SHARE).toFixed(6), roll_stiffness_front: +rs.value, source: "concept/data/" + sheetFile } });
+      }
       return out;
     } catch (e) { return null; }
   }
+  // elastic share of the lateral transfer moment at the concept baseline (concept/physical.js suspension.elastic_share; a test
+  // checks the two agree)
+  const ELASTIC_SHARE = 0.715;
   function deepMerge(a, b) { for (const k of Object.keys(b)) { if (b[k] && typeof b[k] === "object" && !Array.isArray(b[k]) && a[k] && typeof a[k] === "object") deepMerge(a[k], b[k]); else a[k] = b[k]; } return a; }
   function teamCar(teamId, fit) {
     const f = fit || fitted(), t = f && f.teams && f.teams.find(x => x.team === teamId);
     if (!t) throw new Error("concept sim: no fitted car for team " + teamId);
     const c = scaledCar(baseOf(f), t, { id: "team-" + t.team, label: t.name + " (inferred from public 2026 British GP qualifying lap + speed trap; not team data)" });
-    const o = !fit && derivedOverrides(teamId);
+    const o = derivedOverrides(teamId);   // the fit itself is made with these merged in (fitTeams)
     if (o) { deepMerge(c, JSON.parse(JSON.stringify(o))); c.label = t.name + " (inferred from public 2026 British GP qualifying lap + speed trap, not team data; telemetry-derived overrides from concept/data/" + teamId + "-2026*.json)"; }
     return c;
   }

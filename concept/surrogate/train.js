@@ -31,12 +31,15 @@ const MARGIN = {
   sm_balance_shift: [0.05, 0.05], sm_cda_ratio: [0.1, 0.1], ride_height_mm: [15, 35], ride_sens_per_mm: [0.006, 0.024],
   stall_margin_mm: [5, 25], ice_kw: [40, 40], mguk_kw: [30, 30], es_deploy_mj: [4, 4], es_harvest_mj: [2.5, 2.5],
   mu_x: [0.12, 0.12], mu_y: [0.12, 0.12], load_sens: ["40%", "40%"], drivetrain_eff: [0.03, 0.02],
+  // features v5 (more-factors v1): the set-up / gearing fields the concept's parameter domains reach (concept/parts.js), with room
+  lltd_offset: [0.2, 0.16], heave_n_per_mm: ["60%", "130%"], brake_bias_front: [0.08, 0.10], gear_top_kmh: ["14%", "14%"], gear_step: [0.08, 0.09],
 };
 // hard physical limits on the box
 const HARD = {
   mass_kg: [700, 900], fuel_kg: [0, 110], weight_dist_front: [0.3, 0.6], balance_corner: [0.15, 0.85], sm_cla_ratio: [0.05, 1], sm_cda_ratio: [0.2, 1],
   ride_height_mm: [10, 80], ride_sens_per_mm: [0, 0.05], ice_kw: [100, 600], mguk_kw: [0, 400], es_deploy_mj: [0, 20], es_harvest_mj: [0, 12],
   mu_x: [0.8, 2.6], mu_y: [0.8, 2.6], load_sens: [0, 0.3], drivetrain_eff: [0.85, 0.99], cla_corner_m2: [0.5, 9], cda_corner_m2: [0.4, 2.5], cog_height_m: [0.15, 0.45],
+  lltd_offset: [-0.3, 0.3], heave_n_per_mm: [800, 10000], brake_bias_front: [0.4, 0.75], gear_top_kmh: [250, 450], gear_step: [1.03, 1.3],
 };
 // DOE tiers: share of the runs and the box fraction each spans (centre ± frac of the way to each edge). Most runs sit where the
 // optimiser works (near the centre); the whole box keeps the edges honest.

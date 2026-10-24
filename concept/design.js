@@ -152,6 +152,11 @@
       fl.throat_mm = quant(s, was * THROAT_V1_TO_V2);
       out.migrated = (out.migrated || []).concat([{ part: "floor", param: "throat_mm", from: was, to: fl.throat_mm, rule: "v1 → v2 × " + THROAT_V1_TO_V2 + (was * THROAT_V1_TO_V2 > s.max ? ", clamped to the C3.5.1(a) roof" : "") }]);
     }
+    // more-factors v1: a design saved before the gearbox / set-up parameters existed meant the baseline set-up; fill them in
+    if (out.params && typeof out.params === "object") for (const s of parts.PARAMS) {
+      if (!own(out.params, s.part)) out.params[s.part] = {};
+      if (typeof out.params[s.part][s.param] !== "number") { out.params[s.part][s.param] = s.base; out.migrated = (out.migrated || []).concat([{ part: s.part, param: s.param, from: null, to: s.base, rule: "more-factors v1: absent = the baseline value" }]); }
+    }
     return out;
   }
   // diff(a, b): every parameter that differs, b relative to a (material swaps carry delta null)
@@ -189,6 +194,7 @@
       plank_wear_mm: +parts.plankWear(p.floor.ride_height_mm).toFixed(3),
       mass: parts.massSheet(p, { session: opts && opts.session, overrides: d.overrides }),
       aero: aeromap.evaluate(p),
+      gearing: parts.gearSet(p),   // more-factors v1: the eight ratios the design declares (C9.6, concept/regs.js SETUP_RULES)
     };
   }
 

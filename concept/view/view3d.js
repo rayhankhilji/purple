@@ -56,6 +56,15 @@
     "floor.ride_height_mm": "sprung car height: plank bottom = ride height above the ground (wheels stay on the ground)", "diffuser.expansion_deg": "diffuser ramp angle from XR-525 to the exit at XR+300",
     "sidepods.inlet_cm2": "inlet opening area (both sides; superellipse n = 4, aspect 0.55), sidepod width follows the inlet", "sidepods.undercut_mm": "depth of the cut under the sidepod's shoulder (Y)",
     "ballast.x_frac": "no bodywork: ballast sphere position in x-ray mass mode", "ballast.extra_kg": "no bodywork: ballast sphere size in x-ray mass mode",
+    // concept families (claude/redesigns); geometry by claude/view-rb22
+    "sidepods.concept": "sidepod concept: 0 downwash (high shoulder, top falling to the floor), 1 zeropod (minimal narrow pods, small inlets), 2 ramp (deep undercut under a wide pod with a top ramp)",
+    "nose.concept": "nose concept: 0 long low nose on the front wing main plane, 1 short high nose with the wing hung on pylons",
+    "front_wing.endplate": "front wing endplate: 0 open, outwash (flared trailing edge), 1 closed, inwash (tall, joined to the flap tips, curled inboard)",
+    "rear_wing.style": "rear wing style: 0 low-drag spoon main plane, 1 medium, 2 high-downforce (steep, deep flap)",
+    "floor.edge": "floor edge: 0 simple edge, 1 multi-fence scrolled edge ahead of the rear tyre",
+    "cooling.layout": "cooling layout: 0 standard, 1 large airbox inlet + gill louvres on the pods, 2 compact (louvred engine cover, small exit)",
+    "engine_cover.style": "engine cover: 0 high shark fin to the rear wing, 1 low narrow cover without fin",
+    "suspension.front": "front suspension: 0 pushrod (rod to a high rocker), 1 pullrod (rod to a low rocker)",
   };
   // fixed dimensions (mm) that are not design parameters
   const FIX = { tyreR: 352.5, tyreRrear: 355, plank: 10, track: [1580, 1520] };

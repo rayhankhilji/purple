@@ -20,7 +20,13 @@ const LIM = {
   pu: 185, ice_a: 130, mguk_a: 20, tc: 12, es: 35, pu_cog: 200, driveline: 22,                                       // C5.5, C5.3.4, C5.17.9, C5.18.7, C9.5.2
   plank_hole: 470 + 500, sidepod_cm2: 2 * 80000 / 100,                                                               // C3.6.1(c), C3.16.9
   floor_roof_z: 75,                                                                                                  // C3.5.1(a), App. C2 §4.5/§4.11
+  gear_80kmh_rpm: 15000, gear_80kmh_kmh: 80,                                                                         // C9.8.2
 };
+// more-factors v1 gearing, typed independently: the RB22's km/h per 1000 rpm by gear (all 25 RB laps, concept/data/redbull-2026.json),
+// final drive referred to 336 km/h at 12 000 rpm, spread referred to a 1.156 step; PKG-GEAR-TOP: 8th at a 13 000 rpm limiter must
+// reach 333.5 km/h (RB22 Monza race trap)
+const RB22_GEARS = [8.417, 10.546, 12.971, 15.636, 18.605, 21.838, 25, 27.975].map(v => 1000 / v);
+const oracleGears = p => RB22_GEARS.map((k, i) => k * (336 / p.gearbox.top_kmh) * Math.pow(p.gearbox.step / 1.156, 7 - i));
 // RV-FW-PROFILES: [Y, Z] polygon (App. C2 §22.1); the X trims (§21.1 plane through [XF−1250, Y100], [XF−1025, Y700]; §22.4 plane
 // through [XF−750, Y0], [XF−500, Y400]) are vertical
 const FW_LOWER = [[0, 60], [100, 60], [675, 115]], FW_UPPER = [[0, 200], [400, 300], [675, 275]];
@@ -74,12 +80,15 @@ function oracle(d, opts) {
   add("PKG-COOLING", a.cooling.capacity < a.cooling.need * 1.05 - 1e-9, a.cooling.capacity - a.cooling.need * 1.05);
   add("PKG-FLOOR-STALL", a.stall_margin_mm < 2 - 1e-9, a.stall_margin_mm - 2);
   add("PKG-PART-MASS", m.parts.some(r => !(r.mass_kg >= 0)));
+  const gk = oracleGears(p), worstGear = Math.max(...gk), vTop = 13000 / gk[7];
+  add("REG-C-GEAR-80KMH", worstGear * LIM.gear_80kmh_kmh > LIM.gear_80kmh_rpm, worstGear * LIM.gear_80kmh_kmh - LIM.gear_80kmh_rpm);
+  add("PKG-GEAR-TOP", vTop < 333.5 - 1e-9, vTop - 333.5);
   // the PU lock: every PU row as the same design WITHOUT overrides builds it, and the transmission option unchanged
   const ref = parts.massSheet(p, { session: opts && opts.session }).parts;
   add("PKG-PU-FIXED", ["pu_ice", "pu_turbo", "pu_mguk", "pu_es", "pu_electronics"].some(id => { const a = m.parts.find(r => r.id === id), b = ref.find(r => r.id === id); return !a || a.mass_kg !== b.mass_kg || a.x_mm !== b.x_mm || a.z_mm !== b.z_mm; }) || m.mguk_transmission !== parts.PU.mguk_transmission);
   return { ids: out, near };
 }
-const ORACLE_IDS = ["REG-C-WIDTH", "REG-C-WB", "REG-C-FRONT-AXLE", "REG-C-COCKPIT", "REG-C-BULKHEAD", "REG-C-FLOOR-WIDTH", "REG-C-FW-ELEMENTS", "REG-C-RW-ELEMENTS", "REG-C-FW-SPAN", "REG-C-RW-SPAN", "REG-C-FW-CHORD", "REG-C-FW-SM-ENVELOPE", "REG-C-FW-PROFILES-Z", "REG-C-RW-CHORD", "REG-C-RW-ENDPLATE", "REG-C-FW-FLAP", "REG-C-RW-FLAP", "REG-C-SM-DIRECTION", "REG-C-ELEMENTS-MIN", "REG-C-PLANK", "REG-C-PLANK-HOLES", "REG-C-SIDEPOD-INLET", "REG-C-FLOOR-ROOF", "REG-C-MASS-MIN", "REG-C-MASS-FRONT", "REG-C-MASS-REAR", "REG-C-DRIVER-MASS", "REG-C-PU-MASS", "REG-C-ICE-MASS", "REG-C-MGUK-MASS", "REG-C-TC-MASS", "REG-C-ES-MASS", "REG-C-PU-COG", "REG-C-DRIVELINE-MASS", "PKG-WB", "PKG-COOLING", "PKG-FLOOR-STALL", "PKG-PART-MASS", "PKG-PU-FIXED"];
+const ORACLE_IDS = ["REG-C-WIDTH", "REG-C-WB", "REG-C-FRONT-AXLE", "REG-C-COCKPIT", "REG-C-BULKHEAD", "REG-C-FLOOR-WIDTH", "REG-C-FW-ELEMENTS", "REG-C-RW-ELEMENTS", "REG-C-FW-SPAN", "REG-C-RW-SPAN", "REG-C-FW-CHORD", "REG-C-FW-SM-ENVELOPE", "REG-C-FW-PROFILES-Z", "REG-C-RW-CHORD", "REG-C-RW-ENDPLATE", "REG-C-FW-FLAP", "REG-C-RW-FLAP", "REG-C-SM-DIRECTION", "REG-C-ELEMENTS-MIN", "REG-C-PLANK", "REG-C-PLANK-HOLES", "REG-C-SIDEPOD-INLET", "REG-C-FLOOR-ROOF", "REG-C-MASS-MIN", "REG-C-MASS-FRONT", "REG-C-MASS-REAR", "REG-C-DRIVER-MASS", "REG-C-PU-MASS", "REG-C-ICE-MASS", "REG-C-MGUK-MASS", "REG-C-TC-MASS", "REG-C-ES-MASS", "REG-C-PU-COG", "REG-C-DRIVELINE-MASS", "PKG-WB", "PKG-COOLING", "PKG-FLOOR-STALL", "PKG-PART-MASS", "PKG-PU-FIXED", "REG-C-GEAR-80KMH", "PKG-GEAR-TOP"];
 
 // ---------------------------------------------------------------- design generators
 const quantize = (s, v) => +Math.min(s.max, Math.max(s.min, Math.round((v - s.min) / s.step) * s.step + s.min)).toFixed(6);
