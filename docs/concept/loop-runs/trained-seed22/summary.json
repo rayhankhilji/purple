@@ -1,0 +1,56 @@
+{
+  "mode": "live",
+  "run_id": "loop-01m5pmtsemmz74b36rr3wj9sdt",
+  "session_id": "loop-01m5pmtsemmz74b36rr3wj9sdt",
+  "iterations": 25,
+  "kept": 2,
+  "stopped": "generation limit",
+  "kept_by_proposer": {
+    "llm": 1,
+    "fallback": 1
+  },
+  "designer": {
+    "generations": 25,
+    "llm_calls": 25,
+    "llm_accepted": 22,
+    "fallback": 3,
+    "reasons": {
+      "illegal": 3
+    },
+    "designs_seen": 26
+  },
+  "trained": true,
+  "lap_baseline_s": 88.763,
+  "lap_best_s": 88.555,
+  "d_lap_s": -0.208,
+  "gap_to_pole_s": 0.444,
+  "request_ids": [
+    "mreq_01a16d4d720d7f10aa120e217cb92eb4",
+    "mreq_01a16d4d7ced7a50a20f550ecb93ea4e",
+    "mreq_01a16d4d85987322b1a016be6d41bf3a",
+    "mreq_01a16d4d8fb67a93b63a3b03ef0c5824",
+    "mreq_01a16d4d98da78409b541b9360fbe09d",
+    "mreq_01a16d4da1c57400a51cbc9731d2fb4b",
+    "mreq_01a16d4dab0b7232bd92482f7f21ca59",
+    "mreq_01a16d4db45a7222b2049acb3ef00f6a",
+    "mreq_01a16d4dbe3474228d4d9b78836e8f94",
+    "mreq_01a16d4dc8187c61bfa43a8549acec07",
+    "mreq_01a16d4dd0f47a60b9e31c5072286c97",
+    "mreq_01a16d4dd96470d180d30dd778ce8e69",
+    "mreq_01a16d4de18a7e82b36f4060e9fe207a",
+    "mreq_01a16d4debe17830990ad220f99234d2",
+    "mreq_01a16d4df58e7323b8eb8d0ecdcf0e42",
+    "mreq_01a16d4dffad71f38794fd3b0bcf166f",
+    "mreq_01a16d4e0a0c70d384375e0bf492b854",
+    "mreq_01a16d4e133574d08ebe5ee53effd2ce",
+    "mreq_01a16d4e1c9f7b02a128aaf3d9753464",
+    "mreq_01a16d4e25f873d0afcf92b85c476d57",
+    "mreq_01a16d4e2f5079a2a936557a2364c54a",
+    "mreq_01a16d4e39237823a5d086c4f2989adb",
+    "mreq_01a16d4e425e77a296beccf4b0477eb0",
+    "mreq_01a16d4e4ba67b539b692a1d71678e88",
+    "mreq_01a16d4e55757211a7b4aeeb00867697"
+  ],
+  "label": "physics lap sim · quasi-steady-state point mass · Silverstone OSM centreline · calibrated to 2026 British GP qualifying",
+  "kept_rule": "kept = legal && score_after > score_before (concept/optimize.js; weekend score, monotonic in the simulated lap); the model's output has no verdict field"
+}

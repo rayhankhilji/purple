@@ -1,0 +1,208 @@
+{
+  "_meta": {
+    "what": "Materials a 2026 F1 car can be built from (and a few it cannot), with the properties the concept part-mass model uses. Read by concept/materials.js (which embeds an identical copy for the browser; test/concept-coupling.test.js proves they match).",
+    "built": "2026-10-24",
+    "version": "concept materials v1",
+    "contract": "entries are { id, name, class, form, density_kg_m3, E_GPa, tensile_MPa, typical_f1_use, kind, basis, fia: { article, status, note, verified }, sources: [source id] } plus class-specific fields (fibre for laminates, li_wt_pct / be_wt_pct for alloys). A design part may carry params.material = \"<id>\" (concept/parts.js MATERIAL_PARTS says which parts and which forms).",
+    "units": "density kg/m³; E in GPa; tensile (ultimate) in MPa. Laminates: in-plane quasi-isotropic laminate values (see laminate_rule). Cores: out-of-plane (flatwise) stabilised compressive modulus and strength.",
+    "laminate_rule": "Laminate entries (60 % fibre volume, epoxy) start from the maker's unidirectional (UD) composite data (ASTM D3039, normalised to 60 % Vf). Quasi-isotropic [0/±45/90]s values are an ENGINEERING ESTIMATE: E_QI ≈ 3/8·E1 + 5/8·E2 (the classical quasi-isotropic approximation for E1 ≫ E2; E2 from the stated transverse modulus estimate), tensile_QI ≈ 0.33 × UD tensile strength (estimate). Laminate density = 0.6 × fibre density + 0.4 × 1220 kg/m³ (cured epoxy, estimate).",
+    "fia_note": "fia.* records this module's reading of FIA 2026 Section C Article C15 (Materials) and the part-specific material articles, Issue 19 (25/06/2026, in force at Silverstone), text extracted from the fia.com PDF on 2026-10-24. verified=false throughout: the FIA-checklist helper verifies these and owns the legality check (concept/regs.js). Statuses: permitted (listed in C15.2), specific_use (permitted only for named components), forbidden, not_listed (not in the exhaustive C15.2 list, so not permitted outside the PU unless added under C15.1.5/C15.1.6).",
+    "honesty": "Typical / datasheet values, not design allowables, not measured on any F1 part. Every number has a source id or kind 'engineering estimate'."
+  },
+  "sources": {
+    "FIA-C-ISS19": { "title": "2026 Formula 1 Regulations - Section C [Technical], Issue 19, 25 June 2026", "url": "https://www.fia.com/system/files/documents/fia_2026_f1_regulations_-_section_c_technical_-_iss_19_-_2026-06-25.pdf", "accessed": "2026-10-24", "used": "C15.1.4 (metallic specific modulus ≤ 40 GPa/(g/cm³)), C15.1.9, C15.2.1-C15.2.4 (permitted materials), C15.3, C15.4 (exceptions), C15.5 (prescribed and homologated laminates, CC-UHS fibre Ftu > 6250 MPa, aluminium honeycomb core ≥ 6 mm in the survival cell), C3.6.2-C3.6.3 (plank specific gravity, skid materials), C4.3.2 (driver ballast density > 7500 kg/m³), C10.7.1 (rims AZ70/AZ80), C11.2.2 (callipers aluminium), C12.4.2 (halo to FIA 8869-2018), C15.6.1 (PU prohibitions)" },
+    "TORAY-T700S": { "title": "Toray Composite Materials America, TORAYCA T700S data sheet", "url": "https://www.toraycma.com/wp-content/uploads/T700S-Data-Sheet.pdf", "accessed": "2026-10-24 (values via search extract of the sheet)", "used": "fibre 4900 MPa, 230 GPa, 1.80 g/cm³; UD composite 2860 MPa, 134 GPa at 60 % Vf" },
+    "TORAY-T800S": { "title": "Toray Composite Materials America, TORAYCA T800S data sheet", "url": "https://www.toraycma.com/wp-content/uploads/T800S-Data-Sheet.pdf", "accessed": "2026-10-24 (values via search extract of the sheet)", "used": "fibre 5880 MPa, 294 GPa, 1.80 g/cm³; UD composite 3290 MPa, 163 GPa at 60 % Vf" },
+    "TORAY-T1100G": { "title": "Toray Composite Materials America, TORAYCA T1100G data sheet", "url": "https://www.toraycma.com/wp-content/uploads/T1100G-Data-Sheet.pdf", "accessed": "2026-10-24 (values via search extract of the sheet)", "used": "fibre 7000 MPa, 324 GPa, 1.79 g/cm³; UD composite 3460 MPa, 185 GPa at 60 % Vf" },
+    "TORAY-M55J": { "title": "Toray Composite Materials America, TORAYCA M55J data sheet", "url": "https://www.toraycma.com/wp-content/uploads/M55J-Data-Sheet.pdf", "accessed": "2026-10-24 (values via search extract of the sheet)", "used": "fibre 4020 MPa, 540 GPa, 1.91 g/cm³; UD composite 2020 MPa, 338 GPa at 60 % Vf" },
+    "TORAY-M60J": { "title": "Toray Composite Materials America, TORAYCA M60J data sheet", "url": "https://www.toraycma.com/wp-content/uploads/M60J-Data-Sheet.pdf", "accessed": "2026-10-24 (values via search extract of the sheet)", "used": "fibre 3820 MPa, 588 GPa, 1.93 g/cm³; UD composite 2010 MPa, 360 GPa at 60 % Vf" },
+    "HEXCEL-CRIII": { "title": "Hexcel HexWeb CR III aluminium honeycomb data sheet", "url": "https://hexcel.com/wp-content/uploads/2025/12/HexWeb_CRIII_DataSheet.pdf", "accessed": "2026-10-24 (table row read from a search extract; column mapping partly inferred)", "used": "5052 1/8-3.1: 3.1 lb/ft³ (≈ 50 kg/m³), stabilised compressive ≈ 300 psi (2.07 MPa), compressive modulus ≈ 75 ksi (0.52 GPa)" },
+    "HEXCEL-HRH10": { "title": "Hexcel HexWeb HRH-10 (meta-aramid) honeycomb data sheet", "url": "https://hexcel.com/wp-content/uploads/2026/01/HexWeb_HRH10_DataSheet_us.pdf", "accessed": "2026-10-24 (table row read from a search extract)", "used": "1/8-3.0: 3.0 lb/ft³ (≈ 48 kg/m³), stabilised compressive ≈ 325 psi (2.24 MPa), modulus ≈ 20 ksi (0.14 GPa)" },
+    "MATERION-SUPREMEX": { "title": "Materion SupremEX 225XE typical properties", "url": "https://www.totalmateria.com/en-us/material/3311857", "accessed": "2026-10-24 (via search extract of Materion data)", "used": "2.88 g/cm³, 115 GPa, 535-620 MPa by product form (forged plate T6 620 MPa)" },
+    "HANDBOOK-METALS": { "title": "ASM Handbook / ASM Aerospace Specification Metals (MatWeb) typical room-temperature properties", "url": "https://asm.matweb.com/", "accessed": "not opened in this session (connection refused); typical handbook values recalled, verify before quoting", "used": "Ti-6Al-4V annealed, 7075-T6, 17-4PH H900, 18Ni(300) maraging, Inconel 718, AZ80A-T5, WE43-T6, 2195 Al-Li" },
+    "HANDBOOK-COMPOSITES": { "title": "Daniel & Ishai, Engineering Mechanics of Composite Materials (2nd ed., 2006), Table of UD lamina properties", "url": null, "accessed": "not opened in this session; typical values recalled, verify", "used": "Kevlar 49/epoxy and E-glass/epoxy UD lamina moduli and strengths" },
+    "ASTM-B777": { "title": "ASTM B777 Standard Specification for Tungsten Base, High-Density Metal (Class 3, ≈ 95 % W)", "url": "https://www.astm.org/b0777-15r20.html", "accessed": "not opened in this session; class values recalled, verify", "used": "density 17.75-18.35 g/cm³, tensile ≥ 110 ksi (758 MPa)" },
+    "MATERION-ALBEMET": { "title": "Materion AlBeMet AM162 data", "url": "https://www.materion.com/", "accessed": "not opened in this session; typical values recalled, verify", "used": "2.071 g/cm³, 193 GPa, ≈ 400 MPa; ≈ 62 wt % Be" },
+    "TOYOBO-ZYLON": { "title": "Toyobo Zylon (PBO) technical information", "url": "https://www.toyobo-global.com/", "accessed": "not opened in this session; fibre values recalled, verify", "used": "Zylon HM fibre 1.56 g/cm³, 270 GPa, 5.8 GPa" },
+    "DUPONT-KEVLAR": { "title": "DuPont Kevlar 49 technical guide", "url": "https://www.dupont.com/", "accessed": "not opened in this session; fibre values recalled, verify", "used": "Kevlar 49 fibre 1.44 g/cm³, 112 GPa, 3000 MPa" }
+  },
+  "materials": [
+    {
+      "id": "cfrp_t700s", "name": "Carbon/epoxy prepreg, standard modulus (T700S class), quasi-isotropic", "class": "polymer_composite", "form": "laminate",
+      "density_kg_m3": 1568, "E_GPa": 55.6, "tensile_MPa": 944,
+      "fibre": { "name": "Toray T700S (PAN)", "E_GPa": 230, "tensile_MPa": 4900, "density_kg_m3": 1800 },
+      "ud": { "E1_GPa": 134, "E2_GPa_estimate": 8.5, "tensile_MPa": 2860 },
+      "typical_f1_use": "secondary structure, bodywork, tooling-friendly panels", "kind": "datasheet UD values + engineering estimate (QI rule)", "basis": "QI from UD per _meta.laminate_rule",
+      "fia": { "article": "C15.2.3(a)(i), (b)(i)", "status": "permitted", "note": "PAN carbon fibre with nominal tensile modulus ≤ 550 GPa, tensile strength ≤ 7100 MPa, density ≤ 1.92 g/cm³; epoxy matrix", "verified": false },
+      "sources": ["TORAY-T700S", "FIA-C-ISS19"]
+    },
+    {
+      "id": "cfrp_t800s", "name": "Carbon/epoxy prepreg, intermediate modulus (T800S class), quasi-isotropic", "class": "polymer_composite", "form": "laminate",
+      "density_kg_m3": 1568, "E_GPa": 66.4, "tensile_MPa": 1086,
+      "fibre": { "name": "Toray T800S (PAN)", "E_GPa": 294, "tensile_MPa": 5880, "density_kg_m3": 1800 },
+      "ud": { "E1_GPa": 163, "E2_GPa_estimate": 8.5, "tensile_MPa": 3290 },
+      "typical_f1_use": "concept baseline for wings, floor, bodywork, wishbones, gearbox casing", "kind": "datasheet UD values + engineering estimate (QI rule)", "basis": "QI from UD per _meta.laminate_rule",
+      "fia": { "article": "C15.2.3(a)(i), (b)(i)", "status": "permitted", "note": "PAN carbon fibre inside the C15.2.3(b)(i) modulus / strength / density limits", "verified": false },
+      "sources": ["TORAY-T800S", "FIA-C-ISS19"]
+    },
+    {
+      "id": "cfrp_t1100g", "name": "Carbon/epoxy prepreg, ultra-high strength (T1100G class), quasi-isotropic", "class": "polymer_composite", "form": "laminate",
+      "density_kg_m3": 1562, "E_GPa": 74.7, "tensile_MPa": 1142,
+      "fibre": { "name": "Toray T1100G (PAN)", "E_GPa": 324, "tensile_MPa": 7000, "density_kg_m3": 1790 },
+      "ud": { "E1_GPa": 185, "E2_GPa_estimate": 8.5, "tensile_MPa": 3460 },
+      "typical_f1_use": "concept baseline for the survival cell skins and impact structures (C15.5.3 requires CC-UHS plies, fibre Ftu > 6250 MPa)", "kind": "datasheet UD values + engineering estimate (QI rule)", "basis": "QI from UD per _meta.laminate_rule",
+      "fia": { "article": "C15.2.3(b)(i); C15.5.1(f) CC-UHS", "status": "permitted", "note": "7000 MPa fibre: under the 7100 MPa cap ('up to and including Toray T1100') and above the 6250 MPa CC-UHS fibre threshold; CC-UHS is a woven carbon cloth epoxy prepreg (C15.5.1(f)), so the fibre qualifies for the homologated survival-cell laminates in woven-cloth form (this row is a quasi-isotropic laminate: wording only, no verdict change)", "verified": false },
+      "sources": ["TORAY-T1100G", "FIA-C-ISS19"]
+    },
+    {
+      "id": "cfrp_m55j", "name": "Carbon/epoxy prepreg, high modulus (M55J class), quasi-isotropic", "class": "polymer_composite", "form": "laminate",
+      "density_kg_m3": 1634, "E_GPa": 130.5, "tensile_MPa": 667,
+      "fibre": { "name": "Toray M55J (PAN)", "E_GPa": 540, "tensile_MPa": 4020, "density_kg_m3": 1910 },
+      "ud": { "E1_GPa": 338, "E2_GPa_estimate": 6.0, "tensile_MPa": 2020 },
+      "typical_f1_use": "stiffness-critical parts (wing main planes, floor edges, suspension members) where brittleness is acceptable", "kind": "datasheet UD values + engineering estimate (QI rule)", "basis": "QI from UD per _meta.laminate_rule",
+      "fia": { "article": "C15.2.3(b)(i)", "status": "permitted", "note": "540 GPa ≤ 550 GPa nominal modulus cap; 1.91 ≤ 1.92 g/cm³ density cap: just inside both", "verified": false },
+      "sources": ["TORAY-M55J", "FIA-C-ISS19"]
+    },
+    {
+      "id": "cfrp_m60j", "name": "Carbon/epoxy prepreg, ultra-high modulus (M60J class), quasi-isotropic", "class": "polymer_composite", "form": "laminate",
+      "density_kg_m3": 1646, "E_GPa": 138.8, "tensile_MPa": 663,
+      "fibre": { "name": "Toray M60J (PAN)", "E_GPa": 588, "tensile_MPa": 3820, "density_kg_m3": 1930 },
+      "ud": { "E1_GPa": 360, "E2_GPa_estimate": 6.0, "tensile_MPa": 2010 },
+      "typical_f1_use": "none on a legal car (space structures)", "kind": "datasheet UD values + engineering estimate (QI rule)", "basis": "QI from UD per _meta.laminate_rule",
+      "fia": { "article": "C15.2.3(b)(i)", "status": "forbidden", "note": "fibre modulus 588 GPa > 550 GPa and density 1.93 > 1.92 g/cm³: outside the permitted carbon-fibre limits", "verified": false },
+      "sources": ["TORAY-M60J", "FIA-C-ISS19"]
+    },
+    {
+      "id": "afrp_k49", "name": "Aramid/epoxy (Kevlar 49 class), quasi-isotropic", "class": "polymer_composite", "form": "laminate",
+      "density_kg_m3": 1352, "E_GPa": 31.9, "tensile_MPa": 455,
+      "fibre": { "name": "Kevlar 49 (aramid)", "E_GPa": 112, "tensile_MPa": 3000, "density_kg_m3": 1440 },
+      "ud": { "E1_GPa": 76, "E2_GPa_estimate": 5.5, "tensile_MPa": 1380 },
+      "typical_f1_use": "anti-splinter and prescribed laminates (PL-HALO KC60, PL-HEADREST), wheel tethers, fairings", "kind": "handbook UD values + engineering estimate (QI rule)", "basis": "QI from UD per _meta.laminate_rule",
+      "fia": { "article": "C15.2.3(b)(ii); C15.5", "status": "permitted", "note": "aramid fibres are permitted reinforcing; the prescribed laminates PL-HALO [KC60, CC100, KC60] and PL-HEADREST [KC60, KC60] use KC60 aramid cloth only (C15.5.2); KC170 is defined in C15.5.1(c) but used by neither", "verified": false },
+      "sources": ["DUPONT-KEVLAR", "HANDBOOK-COMPOSITES", "FIA-C-ISS19"]
+    },
+    {
+      "id": "pbo_zylon", "name": "PBO/epoxy (Zylon HM class), quasi-isotropic", "class": "polymer_composite", "form": "laminate",
+      "density_kg_m3": 1424, "E_GPa": 63.0, "tensile_MPa": 825,
+      "fibre": { "name": "Zylon HM (PBO)", "E_GPa": 270, "tensile_MPa": 5800, "density_kg_m3": 1560 },
+      "ud": { "E1_GPa_estimate": 160, "E2_GPa_estimate": 5.0, "tensile_MPa_estimate": 2500 },
+      "typical_f1_use": "survival-cell side anti-intrusion panels, anti-splinter layers", "kind": "engineering estimate (UD lamina estimated from fibre values; QI rule)", "basis": "UD E1 ≈ 0.59 × fibre modulus, UD strength ≈ 0.43 × fibre strength (estimates); then _meta.laminate_rule",
+      "fia": { "article": "C15.2.3(b)(iii)", "status": "permitted", "note": "poly(p-phenylene benzobisoxazole) fibres are permitted reinforcing", "verified": false },
+      "sources": ["TOYOBO-ZYLON", "FIA-C-ISS19"]
+    },
+    {
+      "id": "gfrp_e", "name": "E-glass/epoxy, quasi-isotropic", "class": "polymer_composite", "form": "laminate",
+      "density_kg_m3": 2036, "E_GPa": 20.0, "tensile_MPa": 356,
+      "fibre": { "name": "E-glass", "E_GPa": 72, "tensile_MPa": 3400, "density_kg_m3": 2580 },
+      "ud": { "E1_GPa": 39, "E2_GPa_estimate": 8.6, "tensile_MPa": 1080 },
+      "typical_f1_use": "radio-transparent covers, insulation carriers, low-cost spares", "kind": "handbook UD values + engineering estimate (QI rule)", "basis": "QI from UD per _meta.laminate_rule",
+      "fia": { "article": "C15.2.3(b)(vi)", "status": "permitted", "note": "glass fibres limited to types E, S, Q and BF (ISO 2078:2022)", "verified": false },
+      "sources": ["HANDBOOK-COMPOSITES", "FIA-C-ISS19"]
+    },
+    {
+      "id": "core_al_honeycomb", "name": "Aluminium honeycomb core (5052, 1/8 in cell, 3.1 lb/ft³)", "class": "core", "form": "core",
+      "density_kg_m3": 50, "E_GPa": 0.52, "tensile_MPa": 2.07,
+      "typical_f1_use": "survival cell sandwich core (mandatory in the homologated sandwich laminates, ≥ 6 mm), floor and wing sandwich cores", "kind": "datasheet typical", "basis": "E and strength are out-of-plane stabilised compressive values (cores carry shear and compression, not in-plane tension)",
+      "fia": { "article": "C15.2.3(c)(i); C15.5.3(ii)", "status": "permitted", "note": "the core of every homologated survival-cell sandwich laminate must be aluminium honeycomb ≥ 6 mm thick", "verified": false },
+      "sources": ["HEXCEL-CRIII", "FIA-C-ISS19"]
+    },
+    {
+      "id": "core_nomex", "name": "Meta-aramid (Nomex) honeycomb core (1/8 in cell, 3.0 lb/ft³)", "class": "core", "form": "core",
+      "density_kg_m3": 48, "E_GPa": 0.14, "tensile_MPa": 2.24,
+      "typical_f1_use": "wing, bodywork and floor sandwich cores", "kind": "datasheet typical", "basis": "E and strength are out-of-plane stabilised compressive values",
+      "fia": { "article": "C15.2.3(c)(ii)", "status": "permitted", "note": "meta-aramid honeycomb is a permitted core (not in the survival cell's homologated sandwich laminates, which need aluminium)", "verified": false },
+      "sources": ["HEXCEL-HRH10", "FIA-C-ISS19"]
+    },
+    {
+      "id": "ti64", "name": "Titanium alloy Ti-6Al-4V (Grade 5), annealed", "class": "metal", "form": "metal",
+      "density_kg_m3": 4430, "E_GPa": 113.8, "tensile_MPa": 950,
+      "typical_f1_use": "uprights, gearbox inserts, fasteners, halo (FIA 8869-2018 supplier part), skids (C3.6.3)", "kind": "handbook typical", "basis": "annealed bar typical values",
+      "fia": { "article": "C15.2.1(e)(iii); C15.2.2(d); C15.3.3(ii); C3.6.3(d)(iii)", "status": "permitted", "note": "specific modulus 25.7 GPa/(g/cm³) ≤ 40 (C15.1.4)", "verified": false },
+      "sources": ["HANDBOOK-METALS", "FIA-C-ISS19"]
+    },
+    {
+      "id": "al_7075_t6", "name": "Aluminium alloy 7075-T6", "class": "metal", "form": "metal",
+      "density_kg_m3": 2810, "E_GPa": 71.7, "tensile_MPa": 572,
+      "typical_f1_use": "uprights (C15.3.3 lists UNS A97075), brackets, brake callipers (aluminium only, C11.2.2)", "kind": "handbook typical", "basis": "T6 sheet / plate typical values",
+      "fia": { "article": "C15.2.1(b)(ii); C15.3.3(i); C11.2.2", "status": "permitted", "note": "wrought 7xxx series with < 1 % Li; specific modulus 25.5", "verified": false },
+      "sources": ["HANDBOOK-METALS", "FIA-C-ISS19"]
+    },
+    {
+      "id": "al_li_2099", "name": "Aluminium-lithium alloy 2099 (T83 extrusion)", "class": "metal", "form": "metal",
+      "density_kg_m3": 2630, "E_GPa": 78, "tensile_MPa": 560, "li_wt_pct": [1.6, 2.0],
+      "typical_f1_use": "stiff light brackets and housings", "kind": "handbook typical (estimate where the temper varies)", "basis": "T83 extrusion typical values",
+      "fia": { "article": "C15.2.1(b)(v)", "status": "permitted", "note": "explicitly listed (UNS A92099) despite > 1 % Li; specific modulus 29.7", "verified": false },
+      "sources": ["HANDBOOK-METALS", "FIA-C-ISS19"]
+    },
+    {
+      "id": "al_li_2195", "name": "Aluminium-lithium alloy 2195", "class": "metal", "form": "metal",
+      "density_kg_m3": 2710, "E_GPa": 76, "tensile_MPa": 590, "li_wt_pct": [0.8, 1.2],
+      "typical_f1_use": "none on a legal car (launch-vehicle tanks)", "kind": "handbook typical", "basis": "T8 plate typical values",
+      "fia": { "article": "C15.2.1(b)(ii)-(v); C15.1.9", "status": "not_listed", "note": "not named in C15.2.1(b)(iii)-(v), and its Li range 0.8-1.2 % is not wholly below the 1 % of (b)(ii); C15.1.9 requires the whole declared range inside the limit", "verified": false },
+      "sources": ["HANDBOOK-METALS", "FIA-C-ISS19"]
+    },
+    {
+      "id": "mg_az80a", "name": "Magnesium alloy AZ80A-T5", "class": "metal", "form": "metal",
+      "density_kg_m3": 1800, "E_GPa": 45, "tensile_MPa": 380,
+      "typical_f1_use": "wheel rims (C10.7.1: AZ70 or AZ80 only), housings outside the PU", "kind": "handbook typical", "basis": "T5 extrusion / forging typical values",
+      "fia": { "article": "C15.2.1(c)(iv); C10.7.1; C15.6.1(a)", "status": "permitted", "note": "permitted outside the PU perimeter; magnesium alloys are prohibited in the PU (C15.6.1(a)); the mandatory rim material", "verified": false },
+      "sources": ["HANDBOOK-METALS", "FIA-C-ISS19"]
+    },
+    {
+      "id": "mg_we43", "name": "Magnesium alloy WE43C (UNS M18434), T6", "class": "metal", "form": "metal", "grade": "WE43C", "uns": "M18434",
+      "density_kg_m3": 1840, "E_GPa": 44, "tensile_MPa": 250,
+      "typical_f1_use": "gearbox and ancillary housings outside the PU", "kind": "handbook typical", "basis": "T6 casting / wrought typical values",
+      "fia": { "article": "C15.2.1(c)", "status": "permitted", "note": "WE43C (UNS M18434, ASTM B107-13) is listed in C15.2.1(c) (with WE43B, M18432); WE43A (M18430) is not; property values are WE43 T6 typical; not in the PU (C15.6.1(a))", "verified": false },
+      "sources": ["HANDBOOK-METALS", "FIA-C-ISS19"]
+    },
+    {
+      "id": "steel_17_4ph", "name": "Stainless steel 17-4PH (H900)", "class": "metal", "form": "metal",
+      "density_kg_m3": 7780, "E_GPa": 196.5, "tensile_MPa": 1310,
+      "typical_f1_use": "skids (C3.6.3(d)(iv), ≤ 38 HRC when new), fittings", "kind": "handbook typical", "basis": "H900 condition typical values (skids must be softer than H900: ≤ 38 HRC)",
+      "fia": { "article": "C15.2.1(a); C15.2.2(e); C3.6.3(d)(iv)", "status": "permitted", "note": "iron alloys: any; specific modulus 25.3", "verified": false },
+      "sources": ["HANDBOOK-METALS", "FIA-C-ISS19"]
+    },
+    {
+      "id": "steel_maraging_300", "name": "Maraging steel 18Ni(300), aged", "class": "metal", "form": "metal",
+      "density_kg_m3": 8000, "E_GPa": 190, "tensile_MPa": 2050,
+      "typical_f1_use": "gears, shafts, highly loaded pins; also usable as ballast", "kind": "handbook typical", "basis": "aged condition typical values",
+      "fia": { "article": "C15.2.1(a)", "status": "permitted", "note": "iron alloys: any; density 8000 kg/m³ > 7500 satisfies C4.3.2(d) for driver ballast", "verified": false },
+      "sources": ["HANDBOOK-METALS", "FIA-C-ISS19"]
+    },
+    {
+      "id": "inconel_718", "name": "Nickel superalloy Inconel 718 (aged)", "class": "metal", "form": "metal",
+      "density_kg_m3": 8190, "E_GPa": 200, "tensile_MPa": 1375,
+      "typical_f1_use": "exhaust and turbo hardware (PU), high-temperature fasteners", "kind": "handbook typical", "basis": "aged bar typical values",
+      "fia": { "article": "C15.2.1(d)(ii); C15.2.2(g)", "status": "permitted", "note": "UNS N07718 listed", "verified": false },
+      "sources": ["HANDBOOK-METALS", "FIA-C-ISS19"]
+    },
+    {
+      "id": "tungsten_ha", "name": "Tungsten heavy alloy (≈ 95 % W, W-Ni-Fe, ASTM B777 class 3)", "class": "metal", "form": "metal",
+      "density_kg_m3": 18000, "E_GPa": 360, "tensile_MPa": 758,
+      "typical_f1_use": "ballast (free and driver ballast): the densest practical choice", "kind": "standard minimum / typical", "basis": "density mid of the B777 class 3 band 17.75-18.35 g/cm³; tensile = the class minimum; E typical (estimate)",
+      "fia": { "article": "C15.2.1(g); C4.3.2(d); C15.6.1(g)", "status": "permitted", "note": "tungsten alloys: any, outside the PU; excluded from the PU as a tungsten-base alloy (C15.6.1(g)); at 18,000 kg/m³ it is under the 18,400 kg/m³ PU density limit, so C15.6.1(l) does not apply; > 7500 kg/m³ as C4.3.2(d) wants for driver ballast", "verified": false },
+      "sources": ["ASTM-B777", "FIA-C-ISS19"]
+    },
+    {
+      "id": "mmc_supremex_225xe", "name": "Particulate-reinforced aluminium MMC (SupremEX 225XE)", "class": "metal", "form": "metal",
+      "density_kg_m3": 2880, "E_GPa": 115, "tensile_MPa": 610,
+      "typical_f1_use": "uprights (C15.3.3(iii)), stiff brackets and housings", "kind": "maker typical", "basis": "Materion typical values (tensile 535-620 MPa by product form; 610 used)",
+      "fia": { "article": "C15.2.1(h)(i); C15.3.3(iii); C15.3.4", "status": "permitted", "note": "specific modulus 39.9 GPa/(g/cm³): just under the C15.1.4 cap of 40; not allowed in the Primary Roll Structure (C15.3.4)", "verified": false },
+      "sources": ["MATERION-SUPREMEX", "FIA-C-ISS19"]
+    },
+    {
+      "id": "albemet_am162", "name": "Aluminium-beryllium alloy (AlBeMet AM162)", "class": "metal", "form": "metal",
+      "density_kg_m3": 2071, "E_GPa": 193, "tensile_MPa": 400, "be_wt_pct": 62,
+      "typical_f1_use": "none on a legal car (banned in F1 since the early 2000s; aerospace optics)", "kind": "maker typical (recalled)", "basis": "Materion typical values",
+      "fia": { "article": "C15.1.4; C15.2.1", "status": "forbidden", "note": "specific modulus 93 GPa/(g/cm³) > 40 (C15.1.4), and not in the C15.2.1 list", "verified": false },
+      "sources": ["MATERION-ALBEMET", "FIA-C-ISS19"]
+    },
+    {
+      "id": "carbon_carbon", "name": "Carbon-carbon composite (brake / clutch friction grade)", "class": "carbon_carbon", "form": "friction",
+      "density_kg_m3": 1800, "E_GPa": 30, "tensile_MPa": 100,
+      "typical_f1_use": "brake discs and pads, clutch plates", "kind": "engineering estimate", "basis": "order-of-magnitude values for a friction-grade C/C; the concept never designs with it",
+      "fia": { "article": "C15.4(c)", "status": "specific_use", "note": "carbon-carbon may be used for friction materials only", "verified": false },
+      "sources": ["FIA-C-ISS19"]
+    }
+  ]
+}

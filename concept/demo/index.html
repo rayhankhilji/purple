@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PURPLE · demo</title>
+<meta name="color-scheme" content="dark">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+<link rel="icon" href="data:,">
+<!-- the research lab's tokens / type roles / badges (docs/DESIGN_SYSTEM.md), the concept lab's leaderboard + chart styles, then this page -->
+<link rel="stylesheet" href="../../lab/lab.css">
+<link rel="stylesheet" href="../lab/concept-lab.css">
+<link rel="stylesheet" href="demo.css">
+</head>
+<body class="demo-page">
+<header class="dm-top">
+  <div class="dm-brand">
+    <span class="brand">PURPLE</span>
+    <span class="dm-tag">An F1 engineer that learns from physics, through Mubit.</span>
+  </div>
+  <div class="dm-lap" id="dmLap" aria-live="polite"></div>
+</header>
+
+<section class="dm-counters" id="dmCounters" aria-label="Mubit counters"></section>
+
+<main class="dm-main">
+  <section class="panel board dm-board" aria-label="Silverstone qualifying 2026 with the concept car">
+    <div class="ph"><span class="label">Silverstone qualifying · 2026</span><span class="src" id="dmBoardMeta"></span></div>
+    <div class="dm-rows" id="dmBoard"></div>
+    <div class="pf src" id="dmBoardSrc"></div>
+  </section>
+
+  <section class="dm-centre">
+    <section class="panel dm-hero" aria-label="the concept car">
+      <div class="dm-hero-top"><div class="dm-hero-tl" id="dmMode"></div><div class="dm-hero-tr" id="dmCtl"></div></div>
+      <div class="dm-view-wrap"><div class="dm-view" id="dmView"></div><div class="dm-hero-bl" id="dmProgress"></div></div>
+    </section>
+    <section class="panel dm-chart" aria-label="best lap per decision">
+      <div class="ph"><span class="label">Best lap per decision</span><span class="src" id="dmChartMeta"></span></div>
+      <div class="svgwrap dm-svg" id="dmChart"></div>
+    </section>
+  </section>
+
+  <section class="panel dm-feed" aria-label="Mubit feed">
+    <div class="ph"><span class="label dm-feed-t">Mubit feed</span><span class="src">ideas from Claude Haiku 4.5 through Mubit · verdict: physics</span></div>
+    <div class="dm-cards" id="dmCards" aria-live="polite"></div>
+  </section>
+</main>
+
+<footer class="dm-foot src" id="dmFoot"></footer>
+
+<!-- the same scripts the concept lab loads for the bench, the design and the 3D car (ARCHITECTURE §7.3 order) -->
+<script src="../../vendor/three.min.js"></script>
+<script src="../../js/util.js"></script>
+<script src="../../js/data/silverstone.js"></script>
+<script src="../../js/data/racepace2026.js"></script>
+<script src="../../js/data/season2026.js"></script>
+<script src="../sim/track.js"></script>
+<script src="../sim/line-silverstone.js"></script>
+<script src="../sim/lapsim.js"></script>
+<script src="../sim/fitted.js"></script>
+<script src="../sim/fit.js"></script>
+<script src="../sim/index.js"></script>
+<script src="../regs.js"></script>
+<script src="../materials.js"></script>
+<script src="../parts.js"></script>
+<script src="../aeromap.js"></script>
+<script src="../design.js"></script>
+<script src="../race/payload.js"></script>
+<script src="../view/view3d.js" onerror="window.__conceptViewMissing = true"></script>
+<!-- the demo: replays a recorded live Mubit run, or (after the passcode) runs engine v2 live with record_good; never calls Mubit itself -->
+<script src="demo.js"></script>
+</body>
+</html>

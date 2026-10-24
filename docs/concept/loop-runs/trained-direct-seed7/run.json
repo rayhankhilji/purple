@@ -1,0 +1,965 @@
+{
+  "run_id": "eng-corr-s7-01m5qc8veqf4skm8g41hv66neg",
+  "mode": "engineer",
+  "llm": "live",
+  "trained": true,
+  "status": "done",
+  "stop_reason": "physics-lap budget 250",
+  "started_at": "2026-10-24T16:35:29.368Z",
+  "finished_at": "2026-10-24T16:38:38.837Z",
+  "error": null,
+  "dir": "run-seed7",
+  "opts": {
+    "llm": "live",
+    "mock": null,
+    "trained": true,
+    "team": "redbull",
+    "seed": 7,
+    "corrections": true,
+    "budget": 250,
+    "max_calls": 250,
+    "max_decisions": 250,
+    "patience": 3,
+    "stop_after": null,
+    "variants": 1,
+    "confirm": 1,
+    "explore": 0,
+    "segments": true,
+    "workers": 2
+  },
+  "final": {
+    "summary": {
+      "run_id": "eng-corr-s7-01m5qc8veqf4skm8g41hv66neg",
+      "stopped": "physics-lap budget 250",
+      "calls": 71,
+      "decisions": 71,
+      "trained": true,
+      "baseline_lap_s": 88.745,
+      "peak_lap_s": 88.349,
+      "d_baseline_s": -0.396,
+      "gap_to_pole_s": 0.238,
+      "stats": {
+        "decisions": 71,
+        "calls": 71,
+        "by": {
+          "mubit": 71,
+          "mock": 0,
+          "engine": 0
+        },
+        "kept": 15,
+        "kept_by": {
+          "mubit": 15,
+          "mock": 0,
+          "engine": 0
+        },
+        "gain_s": {
+          "mubit": 0.408,
+          "mock": 0,
+          "engine": 0
+        },
+        "directed_gain_share": 1,
+        "cars_measured": 251,
+        "variants_generated": 71,
+        "variants_screened": 71,
+        "screen_ms": 194,
+        "variants_per_s": 366,
+        "physics_laps": 251,
+        "physics_ms": 7073,
+        "laps_per_s": 35.5,
+        "reverts": 6,
+        "forks": 8,
+        "proposal_illegal": 1,
+        "projected": 1,
+        "expected_hit": 1,
+        "expected_n": 70,
+        "branches": 15,
+        "llm_ms": 175666
+      },
+      "request_ids": [
+        "mreq_01a16ec475527a809e3501d50f2ca51f",
+        "mreq_01a16ec48c3073e0a82e223d3bc8b1c9",
+        "mreq_01a16ec496977670b16b553edd271d8a",
+        "mreq_01a16ec4a1e272708154f2eab4efe26c",
+        "mreq_01a16ec4ac847f53abbf28f2334aa480",
+        "mreq_01a16ec4b6f97c31a1fbee1dee7a78d6",
+        "mreq_01a16ec4c21d75c19ec6fe2136661f79",
+        "mreq_01a16ec4cd0977e2a2326cfada925372",
+        "mreq_01a16ec4d7eb7ef08b323cba7b10af6d",
+        "mreq_01a16ec4e26774d3b790ed3409ab5d7a",
+        "mreq_01a16ec4ed9670a1ad614c63c6f0a054",
+        "mreq_01a16ec4f7767e809ce367901791bb7c",
+        "mreq_01a16ec5016e72f188d290baf22c2740",
+        "mreq_01a16ec50bd1761299834da83e08c5d6",
+        "mreq_01a16ec515937f139adbbbe17dbd6dc8",
+        "mreq_01a16ec51f8678b3a37e89ba1a42ee20",
+        "mreq_01a16ec529677ab18b377e2a8f4c53c1",
+        "mreq_01a16ec5330476d3aac293674f102d3c",
+        "mreq_01a16ec53d4b75f3a0ee426f0cc6923c",
+        "mreq_01a16ec547cc72b3b758b8ae3ebc6a69",
+        "mreq_01a16ec5515674429fe95da452187cb7",
+        "mreq_01a16ec55aae7be298dad7615560fe9b",
+        "mreq_01a16ec5652f7492be5af1bdc9d73d09",
+        "mreq_01a16ec56ee67bf0a104acb4afd1e593",
+        "mreq_01a16ec579577ad396af1e48c5ba2fab",
+        "mreq_01a16ec583837173a4aa85eccd7d482a",
+        "mreq_01a16ec58d6c79a2b23ff6b423aeb769",
+        "mreq_01a16ec5978e7b72b19ce72c1abeb042",
+        "mreq_01a16ec5a1a37b23b933d0d8e62afecf",
+        "mreq_01a16ec5abe47b138752c85fc493c51d",
+        "mreq_01a16ec5b53279f29f08e1f267a9e83e",
+        "mreq_01a16ec5bed875b18b48a7585bb045d1",
+        "mreq_01a16ec5c8807ea083acc85c7fb96d87",
+        "mreq_01a16ec5d20071f2b2173645ddc918bb",
+        "mreq_01a16ec5dca172a39ebf98e0896608bb",
+        "mreq_01a16ec5e69c7622b08afccc12ed506c",
+        "mreq_01a16ec5f2fc73c2be047fa79f87cefb",
+        "mreq_01a16ec5fc6078639ced302aef25d84e",
+        "mreq_01a16ec606257c91a7e9021816df6d58",
+        "mreq_01a16ec6101777909da0bf1833c7a866",
+        "mreq_01a16ec61a3574a282af9ab5a81e5fc7",
+        "mreq_01a16ec624617b41a950571d89ed3ea7",
+        "mreq_01a16ec62fbf7e3284646ba4007259e3",
+        "mreq_01a16ec63a6676d3b33679b9de435e50",
+        "mreq_01a16ec644aa7cd19ca6cbd143d33961",
+        "mreq_01a16ec64ec17c71b41dd7db7e753ac6",
+        "mreq_01a16ec6581177e1bb3f3d58bd3fbd7a",
+        "mreq_01a16ec661de74e18587fe023cebf6fb",
+        "mreq_01a16ec66c1379308fad9eddc5bc9f8e",
+        "mreq_01a16ec676bb7f51a67952ed040cecf1",
+        "mreq_01a16ec6805979b0a34b7cb3f8380abb",
+        "mreq_01a16ec68b817b90878af3d61cb79383",
+        "mreq_01a16ec695187783bbf59c0b6e9774b8",
+        "mreq_01a16ec69f087f02b6fa662bd4bb5e18",
+        "mreq_01a16ec6a875782399dc1b34ec1d4547",
+        "mreq_01a16ec6b1bd75309a0e7841426eab4a",
+        "mreq_01a16ec6bb797fb0a04e23f0256ce6c0",
+        "mreq_01a16ec6c4f97e6198b3f7edff8358bf",
+        "mreq_01a16ec6cee67270b38b8aedcf218a17",
+        "mreq_01a16ec6d8ee749394a8637e3c627e9c",
+        "mreq_01a16ec6e2b378a09ce3560cae011aa1",
+        "mreq_01a16ec6ed797ed0b07fe0aa1308f6e9",
+        "mreq_01a16ec6f7a776338e9193e9473081ea",
+        "mreq_01a16ec702a77030aaa332d8eaa59e9c",
+        "mreq_01a16ec70d017910b9f929927b87671c",
+        "mreq_01a16ec7172a73a1bc92ea5648205491",
+        "mreq_01a16ec720ac7162a80a4798c648e64b",
+        "mreq_01a16ec72a957c00ac0922d346381178",
+        "mreq_01a16ec734677000b53bde15688456e8",
+        "mreq_01a16ec73e237a209d37de2f44dc290f",
+        "mreq_01a16ec7484c71f19bff6a3148ce6153"
+      ],
+      "label": "ENGINE v2 · every lap a physics lap sim lap (quasi-steady-state point mass · Silverstone · calibrated to 2026 British GP qualifying); surrogate = ranking only",
+      "kept_rule": "kept = legal (FIA 2026 Section C checks + homologated PU + materials) && physics lap < head lap − 0.1 ms; the model's output has no verdict field"
+    },
+    "calls": 71,
+    "stop_reason": "physics-lap budget 250",
+    "best_params": {
+      "layout": {
+        "wheelbase_mm": 3375
+      },
+      "survival_cell": {
+        "front_axle_offset_mm": 75,
+        "cockpit_len_mm": 1930,
+        "bulkhead_gap_mm": 380
+      },
+      "nose": {
+        "concept": 0
+      },
+      "halo": {},
+      "rear_impact": {},
+      "front_wing": {
+        "span_mm": 1300,
+        "chord_mm": 580,
+        "aoa_deg": 25,
+        "elements": 3,
+        "sm_delta_deg": 5,
+        "endplate": 0
+      },
+      "rear_wing": {
+        "span_mm": 1100,
+        "chord_mm": 430,
+        "aoa_deg": 19,
+        "elements": 2,
+        "endplate_top_mm": 880,
+        "sm_delta_deg": 15,
+        "style": 1
+      },
+      "floor": {
+        "width_mm": 1540,
+        "throat_mm": 60,
+        "ride_height_mm": 35,
+        "edge": 0
+      },
+      "diffuser": {
+        "expansion_deg": 17
+      },
+      "sidepods": {
+        "inlet_cm2": 650,
+        "undercut_mm": 140,
+        "concept": 0
+      },
+      "engine_cover": {
+        "style": 0
+      },
+      "pu_ice": {},
+      "pu_turbo": {},
+      "pu_mguk": {},
+      "pu_es": {},
+      "pu_electronics": {},
+      "gearbox": {
+        "top_kmh": 380,
+        "step": 1.144
+      },
+      "front_suspension": {},
+      "rear_suspension": {},
+      "suspension": {
+        "front": 0
+      },
+      "setup": {
+        "roll_front": 45,
+        "heave_n_mm": 3400,
+        "brake_bias": 57
+      },
+      "wheels_front": {},
+      "wheels_rear": {},
+      "brakes_front": {},
+      "brakes_rear": {},
+      "cooling": {
+        "layout": 0
+      },
+      "fuel_system": {},
+      "hydraulics": {},
+      "electronics": {},
+      "misc": {},
+      "driver": {},
+      "driver_ballast": {},
+      "seat_safety": {},
+      "ballast": {
+        "x_frac": 0.05,
+        "extra_kg": 0
+      }
+    },
+    "tree": [
+      {
+        "id": "n0",
+        "parent": null,
+        "decision": null,
+        "branch": 0,
+        "kind": "root",
+        "lap_s": 88.745,
+        "legal": true,
+        "by": "baseline"
+      },
+      {
+        "id": "n3",
+        "parent": "n0",
+        "decision": 1,
+        "branch": 1,
+        "kind": "result",
+        "lap_s": 88.671,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n6",
+        "parent": "n3",
+        "decision": 2,
+        "branch": 1,
+        "kind": "result",
+        "lap_s": 88.876,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n10",
+        "parent": "n3",
+        "decision": 3,
+        "branch": 1,
+        "kind": "result",
+        "lap_s": 88.631,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n13",
+        "parent": "n10",
+        "decision": 4,
+        "branch": 1,
+        "kind": "result",
+        "lap_s": 88.633,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n15",
+        "parent": "n10",
+        "decision": 5,
+        "branch": 1,
+        "kind": "result",
+        "lap_s": 88.626,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n21",
+        "parent": "n15",
+        "decision": 6,
+        "branch": 1,
+        "kind": "result",
+        "lap_s": 88.628,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n24",
+        "parent": "n15",
+        "decision": 7,
+        "branch": 1,
+        "kind": "result",
+        "lap_s": 88.604,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n26",
+        "parent": "n24",
+        "decision": 8,
+        "branch": 1,
+        "kind": "result",
+        "lap_s": 88.565,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n30",
+        "parent": "n26",
+        "decision": 9,
+        "branch": 1,
+        "kind": "result",
+        "lap_s": 88.533,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n33",
+        "parent": "n30",
+        "decision": 10,
+        "branch": 1,
+        "kind": "result",
+        "lap_s": 88.544,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n36",
+        "parent": "n30",
+        "decision": 11,
+        "branch": 1,
+        "kind": "result",
+        "lap_s": 88.534,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n41",
+        "parent": "n30",
+        "decision": 12,
+        "branch": 1,
+        "kind": "result",
+        "lap_s": 88.556,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n43",
+        "parent": "n36",
+        "decision": 13,
+        "branch": 2,
+        "kind": "result",
+        "lap_s": 88.525,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n49",
+        "parent": "n43",
+        "decision": 14,
+        "branch": 2,
+        "kind": "result",
+        "lap_s": 88.53,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n52",
+        "parent": "n43",
+        "decision": 15,
+        "branch": 2,
+        "kind": "result",
+        "lap_s": 88.527,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n56",
+        "parent": "n43",
+        "decision": 16,
+        "branch": 2,
+        "kind": "result",
+        "lap_s": 88.481,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n61",
+        "parent": "n56",
+        "decision": 17,
+        "branch": 2,
+        "kind": "result",
+        "lap_s": 88.463,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n62",
+        "parent": "n61",
+        "decision": 18,
+        "branch": 2,
+        "kind": "result",
+        "lap_s": 88.607,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n67",
+        "parent": "n61",
+        "decision": 19,
+        "branch": 2,
+        "kind": "result",
+        "lap_s": 88.49,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n70",
+        "parent": "n61",
+        "decision": 20,
+        "branch": 2,
+        "kind": "result",
+        "lap_s": 88.561,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n73",
+        "parent": "n67",
+        "decision": 21,
+        "branch": 3,
+        "kind": "result",
+        "lap_s": 88.501,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n75",
+        "parent": "n67",
+        "decision": 22,
+        "branch": 3,
+        "kind": "result",
+        "lap_s": 88.625,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n79",
+        "parent": "n67",
+        "decision": 23,
+        "branch": 3,
+        "kind": "result",
+        "lap_s": 88.501,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n81",
+        "parent": "n61",
+        "decision": 24,
+        "branch": 4,
+        "kind": "result",
+        "lap_s": 88.649,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n86",
+        "parent": "n61",
+        "decision": 25,
+        "branch": 4,
+        "kind": "result",
+        "lap_s": 88.49,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n89",
+        "parent": "n61",
+        "decision": 26,
+        "branch": 4,
+        "kind": "result",
+        "lap_s": 88.463,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n93",
+        "parent": "n89",
+        "decision": 27,
+        "branch": 5,
+        "kind": "result",
+        "lap_s": 88.464,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n96",
+        "parent": "n89",
+        "decision": 28,
+        "branch": 5,
+        "kind": "result",
+        "lap_s": 88.488,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n100",
+        "parent": "n89",
+        "decision": 29,
+        "branch": 5,
+        "kind": "result",
+        "lap_s": 88.515,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n103",
+        "parent": "n61",
+        "decision": 30,
+        "branch": 6,
+        "kind": "result",
+        "lap_s": 88.49,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n105",
+        "parent": "n61",
+        "decision": 31,
+        "branch": 6,
+        "kind": "result",
+        "lap_s": 88.493,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n110",
+        "parent": "n61",
+        "decision": 32,
+        "branch": 6,
+        "kind": "result",
+        "lap_s": 88.501,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n114",
+        "parent": "n93",
+        "decision": 33,
+        "branch": 7,
+        "kind": "result",
+        "lap_s": 88.477,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n117",
+        "parent": "n93",
+        "decision": 34,
+        "branch": 7,
+        "kind": "result",
+        "lap_s": 88.516,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n121",
+        "parent": "n93",
+        "decision": 35,
+        "branch": 7,
+        "kind": "result",
+        "lap_s": 88.463,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n124",
+        "parent": "n121",
+        "decision": 36,
+        "branch": 7,
+        "kind": "result",
+        "lap_s": 88.471,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n128",
+        "parent": "n121",
+        "decision": 37,
+        "branch": 7,
+        "kind": "result",
+        "lap_s": 88.488,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n132",
+        "parent": "n121",
+        "decision": 38,
+        "branch": 7,
+        "kind": "result",
+        "lap_s": 88.515,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n135",
+        "parent": "n61",
+        "decision": 39,
+        "branch": 8,
+        "kind": "result",
+        "lap_s": 88.49,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n137",
+        "parent": "n61",
+        "decision": 40,
+        "branch": 8,
+        "kind": "result",
+        "lap_s": 88.562,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n142",
+        "parent": "n61",
+        "decision": 41,
+        "branch": 8,
+        "kind": "result",
+        "lap_s": 88.456,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n147",
+        "parent": "n142",
+        "decision": 42,
+        "branch": 8,
+        "kind": "result",
+        "lap_s": 88.453,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n150",
+        "parent": "n147",
+        "decision": 43,
+        "branch": 8,
+        "kind": "result",
+        "lap_s": 88.502,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n154",
+        "parent": "n147",
+        "decision": 44,
+        "branch": 8,
+        "kind": "result",
+        "lap_s": 88.463,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n157",
+        "parent": "n147",
+        "decision": 45,
+        "branch": 8,
+        "kind": "result",
+        "lap_s": 88.466,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n161",
+        "parent": "n121",
+        "decision": 46,
+        "branch": 9,
+        "kind": "result",
+        "lap_s": 88.476,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n164",
+        "parent": "n121",
+        "decision": 47,
+        "branch": 9,
+        "kind": "result",
+        "lap_s": 88.559,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n167",
+        "parent": "n121",
+        "decision": 48,
+        "branch": 9,
+        "kind": "result",
+        "lap_s": 88.453,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n169",
+        "parent": "n167",
+        "decision": 49,
+        "branch": 9,
+        "kind": "result",
+        "lap_s": 88.549,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n174",
+        "parent": "n167",
+        "decision": 50,
+        "branch": 9,
+        "kind": "result",
+        "lap_s": 88.502,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n178",
+        "parent": "n167",
+        "decision": 51,
+        "branch": 9,
+        "kind": "result",
+        "lap_s": 88.453,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n181",
+        "parent": "n147",
+        "decision": 52,
+        "branch": 10,
+        "kind": "result",
+        "lap_s": 88.497,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n185",
+        "parent": "n147",
+        "decision": 53,
+        "branch": 10,
+        "kind": "result",
+        "lap_s": 88.481,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n188",
+        "parent": "n147",
+        "decision": 54,
+        "branch": 10,
+        "kind": "result",
+        "lap_s": 88.502,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n192",
+        "parent": "n167",
+        "decision": 55,
+        "branch": 11,
+        "kind": "result",
+        "lap_s": 88.453,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n195",
+        "parent": "n167",
+        "decision": 56,
+        "branch": 11,
+        "kind": "result",
+        "lap_s": 88.401,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n199",
+        "parent": "n195",
+        "decision": 57,
+        "branch": 11,
+        "kind": "result",
+        "lap_s": 88.41,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n203",
+        "parent": "n195",
+        "decision": 58,
+        "branch": 11,
+        "kind": "result",
+        "lap_s": 88.41,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n206",
+        "parent": "n195",
+        "decision": 59,
+        "branch": 11,
+        "kind": "result",
+        "lap_s": 88.349,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n210",
+        "parent": "n206",
+        "decision": 60,
+        "branch": 11,
+        "kind": "result",
+        "lap_s": 88.349,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n214",
+        "parent": "n206",
+        "decision": 61,
+        "branch": 11,
+        "kind": "result",
+        "lap_s": 88.354,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n218",
+        "parent": "n206",
+        "decision": 62,
+        "branch": 11,
+        "kind": "result",
+        "lap_s": 88.359,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n222",
+        "parent": "n210",
+        "decision": 63,
+        "branch": 12,
+        "kind": "result",
+        "lap_s": 88.366,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n225",
+        "parent": "n210",
+        "decision": 64,
+        "branch": 12,
+        "kind": "result",
+        "lap_s": 88.359,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n229",
+        "parent": "n210",
+        "decision": 65,
+        "branch": 12,
+        "kind": "result",
+        "lap_s": 88.366,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n233",
+        "parent": "n206",
+        "decision": 66,
+        "branch": 13,
+        "kind": "result",
+        "lap_s": 88.349,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n237",
+        "parent": "n206",
+        "decision": 67,
+        "branch": 13,
+        "kind": "result",
+        "lap_s": 88.351,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n238",
+        "parent": "n206",
+        "decision": 68,
+        "branch": 13,
+        "kind": "result",
+        "lap_s": 88.441,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n242",
+        "parent": "n233",
+        "decision": 69,
+        "branch": 14,
+        "kind": "result",
+        "lap_s": 88.404,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n247",
+        "parent": "n233",
+        "decision": 70,
+        "branch": 14,
+        "kind": "result",
+        "lap_s": 88.522,
+        "legal": true,
+        "by": "mubit"
+      },
+      {
+        "id": "n251",
+        "parent": "n233",
+        "decision": 71,
+        "branch": 14,
+        "kind": "result",
+        "lap_s": 88.394,
+        "legal": true,
+        "by": "mubit"
+      }
+    ]
+  }
+}

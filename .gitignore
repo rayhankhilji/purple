@@ -1,0 +1,17 @@
+.DS_Store
+Thumbs.db
+node_modules/
+*.log
+# PURPLE
+server/.env
+data/*
+!data/.gitkeep
+!data/exam.json
+data-mock/
+.env
+.env.*
+server/.env.*
+
+# Vercel (server/vercel.js): build output and the local project link
+/public/
+.vercel/

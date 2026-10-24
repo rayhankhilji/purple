@@ -1,0 +1,109 @@
+/* PURPLE concept lab - the Exam view (exam-panel.js). Tokens from lab/lab.css. Dark only.
+   Desktop: how-to + scoreboard on the left (sticky), the 30 questions on the right; the view scrolls on its own.
+   Below 980 px one column; at phone width a 16 px gutter and no horizontal scroll. */
+body.exam-on .eng2, body.exam-on main.clab, body.exam-on #genBadge, body.exam-on .noai-only, body.exam-on footer.honest { display: none !important; }
+body:not(.exam-on) .exam { display: none; }
+
+.exam { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; padding: 12px 16px 10px; }
+.ex-head { flex: none; display: flex; align-items: flex-end; justify-content: space-between; gap: 8px 20px; flex-wrap: wrap; margin-bottom: 12px; }
+.ex-title { min-width: 0; flex: 1 1 520px; }
+.ex-kicker { color: var(--purple); }
+.ex-h1 { margin: 4px 0 0; font: 600 18px/1.35 var(--sans); color: var(--text); max-width: 900px; text-wrap: balance; }
+.ex-status { flex: 0 1 auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 11.5px; }
+.ex-status .warn { color: var(--amber); }
+
+/* desktop: the two columns scroll on their own (no page scroll, like the rest of the lab) */
+.ex-grid { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(0, 440px) minmax(0, 1fr); gap: 14px; }
+.ex-side { display: flex; flex-direction: column; gap: 12px; min-width: 0; min-height: 0; overflow: hidden auto; padding-right: 2px; scrollbar-width: thin; }
+.ex-side > * { flex: none; }
+
+/* how to */
+.ex-howto { padding: 0; }
+.ex-howto summary { cursor: pointer; padding: 8px 12px; list-style-position: inside; }
+.ex-howto summary .label { color: var(--mubit); }
+.ex-steps { margin: 0; padding: 0 14px 0 32px; font: 400 12.5px/1.5 var(--sans); color: var(--text); }
+.ex-steps li { margin: 0 0 5px; }
+.ex-steps li::marker { color: var(--mubit); font-weight: 600; }
+.ex-steps b, .ex-note b { font-weight: 600; }
+.ex-note { margin: 4px 12px 10px; padding: 7px 10px; border-left: 2px solid var(--amber); background: rgba(251, 191, 36, .06); font: 400 12px/1.45 var(--sans); color: #d6d6dc; }
+
+/* scoreboard */
+.ex-board .ph .src { font-size: 10.5px; }
+.ex-tablewrap { padding: 4px 8px 0; }
+.ex-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.ex-table th, .ex-table td { padding: 6px 6px; border-bottom: 1px solid var(--line); text-align: right; vertical-align: bottom; }
+.ex-table th.m { text-align: left; width: 34%; font: 500 12px/1.3 var(--sans); color: var(--muted); cursor: help; }
+.ex-table thead th.m { cursor: default; }
+.ex-table thead th { vertical-align: bottom; }
+.ex-table thead .cn { display: block; font: 600 12px/1.25 var(--sans); color: var(--text); }
+.ex-table thead .cs { display: block; font: 400 10.5px/1.25 var(--sans); color: var(--muted); margin-top: 2px; }
+.ex-table thead .c-adapter .cn { color: var(--purple); }
+.ex-table td { font: 600 14px/1.2 var(--mono); color: #c9c9d0; white-space: nowrap; }
+.ex-table td.best { color: var(--text); }
+.ex-table td.c-adapter { color: var(--purple); background: rgba(178, 108, 255, .06); }
+.ex-table thead th.c-adapter { background: rgba(178, 108, 255, .06); }
+.ex-table tr.lead th.m { color: var(--text); font-weight: 600; font-size: 13px; }
+.ex-table tr.lead td { font-size: 22px; padding-top: 10px; padding-bottom: 10px; }
+.ex-table tbody tr:last-child th, .ex-table tbody tr:last-child td { border-bottom: none; }
+.ex-cap { margin: 6px 12px 0; font-size: 11px; line-height: 1.45; }
+.ex-cap:last-child { margin-bottom: 10px; }
+.ex-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ex-tools .src { flex: 1 1 200px; }
+
+/* questions */
+.ex-qs { min-width: 0; min-height: 0; overflow: hidden auto; padding-right: 2px; scrollbar-width: thin; }
+.ex-qhead { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 2px 2px 8px; flex-wrap: wrap; }
+.ex-list { display: flex; flex-direction: column; gap: 10px; }
+.ex-q { padding: 9px 12px 10px; }
+.ex-qtop { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.ex-qtop .spacer { flex: 1 1 0; }
+.ex-id { font: 700 15px/1 var(--mono); color: var(--text); }
+.badge.ph-early { color: #7dd3fc; border-color: rgba(125, 211, 252, .5); }
+.badge.ph-mid { color: #c4b5fd; border-color: rgba(196, 181, 253, .5); }
+.badge.ph-late { color: #fda4af; border-color: rgba(253, 164, 175, .5); }
+.ex-headcar { min-width: 0; }
+.btn.done { border-color: var(--green); color: var(--green); }
+.ex-msgd { margin: 6px 0 2px; }
+.ex-msgd summary, .ex-prov summary { cursor: pointer; font-size: 11px; }
+.ex-pre { margin: 4px 0 0; max-height: 160px; overflow: auto; padding: 6px 8px; background: #0d0d10; border: 1px solid var(--line); border-radius: 4px; font: 400 10.5px/1.4 var(--mono); white-space: pre-wrap; word-break: break-all; color: #b9b9c2; }
+.ex-in { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+.ex-ta { width: 100%; min-height: 64px; resize: vertical; background: #0d0d10; border: 1px solid var(--line); border-radius: var(--r); padding: 6px 8px; font: 400 11.5px/1.4 var(--mono); color: var(--text); }
+.ex-ta:focus { border-color: var(--purple); outline: none; }
+.ex-in-provider .ex-ta { min-height: 52px; }
+.ex-act { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ex-act .btn { min-width: 76px; }
+.ex-msg { min-width: 0; overflow-wrap: anywhere; }
+.ex-msg.warn { color: var(--amber); } .ex-msg.bad { color: var(--red); }
+.ex-prov { margin-top: 6px; }
+.ex-res { margin-top: 8px; }
+.ex-mini { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 11.5px; }
+.ex-mini th, .ex-mini td { padding: 4px 6px; border-top: 1px solid var(--line); text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+.ex-mini thead th { border-top: none; font: 500 10px/1.3 var(--sans); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.ex-mini thead th:first-child { width: 26%; }
+.ex-mini tbody th { font: 500 11.5px/1.3 var(--sans); color: var(--muted); }
+.ex-mini td { font: 500 11.5px/1.35 var(--mono); color: #b9b9c2; }
+.ex-mini td.ok { color: var(--green); } .ex-mini td.warn { color: var(--amber); } .ex-mini td.no { color: #8a8a94; }
+.ex-mini tr.w-adapter th, .ex-mini tr.w-adapter td { background: rgba(178, 108, 255, .07); }
+.ex-mini tr.w-adapter th { color: var(--purple); font-weight: 600; }
+.ex-mini tr.pending td { font-family: var(--sans); font-style: italic; }
+.ex-prop { margin-top: 4px; font-size: 10.5px; overflow-wrap: anywhere; }
+
+.viewsw .btn#btnViewExam.on { border-color: var(--purple); }
+
+@media (max-width: 1100px) { .ex-grid { grid-template-columns: minmax(0, 380px) minmax(0, 1fr); } }
+@media (max-width: 980px) {
+  body.exam-on { overflow: auto; }
+  .exam { flex: none; display: block; }
+  .ex-grid { grid-template-columns: minmax(0, 1fr); }
+  .ex-side, .ex-qs { overflow: visible; padding-right: 0; }
+}
+@media (max-width: 600px) {
+  .exam { padding: 10px 16px 24px; }
+  .ex-h1 { font-size: 16px; }
+  .ex-table th.m { width: 31%; font-size: 11px; }
+  .ex-table thead .cn { font-size: 11px; } .ex-table thead .cs { font-size: 9.5px; }
+  .ex-table td { font-size: 12px; padding: 6px 3px; }
+  .ex-table tr.lead td { font-size: 17px; }
+  .ex-mini { font-size: 10.5px; } .ex-mini td { font-size: 10.5px; } .ex-mini th, .ex-mini td { padding: 4px 3px; }
+  .ex-qtop .btn { margin-left: auto; }
+}

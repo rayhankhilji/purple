@@ -1,0 +1,72 @@
+{
+ "legal": true,
+ "lap_s": 87.698,
+ "base_s": 88.745,
+ "band": {
+  "lap_s": 87.698,
+  "sigma_s": 0.122,
+  "band95_s": [
+   87.458,
+   87.938
+  ],
+  "z": 1.96,
+  "components": {
+   "transfer_s": 0.122,
+   "transfer_k": 0.179,
+   "sector_change_s": [
+    -0.102,
+    -0.536,
+    -0.41
+   ],
+   "fit_residual_rms_s": 0.008,
+   "sim_noise_s": 0.005,
+   "surrogate_s": 0
+  },
+  "anchor": {
+   "id": "redbull",
+   "driver": "HAD",
+   "lap_real_s": 88.746,
+   "lap_sim_s": 88.745,
+   "residual_s": -0.001,
+   "basis": "team fit (lap + trap fitted, sectors held out)",
+   "anchor_relative_lap_s": 87.699,
+   "note": "the anchor's real lap plus the sim's change from the anchor car: removes the anchor's own fit residual"
+  },
+  "sector_bias": {
+   "mean_s": [
+    0.144,
+    0.042,
+    -0.191
+   ],
+   "sd_s": [
+    0.128,
+    0.118,
+    0.079
+   ],
+   "n": 10,
+   "corrected_sectors_s": [
+    28.314,
+    35.348,
+    24.041
+   ]
+  },
+  "transfer_pairs": 27,
+  "heldout_trace_rms_kmh": 10,
+  "not_covered": "the concept aero map's relative coefficients (guesses), part-mass estimates, and what the point-mass sim leaves out (SIM.md §7)",
+  "extra": {
+   "noise_s": 0.0004,
+   "noise": {
+    "sigma_s": 0.0004,
+    "max_abs_s": 0.001,
+    "slope_s_per_pct_cla": -0.1,
+    "n": 21
+   }
+  }
+ },
+ "verdict_pole": {
+  "target_s": 88.111,
+  "side": "faster",
+  "inside": false,
+  "text": "faster than 88.111 s and the whole 95 % band (87.458–87.938 s) is below it: outside the model's uncertainty"
+ }
+}

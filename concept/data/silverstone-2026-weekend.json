@@ -1,0 +1,2360 @@
+{
+ "_meta": {
+  "what": "2026 British Grand Prix (Silverstone, round 9, sprint weekend) facts for the PURPLE concept-car lab, each with a source id from `sources`.",
+  "built": "2026-10-24",
+  "units": {
+   "time": "seconds",
+   "speed": "km/h",
+   "length": "m unless suffixed _km",
+   "clock": "local time at Silverstone as printed on the FIA timetable (no timezone printed; UK summer time, BST = UTC+1, is assumed)"
+  },
+  "status_legend": {
+   "official": "read in an FIA or formula1.com document listed in sources",
+   "derived": "arithmetic on official values, method stated",
+   "reported": "journalism or secondary source",
+   "unverified": "could not be confirmed; value left null"
+  }
+ },
+ "sources": {
+  "fia_q_class": {
+   "url": "https://www.fia.com/system/files/decision-document/2026_british_grand_prix_-_final_qualifying_classification.pdf",
+   "title": "FIA Final Qualifying Classification (Doc 63)",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "fia_sq_class": {
+   "url": "https://www.fia.com/system/files/decision-document/2026_british_grand_prix_-_final_sprint_qualifying_classification.pdf",
+   "title": "FIA Final Sprint Qualifying Classification",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "fia_sprint_class": {
+   "url": "https://www.fia.com/system/files/decision-document/2026_british_grand_prix_-_final_sprint_classification.pdf",
+   "title": "FIA Final Sprint Classification",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "fia_r_class": {
+   "url": "https://www.fia.com/system/files/decision-document/2026_british_grand_prix_-_final_race_classification.pdf",
+   "title": "FIA Final Race Classification (Doc 84)",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "fia_grid": {
+   "url": "https://www.fia.com/system/files/decision-document/2026_british_grand_prix_-_final_starting_grid.pdf",
+   "title": "FIA Final Starting Grid",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "fia_entry": {
+   "url": "https://www.fia.com/system/files/decision-document/2026_british_grand_prix_-_entry_list.pdf",
+   "title": "FIA Entry List (Doc 11, 03 Jul 2026)",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "fia_timetable": {
+   "url": "https://www.fia.com/system/files/decision-document/2026_british_grand_prix_-_timetable_v5.pdf",
+   "title": "FIA Timetable V5 (Doc 18, 03 Jul 2026)",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "fia_pirelli": {
+   "url": "https://www.fia.com/system/files/decision-document/2026_british_grand_prix_-_competition_notes_-_pirelli_preview.pdf",
+   "title": "FIA Competition Notes - Pirelli Preview, Issue A (Doc 1, 02 Jul 2026)",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "fia_map": {
+   "url": "https://www.fia.com/system/files/decision-document/2026_british_grand_prix_-_competition_notes_-_circuit_map_pit_lane_drawing_emergency_exits_map_and_red_zone.pdf",
+   "title": "FIA Circuit Map, Version 2 issued 30.06.26 (Doc 6, 02 Jul 2026)",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "fia_pu_info": {
+   "url": "https://www.fia.com/system/files/decision-document/2026_british_grand_prix_-_power_unit_information.pdf",
+   "title": "FIA Power Unit Information to the Teams and PUMs, R09 V02 (Doc 7, 02 Jul 2026)",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "fia_rd_notes": {
+   "url": "https://www.fia.com/system/files/decision-document/2026_british_grand_prix_-_race_directors_competition_notes.pdf",
+   "title": "FIA Race Director's Competition Notes (Doc 5, 02 Jul 2026)",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "fia_car_pres": {
+   "url": "https://www.fia.com/system/files/decision-document/2026_british_grand_prix_-_car_presentation_submissions.pdf",
+   "title": "FIA Car Presentation Submissions (Doc 13, 03 Jul 2026)",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "fia_t_q_speeds": {
+   "url": "https://www.fia.com/sites/default/files/2026_09_gbr_f1_q0_timing_qualifyingsessionmaximumspeeds_v01.pdf",
+   "title": "FIA timing: Qualifying Session Maximum Speeds",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "fia_t_r_speeds": {
+   "url": "https://www.fia.com/sites/default/files/2026_09_gbr_f1_r0_timing_racemaximumspeeds_v01.pdf",
+   "title": "FIA timing: Race Maximum Speeds",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "fia_t_q_sectors": {
+   "url": "https://www.fia.com/sites/default/files/2026_09_gbr_f1_q0_timing_qualifyingsessionbestsectortimes_v01.pdf",
+   "title": "FIA timing: Qualifying Session Best Sector Times",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "fia_t_r_sectors": {
+   "url": "https://www.fia.com/sites/default/files/2026_09_gbr_f1_r0_timing_racebestsectortimes_v01.pdf",
+   "title": "FIA timing: Race Best Sector Times",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "fia_t_r_rcm": {
+   "url": "https://www.fia.com/sites/default/files/2026_09_gbr_f1_r0_timing_raceracecontrolmessages_v01.pdf",
+   "title": "FIA timing: Race Control Messages (race)",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "fia_t_w_p1": {
+   "url": "https://www.fia.com/sites/default/files/2026_09_gbr_f1_p1_timing_firstpracticesessionweatherreport_v01.pdf",
+   "title": "FIA timing: FP1 Weather Report",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "fia_t_w_sq": {
+   "url": "https://www.fia.com/sites/default/files/2026_09_gbr_f1_sq0_timing_sprintqualifyingsessionweatherreport_v01.pdf",
+   "title": "FIA timing: Sprint Qualifying Weather Report",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "fia_t_w_s": {
+   "url": "https://www.fia.com/sites/default/files/2026_09_gbr_f1_s0_timing_sprintweatherreport_v01.pdf",
+   "title": "FIA timing: Sprint Weather Report",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "fia_t_w_q": {
+   "url": "https://www.fia.com/sites/default/files/2026_09_gbr_f1_q0_timing_qualifyingsessionweatherreport_v01.pdf",
+   "title": "FIA timing: Qualifying Weather Report",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "fia_t_w_r": {
+   "url": "https://www.fia.com/sites/default/files/2026_09_gbr_f1_r0_timing_raceweatherreport_v01.pdf",
+   "title": "FIA timing: Race Weather Report",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "fia_event_timing": {
+   "url": "https://www.fia.com/events/fia-formula-one-world-championship/season-2026/british-grand-prix/eventtiming-information",
+   "title": "FIA event timing index, 2026 British GP",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "f1_quali": {
+   "url": "https://www.formula1.com/en/results/2026/races/1289/great-britain/qualifying",
+   "title": "formula1.com Qualifying results",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "f1_race": {
+   "url": "https://www.formula1.com/en/results/2026/races/1289/great-britain/race-result",
+   "title": "formula1.com Race result",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "f1_fastest": {
+   "url": "https://www.formula1.com/en/results/2026/races/1289/great-britain/fastest-laps",
+   "title": "formula1.com Fastest laps",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "f1_grid": {
+   "url": "https://www.formula1.com/en/results/2026/races/1289/great-britain/starting-grid",
+   "title": "formula1.com Starting grid",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "f1_sq": {
+   "url": "https://www.formula1.com/en/results/2026/races/1289/great-britain/sprint-qualifying",
+   "title": "formula1.com Sprint Qualifying",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "f1_sprint": {
+   "url": "https://www.formula1.com/en/results/2026/races/1289/great-britain/sprint-results",
+   "title": "formula1.com Sprint results",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "f1_fp1": {
+   "url": "https://www.formula1.com/en/results/2026/races/1289/great-britain/practice/1",
+   "title": "formula1.com Practice 1",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "f1_circuit": {
+   "url": "https://www.formula1.com/en/racing/2026/great-britain/circuit",
+   "title": "formula1.com British GP circuit facts",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "fia_monza_q_speeds": {
+   "url": "https://www.fia.com/sites/default/files/2026_13_ita_f1_q0_timing_qualifyingsessionmaximumspeeds_v01.pdf",
+   "title": "FIA timing: Italian GP 2026 Qualifying Maximum Speeds",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "fia_monza_r_speeds": {
+   "url": "https://www.fia.com/sites/default/files/2026_13_ita_f1_r0_timing_racemaximumspeeds_v01.pdf",
+   "title": "FIA timing: Italian GP 2026 Race Maximum Speeds",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "wiki_2026": {
+   "url": "https://en.wikipedia.org/wiki/2026_Formula_One_World_Championship",
+   "title": "Wikipedia: 2026 Formula One World Championship, Entries table (wikitext via API)",
+   "kind": "reported",
+   "accessed": "2026-10-24"
+  },
+  "rn365_weights": {
+   "url": "https://racingnews365.com/the-weights-of-every-f1-car-in-2026",
+   "title": "RacingNews365: The weights of every F1 car in 2026 (RN365 Staff, 2 April 2026)",
+   "kind": "reported",
+   "accessed": "2026-10-24"
+  },
+  "planetf1_audi_pu": {
+   "url": "https://www.planetf1.com/news/audi-f1-2026-update-given-amid-rumours-engine-down-on-power",
+   "title": "PlanetF1: Audi F1 2026 update given amid rumours engine is down on power (25 Oct 2025)",
+   "kind": "reported",
+   "accessed": "2026-10-24"
+  },
+  "fia_c19": {
+   "url": "https://www.fia.com/system/files/documents/fia_2026_f1_regulations_-_section_c_technical_-_iss_19_-_2026-06-25.pdf",
+   "title": "2026 F1 Regulations Section C [Technical], Issue 19, 25 June 2026",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "fia_c21": {
+   "url": "https://www.fia.com/system/files/documents/fia_2026_f1_regulations_-_section_c_technical_-_iss_21_-_2026-10-19.pdf",
+   "title": "2026 F1 Regulations Section C [Technical], Issue 21, 19 October 2026",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "fia_b07": {
+   "url": "https://www.fia.com/system/files/documents/fia_2026_f1_regulations_-_section_b_sporting_-_iss_07_-_2026-06-25.pdf",
+   "title": "2026 F1 Regulations Section B [Sporting], Issue 07, 25 June 2026",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "repo_season": {
+   "url": "js/data/season2026.js (EI.SEASON.sources)",
+   "title": "Repo file: car notes compiled from the-race.com / racefans.net / Wikipedia (not re-fetched here)",
+   "kind": "reported",
+   "accessed": "2026-10-24"
+  }
+ },
+ "event": {
+  "name": "Formula 1 Pirelli British Grand Prix 2026",
+  "round": 9,
+  "circuit": "Silverstone",
+  "dates": [
+   "2026-07-03",
+   "2026-07-05"
+  ],
+  "format": "Alternative (sprint weekend): FP1, Sprint Qualifying, Sprint, Qualifying, Race",
+  "format_source": "fia_pu_info",
+  "status": "official"
+ },
+ "circuit": {
+  "centreline_length_km": {
+   "value": 5.891,
+   "status": "official",
+   "sources": [
+    "fia_map",
+    "fia_pu_info",
+    "f1_circuit"
+   ]
+  },
+  "race_laps": {
+   "value": 52,
+   "status": "official",
+   "sources": [
+    "f1_circuit",
+    "fia_r_class"
+   ]
+  },
+  "race_distance_km": {
+   "value": 306.198,
+   "status": "official",
+   "sources": [
+    "f1_circuit"
+   ]
+  },
+  "sprint_laps": {
+   "value": 17,
+   "status": "official",
+   "sources": [
+    "f1_sprint",
+    "fia_timetable"
+   ]
+  },
+  "first_grand_prix": {
+   "value": 1950,
+   "status": "official",
+   "sources": [
+    "f1_circuit"
+   ]
+  },
+  "lap_record": {
+   "time": "1:27.097",
+   "s": 87.097,
+   "driver": "Max Verstappen",
+   "year": 2020,
+   "status": "official",
+   "sources": [
+    "f1_circuit"
+   ],
+   "note": "Race lap record as listed on formula1.com. The 2026 race fastest lap (ANT 1:31.777) did not beat it; the 2026 pole (1:28.111) is a qualifying time and does not count as a lap record."
+  },
+  "turns": {
+   "value": 18,
+   "status": "official",
+   "note": "Corner numbers T1-T18 appear on the FIA circuit map.",
+   "sources": [
+    "fia_map"
+   ]
+  },
+  "sectors": {
+   "status": "official",
+   "sources": [
+    "fia_map"
+   ],
+   "lengths_km": [
+    1.823,
+    2.464,
+    1.604
+   ],
+   "split_points_from_control_line_km": {
+    "value": [
+     1.823,
+     4.287
+    ],
+    "status": "derived",
+    "note": "Cumulative sums of the published sector lengths; the map gives lengths, not lap-distance positions. 1.823+2.464+1.604 = 5.891 = centreline length."
+   },
+   "timing_points": {
+    "intermediate_1": "110m before T6",
+    "intermediate_2": "50m after T14",
+    "speed_trap": "140m before T15"
+   }
+  },
+  "track_limits_note": {
+   "quote": "Each time a driver fails to respect track limits at turn 18, will result in that lap time and the immediately following lap time being invalidated by the Stewards.",
+   "status": "official",
+   "sources": [
+    "fia_rd_notes"
+   ]
+  }
+ },
+ "active_aero_straight_mode": {
+  "status": "official",
+  "sources": [
+   "fia_map",
+   "fia_b07",
+   "fia_c19"
+  ],
+  "rule": "2026 has no DRS. Driver Adjustable Bodywork (front wing flaps + rear wing flap) switches between Corner Mode and Straight Mode inside FIA Activation Zones (Sporting Regulations B7.1; Technical C3.10.10 and C3.11.6). Full activation = front and rear in Straight Mode; in Low Grip Conditions only partial activation (front wing only) in the Low Grip Activation Zones (B7.1.1 d, B7.1.2 b).",
+  "zones": [
+   {
+    "zone": "A1",
+    "normal_grip_activation": "65m after T18",
+    "low_grip_activation": "115m after T18",
+    "straight": "start/finish straight towards T1"
+   },
+   {
+    "zone": "A2",
+    "normal_grip_activation": "55m after T5",
+    "low_grip_activation": "115m after T5",
+    "straight": "T5 to T6"
+   },
+   {
+    "zone": "A3",
+    "normal_grip_activation": "155m after T7",
+    "low_grip_activation": null,
+    "straight": "T7 through T8 to T9",
+    "note": "Map prints n/a for low grip: no low-grip activation in this zone."
+   },
+   {
+    "zone": "A4",
+    "normal_grip_activation": "65m after T14",
+    "low_grip_activation": "125m after T14",
+    "straight": "T14 to T15 (the straight with the speed trap, 140m before T15)"
+   }
+  ],
+  "zone_end": {
+   "value": null,
+   "status": "unverified",
+   "note": "The map gives only activation points. Where Straight Mode must end (deactivation) is not printed on the map; not found in the event documents read."
+  },
+  "straight_descriptions_note": "The `straight` field is read off the map drawing (which turn numbers bound each zone), not printed text."
+ },
+ "overtake_mode": {
+  "status": "official",
+  "sources": [
+   "fia_map",
+   "fia_pu_info"
+  ],
+  "detection": "Exit of T17 (map); lap distance 5560 m (TBC) in the PU information document",
+  "activation": "95m after T17 (map); lap distance 5631 m",
+  "detection_gap_s": 1.0,
+  "rule_ref": "Sporting Regulations B7.2.2-B7.2.3; Technical C5.2.8 ii"
+ },
+ "energy_limits": {
+  "status": "official",
+  "sources": [
+   "fia_pu_info"
+  ],
+  "max_recharge_per_lap_MJ": {
+   "sprint_and_race_overtake_not_active": 8.0,
+   "sprint_and_race_overtake_active": 8.5,
+   "sprint_qualifying_and_qualifying": 6.5,
+   "free_practice": 8.5,
+   "out_laps_other_than_sprint_and_race": 8.5
+  },
+  "max_pu_power_reduction_rate": {
+   "power_limited_distance_m": 3833,
+   "rate_limit_kW_per_s": 50,
+   "article": "C5.12.8"
+  },
+  "alternative_power_curve_sectors_sprint_and_race": [
+   {
+    "sector": "T1-T4",
+    "lap_distance_m": [
+     350,
+     1000
+    ]
+   },
+   {
+    "sector": "T15-T16",
+    "lap_distance_m": [
+     4950,
+     5450
+    ]
+   }
+  ],
+  "power_reduction_over_150kW_sectors": [
+   {
+    "sector": "T1-T4",
+    "lap_distance_m": [
+     350,
+     1000
+    ],
+    "max_kW": 350
+   },
+   {
+    "sector": "T6-T7",
+    "lap_distance_m": [
+     1950,
+     2100
+    ],
+    "max_kW": 350
+   },
+   {
+    "sector": "T15-T16",
+    "lap_distance_m": [
+     4950,
+     5200
+    ],
+    "max_kW": 350
+   },
+   {
+    "sector": "Exit T17 (SQ and Q only)",
+    "lap_distance_m": [
+     5550,
+     5750
+    ],
+    "max_kW": 350
+   }
+  ],
+  "mguk_power_reduction_reset_sectors": [
+   {
+    "sector": "Exit T1",
+    "lap_distance_m": [
+     400,
+     550
+    ]
+   },
+   {
+    "sector": "Exit T9",
+    "lap_distance_m": [
+     3000,
+     3300
+    ]
+   },
+   {
+    "sector": "Exit T17-T18 (SQ and Q only)",
+    "lap_distance_m": [
+     5650,
+     5900
+    ]
+   }
+  ],
+  "higher_speed_threshold_sectors": [
+   {
+    "sector": "T11-T14",
+    "lap_distance_m": [
+     3700,
+     4150
+    ],
+    "speed_threshold_kmh": 300
+   },
+   {
+    "sector": "T18",
+    "lap_distance_m": [
+     5600,
+     5800
+    ],
+    "speed_threshold_kmh": 230
+   }
+  ],
+  "note": "Main overtaking zones use the Base-Standard / Base-Overtake ERS-K power curves; the Alt 1 curve applies in the listed sectors in Sprint and Race (document graphic; curve values are only drawn, not tabulated)."
+ },
+ "tyres": {
+  "status": "official",
+  "sources": [
+   "fia_pirelli"
+  ],
+  "compounds": {
+   "hard": "C1",
+   "medium": "C2",
+   "soft": "C3"
+  },
+  "compound_note": "The preview lists C1 (white W), C2 (yellow Y), C3 (red R); hard/medium/soft names follow the colour codes.",
+  "mandatory_race_tyres": [
+   "C1",
+   "C2"
+  ],
+  "q3_tyre": "C3",
+  "min_starting_pressure_psi": {
+   "slick_front": 28.0,
+   "slick_rear": 26.0,
+   "inter_front": 28.0,
+   "inter_rear": 26.0,
+   "wet_front": 26.0,
+   "wet_rear": 24.0
+  },
+  "camber_limit_deg": {
+   "slick_front": -2.75,
+   "slick_rear": -1.5,
+   "inter_front": -3.0,
+   "inter_rear": -1.75,
+   "wet_front": -3.0,
+   "wet_rear": -1.75
+  }
+ },
+ "sessions": [
+  {
+   "session": "FP1",
+   "date": "2026-07-03",
+   "start_local": "12:30",
+   "end_local": "13:30",
+   "source": "fia_timetable",
+   "weather": {
+    "source": "fia_t_w_p1",
+    "date": "2026-07-03",
+    "chart_window_local": [
+     "12:30",
+     "13:30"
+    ],
+    "air_temp_c": {
+     "min": 21.0,
+     "max": 22.9
+    },
+    "track_temp_c": {
+     "min": 38.0,
+     "max": 42.9
+    },
+    "humidity_pct": {
+     "min": 43.5,
+     "max": 49.5
+    },
+    "wind_speed_ms": {
+     "min": 0.0,
+     "max": 3.3
+    },
+    "air_pressure_mbar": {
+     "min": 1011.3,
+     "max": 1011.6
+    },
+    "rainfall": "dry for the whole session (rainfall trace on Dry line)",
+    "wind_direction": {
+     "value": null,
+     "note": "Mostly between W and S, near W. Only a chart is published; no numeric value, so read approximately from the plot (N/W/S/E axis)."
+    }
+   }
+  },
+  {
+   "session": "Sprint Qualifying",
+   "date": "2026-07-03",
+   "start_local": "16:30",
+   "end_local": "17:14",
+   "source": "fia_timetable",
+   "weather": {
+    "source": "fia_t_w_sq",
+    "date": "2026-07-03",
+    "chart_window_local": [
+     "16:30",
+     "17:14"
+    ],
+    "air_temp_c": {
+     "min": 24.4,
+     "max": 24.8
+    },
+    "track_temp_c": {
+     "min": 39.3,
+     "max": 41.5
+    },
+    "humidity_pct": {
+     "min": 33.7,
+     "max": 35.0
+    },
+    "wind_speed_ms": {
+     "min": 1.0,
+     "max": 4.5
+    },
+    "air_pressure_mbar": {
+     "min": 1009.6,
+     "max": 1009.9
+    },
+    "rainfall": "dry for the whole session (rainfall trace on Dry line)",
+    "wind_direction": {
+     "value": null,
+     "note": "Steady, close to W. Only a chart is published; no numeric value, so read approximately from the plot (N/W/S/E axis)."
+    }
+   }
+  },
+  {
+   "session": "Sprint (17 laps)",
+   "date": "2026-07-04",
+   "start_local": "12:00",
+   "end_local": "12:30 (approx. finish per timetable)",
+   "source": "fia_timetable",
+   "weather": {
+    "source": "fia_t_w_s",
+    "date": "2026-07-04",
+    "chart_window_local": [
+     "12:00",
+     "12:30"
+    ],
+    "air_temp_c": {
+     "min": 22.7,
+     "max": 23.4
+    },
+    "track_temp_c": {
+     "min": 36.7,
+     "max": 40.8
+    },
+    "humidity_pct": {
+     "min": 51.8,
+     "max": 54.8
+    },
+    "wind_speed_ms": {
+     "min": 0.8,
+     "max": 4.9
+    },
+    "air_pressure_mbar": {
+     "min": 1008.5,
+     "max": 1008.8
+    },
+    "rainfall": "dry for the whole session (rainfall trace on Dry line)",
+    "wind_direction": {
+     "value": null,
+     "note": "Mostly between W and S. Only a chart is published; no numeric value, so read approximately from the plot (N/W/S/E axis)."
+    }
+   }
+  },
+  {
+   "session": "Qualifying",
+   "date": "2026-07-04",
+   "start_local": "16:00",
+   "end_local": "17:00",
+   "source": "fia_timetable",
+   "weather": {
+    "source": "fia_t_w_q",
+    "date": "2026-07-04",
+    "chart_window_local": [
+     "16:00",
+     "17:10"
+    ],
+    "air_temp_c": {
+     "min": 24.6,
+     "max": 25.8
+    },
+    "track_temp_c": {
+     "min": 38.2,
+     "max": 42.6
+    },
+    "humidity_pct": {
+     "min": 46.2,
+     "max": 50.2
+    },
+    "wind_speed_ms": {
+     "min": 0.3,
+     "max": 4.9
+    },
+    "air_pressure_mbar": {
+     "min": 1007.4,
+     "max": 1007.8
+    },
+    "rainfall": "dry for the whole session (rainfall trace on Dry line)",
+    "wind_direction": {
+     "value": null,
+     "note": "Variable, swinging between roughly E/S and N/W. Only a chart is published; no numeric value, so read approximately from the plot (N/W/S/E axis)."
+    }
+   }
+  },
+  {
+   "session": "Race (52 laps)",
+   "date": "2026-07-05",
+   "start_local": "15:00",
+   "end_local": "17:00 (scheduled max); chequered flag 16:31 per race control",
+   "source": "fia_timetable",
+   "weather": {
+    "source": "fia_t_w_r",
+    "date": "2026-07-05",
+    "chart_window_local": [
+     "15:00",
+     "16:35"
+    ],
+    "air_temp_c": {
+     "min": 24.4,
+     "max": 26.4
+    },
+    "track_temp_c": {
+     "min": 37.5,
+     "max": 43.8
+    },
+    "humidity_pct": {
+     "min": 44.9,
+     "max": 52.3
+    },
+    "wind_speed_ms": {
+     "min": 0.0,
+     "max": 4.8
+    },
+    "air_pressure_mbar": {
+     "min": 1005.7,
+     "max": 1006.6
+    },
+    "rainfall": "dry for the whole session (rainfall trace on Dry line)",
+    "wind_direction": {
+     "value": null,
+     "note": "Mostly between W and N, variable. Only a chart is published; no numeric value, so read approximately from the plot (N/W/S/E axis)."
+    }
+   }
+  }
+ ],
+ "fp1_classification": {
+  "status": "official",
+  "sources": [
+   "f1_fp1"
+  ],
+  "rows": [
+   {
+    "pos": 1,
+    "code": "HAM",
+    "time_or_gap": "1:29.260",
+    "laps": 32
+   },
+   {
+    "pos": 2,
+    "code": "ANT",
+    "time_or_gap": "+0.213s",
+    "laps": 29
+   },
+   {
+    "pos": 3,
+    "code": "LEC",
+    "time_or_gap": "+0.599s",
+    "laps": 31
+   },
+   {
+    "pos": 4,
+    "code": "RUS",
+    "time_or_gap": "+0.678s",
+    "laps": 31
+   },
+   {
+    "pos": 5,
+    "code": "PIA",
+    "time_or_gap": "+0.887s",
+    "laps": 25
+   },
+   {
+    "pos": 6,
+    "code": "VER",
+    "time_or_gap": "+0.980s",
+    "laps": 27
+   },
+   {
+    "pos": 7,
+    "code": "NOR",
+    "time_or_gap": "+1.028s",
+    "laps": 27
+   },
+   {
+    "pos": 8,
+    "code": "HAD",
+    "time_or_gap": "+1.078s",
+    "laps": 28
+   },
+   {
+    "pos": 9,
+    "code": "HUL",
+    "time_or_gap": "+1.483s",
+    "laps": 29
+   },
+   {
+    "pos": 10,
+    "code": "LAW",
+    "time_or_gap": "+1.590s",
+    "laps": 28
+   },
+   {
+    "pos": 11,
+    "code": "COL",
+    "time_or_gap": "+1.706s",
+    "laps": 28
+   },
+   {
+    "pos": 12,
+    "code": "BOR",
+    "time_or_gap": "+1.775s",
+    "laps": 28
+   },
+   {
+    "pos": 13,
+    "code": "LIN",
+    "time_or_gap": "+2.079s",
+    "laps": 32
+   },
+   {
+    "pos": 14,
+    "code": "BEA",
+    "time_or_gap": "+2.113s",
+    "laps": 27
+   },
+   {
+    "pos": 15,
+    "code": "SAI",
+    "time_or_gap": "+2.424s",
+    "laps": 33
+   },
+   {
+    "pos": 16,
+    "code": "OCO",
+    "time_or_gap": "+2.424s",
+    "laps": 27
+   },
+   {
+    "pos": 17,
+    "code": "ALB",
+    "time_or_gap": "+2.437s",
+    "laps": 30
+   },
+   {
+    "pos": 18,
+    "code": "BOT",
+    "time_or_gap": "+2.890s",
+    "laps": 22
+   },
+   {
+    "pos": 19,
+    "code": "PER",
+    "time_or_gap": "+2.981s",
+    "laps": 23
+   },
+   {
+    "pos": 20,
+    "code": "ALO",
+    "time_or_gap": "+3.697s",
+    "laps": 25
+   },
+   {
+    "pos": 21,
+    "code": "GAS",
+    "time_or_gap": "+3.759s",
+    "laps": 25
+   },
+   {
+    "pos": 22,
+    "code": "STR",
+    "time_or_gap": "+3.870s",
+    "laps": 26
+   }
+  ]
+ },
+ "sprint_qualifying": {
+  "status": "official",
+  "sources": [
+   "fia_sq_class",
+   "f1_sq"
+  ],
+  "pole": {
+   "code": "HAM",
+   "s": 88.376
+  },
+  "rows": [
+   {
+    "pos": 1,
+    "number": 44,
+    "code": "HAM",
+    "sq1_s": 89.273,
+    "sq2_s": 88.747,
+    "sq3_s": 88.376
+   },
+   {
+    "pos": 2,
+    "number": 12,
+    "code": "ANT",
+    "sq1_s": 89.746,
+    "sq2_s": 88.846,
+    "sq3_s": 88.387
+   },
+   {
+    "pos": 3,
+    "number": 3,
+    "code": "VER",
+    "sq1_s": 89.689,
+    "sq2_s": 89.242,
+    "sq3_s": 88.697
+   },
+   {
+    "pos": 4,
+    "number": 16,
+    "code": "LEC",
+    "sq1_s": 89.38,
+    "sq2_s": 88.922,
+    "sq3_s": 88.703
+   },
+   {
+    "pos": 5,
+    "number": 63,
+    "code": "RUS",
+    "sq1_s": 89.675,
+    "sq2_s": 89.246,
+    "sq3_s": 88.733
+   },
+   {
+    "pos": 6,
+    "number": 1,
+    "code": "NOR",
+    "sq1_s": 90.142,
+    "sq2_s": 89.401,
+    "sq3_s": 88.74
+   },
+   {
+    "pos": 7,
+    "number": 81,
+    "code": "PIA",
+    "sq1_s": 89.583,
+    "sq2_s": 89.12,
+    "sq3_s": 88.772
+   },
+   {
+    "pos": 8,
+    "number": 6,
+    "code": "HAD",
+    "sq1_s": 89.47,
+    "sq2_s": 89.28,
+    "sq3_s": 88.835
+   },
+   {
+    "pos": 9,
+    "number": 30,
+    "code": "LAW",
+    "sq1_s": 89.85,
+    "sq2_s": 89.067,
+    "sq3_s": 88.927
+   },
+   {
+    "pos": 10,
+    "number": 41,
+    "code": "LIN",
+    "sq1_s": 90.453,
+    "sq2_s": 89.33,
+    "sq3_s": 89.367
+   },
+   {
+    "pos": 11,
+    "number": 10,
+    "code": "GAS",
+    "sq1_s": 90.444,
+    "sq2_s": 89.482,
+    "sq3_s": null
+   },
+   {
+    "pos": 12,
+    "number": 5,
+    "code": "BOR",
+    "sq1_s": 90.407,
+    "sq2_s": 89.679,
+    "sq3_s": null
+   },
+   {
+    "pos": 13,
+    "number": 27,
+    "code": "HUL",
+    "sq1_s": 90.107,
+    "sq2_s": 89.707,
+    "sq3_s": null
+   },
+   {
+    "pos": 14,
+    "number": 43,
+    "code": "COL",
+    "sq1_s": 90.894,
+    "sq2_s": 89.983,
+    "sq3_s": null
+   },
+   {
+    "pos": 15,
+    "number": 55,
+    "code": "SAI",
+    "sq1_s": 91.073,
+    "sq2_s": 90.197,
+    "sq3_s": null
+   },
+   {
+    "pos": 16,
+    "number": 23,
+    "code": "ALB",
+    "sq1_s": 90.779,
+    "sq2_s": 90.65,
+    "sq3_s": null
+   },
+   {
+    "pos": 17,
+    "number": 87,
+    "code": "BEA",
+    "sq1_s": 91.083,
+    "sq2_s": null,
+    "sq3_s": null
+   },
+   {
+    "pos": 18,
+    "number": 31,
+    "code": "OCO",
+    "sq1_s": 91.714,
+    "sq2_s": null,
+    "sq3_s": null
+   },
+   {
+    "pos": 19,
+    "number": 11,
+    "code": "PER",
+    "sq1_s": 91.776,
+    "sq2_s": null,
+    "sq3_s": null
+   },
+   {
+    "pos": 20,
+    "number": 77,
+    "code": "BOT",
+    "sq1_s": 92.02,
+    "sq2_s": null,
+    "sq3_s": null
+   },
+   {
+    "pos": 21,
+    "number": 14,
+    "code": "ALO",
+    "sq1_s": 92.91,
+    "sq2_s": null,
+    "sq3_s": null
+   },
+   {
+    "pos": 22,
+    "number": 18,
+    "code": "STR",
+    "sq1_s": 92.988,
+    "sq2_s": null,
+    "sq3_s": null
+   }
+  ]
+ },
+ "sprint": {
+  "status": "official",
+  "sources": [
+   "f1_sprint",
+   "fia_sprint_class"
+  ],
+  "winner": "ANT",
+  "rows": [
+   {
+    "pos": "1",
+    "number": 12,
+    "code": "ANT",
+    "laps": 17,
+    "time_or_status": "26:12.129",
+    "points": 8
+   },
+   {
+    "pos": "2",
+    "number": 44,
+    "code": "HAM",
+    "laps": 17,
+    "time_or_status": "+2.745s",
+    "points": 7
+   },
+   {
+    "pos": "3",
+    "number": 1,
+    "code": "NOR",
+    "laps": 17,
+    "time_or_status": "+9.783s",
+    "points": 6
+   },
+   {
+    "pos": "4",
+    "number": 63,
+    "code": "RUS",
+    "laps": 17,
+    "time_or_status": "+10.639s",
+    "points": 5
+   },
+   {
+    "pos": "5",
+    "number": 16,
+    "code": "LEC",
+    "laps": 17,
+    "time_or_status": "+12.620s",
+    "points": 4
+   },
+   {
+    "pos": "6",
+    "number": 3,
+    "code": "VER",
+    "laps": 17,
+    "time_or_status": "+16.550s",
+    "points": 3
+   },
+   {
+    "pos": "7",
+    "number": 81,
+    "code": "PIA",
+    "laps": 17,
+    "time_or_status": "+17.551s",
+    "points": 2
+   },
+   {
+    "pos": "8",
+    "number": 30,
+    "code": "LAW",
+    "laps": 17,
+    "time_or_status": "+30.233s",
+    "points": 1
+   },
+   {
+    "pos": "9",
+    "number": 6,
+    "code": "HAD",
+    "laps": 17,
+    "time_or_status": "+30.953s",
+    "points": 0
+   },
+   {
+    "pos": "10",
+    "number": 41,
+    "code": "LIN",
+    "laps": 17,
+    "time_or_status": "+35.110s",
+    "points": 0
+   },
+   {
+    "pos": "11",
+    "number": 10,
+    "code": "GAS",
+    "laps": 17,
+    "time_or_status": "+40.273s",
+    "points": 0
+   },
+   {
+    "pos": "12",
+    "number": 43,
+    "code": "COL",
+    "laps": 17,
+    "time_or_status": "+41.026s",
+    "points": 0
+   },
+   {
+    "pos": "13",
+    "number": 5,
+    "code": "BOR",
+    "laps": 17,
+    "time_or_status": "+42.499s",
+    "points": 0
+   },
+   {
+    "pos": "14",
+    "number": 87,
+    "code": "BEA",
+    "laps": 17,
+    "time_or_status": "+45.784s",
+    "points": 0
+   },
+   {
+    "pos": "15",
+    "number": 27,
+    "code": "HUL",
+    "laps": 17,
+    "time_or_status": "+46.680s",
+    "points": 0
+   },
+   {
+    "pos": "16",
+    "number": 31,
+    "code": "OCO",
+    "laps": 17,
+    "time_or_status": "+49.810s",
+    "points": 0
+   },
+   {
+    "pos": "17",
+    "number": 55,
+    "code": "SAI",
+    "laps": 17,
+    "time_or_status": "+50.379s",
+    "points": 0
+   },
+   {
+    "pos": "18",
+    "number": 23,
+    "code": "ALB",
+    "laps": 17,
+    "time_or_status": "+50.757s",
+    "points": 0
+   },
+   {
+    "pos": "19",
+    "number": 77,
+    "code": "BOT",
+    "laps": 17,
+    "time_or_status": "+75.117s",
+    "points": 0
+   },
+   {
+    "pos": "20",
+    "number": 14,
+    "code": "ALO",
+    "laps": 17,
+    "time_or_status": "+91.872s",
+    "points": 0
+   },
+   {
+    "pos": "21",
+    "number": 18,
+    "code": "STR",
+    "laps": 16,
+    "time_or_status": "+1 lap",
+    "points": 0
+   },
+   {
+    "pos": "22",
+    "number": 11,
+    "code": "PER",
+    "laps": 16,
+    "time_or_status": "+1 lap",
+    "points": 0
+   }
+  ]
+ },
+ "qualifying": {
+  "status": "official",
+  "sources": [
+   "fia_q_class",
+   "f1_quali",
+   "fia_t_q_sectors",
+   "fia_t_q_speeds"
+  ],
+  "pole": {
+   "code": "ANT",
+   "s": 88.111,
+   "avg_kmh": 240.691
+  },
+  "note": "best_s is the driver's fastest lap across Q1-Q3 (it is not always the lap that set the grid order, e.g. LAW 1:29.300 in Q1, HUL 1:29.539 in Q1). Speed trap = FIA speed trap 140m before T15.",
+  "rows": [
+   {
+    "pos": 1,
+    "number": 12,
+    "code": "ANT",
+    "q1_s": 89.719,
+    "q2_s": 88.493,
+    "q3_s": 88.111,
+    "best_s": 88.111,
+    "best_session": "Q3",
+    "best_sector_s": [
+     28.292,
+     35.521,
+     24.242
+    ],
+    "speed_trap_kmh": 302.6,
+    "intermediate_1_kmh": 297.9,
+    "intermediate_2_kmh": 268.1,
+    "finish_line_kmh": 253.4
+   },
+   {
+    "pos": 2,
+    "number": 16,
+    "code": "LEC",
+    "q1_s": 89.534,
+    "q2_s": 88.626,
+    "q3_s": 88.286,
+    "best_s": 88.286,
+    "best_session": "Q3",
+    "best_sector_s": [
+     28.292,
+     35.614,
+     24.38
+    ],
+    "speed_trap_kmh": 307.4,
+    "intermediate_1_kmh": 299.7,
+    "intermediate_2_kmh": 267.3,
+    "finish_line_kmh": 245.6
+   },
+   {
+    "pos": 3,
+    "number": 44,
+    "code": "HAM",
+    "q1_s": 89.644,
+    "q2_s": 88.864,
+    "q3_s": 88.458,
+    "best_s": 88.458,
+    "best_session": "Q3",
+    "best_sector_s": [
+     28.345,
+     35.738,
+     24.201
+    ],
+    "speed_trap_kmh": 317.9,
+    "intermediate_1_kmh": 303.2,
+    "intermediate_2_kmh": 271.9,
+    "finish_line_kmh": 243.9
+   },
+   {
+    "pos": 4,
+    "number": 63,
+    "code": "RUS",
+    "q1_s": 89.985,
+    "q2_s": 88.92,
+    "q3_s": 88.481,
+    "best_s": 88.481,
+    "best_session": "Q3",
+    "best_sector_s": [
+     28.303,
+     35.629,
+     24.524
+    ],
+    "speed_trap_kmh": 299.8,
+    "intermediate_1_kmh": 297.4,
+    "intermediate_2_kmh": 266.2,
+    "finish_line_kmh": 248.7
+   },
+   {
+    "pos": 5,
+    "number": 6,
+    "code": "HAD",
+    "q1_s": 89.276,
+    "q2_s": 89.069,
+    "q3_s": 88.746,
+    "best_s": 88.746,
+    "best_session": "Q3",
+    "best_sector_s": [
+     28.417,
+     35.831,
+     24.377
+    ],
+    "speed_trap_kmh": 305.8,
+    "intermediate_1_kmh": 303.8,
+    "intermediate_2_kmh": 268.3,
+    "finish_line_kmh": 248.9
+   },
+   {
+    "pos": 6,
+    "number": 1,
+    "code": "NOR",
+    "q1_s": 90.186,
+    "q2_s": 89.383,
+    "q3_s": 88.877,
+    "best_s": 88.877,
+    "best_session": "Q3",
+    "best_sector_s": [
+     28.458,
+     35.976,
+     24.443
+    ],
+    "speed_trap_kmh": 304.3,
+    "intermediate_1_kmh": 297.0,
+    "intermediate_2_kmh": 267.5,
+    "finish_line_kmh": 245.4
+   },
+   {
+    "pos": 7,
+    "number": 3,
+    "code": "VER",
+    "q1_s": 89.549,
+    "q2_s": 89.113,
+    "q3_s": 88.893,
+    "best_s": 88.893,
+    "best_session": "Q3",
+    "best_sector_s": [
+     28.462,
+     35.789,
+     24.608
+    ],
+    "speed_trap_kmh": 304.3,
+    "intermediate_1_kmh": 302.2,
+    "intermediate_2_kmh": 264.9,
+    "finish_line_kmh": 250.3
+   },
+   {
+    "pos": 8,
+    "number": 81,
+    "code": "PIA",
+    "q1_s": 89.971,
+    "q2_s": 89.218,
+    "q3_s": 89.032,
+    "best_s": 89.032,
+    "best_session": "Q3",
+    "best_sector_s": [
+     28.442,
+     36.181,
+     24.396
+    ],
+    "speed_trap_kmh": 308.2,
+    "intermediate_1_kmh": 297.3,
+    "intermediate_2_kmh": 269.2,
+    "finish_line_kmh": 245.5
+   },
+   {
+    "pos": 9,
+    "number": 41,
+    "code": "LIN",
+    "q1_s": 89.661,
+    "q2_s": 89.324,
+    "q3_s": 89.305,
+    "best_s": 89.305,
+    "best_session": "Q3",
+    "best_sector_s": [
+     28.424,
+     36.125,
+     24.649
+    ],
+    "speed_trap_kmh": 306.9,
+    "intermediate_1_kmh": 306.3,
+    "intermediate_2_kmh": 269.4,
+    "finish_line_kmh": 249.0
+   },
+   {
+    "pos": 10,
+    "number": 30,
+    "code": "LAW",
+    "q1_s": 89.3,
+    "q2_s": 89.429,
+    "q3_s": 89.716,
+    "best_s": 89.3,
+    "best_session": "Q1",
+    "best_sector_s": [
+     28.464,
+     36.16,
+     24.676
+    ],
+    "speed_trap_kmh": 306.0,
+    "intermediate_1_kmh": 304.6,
+    "intermediate_2_kmh": 269.1,
+    "finish_line_kmh": 248.2
+   },
+   {
+    "pos": 11,
+    "number": 5,
+    "code": "BOR",
+    "q1_s": 90.269,
+    "q2_s": 89.461,
+    "q3_s": null,
+    "best_s": 89.461,
+    "best_session": "Q2",
+    "best_sector_s": [
+     28.468,
+     36.157,
+     24.681
+    ],
+    "speed_trap_kmh": 298.5,
+    "intermediate_1_kmh": 298.5,
+    "intermediate_2_kmh": 266.0,
+    "finish_line_kmh": 239.5
+   },
+   {
+    "pos": 12,
+    "number": 10,
+    "code": "GAS",
+    "q1_s": 90.345,
+    "q2_s": 90.063,
+    "q3_s": null,
+    "best_s": 90.063,
+    "best_session": "Q2",
+    "best_sector_s": [
+     28.53,
+     36.404,
+     24.895
+    ],
+    "speed_trap_kmh": 307.0,
+    "intermediate_1_kmh": 296.8,
+    "intermediate_2_kmh": 263.2,
+    "finish_line_kmh": 253.0
+   },
+   {
+    "pos": 13,
+    "number": 27,
+    "code": "HUL",
+    "q1_s": 89.539,
+    "q2_s": 90.076,
+    "q3_s": null,
+    "best_s": 89.539,
+    "best_session": "Q1",
+    "best_sector_s": [
+     28.585,
+     36.096,
+     24.858
+    ],
+    "speed_trap_kmh": 300.1,
+    "intermediate_1_kmh": 297.5,
+    "intermediate_2_kmh": 264.2,
+    "finish_line_kmh": 238.0
+   },
+   {
+    "pos": 14,
+    "number": 87,
+    "code": "BEA",
+    "q1_s": 90.57,
+    "q2_s": 90.501,
+    "q3_s": null,
+    "best_s": 90.501,
+    "best_session": "Q2",
+    "best_sector_s": [
+     28.946,
+     36.45,
+     24.995
+    ],
+    "speed_trap_kmh": 302.0,
+    "intermediate_1_kmh": 294.9,
+    "intermediate_2_kmh": 264.7,
+    "finish_line_kmh": 239.0
+   },
+   {
+    "pos": 15,
+    "number": 55,
+    "code": "SAI",
+    "q1_s": 90.562,
+    "q2_s": 90.623,
+    "q3_s": null,
+    "best_s": 90.562,
+    "best_session": "Q1",
+    "best_sector_s": [
+     28.696,
+     36.618,
+     25.108
+    ],
+    "speed_trap_kmh": 315.2,
+    "intermediate_1_kmh": 296.2,
+    "intermediate_2_kmh": 265.6,
+    "finish_line_kmh": 252.4
+   },
+   {
+    "pos": 16,
+    "number": 23,
+    "code": "ALB",
+    "q1_s": 90.638,
+    "q2_s": 91.341,
+    "q3_s": null,
+    "best_s": 90.638,
+    "best_session": "Q1",
+    "best_sector_s": [
+     28.654,
+     36.587,
+     25.205
+    ],
+    "speed_trap_kmh": 296.9,
+    "intermediate_1_kmh": 298.9,
+    "intermediate_2_kmh": 261.1,
+    "finish_line_kmh": 252.2
+   },
+   {
+    "pos": 17,
+    "number": 31,
+    "code": "OCO",
+    "q1_s": 90.68,
+    "q2_s": null,
+    "q3_s": null,
+    "best_s": 90.68,
+    "best_session": "Q1",
+    "best_sector_s": [
+     28.888,
+     36.614,
+     25.101
+    ],
+    "speed_trap_kmh": 298.3,
+    "intermediate_1_kmh": 295.8,
+    "intermediate_2_kmh": 264.9,
+    "finish_line_kmh": 237.3
+   },
+   {
+    "pos": 18,
+    "number": 77,
+    "code": "BOT",
+    "q1_s": 91.227,
+    "q2_s": null,
+    "q3_s": null,
+    "best_s": 91.227,
+    "best_session": "Q1",
+    "best_sector_s": [
+     28.934,
+     37.003,
+     25.29
+    ],
+    "speed_trap_kmh": 304.7,
+    "intermediate_1_kmh": 293.3,
+    "intermediate_2_kmh": 263.5,
+    "finish_line_kmh": 236.2
+   },
+   {
+    "pos": 19,
+    "number": 43,
+    "code": "COL",
+    "q1_s": 91.321,
+    "q2_s": null,
+    "q3_s": null,
+    "best_s": 91.321,
+    "best_session": "Q1",
+    "best_sector_s": [
+     28.667,
+     36.92,
+     25.414
+    ],
+    "speed_trap_kmh": 300.2,
+    "intermediate_1_kmh": 310.7,
+    "intermediate_2_kmh": 255.8,
+    "finish_line_kmh": 253.4
+   },
+   {
+    "pos": 20,
+    "number": 11,
+    "code": "PER",
+    "q1_s": 91.451,
+    "q2_s": null,
+    "q3_s": null,
+    "best_s": 91.451,
+    "best_session": "Q1",
+    "best_sector_s": [
+     29.038,
+     37.121,
+     25.292
+    ],
+    "speed_trap_kmh": 303.9,
+    "intermediate_1_kmh": 303.2,
+    "intermediate_2_kmh": 262.3,
+    "finish_line_kmh": 238.0
+   },
+   {
+    "pos": 21,
+    "number": 18,
+    "code": "STR",
+    "q1_s": 92.863,
+    "q2_s": null,
+    "q3_s": null,
+    "best_s": 92.863,
+    "best_session": "Q1",
+    "best_sector_s": [
+     29.38,
+     37.793,
+     25.69
+    ],
+    "speed_trap_kmh": 292.5,
+    "intermediate_1_kmh": 287.0,
+    "intermediate_2_kmh": 259.1,
+    "finish_line_kmh": 236.4
+   },
+   {
+    "pos": 22,
+    "number": 14,
+    "code": "ALO",
+    "q1_s": 93.025,
+    "q2_s": null,
+    "q3_s": null,
+    "best_s": 93.025,
+    "best_session": "Q1",
+    "best_sector_s": [
+     29.496,
+     37.573,
+     25.632
+    ],
+    "speed_trap_kmh": 292.6,
+    "intermediate_1_kmh": 284.2,
+    "intermediate_2_kmh": 258.1,
+    "finish_line_kmh": 237.4
+   }
+  ]
+ },
+ "starting_grid": {
+  "status": "official",
+  "sources": [
+   "f1_grid",
+   "fia_grid"
+  ],
+  "note": "Differs from qualifying order: GAS 12th -> 15th (3-place grid penalty, impeding car 18), STR 21st -> 22nd (PU elements changed).",
+  "rows": [
+   {
+    "pos": 1,
+    "code": "ANT"
+   },
+   {
+    "pos": 2,
+    "code": "LEC"
+   },
+   {
+    "pos": 3,
+    "code": "HAM"
+   },
+   {
+    "pos": 4,
+    "code": "RUS"
+   },
+   {
+    "pos": 5,
+    "code": "HAD"
+   },
+   {
+    "pos": 6,
+    "code": "NOR"
+   },
+   {
+    "pos": 7,
+    "code": "VER"
+   },
+   {
+    "pos": 8,
+    "code": "PIA"
+   },
+   {
+    "pos": 9,
+    "code": "LIN"
+   },
+   {
+    "pos": 10,
+    "code": "LAW"
+   },
+   {
+    "pos": 11,
+    "code": "BOR"
+   },
+   {
+    "pos": 12,
+    "code": "HUL"
+   },
+   {
+    "pos": 13,
+    "code": "BEA"
+   },
+   {
+    "pos": 14,
+    "code": "SAI"
+   },
+   {
+    "pos": 15,
+    "code": "GAS"
+   },
+   {
+    "pos": 16,
+    "code": "ALB"
+   },
+   {
+    "pos": 17,
+    "code": "OCO"
+   },
+   {
+    "pos": 18,
+    "code": "BOT"
+   },
+   {
+    "pos": 19,
+    "code": "COL"
+   },
+   {
+    "pos": 20,
+    "code": "PER"
+   },
+   {
+    "pos": 21,
+    "code": "ALO"
+   },
+   {
+    "pos": 22,
+    "code": "STR"
+   }
+  ]
+ },
+ "race": {
+  "status": "official",
+  "sources": [
+   "fia_r_class",
+   "f1_race",
+   "f1_fastest",
+   "fia_t_r_speeds",
+   "fia_t_r_sectors",
+   "fia_t_r_rcm"
+  ],
+  "winner": "LEC",
+  "winning_time": "1:27:11.335",
+  "podium": [
+   "LEC",
+   "RUS",
+   "HAM"
+  ],
+  "fastest_lap": {
+   "code": "ANT",
+   "s": 91.777,
+   "lap": 37,
+   "avg_kmh": 231.077
+  },
+  "penalties": [
+   "Car 12 (ANT) 5 s time penalty, track limits (Stewards doc 77)",
+   "Car 55 (SAI) 1 penalty lap, overtaking the Safety Car (Stewards doc 83)",
+   "Car 44 (HAM) 5 s time penalty, false start (served)",
+   "Car 23 (ALB) 10 s time penalty (served)",
+   "Car 18 (STR) three 5 s penalties, track limits (served)"
+  ],
+  "neutralisations": [
+   "VSC deployed 15:37 (ended 15:37)",
+   "VSC deployed 16:04 (ended 16:05)",
+   "Safety Car deployed 16:18; in this lap 16:27; deployed again 16:27; in this lap 16:29; chequered flag 16:31"
+  ],
+  "fastest_lap_no_note": "formula1.com and the FIA classification give different lap numbers for the fastest lap of 9 cars (PIA, BEA, OCO, PER, BOT, ALO, STR, ALB, HUL: FIA 1-3 laps lower). These are mostly cars lapped during the race; FIA appears to count the car's own laps, formula1.com possibly the leader's lap. Times agree exactly. Not resolved.",
+  "note": "Finish came straight after a late Safety Car period, so the gaps (top 16 within 8.2 s) are compressed. Race speed traps are higher than qualifying ones (tow and energy deployment differ).",
+  "rows": [
+   {
+    "pos": "1",
+    "number": 16,
+    "code": "LEC",
+    "laps": 52,
+    "time_or_status": "1:27:11.335",
+    "points": 25,
+    "fastest_lap_s": 92.871,
+    "fastest_lap_no_f1com": 43,
+    "fastest_lap_no_fia": 43,
+    "speed_trap_kmh": 315.1,
+    "intermediate_1_kmh": 319.6,
+    "intermediate_2_kmh": 263.2,
+    "finish_line_kmh": 255.5,
+    "best_sector_s": [
+     28.981,
+     37.395,
+     25.268
+    ]
+   },
+   {
+    "pos": "2",
+    "number": 63,
+    "code": "RUS",
+    "laps": 52,
+    "time_or_status": "+0.427s",
+    "points": 18,
+    "fastest_lap_s": 92.489,
+    "fastest_lap_no_f1com": 36,
+    "fastest_lap_no_fia": 36,
+    "speed_trap_kmh": 332.5,
+    "intermediate_1_kmh": 320.4,
+    "intermediate_2_kmh": 265.3,
+    "finish_line_kmh": 254.4,
+    "best_sector_s": [
+     29.544,
+     37.277,
+     25.334
+    ]
+   },
+   {
+    "pos": "3",
+    "number": 44,
+    "code": "HAM",
+    "laps": 52,
+    "time_or_status": "+0.772s",
+    "points": 15,
+    "fastest_lap_s": 92.309,
+    "fastest_lap_no_f1com": 25,
+    "fastest_lap_no_fia": 25,
+    "speed_trap_kmh": 351.5,
+    "intermediate_1_kmh": 331.5,
+    "intermediate_2_kmh": 264.1,
+    "finish_line_kmh": 252.5,
+    "best_sector_s": [
+     28.967,
+     37.735,
+     25.282
+    ]
+   },
+   {
+    "pos": "4",
+    "number": 1,
+    "code": "NOR",
+    "laps": 52,
+    "time_or_status": "+1.149s",
+    "points": 12,
+    "fastest_lap_s": 92.625,
+    "fastest_lap_no_f1com": 45,
+    "fastest_lap_no_fia": 45,
+    "speed_trap_kmh": 310.9,
+    "intermediate_1_kmh": 325.2,
+    "intermediate_2_kmh": 264.4,
+    "finish_line_kmh": 255.6,
+    "best_sector_s": [
+     29.542,
+     37.49,
+     25.532
+    ]
+   },
+   {
+    "pos": "5",
+    "number": 6,
+    "code": "HAD",
+    "laps": 52,
+    "time_or_status": "+1.598s",
+    "points": 10,
+    "fastest_lap_s": 92.268,
+    "fastest_lap_no_f1com": 40,
+    "fastest_lap_no_fia": 40,
+    "speed_trap_kmh": 331.7,
+    "intermediate_1_kmh": 314.6,
+    "intermediate_2_kmh": 263.6,
+    "finish_line_kmh": 254.7,
+    "best_sector_s": [
+     29.517,
+     37.38,
+     25.052
+    ]
+   },
+   {
+    "pos": "6",
+    "number": 30,
+    "code": "LAW",
+    "laps": 52,
+    "time_or_status": "+2.023s",
+    "points": 8,
+    "fastest_lap_s": 93.648,
+    "fastest_lap_no_f1com": 45,
+    "fastest_lap_no_fia": 45,
+    "speed_trap_kmh": 317.4,
+    "intermediate_1_kmh": 312.6,
+    "intermediate_2_kmh": 263.6,
+    "finish_line_kmh": 254.4,
+    "best_sector_s": [
+     29.629,
+     38.239,
+     25.597
+    ]
+   },
+   {
+    "pos": "7",
+    "number": 41,
+    "code": "LIN",
+    "laps": 52,
+    "time_or_status": "+2.214s",
+    "points": 6,
+    "fastest_lap_s": 93.632,
+    "fastest_lap_no_f1com": 29,
+    "fastest_lap_no_fia": 29,
+    "speed_trap_kmh": 331.6,
+    "intermediate_1_kmh": 315.7,
+    "intermediate_2_kmh": 264.9,
+    "finish_line_kmh": 255.1,
+    "best_sector_s": [
+     29.611,
+     38.237,
+     25.497
+    ]
+   },
+   {
+    "pos": "8",
+    "number": 5,
+    "code": "BOR",
+    "laps": 52,
+    "time_or_status": "+2.413s",
+    "points": 4,
+    "fastest_lap_s": 93.65,
+    "fastest_lap_no_f1com": 30,
+    "fastest_lap_no_fia": 30,
+    "speed_trap_kmh": 332.1,
+    "intermediate_1_kmh": 326.8,
+    "intermediate_2_kmh": 264.3,
+    "finish_line_kmh": 250.2,
+    "best_sector_s": [
+     29.731,
+     38.063,
+     25.807
+    ]
+   },
+   {
+    "pos": "9",
+    "number": 43,
+    "code": "COL",
+    "laps": 52,
+    "time_or_status": "+3.229s",
+    "points": 2,
+    "fastest_lap_s": 94.281,
+    "fastest_lap_no_f1com": 25,
+    "fastest_lap_no_fia": 25,
+    "speed_trap_kmh": 343.9,
+    "intermediate_1_kmh": 320.3,
+    "intermediate_2_kmh": 262.1,
+    "finish_line_kmh": 251.9,
+    "best_sector_s": [
+     29.78,
+     38.442,
+     26.022
+    ]
+   },
+   {
+    "pos": "10",
+    "number": 10,
+    "code": "GAS",
+    "laps": 52,
+    "time_or_status": "+3.445s",
+    "points": 1,
+    "fastest_lap_s": 94.179,
+    "fastest_lap_no_f1com": 44,
+    "fastest_lap_no_fia": 44,
+    "speed_trap_kmh": 344.0,
+    "intermediate_1_kmh": 318.1,
+    "intermediate_2_kmh": 263.7,
+    "finish_line_kmh": 251.2,
+    "best_sector_s": [
+     29.799,
+     38.2,
+     25.849
+    ]
+   },
+   {
+    "pos": "11",
+    "number": 81,
+    "code": "PIA",
+    "laps": 52,
+    "time_or_status": "+4.014s",
+    "points": 0,
+    "fastest_lap_s": 92.917,
+    "fastest_lap_no_f1com": 43,
+    "fastest_lap_no_fia": 42,
+    "speed_trap_kmh": 338.9,
+    "intermediate_1_kmh": 331.2,
+    "intermediate_2_kmh": 264.2,
+    "finish_line_kmh": 259.1,
+    "best_sector_s": [
+     29.187,
+     37.254,
+     25.358
+    ]
+   },
+   {
+    "pos": "12",
+    "number": 87,
+    "code": "BEA",
+    "laps": 52,
+    "time_or_status": "+5.245s",
+    "points": 0,
+    "fastest_lap_s": 94.455,
+    "fastest_lap_no_f1com": 32,
+    "fastest_lap_no_fia": 31,
+    "speed_trap_kmh": 339.4,
+    "intermediate_1_kmh": 327.0,
+    "intermediate_2_kmh": 263.8,
+    "finish_line_kmh": 252.1,
+    "best_sector_s": [
+     29.872,
+     38.448,
+     25.646
+    ]
+   },
+   {
+    "pos": "13",
+    "number": 31,
+    "code": "OCO",
+    "laps": 52,
+    "time_or_status": "+5.512s",
+    "points": 0,
+    "fastest_lap_s": 94.792,
+    "fastest_lap_no_f1com": 44,
+    "fastest_lap_no_fia": 43,
+    "speed_trap_kmh": 332.8,
+    "intermediate_1_kmh": 312.7,
+    "intermediate_2_kmh": 261.5,
+    "finish_line_kmh": 250.1,
+    "best_sector_s": [
+     29.444,
+     38.568,
+     25.885
+    ]
+   },
+   {
+    "pos": "14",
+    "number": 11,
+    "code": "PER",
+    "laps": 52,
+    "time_or_status": "+7.403s",
+    "points": 0,
+    "fastest_lap_s": 95.52,
+    "fastest_lap_no_f1com": 45,
+    "fastest_lap_no_fia": 44,
+    "speed_trap_kmh": 325.2,
+    "intermediate_1_kmh": 317.6,
+    "intermediate_2_kmh": 264.6,
+    "finish_line_kmh": 249.3,
+    "best_sector_s": [
+     29.954,
+     38.847,
+     26.187
+    ]
+   },
+   {
+    "pos": "15",
+    "number": 12,
+    "code": "ANT",
+    "laps": 52,
+    "time_or_status": "+8.005s",
+    "points": 0,
+    "fastest_lap_s": 91.777,
+    "fastest_lap_no_f1com": 37,
+    "fastest_lap_no_fia": 37,
+    "speed_trap_kmh": 322.3,
+    "intermediate_1_kmh": 317.5,
+    "intermediate_2_kmh": 262.4,
+    "finish_line_kmh": 255.7,
+    "best_sector_s": [
+     29.408,
+     37.119,
+     25.157
+    ]
+   },
+   {
+    "pos": "16",
+    "number": 77,
+    "code": "BOT",
+    "laps": 52,
+    "time_or_status": "+8.162s",
+    "points": 0,
+    "fastest_lap_s": 95.893,
+    "fastest_lap_no_f1com": 32,
+    "fastest_lap_no_fia": 31,
+    "speed_trap_kmh": 316.1,
+    "intermediate_1_kmh": 302.6,
+    "intermediate_2_kmh": 260.1,
+    "finish_line_kmh": 245.3,
+    "best_sector_s": [
+     30.176,
+     39.048,
+     26.323
+    ]
+   },
+   {
+    "pos": "17",
+    "number": 55,
+    "code": "SAI",
+    "laps": 51,
+    "time_or_status": "+1 lap",
+    "points": 0,
+    "fastest_lap_s": 92.734,
+    "fastest_lap_no_f1com": 51,
+    "fastest_lap_no_fia": 51,
+    "speed_trap_kmh": 338.9,
+    "intermediate_1_kmh": 332.5,
+    "intermediate_2_kmh": 265.9,
+    "finish_line_kmh": 256.6,
+    "best_sector_s": [
+     29.169,
+     37.71,
+     25.604
+    ]
+   },
+   {
+    "pos": "18",
+    "number": 14,
+    "code": "ALO",
+    "laps": 51,
+    "time_or_status": "+1 lap",
+    "points": 0,
+    "fastest_lap_s": 95.827,
+    "fastest_lap_no_f1com": 51,
+    "fastest_lap_no_fia": 50,
+    "speed_trap_kmh": 334.8,
+    "intermediate_1_kmh": 295.5,
+    "intermediate_2_kmh": 259.3,
+    "finish_line_kmh": 245.2,
+    "best_sector_s": [
+     30.331,
+     39.349,
+     26.142
+    ]
+   },
+   {
+    "pos": "19",
+    "number": 18,
+    "code": "STR",
+    "laps": 51,
+    "time_or_status": "+1 lap",
+    "points": 0,
+    "fastest_lap_s": 97.232,
+    "fastest_lap_no_f1com": 43,
+    "fastest_lap_no_fia": 41,
+    "speed_trap_kmh": 309.9,
+    "intermediate_1_kmh": 300.5,
+    "intermediate_2_kmh": 258.7,
+    "finish_line_kmh": 245.4,
+    "best_sector_s": [
+     30.425,
+     39.749,
+     26.103
+    ]
+   },
+   {
+    "pos": "20",
+    "number": 3,
+    "code": "VER",
+    "laps": 46,
+    "time_or_status": "DNF",
+    "points": 0,
+    "fastest_lap_s": 92.101,
+    "fastest_lap_no_f1com": 40,
+    "fastest_lap_no_fia": 40,
+    "speed_trap_kmh": 330.8,
+    "intermediate_1_kmh": 319.3,
+    "intermediate_2_kmh": 266.7,
+    "finish_line_kmh": 257.6,
+    "best_sector_s": [
+     29.326,
+     37.412,
+     24.964
+    ]
+   },
+   {
+    "pos": "NC",
+    "number": 23,
+    "code": "ALB",
+    "laps": 43,
+    "time_or_status": "DNF",
+    "points": 0,
+    "fastest_lap_s": 93.867,
+    "fastest_lap_no_f1com": 45,
+    "fastest_lap_no_fia": 42,
+    "speed_trap_kmh": 305.5,
+    "intermediate_1_kmh": 308.9,
+    "intermediate_2_kmh": 258.1,
+    "finish_line_kmh": 252.1,
+    "best_sector_s": [
+     29.658,
+     38.296,
+     25.913
+    ]
+   },
+   {
+    "pos": "NC",
+    "number": 27,
+    "code": "HUL",
+    "laps": 36,
+    "time_or_status": "DNF",
+    "points": 0,
+    "fastest_lap_s": 93.433,
+    "fastest_lap_no_f1com": 37,
+    "fastest_lap_no_fia": 36,
+    "speed_trap_kmh": 339.3,
+    "intermediate_1_kmh": 316.7,
+    "intermediate_2_kmh": 261.5,
+    "finish_line_kmh": 253.2,
+    "best_sector_s": [
+     29.75,
+     38.09,
+     25.593
+    ]
+   }
+  ]
+ },
+ "upgrades": {
+  "status": "official",
+  "sources": [
+   "fia_car_pres"
+  ],
+  "teams": {
+   "mclaren": [
+    {
+     "component": "Front Corner",
+     "reason": "Performance - Flow Conditioning",
+     "change": "New Front Brake Duct"
+    },
+    {
+     "component": "Floor Furniture",
+     "reason": "Performance - Flow Conditioning",
+     "change": "Revised Floor Board and Furniture"
+    }
+   ],
+   "mercedes": [],
+   "astonmartin": [],
+   "audi": [],
+   "alpine": [],
+   "cadillac": [],
+   "redbull": [
+    {
+     "component": "Rear Corner",
+     "reason": "Performance - Local Load",
+     "change": "Rear wheel bodywork winglets (number of cascade elements changed)"
+    }
+   ],
+   "ferrari": [
+    {
+     "component": "Rear Corner",
+     "reason": "Performance - Local Load and Cooling",
+     "change": "Increased cooling inlet and outlet sections, updated lower deflector, re-optimized rearward winglet cluster"
+    }
+   ],
+   "williams": [
+    {
+     "component": "Front Wing",
+     "reason": "Performance - Flow Conditioning",
+     "change": "New front wing geometry with updated profiles and endplate surfaces"
+    }
+   ],
+   "racingbulls": [
+    {
+     "component": "Floor Edge & Diffuser",
+     "reason": "Performance - Local Load",
+     "change": "Updated floor corner & diffuser geometry"
+    },
+    {
+     "component": "Rear Corner",
+     "reason": "Performance - Flow Conditioning",
+     "change": "New forward deflector geometry"
+    }
+   ],
+   "haas": [
+    {
+     "component": "Rear Wing",
+     "reason": "Performance - Local Load",
+     "change": "New Rear Wing profiles (flap geometry)"
+    },
+    {
+     "component": "Rear Wing Endplate",
+     "reason": "Performance - Flow Conditioning",
+     "change": "Rear Wing Endplate with external protrusions"
+    }
+   ]
+  },
+  "note": "Empty list = team submitted no updates for this event (Mercedes, Aston Martin, Audi, Alpine, Cadillac)."
+ }
+}

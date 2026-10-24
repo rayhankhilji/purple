@@ -1,0 +1,50 @@
+[
+ {
+  "id": "q01",
+  "try": 1,
+  "served_by": "provider",
+  "model": "claude-haiku-4-5-20251001",
+  "mubit_request_id": "mreq_01a16ea91a567641a52a09f7d7a17367",
+  "ms": 3415
+ },
+ {
+  "id": "q01",
+  "try": 2,
+  "served_by": "provider",
+  "model": "claude-haiku-4-5-20251001",
+  "mubit_request_id": "mreq_01a16ea925b87a038db242dd1b7074f8",
+  "ms": 2332
+ },
+ {
+  "id": "q01",
+  "try": 3,
+  "served_by": "provider",
+  "model": "claude-haiku-4-5-20251001",
+  "mubit_request_id": "mreq_01a16ea92fd17d73aa1a8c2fee8fb45d",
+  "ms": 2692
+ },
+ {
+  "id": "q02",
+  "try": 1,
+  "served_by": "provider",
+  "model": "claude-haiku-4-5-20251001",
+  "mubit_request_id": "mreq_01a16ea93a4f7f228b5953e6ee02485c",
+  "ms": 2486
+ },
+ {
+  "id": "q02",
+  "try": 2,
+  "served_by": "provider",
+  "model": "claude-haiku-4-5-20251001",
+  "mubit_request_id": "mreq_01a16ea942dc7c81b2a2bc110fa2e847",
+  "ms": 2130
+ },
+ {
+  "id": "q02",
+  "try": 3,
+  "served_by": "provider",
+  "model": "claude-haiku-4-5-20251001",
+  "mubit_request_id": "mreq_01a16ea94b2f7863b0eff9d34e399d2b",
+  "ms": 2157
+ }
+]

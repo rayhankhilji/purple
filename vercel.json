@@ -1,0 +1,159 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "npm ci",
+  "buildCommand": "node server/vercel.js build",
+  "outputDirectory": "public",
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 300,
+      "includeFiles": "{server/**,lab/**,concept/**,js/**,vendor/three.min.js,test/mocks/**,docs/ledger-snapshot/**,docs/concept/COUPLING.md,docs/concept/loop-runs/**}",
+      "excludeFiles": "{concept/data/telemetry/**,concept/**/*.png,server/.env*}"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/concept/demo/?api=/",
+      "permanent": false
+    },
+    {
+      "source": "/lab",
+      "destination": "/lab/?api=/",
+      "permanent": false
+    },
+    {
+      "source": "/lab/",
+      "missing": [
+        {
+          "type": "query",
+          "key": "api"
+        }
+      ],
+      "destination": "/lab/?api=/",
+      "permanent": false
+    },
+    {
+      "source": "/lab/index.html",
+      "missing": [
+        {
+          "type": "query",
+          "key": "api"
+        }
+      ],
+      "destination": "/lab/?api=/",
+      "permanent": false
+    },
+    {
+      "source": "/concept/demo",
+      "destination": "/concept/demo/?api=/",
+      "permanent": false
+    },
+    {
+      "source": "/concept/demo/",
+      "missing": [
+        {
+          "type": "query",
+          "key": "api"
+        }
+      ],
+      "destination": "/concept/demo/?api=/",
+      "permanent": false
+    },
+    {
+      "source": "/concept/lab",
+      "destination": "/concept/lab/?api=/",
+      "permanent": false
+    },
+    {
+      "source": "/concept/lab/",
+      "missing": [
+        {
+          "type": "query",
+          "key": "api"
+        }
+      ],
+      "destination": "/concept/lab/?api=/",
+      "permanent": false
+    },
+    {
+      "source": "/concept/lab/index.html",
+      "missing": [
+        {
+          "type": "query",
+          "key": "api"
+        }
+      ],
+      "destination": "/concept/lab/?api=/",
+      "permanent": false
+    },
+    {
+      "source": "/unlock",
+      "destination": "/api/unlock",
+      "permanent": false
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
+    },
+    {
+      "source": "/vendor/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400, stale-while-revalidate=604800"
+        }
+      ]
+    },
+    {
+      "source": "/concept/data/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600, stale-while-revalidate=86400"
+        }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    }
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "claude/equation-i-racing-game-e5dpdc": false,
+      "claude/**": false
+    }
+  }
+}

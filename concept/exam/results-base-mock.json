@@ -1,0 +1,1216 @@
+{
+ "v": 1,
+ "kind": "purple-designer-exam-results",
+ "column": "base",
+ "label": "base-mock",
+ "what": "B. Claude Haiku 4.5 + frozen designer prompt via server/mubit.js, untrained (x-middleware-record: metadata) · MOCK RUN: the scripted mock, not a model",
+ "questions_sha256": "9434d81c78777e1983b649b973286ed6d962b877417526b073677ec29d73ae79",
+ "n": 30,
+ "exam_seed": 2026,
+ "graded_by": "concept/engineer/engine.js one decision from the question's head car (physics lap sim · quasi-steady-state point mass · Silverstone · calibrated to 2026 British GP qualifying); kept = legal && lap < head − 0.1 ms",
+ "meta": {
+  "session_id": "exam-dsg-mock",
+  "mock": true,
+  "trained": false,
+  "model": "claude-haiku-4-5",
+  "max_tokens": 250,
+  "temperature": 0,
+  "prompt_version": "1"
+ },
+ "summary": {
+  "N": 30,
+  "parsed": 27,
+  "legal": 16,
+  "direct_kept": 10,
+  "engine_kept": 22,
+  "direct_mean_gain_s": 0.018467,
+  "engine_mean_gain_s": 0.057567,
+  "direct_total_gain_s": 0.554,
+  "engine_total_gain_s": 1.727,
+  "line": "kept 10/30 (direct), 22/30 (engine), mean gain 0.0185 s (direct), 0.0576 s (engine); parsed 27/30, legal as proposed 16/30"
+ },
+ "grade_ms": 17205,
+ "grade_ms_per_question": 574,
+ "total_ms": 17211,
+ "rows": [
+  {
+   "phase": "early",
+   "id": "q01",
+   "parsed": true,
+   "legal": false,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.001,
+    "lap_s": 88.493,
+    "from": "repaired"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.024,
+    "d_lap_s": -0.024,
+    "lap_s": 88.468,
+    "from": "candidate",
+    "best_change": "rear_wing.aoa_deg 17.5->17",
+    "screened": 2726,
+    "physics_laps": 28
+   },
+   "proposal": [
+    {
+     "part": "diffuser",
+     "param": "expansion_deg",
+     "from": 16,
+     "to": 19
+    }
+   ],
+   "head_lap_s": 88.492,
+   "articles": [
+    "PKG-FLOOR-STALL"
+   ],
+   "ms": 3623,
+   "answer": "{\"changes\":[{\"part\":\"diffuser\",\"param\":\"expansion_deg\",\"to\":19}],\"hypothesis\":\"Last change gained -0.074 s (Maggotts-Becketts-Chapel -0.128, Stowe -0.034); push the same way.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":1}}",
+   "mubit_request_id": "mreq_mock64529f22c5782d37f71c134",
+   "model": "mock",
+   "input_tokens": 434,
+   "output_tokens": 55,
+   "latency_ms": 0
+  },
+  {
+   "phase": "mid",
+   "id": "q02",
+   "parsed": true,
+   "legal": false,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.239,
+    "d_lap_s": -0.239,
+    "lap_s": 87.995,
+    "from": "repaired"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.239,
+    "d_lap_s": -0.239,
+    "lap_s": 87.995,
+    "from": "repaired",
+    "best_change": "front_wing.aoa_deg 25->27.5; rear_wing.aoa_deg 18.5->20; front_wing.span_mm 1300->1330; front_wing.elements 3->2; front_wing.sm_delta_deg 4->5",
+    "screened": 2931,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "front_wing",
+     "param": "aoa_deg",
+     "from": 25,
+     "to": 26
+    }
+   ],
+   "head_lap_s": 88.234,
+   "articles": [
+    "C3.10.1(a)"
+   ],
+   "ms": 1192,
+   "answer": "{\"changes\":[{\"part\":\"front_wing\",\"param\":\"aoa_deg\",\"to\":26}],\"hypothesis\":\"New direction: move front_wing.aoa_deg toward 29; last result illegal.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":1}}",
+   "mubit_request_id": "mreq_mock63529d8fc6782ecafa1c180",
+   "model": "mock",
+   "input_tokens": 440,
+   "output_tokens": 47,
+   "latency_ms": 0
+  },
+  {
+   "phase": "late",
+   "id": "q03",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.002,
+    "lap_s": 87.603,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.002,
+    "lap_s": 87.603,
+    "from": "proposal",
+    "best_change": "floor.width_mm 1530->1520",
+    "screened": 2612,
+    "physics_laps": 27
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "width_mm",
+     "from": 1530,
+     "to": 1520
+    }
+   ],
+   "head_lap_s": 87.601,
+   "ms": 746,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"width_mm\",\"to\":1520}],\"hypothesis\":\"Last change lost +0.002 s (Village -0.001, Loop -0.001); reverse floor.width_mm.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":3}}",
+   "mubit_request_id": "mreq_mock62529bfcc778305df91c167",
+   "model": "mock",
+   "input_tokens": 418,
+   "output_tokens": 49,
+   "latency_ms": 0
+  },
+  {
+   "phase": "early",
+   "id": "q04",
+   "parsed": true,
+   "legal": false,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.111,
+    "lap_s": 88.653,
+    "from": "projected"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.053,
+    "d_lap_s": -0.053,
+    "lap_s": 88.489,
+    "from": "candidate",
+    "best_change": "diffuser.expansion_deg 15.5->17; rear_wing.span_mm 1120->1090; rear_wing.chord_mm 420->415; rear_wing.sm_delta_deg 17->19",
+    "screened": 2867,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "elements",
+     "from": 2,
+     "to": 4
+    }
+   ],
+   "head_lap_s": 88.542,
+   "articles": [
+    "C3.11.1(b)"
+   ],
+   "ms": 650,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"elements\",\"to\":4}],\"hypothesis\":\"Push rear_wing.elements past its limit for more load.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_mock61529a69c0782558f41c0e9",
+   "model": "mock",
+   "input_tokens": 425,
+   "output_tokens": 43,
+   "latency_ms": 0
+  },
+  {
+   "phase": "mid",
+   "id": "q05",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.035,
+    "lap_s": 88.232,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.034,
+    "d_lap_s": -0.034,
+    "lap_s": 88.163,
+    "from": "candidate",
+    "best_change": "floor.ride_height_mm 28.5->27; floor.width_mm 1520->1540; floor.throat_mm 69.5->72",
+    "screened": 2679,
+    "physics_laps": 28
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "ride_height_mm",
+     "from": 28.5,
+     "to": 29
+    }
+   ],
+   "head_lap_s": 88.197,
+   "ms": 577,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"ride_height_mm\",\"to\":28.88}],\"hypothesis\":\"New direction: move floor.ride_height_mm toward 30; last result 0.147 s.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":1}}",
+   "mubit_request_id": "mreq_mock605298d6c17826ebf31c0d0",
+   "model": "mock",
+   "input_tokens": 427,
+   "output_tokens": 49,
+   "latency_ms": 0
+  },
+  {
+   "phase": "late",
+   "id": "q06",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.014,
+    "d_lap_s": -0.014,
+    "lap_s": 87.727,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.029,
+    "d_lap_s": -0.029,
+    "lap_s": 87.712,
+    "from": "candidate",
+    "best_change": "rear_wing.sm_delta_deg 26.5->30",
+    "screened": 2892,
+    "physics_laps": 29
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "sm_delta_deg",
+     "from": 26.5,
+     "to": 28
+    }
+   ],
+   "head_lap_s": 87.741,
+   "ms": 412,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"sm_delta_deg\",\"to\":28}],\"hypothesis\":\"Last change gained -0.003 s (Copse-Maggotts -0.010, Maggotts-Becketts-Chapel -0.007); push the same way.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":3}}",
+   "mubit_request_id": "mreq_mock5f529743c278287ef61c11b",
+   "model": "mock",
+   "input_tokens": 445,
+   "output_tokens": 57,
+   "latency_ms": 0
+  },
+  {
+   "phase": "early",
+   "id": "q07",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.007,
+    "lap_s": 88.534,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.03,
+    "d_lap_s": -0.03,
+    "lap_s": 88.497,
+    "from": "candidate",
+    "best_change": "floor.width_mm 1470->1520; floor.throat_mm 60->62; diffuser.expansion_deg 14->15.5; suspension.front 1->0",
+    "screened": 2731,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "width_mm",
+     "from": 1470,
+     "to": 1490
+    }
+   ],
+   "head_lap_s": 88.527,
+   "ms": 384,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"width_mm\",\"to\":1490}],\"hypothesis\":\"Last change gained -0.004 s (Maggotts-Becketts-Chapel -0.116, Stowe -0.028); push the same way.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":3}}",
+   "mubit_request_id": "mreq_mock5e5295b0c3782a11f51c102",
+   "model": "mock",
+   "input_tokens": 431,
+   "output_tokens": 53,
+   "latency_ms": 0
+  },
+  {
+   "phase": "mid",
+   "id": "q08",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.022,
+    "d_lap_s": -0.022,
+    "lap_s": 88.245,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.061,
+    "d_lap_s": -0.061,
+    "lap_s": 88.206,
+    "from": "candidate",
+    "best_change": "setup.roll_front 55->50.5; setup.brake_bias 57->57.5",
+    "screened": 1287,
+    "physics_laps": 25
+   },
+   "proposal": [
+    {
+     "part": "setup",
+     "param": "roll_front",
+     "from": 55,
+     "to": 53.5
+    }
+   ],
+   "head_lap_s": 88.267,
+   "ms": 398,
+   "answer": "{\"changes\":[{\"part\":\"setup\",\"param\":\"roll_front\",\"to\":53.25}],\"hypothesis\":\"New direction: move setup.roll_front toward 48; last result 0.103 s.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":1}}",
+   "mubit_request_id": "mreq_mock6d52ad4dbc781f0c001c217",
+   "model": "mock",
+   "input_tokens": 448,
+   "output_tokens": 47,
+   "latency_ms": 0
+  },
+  {
+   "phase": "late",
+   "id": "q09",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0,
+    "lap_s": 87.819,
+    "from": "no change"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.021,
+    "d_lap_s": -0.021,
+    "lap_s": 87.798,
+    "from": "candidate",
+    "best_change": "rear_wing.aoa_deg 22.5->23; rear_wing.chord_mm 380->375; rear_wing.endplate_top_mm 855->860",
+    "screened": 2886,
+    "physics_laps": 28
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 22.5,
+     "to": 22.5
+    }
+   ],
+   "head_lap_s": 87.819,
+   "no_change": true,
+   "ms": 613,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"aoa_deg\",\"to\":22.25}],\"hypothesis\":\"New direction: move rear_wing.aoa_deg toward 22; last result 0.265 s.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":1}}",
+   "mubit_request_id": "mreq_mock6c52abbabd78209fff1c1fe",
+   "model": "mock",
+   "input_tokens": 450,
+   "output_tokens": 48,
+   "latency_ms": 0
+  },
+  {
+   "phase": "early",
+   "id": "q10",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.02,
+    "d_lap_s": -0.02,
+    "lap_s": 88.515,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.068,
+    "d_lap_s": -0.068,
+    "lap_s": 88.467,
+    "from": "candidate",
+    "best_change": "rear_wing.sm_delta_deg 21.5->30; diffuser.expansion_deg 15->16.5; rear_wing.chord_mm 405->395; rear_wing.endplate_top_mm 860->865",
+    "screened": 2926,
+    "physics_laps": 30
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "sm_delta_deg",
+     "from": 21.5,
+     "to": 30
+    }
+   ],
+   "clamped": [
+    "rear_wing.sm_delta_deg"
+   ],
+   "head_lap_s": 88.535,
+   "ms": 464,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"sm_delta_deg\",\"to\":36.5}],\"hypothesis\":\"Last change gained -0.080 s (Maggotts-Becketts-Chapel -0.053, Hangar Str -0.027); push the same way.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":1}}",
+   "mubit_request_id": "mreq_mock00106956e32ee2057d32ac3",
+   "model": "mock",
+   "input_tokens": 427,
+   "output_tokens": 56,
+   "latency_ms": 0
+  },
+  {
+   "phase": "mid",
+   "id": "q11",
+   "parsed": true,
+   "legal": false,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.01,
+    "lap_s": 88.235,
+    "from": "projected"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.003,
+    "d_lap_s": -0.003,
+    "lap_s": 88.222,
+    "from": "candidate",
+    "best_change": "setup.heave_n_mm 4050->3600; survival_cell.cockpit_len_mm 1950->1940; ballast.x_frac 0.04->0.11; setup.roll_front 55->53",
+    "screened": 2997,
+    "physics_laps": 33
+   },
+   "proposal": [
+    {
+     "part": "setup",
+     "param": "heave_n_mm",
+     "from": 4050,
+     "to": 4800
+    },
+    {
+     "part": "rear_wing",
+     "param": "endplate_top_mm",
+     "from": 875,
+     "to": 870
+    },
+    {
+     "part": "survival_cell",
+     "param": "cockpit_len_mm",
+     "from": 1950,
+     "to": 1970
+    }
+   ],
+   "head_lap_s": 88.225,
+   "articles": [
+    "PKG-WB"
+   ],
+   "ms": 681,
+   "answer": "{\"changes\":[{\"part\":\"setup\",\"param\":\"heave_n_mm\",\"to\":4800},{\"part\":\"rear_wing\",\"param\":\"endplate_top_mm\",\"to\":870},{\"part\":\"survival_cell\",\"param\":\"cockpit_len_mm\",\"to\":1970}],\"hypothesis\":\"Last change gained -0.055 s (Vale-Club -0.028, Brooklands -0.020); push the same way.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":1}}",
+   "mubit_request_id": "mreq_mock01106ae9e22ee0727e32adc",
+   "model": "mock",
+   "input_tokens": 439,
+   "output_tokens": 80,
+   "latency_ms": 0
+  },
+  {
+   "phase": "late",
+   "id": "q12",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.005,
+    "lap_s": 87.751,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.002,
+    "lap_s": 87.748,
+    "from": "candidate",
+    "best_change": "rear_wing.endplate_top_mm 880->875",
+    "screened": 2872,
+    "physics_laps": 27
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "span_mm",
+     "from": 1110,
+     "to": 1120
+    }
+   ],
+   "head_lap_s": 87.746,
+   "ms": 475,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"span_mm\",\"to\":1120}],\"hypothesis\":\"Last change lost +0.004 s (Wellington Str +0.001, Woodcote +0.001); reverse rear_wing.span_mm.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":3}}",
+   "mubit_request_id": "mreq_mockfe106630e12ededf7f32af5",
+   "model": "mock",
+   "input_tokens": 444,
+   "output_tokens": 54,
+   "latency_ms": 0
+  },
+  {
+   "phase": "early",
+   "id": "q13",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.005,
+    "lap_s": 88.662,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.198,
+    "d_lap_s": -0.198,
+    "lap_s": 88.459,
+    "from": "candidate",
+    "best_change": "floor.width_mm 1450->1520; rear_wing.aoa_deg 20->18; floor.ride_height_mm 35->34; suspension.front 0->1",
+    "screened": 2817,
+    "physics_laps": 28
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "width_mm",
+     "from": 1450,
+     "to": 1500
+    }
+   ],
+   "head_lap_s": 88.657,
+   "ms": 409,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"width_mm\",\"to\":1495}],\"hypothesis\":\"New direction: move floor.width_mm toward 1540; last result illegal.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":3}}",
+   "mubit_request_id": "mreq_mockff1067c3e02edd4c8032b0e",
+   "model": "mock",
+   "input_tokens": 442,
+   "output_tokens": 46,
+   "latency_ms": 0
+  },
+  {
+   "phase": "mid",
+   "id": "q14",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.034,
+    "d_lap_s": -0.034,
+    "lap_s": 88.251,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.126,
+    "d_lap_s": -0.126,
+    "lap_s": 88.159,
+    "from": "candidate",
+    "best_change": "floor.width_mm 1450->1530; floor.throat_mm 62.5->64.5; floor.ride_height_mm 32.5->30; suspension.front 0->1",
+    "screened": 2817,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "width_mm",
+     "from": 1450,
+     "to": 1500
+    }
+   ],
+   "head_lap_s": 88.285,
+   "ms": 402,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"width_mm\",\"to\":1495}],\"hypothesis\":\"New direction: move floor.width_mm toward 1540; last result illegal.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_mock04106fa2df2edbb97932a5e",
+   "model": "mock",
+   "input_tokens": 446,
+   "output_tokens": 46,
+   "latency_ms": 0
+  },
+  {
+   "phase": "late",
+   "id": "q15",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0,
+    "lap_s": 87.647,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.022,
+    "d_lap_s": -0.022,
+    "lap_s": 87.625,
+    "from": "candidate",
+    "best_change": "rear_wing.endplate_top_mm 870->865; rear_wing.span_mm 1150->1120",
+    "screened": 2857,
+    "physics_laps": 27
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "endplate_top_mm",
+     "from": 870,
+     "to": 875
+    }
+   ],
+   "head_lap_s": 87.647,
+   "ms": 687,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"endplate_top_mm\",\"to\":872.5}],\"hypothesis\":\"New direction: move rear_wing.endplate_top_mm toward 880; last result illegal.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":3}}",
+   "mubit_request_id": "mreq_mock05107135de2eda267a32a77",
+   "model": "mock",
+   "input_tokens": 441,
+   "output_tokens": 52,
+   "latency_ms": 0
+  },
+  {
+   "phase": "early",
+   "id": "q16",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.004,
+    "lap_s": 88.516,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.147,
+    "d_lap_s": -0.147,
+    "lap_s": 88.365,
+    "from": "candidate",
+    "best_change": "front_wing.aoa_deg 27.5->29; rear_wing.aoa_deg 19->20.5; floor.ride_height_mm 35->33.5",
+    "screened": 2920,
+    "physics_laps": 32
+   },
+   "proposal": [
+    {
+     "part": "front_wing",
+     "param": "aoa_deg",
+     "from": 27.5,
+     "to": 28
+    }
+   ],
+   "head_lap_s": 88.512,
+   "ms": 466,
+   "answer": "{\"changes\":[{\"part\":\"front_wing\",\"param\":\"aoa_deg\",\"to\":27.88}],\"hypothesis\":\"New direction: move front_wing.aoa_deg toward 29; last result 0.308 s.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":3}}",
+   "mubit_request_id": "mreq_mock02106c7cdd2ed8937b32a90",
+   "model": "mock",
+   "input_tokens": 428,
+   "output_tokens": 48,
+   "latency_ms": 0
+  },
+  {
+   "phase": "mid",
+   "id": "q17",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.002,
+    "d_lap_s": -0.002,
+    "lap_s": 88.189,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.146,
+    "d_lap_s": -0.146,
+    "lap_s": 88.045,
+    "from": "candidate",
+    "best_change": "rear_wing.aoa_deg 19.5->21; front_wing.aoa_deg 30->32; front_wing.sm_delta_deg 5->4.5",
+    "screened": 2900,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "front_wing",
+     "param": "span_mm",
+     "from": 1340,
+     "to": 1350
+    }
+   ],
+   "head_lap_s": 88.191,
+   "ms": 459,
+   "answer": "{\"changes\":[{\"part\":\"front_wing\",\"param\":\"span_mm\",\"to\":1350}],\"hypothesis\":\"Last change gained -0.014 s (Vale-Club -0.072, Brooklands -0.057); push the same way.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_mock03106e0fdc2ed7007c32aaa",
+   "model": "mock",
+   "input_tokens": 435,
+   "output_tokens": 52,
+   "latency_ms": 0
+  },
+  {
+   "phase": "late",
+   "id": "q18",
+   "parsed": true,
+   "legal": false,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.001,
+    "d_lap_s": -0.001,
+    "lap_s": 87.794,
+    "from": "projected"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.02,
+    "d_lap_s": -0.02,
+    "lap_s": 87.775,
+    "from": "candidate",
+    "best_change": "rear_wing.sm_delta_deg 24.5->27",
+    "screened": 2846,
+    "physics_laps": 30
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "endplate_top_mm",
+     "from": 875,
+     "to": 895
+    }
+   ],
+   "head_lap_s": 87.795,
+   "articles": [
+    "C3.11.2(a)"
+   ],
+   "ms": 500,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"endplate_top_mm\",\"to\":895}],\"hypothesis\":\"Last change gained -0.007 s (Wellington Str -0.005, Hangar Str -0.005); push the same way.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_mock081075eeeb2eee9d75329f9",
+   "model": "mock",
+   "input_tokens": 437,
+   "output_tokens": 54,
+   "latency_ms": 0
+  },
+  {
+   "phase": "early",
+   "id": "q19",
+   "parsed": false,
+   "legal": false,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": null,
+    "from": null
+   },
+   "engine": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": null,
+    "from": null
+   },
+   "parse_error": "json: output must start with '{' (prose before JSON)",
+   "ms": 0,
+   "answer": "Here is my proposal: {\"changes\":[{\"part\":\"floor\",\"param\":\"ride_height_mm\",\"to\":31}],\"hypothesis\":\"Lower floor.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_mock09107781ea2eed0a7632a12",
+   "model": "mock",
+   "input_tokens": 441,
+   "output_tokens": 39,
+   "latency_ms": 0
+  },
+  {
+   "phase": "mid",
+   "id": "q20",
+   "parsed": false,
+   "legal": false,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": null,
+    "from": null
+   },
+   "engine": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": null,
+    "from": null
+   },
+   "parse_error": "json: output must start with '{' (prose before JSON)",
+   "ms": 0,
+   "answer": "Here is my proposal: {\"changes\":[{\"part\":\"floor\",\"param\":\"ride_height_mm\",\"to\":31}],\"hypothesis\":\"Lower floor.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_mock1a0e53ad6931f38eef3a1b6",
+   "model": "mock",
+   "input_tokens": 443,
+   "output_tokens": 39,
+   "latency_ms": 0
+  },
+  {
+   "phase": "late",
+   "id": "q21",
+   "parsed": true,
+   "legal": false,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.003,
+    "lap_s": 87.654,
+    "from": "repaired"
+   },
+   "engine": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.003,
+    "lap_s": 87.654,
+    "from": "repaired",
+    "best_change": "front_wing.span_mm 1320->1330; front_wing.sm_delta_deg 5->4.5",
+    "screened": 2908,
+    "physics_laps": 25
+   },
+   "proposal": [
+    {
+     "part": "front_wing",
+     "param": "span_mm",
+     "from": 1320,
+     "to": 1350
+    }
+   ],
+   "head_lap_s": 87.651,
+   "articles": [
+    "C3.10.10(s)(i)"
+   ],
+   "ms": 470,
+   "answer": "{\"changes\":[{\"part\":\"front_wing\",\"param\":\"span_mm\",\"to\":1350}],\"hypothesis\":\"New direction: move front_wing.span_mm toward 1350; last result illegal.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_mock190e521a6a31f521ee3a19d",
+   "model": "mock",
+   "input_tokens": 446,
+   "output_tokens": 48,
+   "latency_ms": 0
+  },
+  {
+   "phase": "early",
+   "id": "q22",
+   "parsed": true,
+   "legal": false,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.121,
+    "d_lap_s": -0.121,
+    "lap_s": 88.37,
+    "from": "repaired"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.121,
+    "d_lap_s": -0.121,
+    "lap_s": 88.37,
+    "from": "repaired",
+    "best_change": "front_wing.span_mm 1300->1310; front_wing.aoa_deg 25->27; front_wing.elements 3->2; front_wing.sm_delta_deg 4->4.5",
+    "screened": 2933,
+    "physics_laps": 29
+   },
+   "proposal": [
+    {
+     "part": "front_wing",
+     "param": "span_mm",
+     "from": 1300,
+     "to": 1350
+    }
+   ],
+   "head_lap_s": 88.491,
+   "articles": [
+    "C3.10.1(a)"
+   ],
+   "ms": 437,
+   "answer": "{\"changes\":[{\"part\":\"front_wing\",\"param\":\"span_mm\",\"to\":1350}],\"hypothesis\":\"New direction: move front_wing.span_mm toward 1350; last result 0.172 s.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":3}}",
+   "mubit_request_id": "mreq_mock180e50876731f068f13a1e9",
+   "model": "mock",
+   "input_tokens": 434,
+   "output_tokens": 48,
+   "latency_ms": 0
+  },
+  {
+   "phase": "mid",
+   "id": "q23",
+   "parsed": true,
+   "legal": false,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.111,
+    "lap_s": 88.258,
+    "from": "projected"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.226,
+    "d_lap_s": -0.226,
+    "lap_s": 87.921,
+    "from": "candidate",
+    "best_change": "front_wing.aoa_deg 27->29.5; rear_wing.chord_mm 405->415; rear_wing.aoa_deg 18.5->20",
+    "screened": 2842,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "elements",
+     "from": 2,
+     "to": 4
+    }
+   ],
+   "head_lap_s": 88.147,
+   "articles": [
+    "C3.11.1(b)"
+   ],
+   "ms": 550,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"elements\",\"to\":4}],\"hypothesis\":\"Push rear_wing.elements past its limit for more load.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_mock170e4ef46831f1fbf03a1d0",
+   "model": "mock",
+   "input_tokens": 434,
+   "output_tokens": 43,
+   "latency_ms": 0
+  },
+  {
+   "phase": "late",
+   "id": "q24",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.135,
+    "lap_s": 87.768,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.009,
+    "d_lap_s": -0.009,
+    "lap_s": 87.624,
+    "from": "candidate",
+    "best_change": "floor.throat_mm 63.5->67.5; floor.ride_height_mm 31->29",
+    "screened": 2819,
+    "physics_laps": 28
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "throat_mm",
+     "from": 63.5,
+     "to": 67.5
+    }
+   ],
+   "head_lap_s": 87.633,
+   "ms": 470,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"throat_mm\",\"to\":67.63}],\"hypothesis\":\"New direction: move floor.throat_mm toward 80; last result illegal.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":3}}",
+   "mubit_request_id": "mreq_mock160e4d616d31f9daeb3a152",
+   "model": "mock",
+   "input_tokens": 432,
+   "output_tokens": 47,
+   "latency_ms": 0
+  },
+  {
+   "phase": "early",
+   "id": "q25",
+   "parsed": true,
+   "legal": false,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.095,
+    "d_lap_s": -0.095,
+    "lap_s": 88.409,
+    "from": "repaired"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.11,
+    "d_lap_s": -0.11,
+    "lap_s": 88.394,
+    "from": "candidate",
+    "best_change": "front_wing.span_mm 1300->1310; front_wing.aoa_deg 25->27; front_wing.elements 3->2; front_wing.sm_delta_deg 4->4.5",
+    "screened": 2933,
+    "physics_laps": 28
+   },
+   "proposal": [
+    {
+     "part": "front_wing",
+     "param": "span_mm",
+     "from": 1300,
+     "to": 1400
+    }
+   ],
+   "head_lap_s": 88.504,
+   "articles": [
+    "C3.10.1(a)"
+   ],
+   "ms": 441,
+   "answer": "{\"changes\":[{\"part\":\"front_wing\",\"param\":\"span_mm\",\"to\":1400}],\"hypothesis\":\"Push front_wing.span_mm past its limit for more load.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_mock150e4bce6e31fb6dea3a139",
+   "model": "mock",
+   "input_tokens": 429,
+   "output_tokens": 44,
+   "latency_ms": 0
+  },
+  {
+   "phase": "mid",
+   "id": "q26",
+   "parsed": false,
+   "legal": false,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": null,
+    "from": null
+   },
+   "engine": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": null,
+    "from": null
+   },
+   "parse_error": "json: output must start with '{' (prose before JSON)",
+   "ms": 0,
+   "answer": "Here is my proposal: {\"changes\":[{\"part\":\"floor\",\"param\":\"ride_height_mm\",\"to\":31}],\"hypothesis\":\"Lower floor.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_mock140e4a3b6b31f6b4ed3a184",
+   "model": "mock",
+   "input_tokens": 444,
+   "output_tokens": 39,
+   "latency_ms": 0
+  },
+  {
+   "phase": "late",
+   "id": "q27",
+   "parsed": true,
+   "legal": false,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.066,
+    "lap_s": 87.822,
+    "from": "repaired"
+   },
+   "engine": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.003,
+    "lap_s": 87.759,
+    "from": "alone",
+    "best_change": "front_wing.sm_delta_deg 4.5->4",
+    "screened": 2950,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "front_wing",
+     "param": "sm_delta_deg",
+     "from": 4.5,
+     "to": 20
+    }
+   ],
+   "head_lap_s": 87.756,
+   "articles": [
+    "C3.10.10(s)(i)"
+   ],
+   "ms": 340,
+   "answer": "{\"changes\":[{\"part\":\"front_wing\",\"param\":\"sm_delta_deg\",\"to\":20}],\"hypothesis\":\"New direction: move front_wing.sm_delta_deg toward 20; last result illegal.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":1}}",
+   "mubit_request_id": "mreq_mock130e48a86c31f847ec3a16b",
+   "model": "mock",
+   "input_tokens": 437,
+   "output_tokens": 50,
+   "latency_ms": 0
+  },
+  {
+   "phase": "early",
+   "id": "q28",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.11,
+    "lap_s": 88.645,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.031,
+    "d_lap_s": -0.031,
+    "lap_s": 88.504,
+    "from": "candidate",
+    "best_change": "diffuser.expansion_deg 15.5->16.5; rear_wing.chord_mm 415->410",
+    "screened": 2931,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 18.5,
+     "to": 19.5
+    }
+   ],
+   "head_lap_s": 88.535,
+   "ms": 447,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"aoa_deg\",\"to\":19.38}],\"hypothesis\":\"New direction: move rear_wing.aoa_deg toward 22; last result 0.032 s.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_mock120e47156131e6f6f73a280",
+   "model": "mock",
+   "input_tokens": 425,
+   "output_tokens": 48,
+   "latency_ms": 0
+  },
+  {
+   "phase": "mid",
+   "id": "q29",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.006,
+    "d_lap_s": -0.006,
+    "lap_s": 88.218,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.009,
+    "d_lap_s": -0.009,
+    "lap_s": 88.215,
+    "from": "candidate",
+    "best_change": "floor.width_mm 1470->1540; floor.throat_mm 66.5->66; diffuser.expansion_deg 16->15.5",
+    "screened": 2773,
+    "physics_laps": 29
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "width_mm",
+     "from": 1470,
+     "to": 1510
+    }
+   ],
+   "head_lap_s": 88.224,
+   "ms": 420,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"width_mm\",\"to\":1505}],\"hypothesis\":\"New direction: move floor.width_mm toward 1540; last result illegal.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_mock110e45826231e889f63a267",
+   "model": "mock",
+   "input_tokens": 446,
+   "output_tokens": 46,
+   "latency_ms": 0
+  },
+  {
+   "phase": "late",
+   "id": "q30",
+   "parsed": true,
+   "legal": false,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": null,
+    "from": "none legal"
+   },
+   "engine": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.001,
+    "lap_s": 87.662,
+    "from": "candidate",
+    "best_change": "rear_wing.endplate_top_mm 880->875",
+    "screened": 2828,
+    "physics_laps": 28
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "endplate_top_mm",
+     "from": 880,
+     "to": 885
+    }
+   ],
+   "head_lap_s": 87.661,
+   "articles": [
+    "C3.11.2(a)"
+   ],
+   "ms": 395,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"endplate_top_mm\",\"to\":885}],\"hypothesis\":\"Last change gained -0.001 s (Farm-Village -0.001, Woodcote -0.001); push the same way.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_mock940b42246f343b97693709e",
+   "model": "mock",
+   "input_tokens": 449,
+   "output_tokens": 53,
+   "latency_ms": 0
+  }
+ ]
+}

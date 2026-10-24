@@ -1,0 +1,831 @@
+{
+ "source": "OpenF1 API (api.openf1.org/v1)",
+ "accessed": "2026-10-24",
+ "note": "best laps exclude lap times deleted by race control (OpenF1 race_control) and pit-out laps",
+ "session_key": 11287,
+ "session": "Qualifying",
+ "year": 2026,
+ "grand_prix": "Canadian Grand Prix",
+ "circuit": "Montreal",
+ "session_start_utc": "2026-05-23T20:00:00+00:00",
+ "session_end_utc": "2026-05-23T21:00:00+00:00",
+ "drivers_in_session": 22,
+ "drivers_without_valid_timed_lap": [],
+ "deleted_lap_times": [
+  {
+   "code": "BEA",
+   "lap_number": 19,
+   "lap_time_s": 78.636
+  },
+  {
+   "code": "BEA",
+   "lap_number": 20,
+   "lap_time_s": 99.643
+  },
+  {
+   "code": "BOR",
+   "lap_number": 5,
+   "lap_time_s": 79.122
+  },
+  {
+   "code": "BOT",
+   "lap_number": 9,
+   "lap_time_s": 102.934
+  },
+  {
+   "code": "HAM",
+   "lap_number": 9,
+   "lap_time_s": 90.923
+  },
+  {
+   "code": "HUL",
+   "lap_number": 18,
+   "lap_time_s": 76.884
+  },
+  {
+   "code": "HUL",
+   "lap_number": 19,
+   "lap_time_s": 94.852
+  },
+  {
+   "code": "LAW",
+   "lap_number": 15,
+   "lap_time_s": 76.871
+  },
+  {
+   "code": "LEC",
+   "lap_number": 3,
+   "lap_time_s": 76.346
+  },
+  {
+   "code": "LEC",
+   "lap_number": 4,
+   "lap_time_s": 96.518
+  },
+  {
+   "code": "LIN",
+   "lap_number": 11,
+   "lap_time_s": 74.785
+  },
+  {
+   "code": "PIA",
+   "lap_number": 10,
+   "lap_time_s": 76.976
+  },
+  {
+   "code": "RUS",
+   "lap_number": 13,
+   "lap_time_s": 90.454
+  },
+  {
+   "code": "VER",
+   "lap_number": 8,
+   "lap_time_s": 87.471
+  }
+ ],
+ "race_control_deleted_messages": [
+  {
+   "date": "2026-05-23T20:07:24+00:00",
+   "message": "CAR 16 (LEC) TIME 1:16.346 DELETED - TRACK LIMITS AT TURN 14 LAP 4 16:06:29",
+   "car": 16,
+   "code": "LEC",
+   "lap_number": 3,
+   "lap_time_s": 76.346,
+   "method": "lap time in message"
+  },
+  {
+   "date": "2026-05-23T20:09:03+00:00",
+   "message": "CAR 27 (HUL) LAP DELETED - TRACK LIMITS AT TURN 1 LAP 6 16:07:37 (PIT)",
+   "car": 27,
+   "code": "HUL",
+   "lap_number": 5,
+   "lap_time_s": 247.396,
+   "method": "clock time in message (UTC offset -4h); lap number in message 6"
+  },
+  {
+   "date": "2026-05-23T20:09:40+00:00",
+   "message": "CAR 5 (BOR) TIME 1:19.122 DELETED - TRACK LIMITS AT TURN 4 LAP 6 16:08:01",
+   "car": 5,
+   "code": "BOR",
+   "lap_number": 5,
+   "lap_time_s": 79.122,
+   "method": "lap time in message"
+  },
+  {
+   "date": "2026-05-23T20:15:26+00:00",
+   "message": "CAR 44 (HAM) TIME 1:30.923 DELETED - TRACK LIMITS AT TURN 1 LAP 10 16:13:55",
+   "car": 44,
+   "code": "HAM",
+   "lap_number": 9,
+   "lap_time_s": 90.923,
+   "method": "lap time in message"
+  },
+  {
+   "date": "2026-05-23T20:16:26+00:00",
+   "message": "CAR 77 (BOT) TIME 1:42.934 DELETED - TRACK LIMITS AT TURN 1 LAP 10 16:14:45",
+   "car": 77,
+   "code": "BOT",
+   "lap_number": 9,
+   "lap_time_s": 102.934,
+   "method": "lap time in message"
+  },
+  {
+   "date": "2026-05-23T20:17:30+00:00",
+   "message": "CAR 41 (LIN) TIME 1:14.785 DELETED - TRACK LIMITS AT TURN 14 LAP 12 16:16:36",
+   "car": 41,
+   "code": "LIN",
+   "lap_number": 11,
+   "lap_time_s": 74.785,
+   "method": "lap time in message"
+  },
+  {
+   "date": "2026-05-23T20:18:18+00:00",
+   "message": "CAR 41 (LIN) LAP DELETED - TRACK LIMITS AT TURN 14 (NEXT LAP PIT)",
+   "car": 41,
+   "code": "LIN",
+   "lap_number": 11,
+   "lap_time_s": 74.785,
+   "method": "inferred: lap that ended last before the message"
+  },
+  {
+   "date": "2026-05-23T20:18:34+00:00",
+   "message": "CAR 81 (PIA) TIME 1:16.976 DELETED - TRACK LIMITS AT TURN 14 LAP 11 16:17:57",
+   "car": 81,
+   "code": "PIA",
+   "lap_number": 10,
+   "lap_time_s": 76.976,
+   "method": "lap time in message"
+  },
+  {
+   "date": "2026-05-23T20:19:08+00:00",
+   "message": "CAR 10 (GAS) LAP DELETED - TRACK LIMITS AT TURN 4 LAP 11 16:16:25",
+   "car": 10,
+   "code": "GAS",
+   "lap_number": 10,
+   "lap_time_s": null,
+   "method": "clock time in message (UTC offset -4h) falls in an OpenF1 lap with no recorded time; lap number in message 11"
+  },
+  {
+   "date": "2026-05-23T20:19:36+00:00",
+   "message": "CAR 81 (PIA) LAP DELETED - TRACK LIMITS AT TURN 14 (NEXT LAP PIT)",
+   "car": 81,
+   "code": "PIA",
+   "lap_number": 10,
+   "lap_time_s": 76.976,
+   "method": "inferred: lap that ended last before the message"
+  },
+  {
+   "date": "2026-05-23T20:20:50+00:00",
+   "message": "CAR 18 (STR) LAP DELETED - TRACK LIMITS AT TURN 4 LAP 11 16:17:39 (PIT)",
+   "car": 18,
+   "code": "STR",
+   "lap_number": null,
+   "lap_time_s": null,
+   "method": "unresolved"
+  },
+  {
+   "date": "2026-05-23T20:30:23+00:00",
+   "message": "CAR 30 (LAW) TIME 1:16.871 DELETED - TRACK LIMITS AT TURN 14 LAP 16 16:29:48",
+   "car": 30,
+   "code": "LAW",
+   "lap_number": 15,
+   "lap_time_s": 76.871,
+   "method": "lap time in message"
+  },
+  {
+   "date": "2026-05-23T20:30:39+00:00",
+   "message": "CAR 3 (VER) TIME 1:27.471 DELETED - TRACK LIMITS AT TURN 1 LAP 9 16:29:11",
+   "car": 3,
+   "code": "VER",
+   "lap_number": 8,
+   "lap_time_s": 87.471,
+   "method": "lap time in message"
+  },
+  {
+   "date": "2026-05-23T20:33:04+00:00",
+   "message": "CAR 87 (BEA) LAP DELETED - TRACK LIMITS AT TURN 8 LAP 18 16:32:20 (PIT)",
+   "car": 87,
+   "code": "BEA",
+   "lap_number": 17,
+   "lap_time_s": 158.297,
+   "method": "clock time in message (UTC offset -4h); lap number in message 18"
+  },
+  {
+   "date": "2026-05-23T20:38:10+00:00",
+   "message": "CAR 63 (RUS) TIME 1:30.454 DELETED - TRACK LIMITS AT TURN 1 LAP 14 16:36:38",
+   "car": 63,
+   "code": "RUS",
+   "lap_number": 13,
+   "lap_time_s": 90.454,
+   "method": "lap time in message"
+  },
+  {
+   "date": "2026-05-23T20:38:39+00:00",
+   "message": "CAR 27 (HUL) TIME 1:16.884 DELETED - TRACK LIMITS AT TURN 14 LAP 19 16:36:52",
+   "car": 27,
+   "code": "HUL",
+   "lap_number": 18,
+   "lap_time_s": 76.884,
+   "method": "lap time in message"
+  },
+  {
+   "date": "2026-05-23T20:38:42+00:00",
+   "message": "CAR 87 (BEA) TIME 1:18.636 DELETED - TRACK LIMITS AT TURN 14 LAP 20 16:36:59",
+   "car": 87,
+   "code": "BEA",
+   "lap_number": 19,
+   "lap_time_s": 78.636,
+   "method": "lap time in message"
+  },
+  {
+   "date": "2026-05-23T20:38:44+00:00",
+   "message": "CAR 27 (HUL) TIME 1:34.852 DELETED - TRACK LIMITS AT TURN 14 (NEXT LAP)",
+   "car": 27,
+   "code": "HUL",
+   "lap_number": 19,
+   "lap_time_s": 94.852,
+   "method": "lap time in message"
+  },
+  {
+   "date": "2026-05-23T21:03:37+00:00",
+   "message": "CAR LEC TIME 1:36.518 DELETED - TRACK LIMITS AT TURN 14 (NEXT LAP) (Q1)",
+   "car": 16,
+   "code": "LEC",
+   "lap_number": 4,
+   "lap_time_s": 96.518,
+   "method": "lap time in message"
+  },
+  {
+   "date": "2026-05-23T21:04:20+00:00",
+   "message": "CAR LAW TIME DELETED - TRACK LIMITS AT TURN 14 (NEXT LAP PIT) (Q2)",
+   "car": 30,
+   "code": "LAW",
+   "lap_number": null,
+   "lap_time_s": null,
+   "method": "unresolved"
+  },
+  {
+   "date": "2026-05-23T21:06:01+00:00",
+   "message": "CAR BEA TIME 1:39.643 DELETED - TRACK LIMITS AT TURN 14 (NEXT LAP) (Q2)",
+   "car": 87,
+   "code": "BEA",
+   "lap_number": 20,
+   "lap_time_s": 99.643,
+   "method": "lap time in message"
+  }
+ ],
+ "telemetry_laps": [
+  {
+   "file": "montreal-2026-q-rus.json",
+   "code": "RUS",
+   "team": "Mercedes",
+   "lap_number": 23,
+   "lap_time_s": 72.578,
+   "sector_s": [
+    20.6,
+    22.902,
+    29.076
+   ],
+   "speed_trap_kmh": 320,
+   "compound": "SOFT",
+   "pole": true,
+   "team_best": true,
+   "length_m": 4321.2,
+   "dropout_s": 0,
+   "invalid_car_samples_dropped": 0,
+   "length_m_xy_path": 4303.2,
+   "xy_start_end_gap_m": 7.2,
+   "max_gap_between_car_samples_s": 0.96,
+   "file_bytes": 53042,
+   "raw_dropped": false
+  },
+  {
+   "file": "montreal-2026-q-ant.json",
+   "code": "ANT",
+   "team": "Mercedes",
+   "lap_number": 23,
+   "lap_time_s": 72.646,
+   "sector_s": [
+    20.547,
+    23.061,
+    29.038
+   ],
+   "speed_trap_kmh": 319,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": false,
+   "length_m": 4318.4,
+   "dropout_s": 0,
+   "invalid_car_samples_dropped": 0,
+   "length_m_xy_path": 4309.0,
+   "xy_start_end_gap_m": 0.4,
+   "max_gap_between_car_samples_s": 0.72,
+   "file_bytes": 53304,
+   "raw_dropped": false
+  },
+  {
+   "file": "montreal-2026-q-nor.json",
+   "code": "NOR",
+   "team": "McLaren",
+   "lap_number": 23,
+   "lap_time_s": 72.729,
+   "sector_s": [
+    20.619,
+    22.967,
+    29.143
+   ],
+   "speed_trap_kmh": 315,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": true,
+   "length_m": 4319.2,
+   "dropout_s": 0,
+   "invalid_car_samples_dropped": 0,
+   "length_m_xy_path": 4339.9,
+   "xy_start_end_gap_m": 30.0,
+   "max_gap_between_car_samples_s": 1.08,
+   "file_bytes": 52703,
+   "raw_dropped": false
+  },
+  {
+   "file": "montreal-2026-q-pia.json",
+   "code": "PIA",
+   "team": "McLaren",
+   "lap_number": 28,
+   "lap_time_s": 72.781,
+   "sector_s": [
+    20.774,
+    22.926,
+    29.081
+   ],
+   "speed_trap_kmh": 316,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": false,
+   "length_m": 4318.1,
+   "dropout_s": 0,
+   "invalid_car_samples_dropped": 18,
+   "length_m_xy_path": 4345.7,
+   "xy_start_end_gap_m": 37.9,
+   "max_gap_between_car_samples_s": 1.48,
+   "file_bytes": 52077,
+   "raw_dropped": false
+  },
+  {
+   "file": "montreal-2026-q-ham.json",
+   "code": "HAM",
+   "team": "Ferrari",
+   "lap_number": 23,
+   "lap_time_s": 72.868,
+   "sector_s": [
+    20.606,
+    23.029,
+    29.233
+   ],
+   "speed_trap_kmh": 318,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": true,
+   "length_m": 4329.6,
+   "dropout_s": 0,
+   "invalid_car_samples_dropped": 0,
+   "length_m_xy_path": 4320.6,
+   "xy_start_end_gap_m": 10.5,
+   "max_gap_between_car_samples_s": 1.08,
+   "file_bytes": 52863,
+   "raw_dropped": false
+  },
+  {
+   "file": "montreal-2026-q-ver.json",
+   "code": "VER",
+   "team": "Red Bull Racing",
+   "lap_number": 22,
+   "lap_time_s": 72.907,
+   "sector_s": [
+    20.58,
+    23.155,
+    29.172
+   ],
+   "speed_trap_kmh": 318,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": true,
+   "length_m": 4338.6,
+   "dropout_s": 0,
+   "invalid_car_samples_dropped": 0,
+   "length_m_xy_path": 4309.5,
+   "xy_start_end_gap_m": 2.7,
+   "max_gap_between_car_samples_s": 0.96,
+   "file_bytes": 53119,
+   "raw_dropped": false
+  },
+  {
+   "file": "montreal-2026-q-had.json",
+   "code": "HAD",
+   "team": "Red Bull Racing",
+   "lap_number": 21,
+   "lap_time_s": 72.935,
+   "sector_s": [
+    20.549,
+    23.218,
+    29.168
+   ],
+   "speed_trap_kmh": 320,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": false,
+   "length_m": 4325.3,
+   "dropout_s": 0,
+   "invalid_car_samples_dropped": 0,
+   "length_m_xy_path": 4348.6,
+   "xy_start_end_gap_m": 9.1,
+   "max_gap_between_car_samples_s": 0.96,
+   "file_bytes": 53263,
+   "raw_dropped": false
+  },
+  {
+   "file": "montreal-2026-q-lec.json",
+   "code": "LEC",
+   "team": "Ferrari",
+   "lap_number": 28,
+   "lap_time_s": 72.976,
+   "sector_s": [
+    20.656,
+    23.169,
+    29.151
+   ],
+   "speed_trap_kmh": 321,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": false,
+   "length_m": 4324.2,
+   "dropout_s": 0,
+   "invalid_car_samples_dropped": 0,
+   "length_m_xy_path": 4309.3,
+   "xy_start_end_gap_m": 1.0,
+   "max_gap_between_car_samples_s": 0.96,
+   "file_bytes": 53352,
+   "raw_dropped": false
+  },
+  {
+   "file": "montreal-2026-q-lin.json",
+   "code": "LIN",
+   "team": "Racing Bulls",
+   "lap_number": 27,
+   "lap_time_s": 73.28,
+   "sector_s": [
+    20.654,
+    23.309,
+    29.317
+   ],
+   "speed_trap_kmh": 320,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": true,
+   "length_m": 4321.3,
+   "dropout_s": 0,
+   "invalid_car_samples_dropped": 0,
+   "length_m_xy_path": 4311.3,
+   "xy_start_end_gap_m": 1.7,
+   "max_gap_between_car_samples_s": 0.88,
+   "file_bytes": 53254,
+   "raw_dropped": false
+  },
+  {
+   "file": "montreal-2026-q-col.json",
+   "code": "COL",
+   "team": "Alpine",
+   "lap_number": 22,
+   "lap_time_s": 73.697,
+   "sector_s": [
+    21.04,
+    23.407,
+    29.25
+   ],
+   "speed_trap_kmh": 320,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": true,
+   "length_m": 4312.3,
+   "dropout_s": 0,
+   "invalid_car_samples_dropped": 3,
+   "length_m_xy_path": 4311.3,
+   "xy_start_end_gap_m": 4.2,
+   "max_gap_between_car_samples_s": 1.0,
+   "file_bytes": 52896,
+   "raw_dropped": false
+  },
+  {
+   "file": "montreal-2026-q-hul.json",
+   "code": "HUL",
+   "team": "Audi",
+   "lap_number": 20,
+   "lap_time_s": 73.886,
+   "sector_s": [
+    21.108,
+    23.357,
+    29.421
+   ],
+   "speed_trap_kmh": 316,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": true,
+   "length_m": 4323.3,
+   "dropout_s": 0,
+   "invalid_car_samples_dropped": 0,
+   "length_m_xy_path": 4317.9,
+   "xy_start_end_gap_m": 7.5,
+   "max_gap_between_car_samples_s": 1.041,
+   "file_bytes": 52942,
+   "raw_dropped": false
+  },
+  {
+   "file": "montreal-2026-q-law.json",
+   "code": "LAW",
+   "team": "Racing Bulls",
+   "lap_number": 21,
+   "lap_time_s": 73.897,
+   "sector_s": [
+    20.886,
+    23.528,
+    29.483
+   ],
+   "speed_trap_kmh": 315,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": false,
+   "length_m": 4318.3,
+   "dropout_s": 0,
+   "invalid_car_samples_dropped": 0,
+   "length_m_xy_path": 4307.5,
+   "xy_start_end_gap_m": 0.7,
+   "max_gap_between_car_samples_s": 1.041,
+   "file_bytes": 52874,
+   "raw_dropped": false
+  },
+  {
+   "file": "montreal-2026-q-bor.json",
+   "code": "BOR",
+   "team": "Audi",
+   "lap_number": 21,
+   "lap_time_s": 74.071,
+   "sector_s": [
+    21.168,
+    23.432,
+    29.471
+   ],
+   "speed_trap_kmh": 320,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": false,
+   "length_m": 4322.4,
+   "dropout_s": 0,
+   "invalid_car_samples_dropped": 0,
+   "length_m_xy_path": 4313.8,
+   "xy_start_end_gap_m": 4.0,
+   "max_gap_between_car_samples_s": 0.959,
+   "file_bytes": 52542,
+   "raw_dropped": false
+  },
+  {
+   "file": "montreal-2026-q-gas.json",
+   "code": "GAS",
+   "team": "Alpine",
+   "lap_number": 19,
+   "lap_time_s": 74.187,
+   "sector_s": [
+    21.27,
+    23.396,
+    29.521
+   ],
+   "speed_trap_kmh": 316,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": false,
+   "length_m": 4321.0,
+   "dropout_s": 0,
+   "invalid_car_samples_dropped": 4,
+   "length_m_xy_path": 4310.8,
+   "xy_start_end_gap_m": 1.6,
+   "max_gap_between_car_samples_s": 1.36,
+   "file_bytes": 53159,
+   "raw_dropped": false
+  },
+  {
+   "file": "montreal-2026-q-sai.json",
+   "code": "SAI",
+   "team": "Williams",
+   "lap_number": 20,
+   "lap_time_s": 74.273,
+   "sector_s": [
+    21.483,
+    23.333,
+    29.457
+   ],
+   "speed_trap_kmh": 317,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": true,
+   "length_m": 4314.5,
+   "dropout_s": 0,
+   "invalid_car_samples_dropped": 0,
+   "length_m_xy_path": 4312.2,
+   "xy_start_end_gap_m": 1.5,
+   "max_gap_between_car_samples_s": 1.041,
+   "file_bytes": 52921,
+   "raw_dropped": false
+  },
+  {
+   "file": "montreal-2026-q-bea.json",
+   "code": "BEA",
+   "team": "Haas F1 Team",
+   "lap_number": 21,
+   "lap_time_s": 74.416,
+   "sector_s": [
+    21.143,
+    23.631,
+    29.642
+   ],
+   "speed_trap_kmh": 315,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": true,
+   "length_m": 4321.0,
+   "dropout_s": 0,
+   "invalid_car_samples_dropped": 0,
+   "length_m_xy_path": 4303.7,
+   "xy_start_end_gap_m": 6.9,
+   "max_gap_between_car_samples_s": 1.041,
+   "file_bytes": 52871,
+   "raw_dropped": false
+  },
+  {
+   "file": "montreal-2026-q-oco.json",
+   "code": "OCO",
+   "team": "Haas F1 Team",
+   "lap_number": 11,
+   "lap_time_s": 74.845,
+   "sector_s": [
+    21.351,
+    23.731,
+    29.763
+   ],
+   "speed_trap_kmh": 315,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": false,
+   "length_m": 4317.0,
+   "dropout_s": 0,
+   "invalid_car_samples_dropped": 0,
+   "length_m_xy_path": 4311.1,
+   "xy_start_end_gap_m": 5.0,
+   "max_gap_between_car_samples_s": 1.12,
+   "file_bytes": 53082,
+   "raw_dropped": false
+  },
+  {
+   "file": "montreal-2026-q-alb.json",
+   "code": "ALB",
+   "team": "Williams",
+   "lap_number": 9,
+   "lap_time_s": 74.851,
+   "sector_s": [
+    21.253,
+    23.795,
+    29.803
+   ],
+   "speed_trap_kmh": 314,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": false,
+   "length_m": 4323.2,
+   "dropout_s": 0,
+   "invalid_car_samples_dropped": 0,
+   "length_m_xy_path": 4312.1,
+   "xy_start_end_gap_m": 0.0,
+   "max_gap_between_car_samples_s": 1.0,
+   "file_bytes": 53196,
+   "raw_dropped": false
+  },
+  {
+   "file": "montreal-2026-q-alo.json",
+   "code": "ALO",
+   "team": "Aston Martin",
+   "lap_number": 10,
+   "lap_time_s": 75.196,
+   "sector_s": [
+    21.42,
+    23.893,
+    29.883
+   ],
+   "speed_trap_kmh": 320,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": true,
+   "length_m": 4318.4,
+   "dropout_s": 0,
+   "invalid_car_samples_dropped": 6,
+   "length_m_xy_path": 4306.4,
+   "xy_start_end_gap_m": 1.7,
+   "max_gap_between_car_samples_s": 1.12,
+   "file_bytes": 52667,
+   "raw_dropped": false
+  },
+  {
+   "file": "montreal-2026-q-per.json",
+   "code": "PER",
+   "team": "Cadillac",
+   "lap_number": 9,
+   "lap_time_s": 75.429,
+   "sector_s": [
+    21.429,
+    24.034,
+    29.966
+   ],
+   "speed_trap_kmh": 312,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": true,
+   "length_m": 4328.0,
+   "dropout_s": 0,
+   "invalid_car_samples_dropped": 0,
+   "length_m_xy_path": 4309.2,
+   "xy_start_end_gap_m": 0.6,
+   "max_gap_between_car_samples_s": 1.12,
+   "file_bytes": 53223,
+   "raw_dropped": false
+  },
+  {
+   "file": "montreal-2026-q-str.json",
+   "code": "STR",
+   "team": "Aston Martin",
+   "lap_number": 8,
+   "lap_time_s": 76.195,
+   "sector_s": [
+    21.774,
+    24.196,
+    30.225
+   ],
+   "speed_trap_kmh": 310,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": false,
+   "length_m": 4309.2,
+   "dropout_s": 0,
+   "invalid_car_samples_dropped": 0,
+   "length_m_xy_path": 4302.8,
+   "xy_start_end_gap_m": 5.5,
+   "max_gap_between_car_samples_s": 1.04,
+   "file_bytes": 52983,
+   "raw_dropped": false
+  },
+  {
+   "file": "montreal-2026-q-bot.json",
+   "code": "BOT",
+   "team": "Cadillac",
+   "lap_number": 5,
+   "lap_time_s": 76.272,
+   "sector_s": [
+    21.847,
+    24.184,
+    30.241
+   ],
+   "speed_trap_kmh": 307,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": false,
+   "length_m": 4292.7,
+   "dropout_s": 0,
+   "invalid_car_samples_dropped": 0,
+   "length_m_xy_path": 4307.7,
+   "xy_start_end_gap_m": 2.2,
+   "max_gap_between_car_samples_s": 0.96,
+   "file_bytes": 53091,
+   "raw_dropped": false
+  }
+ ],
+ "max_speed_trap_kmh_session": {
+  "ALB": 316,
+  "LAW": 321,
+  "BEA": 323,
+  "OCO": 322,
+  "SAI": 320,
+  "LIN": 327,
+  "GAS": 320,
+  "BOT": 315,
+  "PER": 321,
+  "STR": 314,
+  "ALO": 320,
+  "COL": 323,
+  "NOR": 318,
+  "PIA": 318,
+  "BOR": 329,
+  "HUL": 320,
+  "RUS": 321,
+  "ANT": 323,
+  "HAM": 328,
+  "LEC": 324,
+  "VER": 319,
+  "HAD": 323
+ }
+}

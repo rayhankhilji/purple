@@ -1,0 +1,3723 @@
+{
+ "_meta": {
+  "what": "Every 2026 team's car derived from its two Silverstone qualifying laps (OpenF1) by the inverse vehicle dynamics of concept/tools/derive-car.js: PhysicalCar-shaped estimates with bootstrap mean ± sd, fit residuals and a teammate held-out check. Red Bull's full write-up: concept/data/redbull-2026-derived.json and docs/concept/REDBULL-DERIVED.md.",
+  "generated_by": "node concept/tools/derive-car.js --all --write",
+  "built": "2026-10-24",
+  "laps_used": [
+   "ALB",
+   "ALO",
+   "ANT",
+   "BEA",
+   "BOR",
+   "BOT",
+   "COL",
+   "GAS",
+   "HAD",
+   "HAM",
+   "HUL",
+   "LAW",
+   "LEC",
+   "LIN",
+   "NOR",
+   "OCO",
+   "PER",
+   "PIA",
+   "RUS",
+   "SAI",
+   "STR",
+   "VER"
+  ],
+  "shared": {
+   "rho_kg_m3": 1.1696,
+   "dCdA_straight_m2": 0.274,
+   "dCdA_se": 0.061,
+   "dCdA_n": 19,
+   "eta_th": 0.475,
+   "eta_th_band": [
+    0.45,
+    0.5
+   ],
+   "ice_kw": 395.8,
+   "cda_fallback_median_m2": 1.16
+  },
+  "caveats": [
+   "ICE power is the same assumption for every PU (η_th 0.475 × the regulated 833 kW fuel flow). CdA_c is therefore conditional: an ICE weaker than assumed shows up as a HIGHER CdA_c (the 350 kW deployment anchor needs more drag to explain the same acceleration), a stronger one as lower. Compare CdA_c directly only between teams sharing a PU.",
+   "If a car never reaches 350 kW of deployment on its best exits, the anchor cannot be met: CdA_c is then the median of the other teams (cda_anchor.ok = false) and top3_peak_dc_kw shows the deployment that implies.",
+   "ΔCdA (Straight Mode) is one value for all cars, measured on all laps.",
+   "μ_y and ClA are strongly anti-correlated; μ_y·ClA (muClA) is the better-determined quantity.",
+   "Bootstrap sd covers lap-to-lap and corner/straight/zone sampling only; systematic bands come on top (η_th ±0.025 -> CdA ±0.09; x/y smoothing -> ClA +0.6/-0.4, see redbull-2026-derived.json sensitivity).",
+   "Aero balance, CoG height, tracks, wheelbase, tyre radius and fuel are assumptions, as for Red Bull. Masses use the reported April over-minimum figures."
+  ],
+  "multi_circuit": "Circuit specifics (lap files, corner markers, weather, Straight Mode zones, recharge limit) are in the CIRCUITS registry of the tool. A joint fit across circuits would share μ, the PU and the ClA/CdA efficiency of each car, with a per-circuit wing level (ClA and CdA scale)."
+ },
+ "teams": {
+  "mercedes": {
+   "name": "Mercedes",
+   "entrant": "Mercedes-AMG PETRONAS F1 Team",
+   "chassis": "F1 W17",
+   "power_unit": "Mercedes-AMG F1 M17",
+   "drivers": [
+    {
+     "code": "ANT",
+     "lap_time_s": 88.111
+    },
+    {
+     "code": "RUS",
+     "lap_time_s": 88.481
+    }
+   ],
+   "fit_driver": "ANT",
+   "mass": {
+    "kg": 770,
+    "basis": "726 + 44 (Nominal Tyre Mass, implied) + 0 kg reported over the minimum (\"Under the limit\", RacingNews365 April); fuel 5 kg separate",
+    "sd_kg": 10
+   },
+   "physical_car": {
+    "id": "mercedes-silverstone-2026-q",
+    "session": "qualifying",
+    "label": "Mercedes (Mercedes-AMG F1 M17), Silverstone 2026 qualifying: derived from telemetry (concept/tools/derive-car.js --all)",
+    "mass_kg": 770,
+    "fuel_kg": 5,
+    "wheelbase_m": 3.4,
+    "track_front_m": 1.58,
+    "track_rear_m": 1.52,
+    "cog_height_m": 0.28,
+    "weight_dist_front": 0.45,
+    "aero": {
+     "corner": {
+      "CLA_front_m2": 1.447,
+      "CLA_rear_m2": 1.919,
+      "CDA_m2": 1.079
+     },
+     "straight": {
+      "CLA_front_m2": 1.447,
+      "CLA_rear_m2": 1.919,
+      "CDA_m2": 0.806
+     },
+     "ride_height_mm": null,
+     "ride_sens_per_mm": 0,
+     "floor_stalled": false,
+     "stall_margin_mm": null
+    },
+    "pu": {
+     "ice_kw": 395.8,
+     "mguk_kw": 350,
+     "es_deploy_mj_per_lap": 4.9,
+     "es_harvest_mj_per_lap": 6.5
+    },
+    "tyres": {
+     "mu_x": 1.786,
+     "mu_y": 2.577,
+     "load_sens": 0,
+     "radius_m": 0.348,
+     "compound": "soft"
+    },
+    "brakes": {
+     "max_decel_g_mech": 1.786
+    },
+    "drivetrain_eff": 0.95,
+    "calibration": {
+     "cla_scale": 1,
+     "cda_scale": 1,
+     "power_scale": 1,
+     "mu_scale": 1
+    }
+   },
+   "stats": {
+    "CdA_c": {
+     "central": 1.079,
+     "mean": 1.128,
+     "sd": 0.192,
+     "median": 1.083,
+     "sd_robust": 0.176,
+     "p05": 0.897,
+     "p95": 1.518
+    },
+    "CdA_s": {
+     "central": 0.806,
+     "mean": 0.854,
+     "sd": 0.192,
+     "median": 0.81,
+     "sd_robust": 0.176,
+     "p05": 0.624,
+     "p95": 1.244
+    },
+    "ClA": {
+     "central": 3.366,
+     "mean": 3.369,
+     "sd": 1.637,
+     "median": 3.23,
+     "sd_robust": 1.42,
+     "p05": 1.4,
+     "p95": 6.219
+    },
+    "mu_y": {
+     "central": 2.577,
+     "mean": 2.572,
+     "sd": 0.398,
+     "median": 2.557,
+     "sd_robust": 0.377,
+     "p05": 1.918,
+     "p95": 3.254
+    },
+    "mu_x": {
+     "central": 1.786,
+     "mean": 1.88,
+     "sd": 0.383,
+     "median": 1.898,
+     "sd_robust": 0.356,
+     "p05": 1.201,
+     "p95": 2.449
+    },
+    "muClA": {
+     "central": 8.673,
+     "mean": 8.094,
+     "sd": 2.644,
+     "median": 8.224,
+     "sd_robust": 2.559,
+     "p05": 4.334,
+     "p95": 12.103
+    },
+    "ay150_g": {
+     "central": 3.734,
+     "mean": 3.652,
+     "sd": 0.242,
+     "median": 3.628,
+     "sd_robust": 0.232,
+     "p05": 3.308,
+     "p95": 4.064
+    },
+    "ay250_g": {
+     "central": 5.792,
+     "mean": 5.574,
+     "sd": 0.704,
+     "median": 5.637,
+     "sd_robust": 0.677,
+     "p05": 4.573,
+     "p95": 6.534
+    }
+   },
+   "bootstrap": {
+    "replicates": 300,
+    "used": 300,
+    "anchor_failures": 0,
+    "method": "each replicate: one of the team's two laps at random, then that lap's grip-limited corners, full-throttle straights and brake zones resampled with replacement; systematic assumptions (η_th, mass, smoothing) are not in these sd"
+   },
+   "cda_anchor": {
+    "ok": true,
+    "fallback_CdA_c": null,
+    "top3_peak_dc_kw": 350,
+    "per_straight_peaks_dc_kw": [
+     322,
+     403,
+     325,
+     248,
+     28,
+     250
+    ]
+   },
+   "per_driver": [
+    {
+     "code": "ANT",
+     "lap_time_s": 88.111,
+     "anchor_ok": true,
+     "CdA_c": 1.079,
+     "CdA_s": 0.806,
+     "ClA": 3.366,
+     "mu_y": 2.577,
+     "mu_x": 1.786,
+     "muClA": 8.673,
+     "ay150_g": 3.734,
+     "ay250_g": 5.792,
+     "cornering_rms_g": 0.549,
+     "braking_rms_kmh": 12.38,
+     "n_corners": 8,
+     "n_brake_zones": 5
+    },
+    {
+     "code": "RUS",
+     "lap_time_s": 88.481,
+     "anchor_ok": true,
+     "CdA_c": 1.009,
+     "CdA_s": 0.736,
+     "ClA": 1.954,
+     "mu_y": 2.848,
+     "mu_x": 2.23,
+     "muClA": 5.566,
+     "ay150_g": 3.591,
+     "ay250_g": 4.912,
+     "cornering_rms_g": 0.537,
+     "braking_rms_kmh": 13.91,
+     "n_corners": 8,
+     "n_brake_zones": 6
+    }
+   ],
+   "gearing": {
+    "kmh_per_1000rpm": [
+     [
+      2,
+      11.278
+     ],
+     [
+      3,
+      13.756
+     ],
+     [
+      4,
+      16.93
+     ],
+     [
+      5,
+      19.634
+     ],
+     [
+      6,
+      22.491
+     ],
+     [
+      7,
+      25.94
+     ],
+     [
+      8,
+      29.058
+     ]
+    ],
+    "overall_ratio": [
+     [
+      2,
+      11.633
+     ],
+     [
+      3,
+      9.537
+     ],
+     [
+      4,
+      7.749
+     ],
+     [
+      5,
+      6.682
+     ],
+     [
+      6,
+      5.833
+     ],
+     [
+      7,
+      5.057
+     ],
+     [
+      8,
+      4.515
+     ]
+    ],
+    "rev_max_rpm": 12573,
+    "shift_rpm": 11193
+   },
+   "energy": {
+    "deploy_mj": 4.9,
+    "harvest_full_throttle_mj": 2.7
+   },
+   "residuals": {
+    "cornering_rms_g": 0.549,
+    "braking_rms_kmh": 12.38,
+    "sim_fit_lap": {
+     "lap_time_real_s": 88.111,
+     "lap_time_sim_s": 86.881,
+     "delta_s": -1.23,
+     "delta_pct": -1.4,
+     "speed_rms_kmh": 8.4,
+     "speed_bias_kmh": 1.9,
+     "vmax_real_kmh": 316.5,
+     "vmax_sim_kmh": 321.8,
+     "sim_deploy_mj": 4.93,
+     "sim_harvest_drive_mj": 3.12,
+     "sim_time_share": {
+      "corner": 0.016,
+      "brake": 0.126,
+      "traction": 0.072,
+      "power": 0.786
+     }
+    }
+   },
+   "held_out_teammate": [
+    {
+     "fit_on": "ANT",
+     "checked_on": "RUS",
+     "lap_time_real_s": 88.481,
+     "lap_time_sim_s": 86.485,
+     "delta_s": -1.996,
+     "delta_pct": -2.26,
+     "speed_rms_kmh": 8.5,
+     "speed_bias_kmh": 4.5,
+     "vmax_real_kmh": 317.1,
+     "vmax_sim_kmh": 322.6,
+     "sim_deploy_mj": 4.94,
+     "sim_harvest_drive_mj": 3.1,
+     "sim_time_share": {
+      "corner": 0.016,
+      "brake": 0.123,
+      "traction": 0.083,
+      "power": 0.778
+     }
+    },
+    {
+     "fit_on": "RUS",
+     "checked_on": "ANT",
+     "lap_time_real_s": 88.111,
+     "lap_time_sim_s": 88.857,
+     "delta_s": 0.746,
+     "delta_pct": 0.85,
+     "speed_rms_kmh": 13.6,
+     "speed_bias_kmh": -5.2,
+     "vmax_real_kmh": 316.5,
+     "vmax_sim_kmh": 325.8,
+     "sim_deploy_mj": 4.34,
+     "sim_harvest_drive_mj": 3.41,
+     "sim_time_share": {
+      "corner": 0.019,
+      "brake": 0.144,
+      "traction": 0.054,
+      "power": 0.783
+     }
+    }
+   ]
+  },
+  "ferrari": {
+   "name": "Ferrari",
+   "entrant": "Scuderia Ferrari HP",
+   "chassis": "SF-26",
+   "power_unit": "Ferrari 067/6",
+   "drivers": [
+    {
+     "code": "LEC",
+     "lap_time_s": 88.286
+    },
+    {
+     "code": "HAM",
+     "lap_time_s": 88.458
+    }
+   ],
+   "fit_driver": "LEC",
+   "mass": {
+    "kg": 770,
+    "basis": "726 + 44 (Nominal Tyre Mass, implied) + 0 kg reported over the minimum (\"Under the limit\", RacingNews365 April); fuel 5 kg separate",
+    "sd_kg": 10
+   },
+   "physical_car": {
+    "id": "ferrari-silverstone-2026-q",
+    "session": "qualifying",
+    "label": "Ferrari (Ferrari 067/6), Silverstone 2026 qualifying: derived from telemetry (concept/tools/derive-car.js --all)",
+    "mass_kg": 770,
+    "fuel_kg": 5,
+    "wheelbase_m": 3.4,
+    "track_front_m": 1.58,
+    "track_rear_m": 1.52,
+    "cog_height_m": 0.28,
+    "weight_dist_front": 0.45,
+    "aero": {
+     "corner": {
+      "CLA_front_m2": 2.256,
+      "CLA_rear_m2": 2.991,
+      "CDA_m2": 1.211
+     },
+     "straight": {
+      "CLA_front_m2": 2.256,
+      "CLA_rear_m2": 2.991,
+      "CDA_m2": 0.937
+     },
+     "ride_height_mm": null,
+     "ride_sens_per_mm": 0,
+     "floor_stalled": false,
+     "stall_margin_mm": null
+    },
+    "pu": {
+     "ice_kw": 395.8,
+     "mguk_kw": 350,
+     "es_deploy_mj_per_lap": 5.29,
+     "es_harvest_mj_per_lap": 6.5
+    },
+    "tyres": {
+     "mu_x": 1.504,
+     "mu_y": 2.153,
+     "load_sens": 0,
+     "radius_m": 0.348,
+     "compound": "soft"
+    },
+    "brakes": {
+     "max_decel_g_mech": 1.504
+    },
+    "drivetrain_eff": 0.95,
+    "calibration": {
+     "cla_scale": 1,
+     "cda_scale": 1,
+     "power_scale": 1,
+     "mu_scale": 1
+    }
+   },
+   "stats": {
+    "CdA_c": {
+     "central": 1.211,
+     "mean": 1.315,
+     "sd": 0.232,
+     "median": 1.311,
+     "sd_robust": 0.142,
+     "p05": 1.001,
+     "p95": 1.785
+    },
+    "CdA_s": {
+     "central": 0.937,
+     "mean": 1.042,
+     "sd": 0.232,
+     "median": 1.037,
+     "sd_robust": 0.142,
+     "p05": 0.727,
+     "p95": 1.512
+    },
+    "ClA": {
+     "central": 5.247,
+     "mean": 5.26,
+     "sd": 2.536,
+     "median": 5.12,
+     "sd_robust": 1.674,
+     "p05": 2.935,
+     "p95": 8.281
+    },
+    "mu_y": {
+     "central": 2.153,
+     "mean": 2.119,
+     "sd": 0.515,
+     "median": 2.151,
+     "sd_robust": 0.303,
+     "p05": 1.631,
+     "p95": 2.662
+    },
+    "mu_x": {
+     "central": 1.504,
+     "mean": 1.55,
+     "sd": 0.333,
+     "median": 1.548,
+     "sd_robust": 0.305,
+     "p05": 1.053,
+     "p95": 2.006
+    },
+    "muClA": {
+     "central": 11.296,
+     "mean": 11.158,
+     "sd": 5.964,
+     "median": 10.859,
+     "sd_robust": 1.831,
+     "p05": 7.564,
+     "p95": 14.6
+    },
+    "ay150_g": {
+     "central": 3.659,
+     "mean": 3.607,
+     "sd": 0.377,
+     "median": 3.609,
+     "sd_robust": 0.181,
+     "p05": 3.262,
+     "p95": 3.912
+    },
+    "ay250_g": {
+     "central": 6.337,
+     "mean": 6.252,
+     "sd": 1.745,
+     "median": 6.186,
+     "sd_robust": 0.436,
+     "p05": 5.36,
+     "p95": 7.197
+    }
+   },
+   "bootstrap": {
+    "replicates": 300,
+    "used": 300,
+    "anchor_failures": 2,
+    "method": "each replicate: one of the team's two laps at random, then that lap's grip-limited corners, full-throttle straights and brake zones resampled with replacement; systematic assumptions (η_th, mass, smoothing) are not in these sd"
+   },
+   "cda_anchor": {
+    "ok": true,
+    "fallback_CdA_c": null,
+    "top3_peak_dc_kw": 350,
+    "per_straight_peaks_dc_kw": [
+     316,
+     395,
+     340,
+     242,
+     143,
+     177
+    ]
+   },
+   "per_driver": [
+    {
+     "code": "LEC",
+     "lap_time_s": 88.286,
+     "anchor_ok": true,
+     "CdA_c": 1.211,
+     "CdA_s": 0.937,
+     "ClA": 5.247,
+     "mu_y": 2.153,
+     "mu_x": 1.504,
+     "muClA": 11.296,
+     "ay150_g": 3.659,
+     "ay250_g": 6.337,
+     "cornering_rms_g": 0.351,
+     "braking_rms_kmh": 13.86,
+     "n_corners": 7,
+     "n_brake_zones": 6
+    },
+    {
+     "code": "HAM",
+     "lap_time_s": 88.458,
+     "anchor_ok": true,
+     "CdA_c": 1.316,
+     "CdA_s": 1.043,
+     "ClA": 4.505,
+     "mu_y": 2.237,
+     "mu_x": 1.659,
+     "muClA": 10.076,
+     "ay150_g": 3.58,
+     "ay250_g": 5.969,
+     "cornering_rms_g": 0.423,
+     "braking_rms_kmh": 8.01,
+     "n_corners": 7,
+     "n_brake_zones": 6
+    }
+   ],
+   "gearing": {
+    "kmh_per_1000rpm": [
+     [
+      2,
+      10.71
+     ],
+     [
+      3,
+      13.296
+     ],
+     [
+      4,
+      16.068
+     ],
+     [
+      5,
+      18.944
+     ],
+     [
+      6,
+      22.197
+     ],
+     [
+      7,
+      25.406
+     ],
+     [
+      8,
+      28.649
+     ]
+    ],
+    "overall_ratio": [
+     [
+      2,
+      12.249
+     ],
+     [
+      3,
+      9.867
+     ],
+     [
+      4,
+      8.165
+     ],
+     [
+      5,
+      6.925
+     ],
+     [
+      6,
+      5.91
+     ],
+     [
+      7,
+      5.164
+     ],
+     [
+      8,
+      4.579
+     ]
+    ],
+    "rev_max_rpm": 12514,
+    "shift_rpm": 11484
+   },
+   "energy": {
+    "deploy_mj": 5.29,
+    "harvest_full_throttle_mj": 2.14
+   },
+   "residuals": {
+    "cornering_rms_g": 0.351,
+    "braking_rms_kmh": 13.86,
+    "sim_fit_lap": {
+     "lap_time_real_s": 88.286,
+     "lap_time_sim_s": 88.523,
+     "delta_s": 0.237,
+     "delta_pct": 0.27,
+     "speed_rms_kmh": 7.5,
+     "speed_bias_kmh": 0.2,
+     "vmax_real_kmh": 316.1,
+     "vmax_sim_kmh": 315,
+     "sim_deploy_mj": 5.26,
+     "sim_harvest_drive_mj": 2.5,
+     "sim_time_share": {
+      "corner": 0.021,
+      "brake": 0.114,
+      "traction": 0.098,
+      "power": 0.767
+     }
+    }
+   },
+   "held_out_teammate": [
+    {
+     "fit_on": "LEC",
+     "checked_on": "HAM",
+     "lap_time_real_s": 88.458,
+     "lap_time_sim_s": 88.358,
+     "delta_s": -0.1,
+     "delta_pct": -0.11,
+     "speed_rms_kmh": 6.8,
+     "speed_bias_kmh": 0.2,
+     "vmax_real_kmh": 315.1,
+     "vmax_sim_kmh": 315.1,
+     "sim_deploy_mj": 5.25,
+     "sim_harvest_drive_mj": 2.47,
+     "sim_time_share": {
+      "corner": 0.016,
+      "brake": 0.119,
+      "traction": 0.091,
+      "power": 0.775
+     }
+    },
+    {
+     "fit_on": "HAM",
+     "checked_on": "LEC",
+     "lap_time_real_s": 88.286,
+     "lap_time_sim_s": 89.099,
+     "delta_s": 0.813,
+     "delta_pct": 0.92,
+     "speed_rms_kmh": 7,
+     "speed_bias_kmh": -1.7,
+     "vmax_real_kmh": 316.1,
+     "vmax_sim_kmh": 314.5,
+     "sim_deploy_mj": 6.25,
+     "sim_harvest_drive_mj": 1.88,
+     "sim_time_share": {
+      "corner": 0.023,
+      "brake": 0.115,
+      "traction": 0.089,
+      "power": 0.773
+     }
+    }
+   ]
+  },
+  "mclaren": {
+   "name": "McLaren Mercedes",
+   "entrant": "McLaren Mastercard F1 Team",
+   "chassis": "MCL40",
+   "power_unit": "Mercedes-AMG F1 M17",
+   "drivers": [
+    {
+     "code": "NOR",
+     "lap_time_s": 88.877
+    },
+    {
+     "code": "PIA",
+     "lap_time_s": 89.032
+    }
+   ],
+   "fit_driver": "NOR",
+   "mass": {
+    "kg": 770,
+    "basis": "726 + 44 (Nominal Tyre Mass, implied) + 0 kg reported over the minimum (\"Right on the limit\", RacingNews365 April); fuel 5 kg separate",
+    "sd_kg": 10
+   },
+   "physical_car": {
+    "id": "mclaren-silverstone-2026-q",
+    "session": "qualifying",
+    "label": "McLaren Mercedes (Mercedes-AMG F1 M17), Silverstone 2026 qualifying: derived from telemetry (concept/tools/derive-car.js --all)",
+    "mass_kg": 770,
+    "fuel_kg": 5,
+    "wheelbase_m": 3.4,
+    "track_front_m": 1.58,
+    "track_rear_m": 1.52,
+    "cog_height_m": 0.28,
+    "weight_dist_front": 0.45,
+    "aero": {
+     "corner": {
+      "CLA_front_m2": 1.225,
+      "CLA_rear_m2": 1.624,
+      "CDA_m2": 1.298
+     },
+     "straight": {
+      "CLA_front_m2": 1.225,
+      "CLA_rear_m2": 1.624,
+      "CDA_m2": 1.024
+     },
+     "ride_height_mm": null,
+     "ride_sens_per_mm": 0,
+     "floor_stalled": false,
+     "stall_margin_mm": null
+    },
+    "pu": {
+     "ice_kw": 395.8,
+     "mguk_kw": 350,
+     "es_deploy_mj_per_lap": 6.47,
+     "es_harvest_mj_per_lap": 6.5
+    },
+    "tyres": {
+     "mu_x": 1.887,
+     "mu_y": 2.424,
+     "load_sens": 0,
+     "radius_m": 0.348,
+     "compound": "soft"
+    },
+    "brakes": {
+     "max_decel_g_mech": 1.887
+    },
+    "drivetrain_eff": 0.95,
+    "calibration": {
+     "cla_scale": 1,
+     "cda_scale": 1,
+     "power_scale": 1,
+     "mu_scale": 1
+    }
+   },
+   "stats": {
+    "CdA_c": {
+     "central": 1.298,
+     "mean": 1.315,
+     "sd": 0.25,
+     "median": 1.297,
+     "sd_robust": 0.139,
+     "p05": 0.935,
+     "p95": 1.74
+    },
+    "CdA_s": {
+     "central": 1.024,
+     "mean": 1.042,
+     "sd": 0.25,
+     "median": 1.024,
+     "sd_robust": 0.139,
+     "p05": 0.662,
+     "p95": 1.466
+    },
+    "ClA": {
+     "central": 2.849,
+     "mean": 2.598,
+     "sd": 1.286,
+     "median": 2.501,
+     "sd_robust": 1.221,
+     "p05": 0.925,
+     "p95": 5.018
+    },
+    "mu_y": {
+     "central": 2.424,
+     "mean": 2.721,
+     "sd": 0.48,
+     "median": 2.746,
+     "sd_robust": 0.494,
+     "p05": 1.939,
+     "p95": 3.491
+    },
+    "mu_x": {
+     "central": 1.887,
+     "mean": 2.067,
+     "sd": 0.448,
+     "median": 2.03,
+     "sd_robust": 0.462,
+     "p05": 1.41,
+     "p95": 2.87
+    },
+    "muClA": {
+     "central": 6.906,
+     "mean": 6.516,
+     "sd": 2.199,
+     "median": 6.703,
+     "sd_robust": 2.23,
+     "p05": 3.251,
+     "p95": 9.711
+    },
+    "ay150_g": {
+     "central": 3.346,
+     "mean": 3.59,
+     "sd": 0.302,
+     "median": 3.604,
+     "sd_robust": 0.313,
+     "p05": 3.097,
+     "p95": 4.019
+    },
+    "ay250_g": {
+     "central": 4.985,
+     "mean": 5.136,
+     "sd": 0.519,
+     "median": 5.028,
+     "sd_robust": 0.487,
+     "p05": 4.491,
+     "p95": 5.813
+    }
+   },
+   "bootstrap": {
+    "replicates": 300,
+    "used": 300,
+    "anchor_failures": 15,
+    "method": "each replicate: one of the team's two laps at random, then that lap's grip-limited corners, full-throttle straights and brake zones resampled with replacement; systematic assumptions (η_th, mass, smoothing) are not in these sd"
+   },
+   "cda_anchor": {
+    "ok": true,
+    "fallback_CdA_c": null,
+    "top3_peak_dc_kw": 350,
+    "per_straight_peaks_dc_kw": [
+     351,
+     357,
+     342,
+     285,
+     50,
+     171
+    ]
+   },
+   "per_driver": [
+    {
+     "code": "NOR",
+     "lap_time_s": 88.877,
+     "anchor_ok": true,
+     "CdA_c": 1.298,
+     "CdA_s": 1.024,
+     "ClA": 2.849,
+     "mu_y": 2.424,
+     "mu_x": 1.887,
+     "muClA": 6.906,
+     "ay150_g": 3.346,
+     "ay250_g": 4.985,
+     "cornering_rms_g": 0.454,
+     "braking_rms_kmh": 10.4,
+     "n_corners": 8,
+     "n_brake_zones": 6
+    },
+    {
+     "code": "PIA",
+     "lap_time_s": 89.032,
+     "anchor_ok": true,
+     "CdA_c": 1.177,
+     "CdA_s": 0.903,
+     "ClA": 1.47,
+     "mu_y": 3.176,
+     "mu_x": 2.583,
+     "muClA": 4.669,
+     "ay150_g": 3.799,
+     "ay250_g": 4.906,
+     "cornering_rms_g": 0.463,
+     "braking_rms_kmh": 14.45,
+     "n_corners": 8,
+     "n_brake_zones": 5
+    }
+   ],
+   "gearing": {
+    "kmh_per_1000rpm": [
+     [
+      2,
+      10.095
+     ],
+     [
+      3,
+      12.402
+     ],
+     [
+      4,
+      15.249
+     ],
+     [
+      5,
+      18.073
+     ],
+     [
+      6,
+      20.564
+     ],
+     [
+      7,
+      23.856
+     ],
+     [
+      8,
+      27.487
+     ]
+    ],
+    "overall_ratio": [
+     [
+      2,
+      12.996
+     ],
+     [
+      3,
+      10.578
+     ],
+     [
+      4,
+      8.604
+     ],
+     [
+      5,
+      7.259
+     ],
+     [
+      6,
+      6.38
+     ],
+     [
+      7,
+      5.499
+     ],
+     [
+      8,
+      4.773
+     ]
+    ],
+    "rev_max_rpm": 12579,
+    "shift_rpm": 11373
+   },
+   "energy": {
+    "deploy_mj": 6.47,
+    "harvest_full_throttle_mj": 1.09
+   },
+   "residuals": {
+    "cornering_rms_g": 0.454,
+    "braking_rms_kmh": 10.4,
+    "sim_fit_lap": {
+     "lap_time_real_s": 88.877,
+     "lap_time_sim_s": 89.043,
+     "delta_s": 0.166,
+     "delta_pct": 0.19,
+     "speed_rms_kmh": 7.7,
+     "speed_bias_kmh": -1.4,
+     "vmax_real_kmh": 311.1,
+     "vmax_sim_kmh": 310.4,
+     "sim_deploy_mj": 6.43,
+     "sim_harvest_drive_mj": 1.44,
+     "sim_time_share": {
+      "corner": 0.019,
+      "brake": 0.135,
+      "traction": 0.092,
+      "power": 0.754
+     }
+    }
+   },
+   "held_out_teammate": [
+    {
+     "fit_on": "NOR",
+     "checked_on": "PIA",
+     "lap_time_real_s": 89.032,
+     "lap_time_sim_s": 90.738,
+     "delta_s": 1.706,
+     "delta_pct": 1.92,
+     "speed_rms_kmh": 10,
+     "speed_bias_kmh": -3.4,
+     "vmax_real_kmh": 312.7,
+     "vmax_sim_kmh": 311.2,
+     "sim_deploy_mj": 6.49,
+     "sim_harvest_drive_mj": 1.41,
+     "sim_time_share": {
+      "corner": 0.024,
+      "brake": 0.141,
+      "traction": 0.097,
+      "power": 0.738
+     }
+    },
+    {
+     "fit_on": "PIA",
+     "checked_on": "NOR",
+     "lap_time_real_s": 88.877,
+     "lap_time_sim_s": 87.312,
+     "delta_s": -1.565,
+     "delta_pct": -1.76,
+     "speed_rms_kmh": 11.2,
+     "speed_bias_kmh": -0.8,
+     "vmax_real_kmh": 311.1,
+     "vmax_sim_kmh": 311.1,
+     "sim_deploy_mj": 4.13,
+     "sim_harvest_drive_mj": 1.47,
+     "sim_time_share": {
+      "corner": 0.021,
+      "brake": 0.121,
+      "traction": 0.051,
+      "power": 0.808
+     }
+    }
+   ]
+  },
+  "redbull": {
+   "name": "Red Bull Racing Red Bull Ford",
+   "entrant": "Oracle Red Bull Racing",
+   "chassis": "RB22",
+   "power_unit": "Red Bull Ford DM01",
+   "drivers": [
+    {
+     "code": "HAD",
+     "lap_time_s": 88.746
+    },
+    {
+     "code": "VER",
+     "lap_time_s": 88.893
+    }
+   ],
+   "fit_driver": "HAD",
+   "mass": {
+    "kg": 779.5,
+    "basis": "726 + 44 (Nominal Tyre Mass, implied) + 9.5 kg reported over the minimum (\"+ 9/10 kg\", RacingNews365 April); fuel 5 kg separate",
+    "sd_kg": 10
+   },
+   "physical_car": {
+    "id": "redbull-silverstone-2026-q",
+    "session": "qualifying",
+    "label": "Red Bull Racing Red Bull Ford (Red Bull Ford DM01), Silverstone 2026 qualifying: derived from telemetry (concept/tools/derive-car.js --all)",
+    "mass_kg": 779.5,
+    "fuel_kg": 5,
+    "wheelbase_m": 3.4,
+    "track_front_m": 1.58,
+    "track_rear_m": 1.52,
+    "cog_height_m": 0.28,
+    "weight_dist_front": 0.45,
+    "aero": {
+     "corner": {
+      "CLA_front_m2": 1.228,
+      "CLA_rear_m2": 1.627,
+      "CDA_m2": 1.233
+     },
+     "straight": {
+      "CLA_front_m2": 1.228,
+      "CLA_rear_m2": 1.627,
+      "CDA_m2": 0.959
+     },
+     "ride_height_mm": null,
+     "ride_sens_per_mm": 0,
+     "floor_stalled": false,
+     "stall_margin_mm": null
+    },
+    "pu": {
+     "ice_kw": 395.8,
+     "mguk_kw": 350,
+     "es_deploy_mj_per_lap": 5.95,
+     "es_harvest_mj_per_lap": 6.5
+    },
+    "tyres": {
+     "mu_x": 2.091,
+     "mu_y": 2.537,
+     "load_sens": 0,
+     "radius_m": 0.348,
+     "compound": "soft"
+    },
+    "brakes": {
+     "max_decel_g_mech": 2.091
+    },
+    "drivetrain_eff": 0.95,
+    "calibration": {
+     "cla_scale": 1,
+     "cda_scale": 1,
+     "power_scale": 1,
+     "mu_scale": 1
+    }
+   },
+   "stats": {
+    "CdA_c": {
+     "central": 1.233,
+     "mean": 1.273,
+     "sd": 0.151,
+     "median": 1.233,
+     "sd_robust": 0.114,
+     "p05": 1.142,
+     "p95": 1.578
+    },
+    "CdA_s": {
+     "central": 0.959,
+     "mean": 1,
+     "sd": 0.151,
+     "median": 0.959,
+     "sd_robust": 0.114,
+     "p05": 0.869,
+     "p95": 1.304
+    },
+    "ClA": {
+     "central": 2.855,
+     "mean": 3.477,
+     "sd": 1.294,
+     "median": 3.063,
+     "sd_robust": 1.22,
+     "p05": 2.05,
+     "p95": 5.956
+    },
+    "mu_y": {
+     "central": 2.537,
+     "mean": 2.394,
+     "sd": 0.31,
+     "median": 2.412,
+     "sd_robust": 0.304,
+     "p05": 1.886,
+     "p95": 2.861
+    },
+    "mu_x": {
+     "central": 2.091,
+     "mean": 1.952,
+     "sd": 0.325,
+     "median": 2.014,
+     "sd_robust": 0.329,
+     "p05": 1.346,
+     "p95": 2.387
+    },
+    "muClA": {
+     "central": 7.244,
+     "mean": 7.97,
+     "sd": 1.874,
+     "median": 7.364,
+     "sd_robust": 2.018,
+     "p05": 5.75,
+     "p95": 11.278
+    },
+    "ay150_g": {
+     "central": 3.492,
+     "mean": 3.444,
+     "sd": 0.182,
+     "median": 3.445,
+     "sd_robust": 0.162,
+     "p05": 3.146,
+     "p95": 3.743
+    },
+    "ay250_g": {
+     "central": 5.188,
+     "mean": 5.311,
+     "sd": 0.471,
+     "median": 5.178,
+     "sd_robust": 0.486,
+     "p05": 4.655,
+     "p95": 6.102
+    }
+   },
+   "bootstrap": {
+    "replicates": 300,
+    "used": 300,
+    "anchor_failures": 3,
+    "method": "each replicate: one of the team's two laps at random, then that lap's grip-limited corners, full-throttle straights and brake zones resampled with replacement; systematic assumptions (η_th, mass, smoothing) are not in these sd"
+   },
+   "cda_anchor": {
+    "ok": true,
+    "fallback_CdA_c": null,
+    "top3_peak_dc_kw": 350,
+    "per_straight_peaks_dc_kw": [
+     336,
+     371,
+     343,
+     195,
+     302,
+     92,
+     225
+    ]
+   },
+   "per_driver": [
+    {
+     "code": "HAD",
+     "lap_time_s": 88.746,
+     "anchor_ok": true,
+     "CdA_c": 1.233,
+     "CdA_s": 0.959,
+     "ClA": 2.855,
+     "mu_y": 2.537,
+     "mu_x": 2.091,
+     "muClA": 7.244,
+     "ay150_g": 3.492,
+     "ay250_g": 5.188,
+     "cornering_rms_g": 0.386,
+     "braking_rms_kmh": 8.1,
+     "n_corners": 8,
+     "n_brake_zones": 6
+    },
+    {
+     "code": "VER",
+     "lap_time_s": 88.893,
+     "anchor_ok": true,
+     "CdA_c": 1.159,
+     "CdA_s": 0.885,
+     "ClA": 3.034,
+     "mu_y": 2.364,
+     "mu_x": 2.053,
+     "muClA": 7.174,
+     "ay150_g": 3.309,
+     "ay250_g": 4.99,
+     "cornering_rms_g": 0.474,
+     "braking_rms_kmh": 10.77,
+     "n_corners": 9,
+     "n_brake_zones": 5
+    }
+   ],
+   "gearing": {
+    "kmh_per_1000rpm": [
+     [
+      2,
+      10.524
+     ],
+     [
+      3,
+      12.993
+     ],
+     [
+      4,
+      15.886
+     ],
+     [
+      5,
+      18.938
+     ],
+     [
+      6,
+      21.887
+     ],
+     [
+      7,
+      24.974
+     ],
+     [
+      8,
+      27.975
+     ]
+    ],
+    "overall_ratio": [
+     [
+      2,
+      12.466
+     ],
+     [
+      3,
+      10.097
+     ],
+     [
+      4,
+      8.258
+     ],
+     [
+      5,
+      6.927
+     ],
+     [
+      6,
+      5.994
+     ],
+     [
+      7,
+      5.253
+     ],
+     [
+      8,
+      4.69
+     ]
+    ],
+    "rev_max_rpm": 12536,
+    "shift_rpm": 11480
+   },
+   "energy": {
+    "deploy_mj": 5.95,
+    "harvest_full_throttle_mj": 1.56
+   },
+   "residuals": {
+    "cornering_rms_g": 0.386,
+    "braking_rms_kmh": 8.1,
+    "sim_fit_lap": {
+     "lap_time_real_s": 88.746,
+     "lap_time_sim_s": 88.312,
+     "delta_s": -0.434,
+     "delta_pct": -0.49,
+     "speed_rms_kmh": 8,
+     "speed_bias_kmh": -0.3,
+     "vmax_real_kmh": 316.1,
+     "vmax_sim_kmh": 310.1,
+     "sim_deploy_mj": 5.96,
+     "sim_harvest_drive_mj": 1.94,
+     "sim_time_share": {
+      "corner": 0.022,
+      "brake": 0.119,
+      "traction": 0.075,
+      "power": 0.784
+     }
+    }
+   },
+   "held_out_teammate": [
+    {
+     "fit_on": "HAD",
+     "checked_on": "VER",
+     "lap_time_real_s": 88.893,
+     "lap_time_sim_s": 88.885,
+     "delta_s": -0.008,
+     "delta_pct": -0.01,
+     "speed_rms_kmh": 9.9,
+     "speed_bias_kmh": -1.5,
+     "vmax_real_kmh": 316.1,
+     "vmax_sim_kmh": 310.9,
+     "sim_deploy_mj": 6,
+     "sim_harvest_drive_mj": 1.96,
+     "sim_time_share": {
+      "corner": 0.023,
+      "brake": 0.127,
+      "traction": 0.063,
+      "power": 0.786
+     }
+    },
+    {
+     "fit_on": "VER",
+     "checked_on": "HAD",
+     "lap_time_real_s": 88.746,
+     "lap_time_sim_s": 89.517,
+     "delta_s": 0.771,
+     "delta_pct": 0.87,
+     "speed_rms_kmh": 9,
+     "speed_bias_kmh": -2.6,
+     "vmax_real_kmh": 316.1,
+     "vmax_sim_kmh": 310.4,
+     "sim_deploy_mj": 5.12,
+     "sim_harvest_drive_mj": 2.55,
+     "sim_time_share": {
+      "corner": 0.023,
+      "brake": 0.124,
+      "traction": 0.082,
+      "power": 0.771
+     }
+    }
+   ]
+  },
+  "racingbulls": {
+   "name": "Racing Bulls Red Bull Ford",
+   "entrant": "Visa Cash App Racing Bulls F1 Team",
+   "chassis": "VCARB 03",
+   "power_unit": "Red Bull Ford DM01",
+   "drivers": [
+    {
+     "code": "LAW",
+     "lap_time_s": 89.3
+    },
+    {
+     "code": "LIN",
+     "lap_time_s": 89.305
+    }
+   ],
+   "fit_driver": "LAW",
+   "mass": {
+    "kg": 774.5,
+    "basis": "726 + 44 (Nominal Tyre Mass, implied) + 4.5 kg reported over the minimum (\"+ 4/5 kg\", RacingNews365 April); fuel 5 kg separate",
+    "sd_kg": 10
+   },
+   "physical_car": {
+    "id": "racingbulls-silverstone-2026-q",
+    "session": "qualifying",
+    "label": "Racing Bulls Red Bull Ford (Red Bull Ford DM01), Silverstone 2026 qualifying: derived from telemetry (concept/tools/derive-car.js --all)",
+    "mass_kg": 774.5,
+    "fuel_kg": 5,
+    "wheelbase_m": 3.4,
+    "track_front_m": 1.58,
+    "track_rear_m": 1.52,
+    "cog_height_m": 0.28,
+    "weight_dist_front": 0.45,
+    "aero": {
+     "corner": {
+      "CLA_front_m2": 0.905,
+      "CLA_rear_m2": 1.199,
+      "CDA_m2": 1.112
+     },
+     "straight": {
+      "CLA_front_m2": 0.905,
+      "CLA_rear_m2": 1.199,
+      "CDA_m2": 0.838
+     },
+     "ride_height_mm": null,
+     "ride_sens_per_mm": 0,
+     "floor_stalled": false,
+     "stall_margin_mm": null
+    },
+    "pu": {
+     "ice_kw": 395.8,
+     "mguk_kw": 350,
+     "es_deploy_mj_per_lap": 5.34,
+     "es_harvest_mj_per_lap": 6.5
+    },
+    "tyres": {
+     "mu_x": 2.184,
+     "mu_y": 2.613,
+     "load_sens": 0,
+     "radius_m": 0.348,
+     "compound": "soft"
+    },
+    "brakes": {
+     "max_decel_g_mech": 2.184
+    },
+    "drivetrain_eff": 0.95,
+    "calibration": {
+     "cla_scale": 1,
+     "cda_scale": 1,
+     "power_scale": 1,
+     "mu_scale": 1
+    }
+   },
+   "stats": {
+    "CdA_c": {
+     "central": 1.112,
+     "mean": 1.166,
+     "sd": 0.184,
+     "median": 1.134,
+     "sd_robust": 0.161,
+     "p05": 0.941,
+     "p95": 1.539
+    },
+    "CdA_s": {
+     "central": 0.838,
+     "mean": 0.892,
+     "sd": 0.184,
+     "median": 0.861,
+     "sd_robust": 0.161,
+     "p05": 0.667,
+     "p95": 1.266
+    },
+    "ClA": {
+     "central": 2.104,
+     "mean": 2.902,
+     "sd": 1.369,
+     "median": 2.608,
+     "sd_robust": 1.12,
+     "p05": 1.496,
+     "p95": 5.217
+    },
+    "mu_y": {
+     "central": 2.613,
+     "mean": 2.5,
+     "sd": 0.343,
+     "median": 2.524,
+     "sd_robust": 0.359,
+     "p05": 1.939,
+     "p95": 2.996
+    },
+    "mu_x": {
+     "central": 2.184,
+     "mean": 1.962,
+     "sd": 0.362,
+     "median": 1.977,
+     "sd_robust": 0.336,
+     "p05": 1.42,
+     "p95": 2.519
+    },
+    "muClA": {
+     "central": 5.497,
+     "mean": 6.828,
+     "sd": 2.747,
+     "median": 6.516,
+     "sd_robust": 2.05,
+     "p05": 4.404,
+     "p95": 10.347
+    },
+    "ay150_g": {
+     "central": 3.343,
+     "mean": 3.407,
+     "sd": 0.229,
+     "median": 3.414,
+     "sd_robust": 0.162,
+     "p05": 3.118,
+     "p95": 3.711
+    },
+    "ay250_g": {
+     "central": 4.641,
+     "mean": 5.018,
+     "sd": 0.77,
+     "median": 4.969,
+     "sd_robust": 0.497,
+     "p05": 4.438,
+     "p95": 5.828
+    }
+   },
+   "bootstrap": {
+    "replicates": 300,
+    "used": 300,
+    "anchor_failures": 0,
+    "method": "each replicate: one of the team's two laps at random, then that lap's grip-limited corners, full-throttle straights and brake zones resampled with replacement; systematic assumptions (η_th, mass, smoothing) are not in these sd"
+   },
+   "cda_anchor": {
+    "ok": true,
+    "fallback_CdA_c": null,
+    "top3_peak_dc_kw": 350,
+    "per_straight_peaks_dc_kw": [
+     327,
+     375,
+     348,
+     151,
+     283,
+     149,
+     209
+    ]
+   },
+   "per_driver": [
+    {
+     "code": "LAW",
+     "lap_time_s": 89.3,
+     "anchor_ok": true,
+     "CdA_c": 1.112,
+     "CdA_s": 0.838,
+     "ClA": 2.104,
+     "mu_y": 2.613,
+     "mu_x": 2.184,
+     "muClA": 5.497,
+     "ay150_g": 3.343,
+     "ay250_g": 4.641,
+     "cornering_rms_g": 0.458,
+     "braking_rms_kmh": 12.64,
+     "n_corners": 8,
+     "n_brake_zones": 5
+    },
+    {
+     "code": "LIN",
+     "lap_time_s": 89.305,
+     "anchor_ok": true,
+     "CdA_c": 1.081,
+     "CdA_s": 0.807,
+     "ClA": 2.644,
+     "mu_y": 2.549,
+     "mu_x": 2.034,
+     "muClA": 6.741,
+     "ay150_g": 3.445,
+     "ay250_g": 5.036,
+     "cornering_rms_g": 0.418,
+     "braking_rms_kmh": 10.52,
+     "n_corners": 8,
+     "n_brake_zones": 6
+    }
+   ],
+   "gearing": {
+    "kmh_per_1000rpm": [
+     [
+      2,
+      10.557
+     ],
+     [
+      3,
+      12.926
+     ],
+     [
+      4,
+      15.808
+     ],
+     [
+      5,
+      18.781
+     ],
+     [
+      6,
+      21.878
+     ],
+     [
+      7,
+      25.026
+     ],
+     [
+      8,
+      27.968
+     ]
+    ],
+    "overall_ratio": [
+     [
+      2,
+      12.427
+     ],
+     [
+      3,
+      10.149
+     ],
+     [
+      4,
+      8.299
+     ],
+     [
+      5,
+      6.986
+     ],
+     [
+      6,
+      5.997
+     ],
+     [
+      7,
+      5.242
+     ],
+     [
+      8,
+      4.691
+     ]
+    ],
+    "rev_max_rpm": 12281,
+    "shift_rpm": 11387
+   },
+   "energy": {
+    "deploy_mj": 5.34,
+    "harvest_full_throttle_mj": 1.72
+   },
+   "residuals": {
+    "cornering_rms_g": 0.458,
+    "braking_rms_kmh": 12.64,
+    "sim_fit_lap": {
+     "lap_time_real_s": 89.3,
+     "lap_time_sim_s": 89.006,
+     "delta_s": -0.294,
+     "delta_pct": -0.33,
+     "speed_rms_kmh": 8,
+     "speed_bias_kmh": -1,
+     "vmax_real_kmh": 316.1,
+     "vmax_sim_kmh": 313.2,
+     "sim_deploy_mj": 5.26,
+     "sim_harvest_drive_mj": 2.17,
+     "sim_time_share": {
+      "corner": 0.024,
+      "brake": 0.14,
+      "traction": 0.078,
+      "power": 0.757
+     }
+    }
+   },
+   "held_out_teammate": [
+    {
+     "fit_on": "LAW",
+     "checked_on": "LIN",
+     "lap_time_real_s": 89.305,
+     "lap_time_sim_s": 89.821,
+     "delta_s": 0.516,
+     "delta_pct": 0.58,
+     "speed_rms_kmh": 8.5,
+     "speed_bias_kmh": -3.1,
+     "vmax_real_kmh": 315,
+     "vmax_sim_kmh": 313.4,
+     "sim_deploy_mj": 5.31,
+     "sim_harvest_drive_mj": 2.17,
+     "sim_time_share": {
+      "corner": 0.027,
+      "brake": 0.147,
+      "traction": 0.079,
+      "power": 0.747
+     }
+    },
+    {
+     "fit_on": "LIN",
+     "checked_on": "LAW",
+     "lap_time_real_s": 89.3,
+     "lap_time_sim_s": 87.947,
+     "delta_s": -1.353,
+     "delta_pct": -1.52,
+     "speed_rms_kmh": 8.3,
+     "speed_bias_kmh": 2.4,
+     "vmax_real_kmh": 316.1,
+     "vmax_sim_kmh": 313.1,
+     "sim_deploy_mj": 5.03,
+     "sim_harvest_drive_mj": 2.31,
+     "sim_time_share": {
+      "corner": 0.021,
+      "brake": 0.135,
+      "traction": 0.075,
+      "power": 0.769
+     }
+    }
+   ]
+  },
+  "alpine": {
+   "name": "Alpine Mercedes",
+   "entrant": "BWT Alpine F1 Team",
+   "chassis": "A526",
+   "power_unit": "Mercedes-AMG F1 M17",
+   "drivers": [
+    {
+     "code": "GAS",
+     "lap_time_s": 90.063
+    },
+    {
+     "code": "COL",
+     "lap_time_s": 91.321
+    }
+   ],
+   "fit_driver": "GAS",
+   "mass": {
+    "kg": 772,
+    "basis": "726 + 44 (Nominal Tyre Mass, implied) + 2 kg reported over the minimum (\"+ 2 kg (printed '+ 2/ kg')\", RacingNews365 April); fuel 5 kg separate",
+    "sd_kg": 10
+   },
+   "physical_car": {
+    "id": "alpine-silverstone-2026-q",
+    "session": "qualifying",
+    "label": "Alpine Mercedes (Mercedes-AMG F1 M17), Silverstone 2026 qualifying: derived from telemetry (concept/tools/derive-car.js --all)",
+    "mass_kg": 772,
+    "fuel_kg": 5,
+    "wheelbase_m": 3.4,
+    "track_front_m": 1.58,
+    "track_rear_m": 1.52,
+    "cog_height_m": 0.28,
+    "weight_dist_front": 0.45,
+    "aero": {
+     "corner": {
+      "CLA_front_m2": 1.002,
+      "CLA_rear_m2": 1.329,
+      "CDA_m2": 0.899
+     },
+     "straight": {
+      "CLA_front_m2": 1.002,
+      "CLA_rear_m2": 1.329,
+      "CDA_m2": 0.625
+     },
+     "ride_height_mm": null,
+     "ride_sens_per_mm": 0,
+     "floor_stalled": false,
+     "stall_margin_mm": null
+    },
+    "pu": {
+     "ice_kw": 395.8,
+     "mguk_kw": 350,
+     "es_deploy_mj_per_lap": 3.11,
+     "es_harvest_mj_per_lap": 6.5
+    },
+    "tyres": {
+     "mu_x": 2.082,
+     "mu_y": 2.429,
+     "load_sens": 0,
+     "radius_m": 0.348,
+     "compound": "soft"
+    },
+    "brakes": {
+     "max_decel_g_mech": 2.082
+    },
+    "drivetrain_eff": 0.95,
+    "calibration": {
+     "cla_scale": 1,
+     "cda_scale": 1,
+     "power_scale": 1,
+     "mu_scale": 1
+    }
+   },
+   "stats": {
+    "CdA_c": {
+     "central": 0.899,
+     "mean": 1.19,
+     "sd": 0.287,
+     "median": 1.178,
+     "sd_robust": 0.282,
+     "p05": 0.722,
+     "p95": 1.612
+    },
+    "CdA_s": {
+     "central": 0.625,
+     "mean": 0.916,
+     "sd": 0.287,
+     "median": 0.905,
+     "sd_robust": 0.282,
+     "p05": 0.448,
+     "p95": 1.339
+    },
+    "ClA": {
+     "central": 2.331,
+     "mean": 3.061,
+     "sd": 1.396,
+     "median": 2.748,
+     "sd_robust": 0.97,
+     "p05": 1.625,
+     "p95": 5.941
+    },
+    "mu_y": {
+     "central": 2.429,
+     "mean": 2.373,
+     "sd": 0.332,
+     "median": 2.362,
+     "sd_robust": 0.304,
+     "p05": 1.822,
+     "p95": 2.929
+    },
+    "mu_x": {
+     "central": 2.082,
+     "mean": 1.645,
+     "sd": 0.406,
+     "median": 1.631,
+     "sd_robust": 0.429,
+     "p05": 0.947,
+     "p95": 2.288
+    },
+    "muClA": {
+     "central": 5.66,
+     "mean": 6.883,
+     "sd": 1.913,
+     "median": 6.429,
+     "sd_robust": 1.649,
+     "p05": 4.544,
+     "p95": 11.22
+    },
+    "ay150_g": {
+     "central": 3.183,
+     "mean": 3.29,
+     "sd": 0.214,
+     "median": 3.295,
+     "sd_robust": 0.209,
+     "p05": 2.937,
+     "p95": 3.643
+    },
+    "ay250_g": {
+     "central": 4.523,
+     "mean": 4.921,
+     "sd": 0.503,
+     "median": 4.811,
+     "sd_robust": 0.476,
+     "p05": 4.299,
+     "p95": 5.968
+    }
+   },
+   "bootstrap": {
+    "replicates": 300,
+    "used": 300,
+    "anchor_failures": 0,
+    "method": "each replicate: one of the team's two laps at random, then that lap's grip-limited corners, full-throttle straights and brake zones resampled with replacement; systematic assumptions (η_th, mass, smoothing) are not in these sd"
+   },
+   "cda_anchor": {
+    "ok": true,
+    "fallback_CdA_c": null,
+    "top3_peak_dc_kw": 350,
+    "per_straight_peaks_dc_kw": [
+     419,
+     341,
+     290,
+     93,
+     163,
+     140,
+     120
+    ]
+   },
+   "per_driver": [
+    {
+     "code": "GAS",
+     "lap_time_s": 90.063,
+     "anchor_ok": true,
+     "CdA_c": 0.899,
+     "CdA_s": 0.625,
+     "ClA": 2.331,
+     "mu_y": 2.429,
+     "mu_x": 2.082,
+     "muClA": 5.66,
+     "ay150_g": 3.183,
+     "ay250_g": 4.523,
+     "cornering_rms_g": 0.517,
+     "braking_rms_kmh": 10.41,
+     "n_corners": 9,
+     "n_brake_zones": 5
+    },
+    {
+     "code": "COL",
+     "lap_time_s": 91.321,
+     "anchor_ok": true,
+     "CdA_c": 1.261,
+     "CdA_s": 0.987,
+     "ClA": 2.756,
+     "mu_y": 2.453,
+     "mu_x": 1.515,
+     "muClA": 6.761,
+     "ay150_g": 3.354,
+     "ay250_g": 4.955,
+     "cornering_rms_g": 0.44,
+     "braking_rms_kmh": 11.18,
+     "n_corners": 8,
+     "n_brake_zones": 6
+    }
+   ],
+   "gearing": {
+    "kmh_per_1000rpm": [
+     [
+      2,
+      11.387
+     ],
+     [
+      3,
+      14.152
+     ],
+     [
+      4,
+      16.935
+     ],
+     [
+      5,
+      19.668
+     ],
+     [
+      6,
+      22.49
+     ],
+     [
+      7,
+      25.882
+     ],
+     [
+      8,
+      29.043
+     ]
+    ],
+    "overall_ratio": [
+     [
+      2,
+      11.521
+     ],
+     [
+      3,
+      9.27
+     ],
+     [
+      4,
+      7.747
+     ],
+     [
+      5,
+      6.67
+     ],
+     [
+      6,
+      5.833
+     ],
+     [
+      7,
+      5.069
+     ],
+     [
+      8,
+      4.517
+     ]
+    ],
+    "rev_max_rpm": 12612,
+    "shift_rpm": 11405
+   },
+   "energy": {
+    "deploy_mj": 3.11,
+    "harvest_full_throttle_mj": 2.75
+   },
+   "residuals": {
+    "cornering_rms_g": 0.517,
+    "braking_rms_kmh": 10.41,
+    "sim_fit_lap": {
+     "lap_time_real_s": 90.063,
+     "lap_time_sim_s": 90.596,
+     "delta_s": 0.533,
+     "delta_pct": 0.59,
+     "speed_rms_kmh": 10.1,
+     "speed_bias_kmh": -2.8,
+     "vmax_real_kmh": 322.3,
+     "vmax_sim_kmh": 318.6,
+     "sim_deploy_mj": 3.08,
+     "sim_harvest_drive_mj": 3.24,
+     "sim_time_share": {
+      "corner": 0.028,
+      "brake": 0.154,
+      "traction": 0.083,
+      "power": 0.735
+     }
+    }
+   },
+   "held_out_teammate": [
+    {
+     "fit_on": "GAS",
+     "checked_on": "COL",
+     "lap_time_real_s": 91.321,
+     "lap_time_sim_s": 91.428,
+     "delta_s": 0.107,
+     "delta_pct": 0.12,
+     "speed_rms_kmh": 11,
+     "speed_bias_kmh": -1.9,
+     "vmax_real_kmh": 314.9,
+     "vmax_sim_kmh": 319.1,
+     "sim_deploy_mj": 3.09,
+     "sim_harvest_drive_mj": 3.25,
+     "sim_time_share": {
+      "corner": 0.025,
+      "brake": 0.157,
+      "traction": 0.078,
+      "power": 0.74
+     }
+    },
+    {
+     "fit_on": "COL",
+     "checked_on": "GAS",
+     "lap_time_real_s": 90.063,
+     "lap_time_sim_s": 90.592,
+     "delta_s": 0.529,
+     "delta_pct": 0.59,
+     "speed_rms_kmh": 9.9,
+     "speed_bias_kmh": -1.8,
+     "vmax_real_kmh": 322.3,
+     "vmax_sim_kmh": 310.6,
+     "sim_deploy_mj": 5.67,
+     "sim_harvest_drive_mj": 0.85,
+     "sim_time_share": {
+      "corner": 0.022,
+      "brake": 0.149,
+      "traction": 0.167,
+      "power": 0.663
+     }
+    }
+   ]
+  },
+  "haas": {
+   "name": "Haas Ferrari",
+   "entrant": "TGR Haas F1 Team",
+   "chassis": "VF-26",
+   "power_unit": "Ferrari 067/6",
+   "drivers": [
+    {
+     "code": "BEA",
+     "lap_time_s": 90.501
+    },
+    {
+     "code": "OCO",
+     "lap_time_s": 90.68
+    }
+   ],
+   "fit_driver": "BEA",
+   "mass": {
+    "kg": 771,
+    "basis": "726 + 44 (Nominal Tyre Mass, implied) + 1 kg reported over the minimum (\"+ 1 kg\", RacingNews365 April); fuel 5 kg separate",
+    "sd_kg": 10
+   },
+   "physical_car": {
+    "id": "haas-silverstone-2026-q",
+    "session": "qualifying",
+    "label": "Haas Ferrari (Ferrari 067/6), Silverstone 2026 qualifying: derived from telemetry (concept/tools/derive-car.js --all)",
+    "mass_kg": 771,
+    "fuel_kg": 5,
+    "wheelbase_m": 3.4,
+    "track_front_m": 1.58,
+    "track_rear_m": 1.52,
+    "cog_height_m": 0.28,
+    "weight_dist_front": 0.45,
+    "aero": {
+     "corner": {
+      "CLA_front_m2": 0.937,
+      "CLA_rear_m2": 1.243,
+      "CDA_m2": 1.153
+     },
+     "straight": {
+      "CLA_front_m2": 0.937,
+      "CLA_rear_m2": 1.243,
+      "CDA_m2": 0.879
+     },
+     "ride_height_mm": null,
+     "ride_sens_per_mm": 0,
+     "floor_stalled": false,
+     "stall_margin_mm": null
+    },
+    "pu": {
+     "ice_kw": 395.8,
+     "mguk_kw": 350,
+     "es_deploy_mj_per_lap": 4.54,
+     "es_harvest_mj_per_lap": 6.5
+    },
+    "tyres": {
+     "mu_x": 2.138,
+     "mu_y": 2.669,
+     "load_sens": 0,
+     "radius_m": 0.348,
+     "compound": "soft"
+    },
+    "brakes": {
+     "max_decel_g_mech": 2.138
+    },
+    "drivetrain_eff": 0.95,
+    "calibration": {
+     "cla_scale": 1,
+     "cda_scale": 1,
+     "power_scale": 1,
+     "mu_scale": 1
+    }
+   },
+   "stats": {
+    "CdA_c": {
+     "central": 1.153,
+     "mean": 1.247,
+     "sd": 0.169,
+     "median": 1.171,
+     "sd_robust": 0.12,
+     "p05": 1.118,
+     "p95": 1.654
+    },
+    "CdA_s": {
+     "central": 0.879,
+     "mean": 0.973,
+     "sd": 0.169,
+     "median": 0.897,
+     "sd_robust": 0.12,
+     "p05": 0.844,
+     "p95": 1.38
+    },
+    "ClA": {
+     "central": 2.18,
+     "mean": 2.348,
+     "sd": 1.441,
+     "median": 2.056,
+     "sd_robust": 1.072,
+     "p05": 0.794,
+     "p95": 5.249
+    },
+    "mu_y": {
+     "central": 2.669,
+     "mean": 2.774,
+     "sd": 0.463,
+     "median": 2.739,
+     "sd_robust": 0.466,
+     "p05": 1.985,
+     "p95": 3.555
+    },
+    "mu_x": {
+     "central": 2.138,
+     "mean": 2.123,
+     "sd": 0.439,
+     "median": 2.11,
+     "sd_robust": 0.417,
+     "p05": 1.385,
+     "p95": 2.81
+    },
+    "muClA": {
+     "central": 5.818,
+     "mean": 5.925,
+     "sd": 2.542,
+     "median": 5.662,
+     "sd_robust": 2.041,
+     "p05": 2.809,
+     "p95": 10.559
+    },
+    "ay150_g": {
+     "central": 3.445,
+     "mean": 3.564,
+     "sd": 0.252,
+     "median": 3.542,
+     "sd_robust": 0.243,
+     "p05": 3.207,
+     "p95": 3.982
+    },
+    "ay250_g": {
+     "central": 4.824,
+     "mean": 4.969,
+     "sd": 0.602,
+     "median": 4.896,
+     "sd_robust": 0.367,
+     "p05": 4.394,
+     "p95": 6.052
+    }
+   },
+   "bootstrap": {
+    "replicates": 300,
+    "used": 300,
+    "anchor_failures": 0,
+    "method": "each replicate: one of the team's two laps at random, then that lap's grip-limited corners, full-throttle straights and brake zones resampled with replacement; systematic assumptions (η_th, mass, smoothing) are not in these sd"
+   },
+   "cda_anchor": {
+    "ok": true,
+    "fallback_CdA_c": null,
+    "top3_peak_dc_kw": 350,
+    "per_straight_peaks_dc_kw": [
+     349,
+     346,
+     355,
+     108,
+     285,
+     98,
+     131
+    ]
+   },
+   "per_driver": [
+    {
+     "code": "BEA",
+     "lap_time_s": 90.501,
+     "anchor_ok": true,
+     "CdA_c": 1.153,
+     "CdA_s": 0.879,
+     "ClA": 2.18,
+     "mu_y": 2.669,
+     "mu_x": 2.138,
+     "muClA": 5.818,
+     "ay150_g": 3.445,
+     "ay250_g": 4.824,
+     "cornering_rms_g": 0.493,
+     "braking_rms_kmh": 10.98,
+     "n_corners": 8,
+     "n_brake_zones": 5
+    },
+    {
+     "code": "OCO",
+     "lap_time_s": 90.68,
+     "anchor_ok": true,
+     "CdA_c": 1.17,
+     "CdA_s": 0.896,
+     "ClA": 1.746,
+     "mu_y": 2.981,
+     "mu_x": 2.283,
+     "muClA": 5.203,
+     "ay150_g": 3.675,
+     "ay250_g": 4.908,
+     "cornering_rms_g": 0.552,
+     "braking_rms_kmh": 20.3,
+     "n_corners": 8,
+     "n_brake_zones": 5
+    }
+   ],
+   "gearing": {
+    "kmh_per_1000rpm": [
+     [
+      2,
+      10.661
+     ],
+     [
+      3,
+      13.29
+     ],
+     [
+      4,
+      15.938
+     ],
+     [
+      5,
+      18.955
+     ],
+     [
+      6,
+      22.164
+     ],
+     [
+      7,
+      25.354
+     ],
+     [
+      8,
+      28.585
+     ]
+    ],
+    "overall_ratio": [
+     [
+      2,
+      12.306
+     ],
+     [
+      3,
+      9.871
+     ],
+     [
+      4,
+      8.232
+     ],
+     [
+      5,
+      6.921
+     ],
+     [
+      6,
+      5.919
+     ],
+     [
+      7,
+      5.174
+     ],
+     [
+      8,
+      4.59
+     ]
+    ],
+    "rev_max_rpm": 12040,
+    "shift_rpm": 11358
+   },
+   "energy": {
+    "deploy_mj": 4.54,
+    "harvest_full_throttle_mj": 1.61
+   },
+   "residuals": {
+    "cornering_rms_g": 0.493,
+    "braking_rms_kmh": 10.98,
+    "sim_fit_lap": {
+     "lap_time_real_s": 90.501,
+     "lap_time_sim_s": 90.276,
+     "delta_s": -0.225,
+     "delta_pct": -0.25,
+     "speed_rms_kmh": 10.4,
+     "speed_bias_kmh": -2.1,
+     "vmax_real_kmh": 311.1,
+     "vmax_sim_kmh": 311.7,
+     "sim_deploy_mj": 4.49,
+     "sim_harvest_drive_mj": 2.01,
+     "sim_time_share": {
+      "corner": 0.024,
+      "brake": 0.147,
+      "traction": 0.072,
+      "power": 0.758
+     }
+    }
+   },
+   "held_out_teammate": [
+    {
+     "fit_on": "BEA",
+     "checked_on": "OCO",
+     "lap_time_real_s": 90.68,
+     "lap_time_sim_s": 94.058,
+     "delta_s": 3.378,
+     "delta_pct": 3.73,
+     "speed_rms_kmh": 22.5,
+     "speed_bias_kmh": -7.3,
+     "vmax_real_kmh": 313.7,
+     "vmax_sim_kmh": 313.9,
+     "sim_deploy_mj": 4.47,
+     "sim_harvest_drive_mj": 1.86,
+     "sim_time_share": {
+      "corner": 0.027,
+      "brake": 0.15,
+      "traction": 0.084,
+      "power": 0.739
+     }
+    },
+    {
+     "fit_on": "OCO",
+     "checked_on": "BEA",
+     "lap_time_real_s": 90.501,
+     "lap_time_sim_s": 88.891,
+     "delta_s": -1.61,
+     "delta_pct": -1.78,
+     "speed_rms_kmh": 11.3,
+     "speed_bias_kmh": 0,
+     "vmax_real_kmh": 311.1,
+     "vmax_sim_kmh": 311.6,
+     "sim_deploy_mj": 4.87,
+     "sim_harvest_drive_mj": 2.09,
+     "sim_time_share": {
+      "corner": 0.024,
+      "brake": 0.138,
+      "traction": 0.067,
+      "power": 0.77
+     }
+    }
+   ]
+  },
+  "audi": {
+   "name": "Audi",
+   "entrant": "Audi Revolut F1 Team",
+   "chassis": "R26",
+   "power_unit": "Audi AFR 26 Hybrid",
+   "drivers": [
+    {
+     "code": "BOR",
+     "lap_time_s": 89.461
+    },
+    {
+     "code": "HUL",
+     "lap_time_s": 89.539
+    }
+   ],
+   "fit_driver": "BOR",
+   "mass": {
+    "kg": 770,
+    "basis": "726 + 44 (Nominal Tyre Mass, implied) + 0 kg reported over the minimum (\"Under the limit\", RacingNews365 April); fuel 5 kg separate",
+    "sd_kg": 10
+   },
+   "physical_car": {
+    "id": "audi-silverstone-2026-q",
+    "session": "qualifying",
+    "label": "Audi (Audi AFR 26 Hybrid), Silverstone 2026 qualifying: derived from telemetry (concept/tools/derive-car.js --all)",
+    "mass_kg": 770,
+    "fuel_kg": 5,
+    "wheelbase_m": 3.4,
+    "track_front_m": 1.58,
+    "track_rear_m": 1.52,
+    "cog_height_m": 0.28,
+    "weight_dist_front": 0.45,
+    "aero": {
+     "corner": {
+      "CLA_front_m2": 1.001,
+      "CLA_rear_m2": 1.327,
+      "CDA_m2": 1.16
+     },
+     "straight": {
+      "CLA_front_m2": 1.001,
+      "CLA_rear_m2": 1.327,
+      "CDA_m2": 0.886
+     },
+     "ride_height_mm": null,
+     "ride_sens_per_mm": 0,
+     "floor_stalled": false,
+     "stall_margin_mm": null
+    },
+    "pu": {
+     "ice_kw": 395.8,
+     "mguk_kw": 350,
+     "es_deploy_mj_per_lap": 5.03,
+     "es_harvest_mj_per_lap": 6.5
+    },
+    "tyres": {
+     "mu_x": 1.994,
+     "mu_y": 2.543,
+     "load_sens": 0,
+     "radius_m": 0.348,
+     "compound": "soft"
+    },
+    "brakes": {
+     "max_decel_g_mech": 1.994
+    },
+    "drivetrain_eff": 0.95,
+    "calibration": {
+     "cla_scale": 1,
+     "cda_scale": 1,
+     "power_scale": 1,
+     "mu_scale": 1
+    }
+   },
+   "stats": {
+    "CdA_c": {
+     "central": 1.16,
+     "mean": 1.235,
+     "sd": 0.196,
+     "median": 1.184,
+     "sd_robust": 0.124,
+     "p05": 0.939,
+     "p95": 1.588
+    },
+    "CdA_s": {
+     "central": 0.886,
+     "mean": 0.962,
+     "sd": 0.196,
+     "median": 0.91,
+     "sd_robust": 0.124,
+     "p05": 0.665,
+     "p95": 1.314
+    },
+    "ClA": {
+     "central": 2.328,
+     "mean": 3.168,
+     "sd": 1.333,
+     "median": 2.955,
+     "sd_robust": 1.254,
+     "p05": 1.695,
+     "p95": 5.461
+    },
+    "mu_y": {
+     "central": 2.543,
+     "mean": 2.431,
+     "sd": 0.305,
+     "median": 2.455,
+     "sd_robust": 0.29,
+     "p05": 1.91,
+     "p95": 2.919
+    },
+    "mu_x": {
+     "central": 1.994,
+     "mean": 1.841,
+     "sd": 0.337,
+     "median": 1.836,
+     "sd_robust": 0.294,
+     "p05": 1.292,
+     "p95": 2.342
+    },
+    "muClA": {
+     "central": 5.92,
+     "mean": 7.333,
+     "sd": 2.362,
+     "median": 7.384,
+     "sd_robust": 2.216,
+     "p05": 4.646,
+     "p95": 10.529
+    },
+    "ay150_g": {
+     "central": 3.333,
+     "mean": 3.411,
+     "sd": 0.195,
+     "median": 3.422,
+     "sd_robust": 0.174,
+     "p05": 3.137,
+     "p95": 3.692
+    },
+    "ay250_g": {
+     "central": 4.739,
+     "mean": 5.152,
+     "sd": 0.657,
+     "median": 5.243,
+     "sd_robust": 0.596,
+     "p05": 4.339,
+     "p95": 5.893
+    }
+   },
+   "bootstrap": {
+    "replicates": 300,
+    "used": 300,
+    "anchor_failures": 0,
+    "method": "each replicate: one of the team's two laps at random, then that lap's grip-limited corners, full-throttle straights and brake zones resampled with replacement; systematic assumptions (η_th, mass, smoothing) are not in these sd"
+   },
+   "cda_anchor": {
+    "ok": true,
+    "fallback_CdA_c": null,
+    "top3_peak_dc_kw": 350,
+    "per_straight_peaks_dc_kw": [
+     348,
+     358,
+     344,
+     177,
+     281,
+     94,
+     184
+    ]
+   },
+   "per_driver": [
+    {
+     "code": "BOR",
+     "lap_time_s": 89.461,
+     "anchor_ok": true,
+     "CdA_c": 1.16,
+     "CdA_s": 0.886,
+     "ClA": 2.328,
+     "mu_y": 2.543,
+     "mu_x": 1.994,
+     "muClA": 5.92,
+     "ay150_g": 3.333,
+     "ay250_g": 4.739,
+     "cornering_rms_g": 0.496,
+     "braking_rms_kmh": 9.69,
+     "n_corners": 8,
+     "n_brake_zones": 6
+    },
+    {
+     "code": "HUL",
+     "lap_time_s": 89.539,
+     "anchor_ok": true,
+     "CdA_c": 1.213,
+     "CdA_s": 0.939,
+     "ClA": 3.124,
+     "mu_y": 2.444,
+     "mu_x": 1.806,
+     "muClA": 7.633,
+     "ay150_g": 3.463,
+     "ay250_g": 5.276,
+     "cornering_rms_g": 0.403,
+     "braking_rms_kmh": 7.74,
+     "n_corners": 8,
+     "n_brake_zones": 5
+    }
+   ],
+   "gearing": {
+    "kmh_per_1000rpm": [
+     [
+      2,
+      9.977
+     ],
+     [
+      3,
+      13.195
+     ],
+     [
+      4,
+      16.498
+     ],
+     [
+      5,
+      19.964
+     ],
+     [
+      6,
+      23.412
+     ],
+     [
+      7,
+      27.31
+     ]
+    ],
+    "overall_ratio": [
+     [
+      2,
+      13.15
+     ],
+     [
+      3,
+      9.943
+     ],
+     [
+      4,
+      7.952
+     ],
+     [
+      5,
+      6.571
+     ],
+     [
+      6,
+      5.604
+     ],
+     [
+      7,
+      4.804
+     ]
+    ],
+    "rev_max_rpm": 12103,
+    "shift_rpm": 11258
+   },
+   "energy": {
+    "deploy_mj": 5.03,
+    "harvest_full_throttle_mj": 2.01
+   },
+   "residuals": {
+    "cornering_rms_g": 0.496,
+    "braking_rms_kmh": 9.69,
+    "sim_fit_lap": {
+     "lap_time_real_s": 89.461,
+     "lap_time_sim_s": 90.614,
+     "delta_s": 1.153,
+     "delta_pct": 1.29,
+     "speed_rms_kmh": 10.4,
+     "speed_bias_kmh": -4,
+     "vmax_real_kmh": 314.1,
+     "vmax_sim_kmh": 313,
+     "sim_deploy_mj": 4.97,
+     "sim_harvest_drive_mj": 2.31,
+     "sim_time_share": {
+      "corner": 0.022,
+      "brake": 0.135,
+      "traction": 0.093,
+      "power": 0.75
+     }
+    }
+   },
+   "held_out_teammate": [
+    {
+     "fit_on": "BOR",
+     "checked_on": "HUL",
+     "lap_time_real_s": 89.539,
+     "lap_time_sim_s": 90.308,
+     "delta_s": 0.769,
+     "delta_pct": 0.86,
+     "speed_rms_kmh": 10.5,
+     "speed_bias_kmh": -3.3,
+     "vmax_real_kmh": 313.9,
+     "vmax_sim_kmh": 314.1,
+     "sim_deploy_mj": 4.99,
+     "sim_harvest_drive_mj": 2.21,
+     "sim_time_share": {
+      "corner": 0.02,
+      "brake": 0.136,
+      "traction": 0.101,
+      "power": 0.743
+     }
+    },
+    {
+     "fit_on": "HUL",
+     "checked_on": "BOR",
+     "lap_time_real_s": 89.461,
+     "lap_time_sim_s": 89.803,
+     "delta_s": 0.342,
+     "delta_pct": 0.38,
+     "speed_rms_kmh": 7.9,
+     "speed_bias_kmh": -1.8,
+     "vmax_real_kmh": 314.1,
+     "vmax_sim_kmh": 309.1,
+     "sim_deploy_mj": 5.18,
+     "sim_harvest_drive_mj": 1.81,
+     "sim_time_share": {
+      "corner": 0.02,
+      "brake": 0.126,
+      "traction": 0.098,
+      "power": 0.756
+     }
+    }
+   ]
+  },
+  "williams": {
+   "name": "Atlassian Williams Mercedes",
+   "entrant": "Atlassian Williams F1 Team",
+   "chassis": "FW48",
+   "power_unit": "Mercedes-AMG F1 M17",
+   "drivers": [
+    {
+     "code": "SAI",
+     "lap_time_s": 90.562
+    },
+    {
+     "code": "ALB",
+     "lap_time_s": 90.638
+    }
+   ],
+   "fit_driver": "SAI",
+   "mass": {
+    "kg": 796,
+    "basis": "726 + 44 (Nominal Tyre Mass, implied) + 26 kg reported over the minimum (\"+ 26 kg\", RacingNews365 April); fuel 5 kg separate",
+    "sd_kg": 10
+   },
+   "physical_car": {
+    "id": "williams-silverstone-2026-q",
+    "session": "qualifying",
+    "label": "Atlassian Williams Mercedes (Mercedes-AMG F1 M17), Silverstone 2026 qualifying: derived from telemetry (concept/tools/derive-car.js --all)",
+    "mass_kg": 796,
+    "fuel_kg": 5,
+    "wheelbase_m": 3.4,
+    "track_front_m": 1.58,
+    "track_rear_m": 1.52,
+    "cog_height_m": 0.28,
+    "weight_dist_front": 0.45,
+    "aero": {
+     "corner": {
+      "CLA_front_m2": 1.253,
+      "CLA_rear_m2": 1.661,
+      "CDA_m2": 1.227
+     },
+     "straight": {
+      "CLA_front_m2": 1.253,
+      "CLA_rear_m2": 1.661,
+      "CDA_m2": 0.953
+     },
+     "ride_height_mm": null,
+     "ride_sens_per_mm": 0,
+     "floor_stalled": false,
+     "stall_margin_mm": null
+    },
+    "pu": {
+     "ice_kw": 395.8,
+     "mguk_kw": 350,
+     "es_deploy_mj_per_lap": 5.86,
+     "es_harvest_mj_per_lap": 6.5
+    },
+    "tyres": {
+     "mu_x": 1.714,
+     "mu_y": 2.545,
+     "load_sens": 0,
+     "radius_m": 0.348,
+     "compound": "soft"
+    },
+    "brakes": {
+     "max_decel_g_mech": 1.714
+    },
+    "drivetrain_eff": 0.95,
+    "calibration": {
+     "cla_scale": 1,
+     "cda_scale": 1,
+     "power_scale": 1,
+     "mu_scale": 1
+    }
+   },
+   "stats": {
+    "CdA_c": {
+     "central": 1.227,
+     "mean": 1.209,
+     "sd": 0.239,
+     "median": 1.236,
+     "sd_robust": 0.263,
+     "p05": 0.809,
+     "p95": 1.591
+    },
+    "CdA_s": {
+     "central": 0.953,
+     "mean": 0.935,
+     "sd": 0.239,
+     "median": 0.963,
+     "sd_robust": 0.263,
+     "p05": 0.536,
+     "p95": 1.317
+    },
+    "ClA": {
+     "central": 2.914,
+     "mean": 4.702,
+     "sd": 2.256,
+     "median": 4.625,
+     "sd_robust": 2.026,
+     "p05": 2.011,
+     "p95": 8.428
+    },
+    "mu_y": {
+     "central": 2.545,
+     "mean": 2.23,
+     "sd": 0.425,
+     "median": 2.18,
+     "sd_robust": 0.406,
+     "p05": 1.616,
+     "p95": 2.912
+    },
+    "mu_x": {
+     "central": 1.714,
+     "mean": 1.533,
+     "sd": 0.385,
+     "median": 1.532,
+     "sd_robust": 0.38,
+     "p05": 0.867,
+     "p95": 2.115
+    },
+    "muClA": {
+     "central": 7.416,
+     "mean": 9.659,
+     "sd": 2.95,
+     "median": 10.209,
+     "sd_robust": 2.756,
+     "p05": 5.638,
+     "p95": 14.61
+    },
+    "ay150_g": {
+     "central": 3.503,
+     "mean": 3.479,
+     "sd": 0.231,
+     "median": 3.448,
+     "sd_robust": 0.21,
+     "p05": 3.161,
+     "p95": 3.908
+    },
+    "ay250_g": {
+     "central": 5.207,
+     "mean": 5.698,
+     "sd": 0.739,
+     "median": 5.777,
+     "sd_robust": 0.615,
+     "p05": 4.68,
+     "p95": 7.075
+    }
+   },
+   "bootstrap": {
+    "replicates": 300,
+    "used": 300,
+    "anchor_failures": 0,
+    "method": "each replicate: one of the team's two laps at random, then that lap's grip-limited corners, full-throttle straights and brake zones resampled with replacement; systematic assumptions (η_th, mass, smoothing) are not in these sd"
+   },
+   "cda_anchor": {
+    "ok": true,
+    "fallback_CdA_c": null,
+    "top3_peak_dc_kw": 350,
+    "per_straight_peaks_dc_kw": [
+     320,
+     383,
+     347,
+     174,
+     308,
+     122,
+     248
+    ]
+   },
+   "per_driver": [
+    {
+     "code": "SAI",
+     "lap_time_s": 90.562,
+     "anchor_ok": true,
+     "CdA_c": 1.227,
+     "CdA_s": 0.953,
+     "ClA": 2.914,
+     "mu_y": 2.545,
+     "mu_x": 1.714,
+     "muClA": 7.416,
+     "ay150_g": 3.503,
+     "ay250_g": 5.207,
+     "cornering_rms_g": 0.672,
+     "braking_rms_kmh": 9.71,
+     "n_corners": 8,
+     "n_brake_zones": 6
+    },
+    {
+     "code": "ALB",
+     "lap_time_s": 90.638,
+     "anchor_ok": true,
+     "CdA_c": 1.147,
+     "CdA_s": 0.873,
+     "ClA": 5.427,
+     "mu_y": 1.993,
+     "mu_x": 1.397,
+     "muClA": 10.819,
+     "ay150_g": 3.392,
+     "ay250_g": 5.878,
+     "cornering_rms_g": 0.399,
+     "braking_rms_kmh": 14.05,
+     "n_corners": 9,
+     "n_brake_zones": 5
+    }
+   ],
+   "gearing": {
+    "kmh_per_1000rpm": [
+     [
+      2,
+      11.32
+     ],
+     [
+      3,
+      14.03
+     ],
+     [
+      4,
+      17.327
+     ],
+     [
+      5,
+      19.559
+     ],
+     [
+      6,
+      22.487
+     ],
+     [
+      7,
+      25.86
+     ],
+     [
+      8,
+      29.026
+     ]
+    ],
+    "overall_ratio": [
+     [
+      2,
+      11.589
+     ],
+     [
+      3,
+      9.351
+     ],
+     [
+      4,
+      7.571
+     ],
+     [
+      5,
+      6.707
+     ],
+     [
+      6,
+      5.834
+     ],
+     [
+      7,
+      5.073
+     ],
+     [
+      8,
+      4.52
+     ]
+    ],
+    "rev_max_rpm": 12522,
+    "shift_rpm": 11222
+   },
+   "energy": {
+    "deploy_mj": 5.86,
+    "harvest_full_throttle_mj": 1.12
+   },
+   "residuals": {
+    "cornering_rms_g": 0.672,
+    "braking_rms_kmh": 9.71,
+    "sim_fit_lap": {
+     "lap_time_real_s": 90.562,
+     "lap_time_sim_s": 90.913,
+     "delta_s": 0.351,
+     "delta_pct": 0.39,
+     "speed_rms_kmh": 11.5,
+     "speed_bias_kmh": -3.1,
+     "vmax_real_kmh": 315.8,
+     "vmax_sim_kmh": 310.4,
+     "sim_deploy_mj": 5.89,
+     "sim_harvest_drive_mj": 1.48,
+     "sim_time_share": {
+      "corner": 0.018,
+      "brake": 0.15,
+      "traction": 0.109,
+      "power": 0.722
+     }
+    }
+   },
+   "held_out_teammate": [
+    {
+     "fit_on": "SAI",
+     "checked_on": "ALB",
+     "lap_time_real_s": 90.638,
+     "lap_time_sim_s": 90.112,
+     "delta_s": -0.526,
+     "delta_pct": -0.58,
+     "speed_rms_kmh": 11.8,
+     "speed_bias_kmh": -0.9,
+     "vmax_real_kmh": 313.1,
+     "vmax_sim_kmh": 311.7,
+     "sim_deploy_mj": 5.88,
+     "sim_harvest_drive_mj": 1.48,
+     "sim_time_share": {
+      "corner": 0.019,
+      "brake": 0.132,
+      "traction": 0.111,
+      "power": 0.738
+     }
+    },
+    {
+     "fit_on": "ALB",
+     "checked_on": "SAI",
+     "lap_time_real_s": 90.562,
+     "lap_time_sim_s": 92.02,
+     "delta_s": 1.458,
+     "delta_pct": 1.61,
+     "speed_rms_kmh": 12.2,
+     "speed_bias_kmh": -3.3,
+     "vmax_real_kmh": 315.8,
+     "vmax_sim_kmh": 307,
+     "sim_deploy_mj": 4.56,
+     "sim_harvest_drive_mj": 2.2,
+     "sim_time_share": {
+      "corner": 0.019,
+      "brake": 0.146,
+      "traction": 0.115,
+      "power": 0.72
+     }
+    }
+   ]
+  },
+  "astonmartin": {
+   "name": "Aston Martin Aramco Honda",
+   "entrant": "Aston Martin Aramco F1 Team",
+   "chassis": "AMR26",
+   "power_unit": "Honda RA626H",
+   "drivers": [
+    {
+     "code": "STR",
+     "lap_time_s": 92.863
+    },
+    {
+     "code": "ALO",
+     "lap_time_s": 93.025
+    }
+   ],
+   "fit_driver": "STR",
+   "mass": {
+    "kg": 779.5,
+    "basis": "726 + 44 (Nominal Tyre Mass, implied) + 9.5 kg reported over the minimum (\"+9/10 kg\", RacingNews365 April); fuel 5 kg separate",
+    "sd_kg": 10
+   },
+   "physical_car": {
+    "id": "astonmartin-silverstone-2026-q",
+    "session": "qualifying",
+    "label": "Aston Martin Aramco Honda (Honda RA626H), Silverstone 2026 qualifying: derived from telemetry (concept/tools/derive-car.js --all)",
+    "mass_kg": 779.5,
+    "fuel_kg": 5,
+    "wheelbase_m": 3.4,
+    "track_front_m": 1.58,
+    "track_rear_m": 1.52,
+    "cog_height_m": 0.28,
+    "weight_dist_front": 0.45,
+    "aero": {
+     "corner": {
+      "CLA_front_m2": 0.844,
+      "CLA_rear_m2": 1.118,
+      "CDA_m2": 1.595
+     },
+     "straight": {
+      "CLA_front_m2": 0.844,
+      "CLA_rear_m2": 1.118,
+      "CDA_m2": 1.321
+     },
+     "ride_height_mm": null,
+     "ride_sens_per_mm": 0,
+     "floor_stalled": false,
+     "stall_margin_mm": null
+    },
+    "pu": {
+     "ice_kw": 395.8,
+     "mguk_kw": 350,
+     "es_deploy_mj_per_lap": 7.96,
+     "es_harvest_mj_per_lap": 6.5
+    },
+    "tyres": {
+     "mu_x": 1.398,
+     "mu_y": 2.64,
+     "load_sens": 0,
+     "radius_m": 0.348,
+     "compound": "soft"
+    },
+    "brakes": {
+     "max_decel_g_mech": 1.398
+    },
+    "drivetrain_eff": 0.95,
+    "calibration": {
+     "cla_scale": 1,
+     "cda_scale": 1,
+     "power_scale": 1,
+     "mu_scale": 1
+    }
+   },
+   "stats": {
+    "CdA_c": {
+     "central": 1.595,
+     "mean": 1.597,
+     "sd": 0.113,
+     "median": 1.592,
+     "sd_robust": 0.104,
+     "p05": 1.467,
+     "p95": 1.766
+    },
+    "CdA_s": {
+     "central": 1.321,
+     "mean": 1.323,
+     "sd": 0.113,
+     "median": 1.319,
+     "sd_robust": 0.104,
+     "p05": 1.193,
+     "p95": 1.493
+    },
+    "ClA": {
+     "central": 1.962,
+     "mean": 2.731,
+     "sd": 1.201,
+     "median": 2.716,
+     "sd_robust": 0.895,
+     "p05": 1.057,
+     "p95": 4.301
+    },
+    "mu_y": {
+     "central": 2.64,
+     "mean": 2.42,
+     "sd": 0.394,
+     "median": 2.353,
+     "sd_robust": 0.335,
+     "p05": 1.949,
+     "p95": 3.205
+    },
+    "mu_x": {
+     "central": 1.398,
+     "mean": 1.592,
+     "sd": 0.373,
+     "median": 1.647,
+     "sd_robust": 0.339,
+     "p05": 0.819,
+     "p95": 2.067
+    },
+    "muClA": {
+     "central": 5.18,
+     "mean": 6.227,
+     "sd": 2.059,
+     "median": 6.419,
+     "sd_robust": 1.332,
+     "p05": 3.488,
+     "p95": 8.388
+    },
+    "ay150_g": {
+     "central": 3.324,
+     "mean": 3.242,
+     "sd": 0.248,
+     "median": 3.207,
+     "sd_robust": 0.189,
+     "p05": 2.926,
+     "p95": 3.707
+    },
+    "ay250_g": {
+     "central": 4.539,
+     "mean": 4.704,
+     "sd": 0.51,
+     "median": 4.719,
+     "sd_robust": 0.237,
+     "p05": 4.244,
+     "p95": 5.327
+    }
+   },
+   "bootstrap": {
+    "replicates": 300,
+    "used": 300,
+    "anchor_failures": 0,
+    "method": "each replicate: one of the team's two laps at random, then that lap's grip-limited corners, full-throttle straights and brake zones resampled with replacement; systematic assumptions (η_th, mass, smoothing) are not in these sd"
+   },
+   "cda_anchor": {
+    "ok": true,
+    "fallback_CdA_c": null,
+    "top3_peak_dc_kw": 612,
+    "per_straight_peaks_dc_kw": [
+     384,
+     37,
+     1117,
+     336,
+     299,
+     328,
+     330,
+     191
+    ]
+   },
+   "per_driver": [
+    {
+     "code": "STR",
+     "lap_time_s": 92.863,
+     "anchor_ok": true,
+     "CdA_c": 1.595,
+     "CdA_s": 1.321,
+     "ClA": 1.962,
+     "mu_y": 2.64,
+     "mu_x": 1.398,
+     "muClA": 5.18,
+     "ay150_g": 3.324,
+     "ay250_g": 4.539,
+     "cornering_rms_g": 0.768,
+     "braking_rms_kmh": 13.51,
+     "n_corners": 10,
+     "n_brake_zones": 6
+    },
+    {
+     "code": "ALO",
+     "lap_time_s": 93.025,
+     "anchor_ok": true,
+     "CdA_c": 1.536,
+     "CdA_s": 1.262,
+     "ClA": 2.991,
+     "mu_y": 2.267,
+     "mu_x": 1.769,
+     "muClA": 6.781,
+     "ay150_g": 3.162,
+     "ay250_g": 4.752,
+     "cornering_rms_g": 0.25,
+     "braking_rms_kmh": 8.1,
+     "n_corners": 8,
+     "n_brake_zones": 5
+    }
+   ],
+   "gearing": {
+    "kmh_per_1000rpm": [
+     [
+      2,
+      11.473
+     ],
+     [
+      3,
+      14.292
+     ],
+     [
+      4,
+      17.464
+     ],
+     [
+      5,
+      20.421
+     ],
+     [
+      6,
+      23.271
+     ],
+     [
+      7,
+      26.065
+     ]
+    ],
+    "overall_ratio": [
+     [
+      2,
+      11.435
+     ],
+     [
+      3,
+      9.179
+     ],
+     [
+      4,
+      7.512
+     ],
+     [
+      5,
+      6.424
+     ],
+     [
+      6,
+      5.638
+     ],
+     [
+      7,
+      5.033
+     ]
+    ],
+    "rev_max_rpm": 12474,
+    "shift_rpm": 11122
+   },
+   "energy": {
+    "deploy_mj": 7.96,
+    "harvest_full_throttle_mj": 0.96
+   },
+   "residuals": {
+    "cornering_rms_g": 0.768,
+    "braking_rms_kmh": 13.51,
+    "sim_fit_lap": {
+     "lap_time_real_s": 92.863,
+     "lap_time_sim_s": 96.054,
+     "delta_s": 3.191,
+     "delta_pct": 3.44,
+     "speed_rms_kmh": 14.8,
+     "speed_bias_kmh": -8.1,
+     "vmax_real_kmh": 301.1,
+     "vmax_sim_kmh": 299.2,
+     "sim_deploy_mj": 6.32,
+     "sim_harvest_drive_mj": 1.22,
+     "sim_time_share": {
+      "corner": 0.018,
+      "brake": 0.143,
+      "traction": 0.301,
+      "power": 0.538
+     }
+    }
+   },
+   "held_out_teammate": [
+    {
+     "fit_on": "STR",
+     "checked_on": "ALO",
+     "lap_time_real_s": 93.025,
+     "lap_time_sim_s": 95.568,
+     "delta_s": 2.543,
+     "delta_pct": 2.73,
+     "speed_rms_kmh": 14.5,
+     "speed_bias_kmh": -7.9,
+     "vmax_real_kmh": 300.9,
+     "vmax_sim_kmh": 298.2,
+     "sim_deploy_mj": 6.32,
+     "sim_harvest_drive_mj": 1.25,
+     "sim_time_share": {
+      "corner": 0.015,
+      "brake": 0.145,
+      "traction": 0.288,
+      "power": 0.553
+     }
+    },
+    {
+     "fit_on": "ALO",
+     "checked_on": "STR",
+     "lap_time_real_s": 92.863,
+     "lap_time_sim_s": 93.579,
+     "delta_s": 0.716,
+     "delta_pct": 0.77,
+     "speed_rms_kmh": 10.3,
+     "speed_bias_kmh": -1.7,
+     "vmax_real_kmh": 301.1,
+     "vmax_sim_kmh": 300,
+     "sim_deploy_mj": 6.83,
+     "sim_harvest_drive_mj": 0.73,
+     "sim_time_share": {
+      "corner": 0.022,
+      "brake": 0.128,
+      "traction": 0.129,
+      "power": 0.721
+     }
+    }
+   ]
+  },
+  "cadillac": {
+   "name": "Cadillac Ferrari",
+   "entrant": "Cadillac Formula 1 Team",
+   "chassis": "MAC-26",
+   "power_unit": "Ferrari 067/6",
+   "drivers": [
+    {
+     "code": "BOT",
+     "lap_time_s": 91.227
+    },
+    {
+     "code": "PER",
+     "lap_time_s": 91.94
+    }
+   ],
+   "fit_driver": "BOT",
+   "mass": {
+    "kg": 776.5,
+    "basis": "726 + 44 (Nominal Tyre Mass, implied) + 6.5 kg reported over the minimum (\"+ 6/7 kg\", RacingNews365 April); fuel 5 kg separate",
+    "sd_kg": 10
+   },
+   "physical_car": {
+    "id": "cadillac-silverstone-2026-q",
+    "session": "qualifying",
+    "label": "Cadillac Ferrari (Ferrari 067/6), Silverstone 2026 qualifying: derived from telemetry (concept/tools/derive-car.js --all)",
+    "mass_kg": 776.5,
+    "fuel_kg": 5,
+    "wheelbase_m": 3.4,
+    "track_front_m": 1.58,
+    "track_rear_m": 1.52,
+    "cog_height_m": 0.28,
+    "weight_dist_front": 0.45,
+    "aero": {
+     "corner": {
+      "CLA_front_m2": 1.39,
+      "CLA_rear_m2": 1.842,
+      "CDA_m2": 0.876
+     },
+     "straight": {
+      "CLA_front_m2": 1.39,
+      "CLA_rear_m2": 1.842,
+      "CDA_m2": 0.602
+     },
+     "ride_height_mm": null,
+     "ride_sens_per_mm": 0,
+     "floor_stalled": false,
+     "stall_margin_mm": null
+    },
+    "pu": {
+     "ice_kw": 395.8,
+     "mguk_kw": 350,
+     "es_deploy_mj_per_lap": 3.29,
+     "es_harvest_mj_per_lap": 6.5
+    },
+    "tyres": {
+     "mu_x": 1.684,
+     "mu_y": 2.158,
+     "load_sens": 0,
+     "radius_m": 0.348,
+     "compound": "soft"
+    },
+    "brakes": {
+     "max_decel_g_mech": 1.684
+    },
+    "drivetrain_eff": 0.95,
+    "calibration": {
+     "cla_scale": 1,
+     "cda_scale": 1,
+     "power_scale": 1,
+     "mu_scale": 1
+    }
+   },
+   "stats": {
+    "CdA_c": {
+     "central": 0.876,
+     "mean": 1.171,
+     "sd": 0.289,
+     "median": 1.216,
+     "sd_robust": 0.271,
+     "p05": 0.564,
+     "p95": 1.586
+    },
+    "CdA_s": {
+     "central": 0.602,
+     "mean": 0.898,
+     "sd": 0.289,
+     "median": 0.942,
+     "sd_robust": 0.271,
+     "p05": 0.291,
+     "p95": 1.312
+    },
+    "ClA": {
+     "central": 3.232,
+     "mean": 3.003,
+     "sd": 1.658,
+     "median": 2.913,
+     "sd_robust": 1.614,
+     "p05": 1.018,
+     "p95": 5.728
+    },
+    "mu_y": {
+     "central": 2.158,
+     "mean": 2.306,
+     "sd": 0.403,
+     "median": 2.236,
+     "sd_robust": 0.383,
+     "p05": 1.742,
+     "p95": 2.99
+    },
+    "mu_x": {
+     "central": 1.684,
+     "mean": 1.794,
+     "sd": 0.417,
+     "median": 1.785,
+     "sd_robust": 0.438,
+     "p05": 1.138,
+     "p95": 2.532
+    },
+    "muClA": {
+     "central": 6.974,
+     "mean": 6.313,
+     "sd": 3.276,
+     "median": 6.43,
+     "sd_robust": 2.587,
+     "p05": 2.94,
+     "p95": 10.237
+    },
+    "ay150_g": {
+     "central": 3.082,
+     "mean": 3.142,
+     "sd": 0.221,
+     "median": 3.136,
+     "sd_robust": 0.156,
+     "p05": 2.913,
+     "p95": 3.437
+    },
+    "ay250_g": {
+     "central": 4.724,
+     "mean": 4.629,
+     "sd": 0.882,
+     "median": 4.576,
+     "sd_robust": 0.579,
+     "p05": 3.993,
+     "p95": 5.568
+    }
+   },
+   "bootstrap": {
+    "replicates": 300,
+    "used": 300,
+    "anchor_failures": 12,
+    "method": "each replicate: one of the team's two laps at random, then that lap's grip-limited corners, full-throttle straights and brake zones resampled with replacement; systematic assumptions (η_th, mass, smoothing) are not in these sd"
+   },
+   "cda_anchor": {
+    "ok": true,
+    "fallback_CdA_c": null,
+    "top3_peak_dc_kw": 350,
+    "per_straight_peaks_dc_kw": [
+     243,
+     -102,
+     397,
+     347,
+     141,
+     306,
+     117,
+     137
+    ]
+   },
+   "per_driver": [
+    {
+     "code": "BOT",
+     "lap_time_s": 91.227,
+     "anchor_ok": true,
+     "CdA_c": 0.876,
+     "CdA_s": 0.602,
+     "ClA": 3.232,
+     "mu_y": 2.158,
+     "mu_x": 1.684,
+     "muClA": 6.974,
+     "ay150_g": 3.082,
+     "ay250_g": 4.724,
+     "cornering_rms_g": 0.304,
+     "braking_rms_kmh": 13.06,
+     "n_corners": 8,
+     "n_brake_zones": 6
+    },
+    {
+     "code": "PER",
+     "lap_time_s": 91.94,
+     "anchor_ok": true,
+     "CdA_c": 1.286,
+     "CdA_s": 1.013,
+     "ClA": 1.731,
+     "mu_y": 2.626,
+     "mu_x": 2.225,
+     "muClA": 4.544,
+     "ay150_g": 3.228,
+     "ay250_g": 4.298,
+     "cornering_rms_g": 0.476,
+     "braking_rms_kmh": 10.82,
+     "n_corners": 8,
+     "n_brake_zones": 7
+    }
+   ],
+   "gearing": {
+    "kmh_per_1000rpm": [
+     [
+      2,
+      10.647
+     ],
+     [
+      3,
+      13.297
+     ],
+     [
+      4,
+      15.969
+     ],
+     [
+      5,
+      19.009
+     ],
+     [
+      6,
+      22.244
+     ],
+     [
+      7,
+      25.402
+     ],
+     [
+      8,
+      28.625
+     ]
+    ],
+    "overall_ratio": [
+     [
+      2,
+      12.322
+     ],
+     [
+      3,
+      9.867
+     ],
+     [
+      4,
+      8.215
+     ],
+     [
+      5,
+      6.902
+     ],
+     [
+      6,
+      5.898
+     ],
+     [
+      7,
+      5.165
+     ],
+     [
+      8,
+      4.583
+     ]
+    ],
+    "rev_max_rpm": 12306,
+    "shift_rpm": 11487
+   },
+   "energy": {
+    "deploy_mj": 3.29,
+    "harvest_full_throttle_mj": 3.33
+   },
+   "residuals": {
+    "cornering_rms_g": 0.304,
+    "braking_rms_kmh": 13.06,
+    "sim_fit_lap": {
+     "lap_time_real_s": 91.227,
+     "lap_time_sim_s": 91.565,
+     "delta_s": 0.338,
+     "delta_pct": 0.37,
+     "speed_rms_kmh": 10.8,
+     "speed_bias_kmh": -1,
+     "vmax_real_kmh": 314.9,
+     "vmax_sim_kmh": 313.7,
+     "sim_deploy_mj": 3.17,
+     "sim_harvest_drive_mj": 3.91,
+     "sim_time_share": {
+      "corner": 0.029,
+      "brake": 0.159,
+      "traction": 0.121,
+      "power": 0.691
+     }
+    }
+   },
+   "held_out_teammate": [
+    {
+     "fit_on": "BOT",
+     "checked_on": "PER",
+     "lap_time_real_s": 91.94,
+     "lap_time_sim_s": 92.162,
+     "delta_s": 0.222,
+     "delta_pct": 0.24,
+     "speed_rms_kmh": 14.6,
+     "speed_bias_kmh": 0.6,
+     "vmax_real_kmh": 318.8,
+     "vmax_sim_kmh": 314.6,
+     "sim_deploy_mj": 3.16,
+     "sim_harvest_drive_mj": 3.91,
+     "sim_time_share": {
+      "corner": 0.026,
+      "brake": 0.158,
+      "traction": 0.121,
+      "power": 0.696
+     }
+    },
+    {
+     "fit_on": "PER",
+     "checked_on": "BOT",
+     "lap_time_real_s": 91.227,
+     "lap_time_sim_s": 91.567,
+     "delta_s": 0.34,
+     "delta_pct": 0.37,
+     "speed_rms_kmh": 13.7,
+     "speed_bias_kmh": -4.8,
+     "vmax_real_kmh": 314.9,
+     "vmax_sim_kmh": 318.3,
+     "sim_deploy_mj": 6.06,
+     "sim_harvest_drive_mj": 1.06,
+     "sim_time_share": {
+      "corner": 0.035,
+      "brake": 0.147,
+      "traction": 0.082,
+      "power": 0.735
+     }
+    }
+   ]
+  }
+ }
+}

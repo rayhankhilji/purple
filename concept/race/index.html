@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PURPLE · concept race</title>
+<meta name="color-scheme" content="dark">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="race.css">
+<!-- URL contract (docs/concept/RACE.md): ?design=<base64url JSON Design>&ref=redbull[&conditions=<base64url JSON>][&wind_ms=..&wind_from_deg=..][&mode=replay|race|grid][&rate=1] -->
+</head>
+<body>
+<header class="top">
+  <span class="brand">PURPLE</span>
+  <span class="sub" id="sub">concept race · the concept car on the game's 3D Silverstone</span>
+  <span class="spacer"></span>
+  <div class="tabs" role="tablist" aria-label="what drives the cars">
+    <button class="tab" role="tab" id="tabReplay" data-mode="replay" aria-selected="true" title="the physics lap sim's own trace, replayed on the game's track">Physics replay</button>
+    <button class="tab" role="tab" id="tabRace" data-mode="race" aria-selected="false" title="the game's AI and lap model with the bench's v0 multipliers: cinematic">Game race</button>
+    <button class="tab" role="tab" id="tabGrid" data-mode="grid" aria-selected="false" title="the concept aero on HAD's car in the real 2026 field, game AI: cinematic">2026 grid</button>
+  </div>
+  <div class="ctl" id="ctl">
+    <button class="btn" id="btnReplay" title="replay the lap (R)">Replay</button>
+    <button class="btn" id="btnPause" title="pause (Space)">Pause</button>
+    <select id="rate" aria-label="playback speed" title="playback speed (the clock stays in sim seconds)"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option><option value="8">8×</option></select>
+    <select id="cam" aria-label="camera" title="camera (C)"><option value="auto" selected>director</option><option value="tv">TV</option><option value="chase">chase</option><option value="tcam">T-cam</option></select>
+  </div>
+  <a class="back" href="../lab/" title="the concept lab">concept lab →</a>
+</header>
+<div id="banner" hidden></div>
+
+<main class="main">
+  <section class="panel stage" aria-label="game view">
+    <div class="ph"><span class="label" id="stageTitle">Physics replay · Silverstone</span><span class="src" id="stageLabel">physics lap sim</span></div>
+    <iframe id="game" title="Equation I · Silverstone" allow="autoplay; fullscreen"></iframe>
+    <div class="wait" id="stageWait">Building Silverstone and running the physics lap sim…</div>
+  </section>
+
+  <aside class="side">
+    <section class="panel" aria-label="lap times">
+      <div class="ph"><span class="label">Lap · Silverstone</span><span class="src" id="lapSrc">seconds</span></div>
+      <div class="pb"><table class="lap" id="lapTable"></table><div class="progress" aria-hidden="true"><i id="prog"></i></div></div>
+    </section>
+    <section class="panel" id="checkPanel" aria-label="replay check">
+      <div class="ph"><span class="label">Replay check</span><span class="src">clock vs the sim's lap</span></div>
+      <div class="pb"><div class="kv" id="check"></div><div class="note" id="checkNote"></div></div>
+    </section>
+    <section class="panel" id="mapPanel" aria-label="mapping">
+      <div class="ph"><span class="label">Sim line → game track</span><span class="src">mapping error</span></div>
+      <div class="pb"><div class="kv" id="mapping"><span class="k">waiting for the game view</span><span class="v"></span></div><div class="note" id="mapNote"></div></div>
+    </section>
+    <section class="panel" aria-label="the car">
+      <div class="ph"><span class="label">The car</span><span class="src" id="carSrc"></span></div>
+      <div class="pb"><div class="kv" id="carKv"></div><div class="note" id="carNote"></div></div>
+    </section>
+    <section class="panel" id="cinePanel" aria-label="game race result" style="order:-1" hidden>
+      <div class="ph"><span class="label">Game race result</span><span class="src">game lap model</span></div>
+      <div class="pb"><div class="kv" id="cine"></div><div class="note" id="cineNote"></div></div>
+    </section>
+  </aside>
+</main>
+<footer class="honest" id="honest">Physics replay: physics lap sim (quasi-steady-state point mass) on the sim's racing line; ghosts on the same clock. Game race: cinematic — game lap model, mixes car and driver. Real 2026 qualifying telemetry: OpenF1 (openf1.org), an independent community project, not associated with Formula 1, the FIA or FOM. Reduced-order models; no flow is solved anywhere.</footer>
+
+<!-- the physics lap sim (concept/sim, docs/concept/SIM.md) and the design layer, as the concept lab loads them -->
+<script src="../../vendor/three.min.js"></script>
+<script src="../../js/util.js"></script>
+<script src="../../js/data/silverstone.js"></script>
+<script src="../../js/data/racepace2026.js"></script>
+<script src="../../js/data/season2026.js"></script>
+<script src="../../js/track.js"></script>
+<script src="../../js/carmodel.js"></script>
+<script src="../../js/car.js"></script>
+<script src="../../js/ai.js"></script>
+<script src="../../lab/aero.js"></script>
+<script src="../../lab/evaluator.js"></script>
+<script src="../sim/track.js"></script>
+<script src="../sim/line-silverstone.js"></script>
+<script src="../sim/lapsim.js"></script>
+<script src="../sim/fitted.js"></script>
+<script src="../sim/fit.js"></script>
+<script src="../sim/index.js"></script>
+<script src="../regs.js"></script>
+<script src="../materials.js"></script>
+<script src="../parts.js"></script>
+<script src="../aeromap.js"></script>
+<script src="../design.js"></script>
+<script src="../physical.js"></script>
+<script src="../bench.js"></script>
+<script src="payload.js"></script>
+<script src="race.js"></script>
+</body>
+</html>
