@@ -196,6 +196,10 @@ function ruleValue(id, f) {
     "REG-C-MASS-MIN": m.total_kg, "REG-C-MASS-FRONT": m.front_kg, "REG-C-MASS-REAR": m.rear_kg, "REG-C-DRIVER-MASS": m.driver_kg, "REG-C-PU-MASS": m.pu_kg,
     "REG-C-ICE-MASS": m.ice_group_kg, "REG-C-TC-MASS": m.tc_kg, "REG-C-MGUK-MASS": m.mguk_kg, "REG-C-ES-MASS": m.es_kg, "REG-C-PU-COG": m.pu_cog_z_mm, "REG-C-DRIVELINE-MASS": m.driveline_kg,
     "PKG-WB": g.wheelbase_mm, "PKG-COOLING": a && a.cooling ? r3(a.cooling.capacity / a.cooling.need) : null, "PKG-FLOOR-STALL": a ? r3(a.stall_margin_mm) : null,
+    "REG-C-FW-PROFILES-Z": fw.chord_mm + " mm (limit here " + (regs.fwProfilesChordLimit ? r3(regs.fwProfilesChordLimit(fw)) : "—") + ")", "REG-C-SM-DIRECTION": "front " + fw.sm_delta_deg + "°, rear " + rw.sm_delta_deg + "°",
+    "REG-C-ELEMENTS-MIN": "front " + fw.elements + ", rear " + rw.elements, "REG-C-PLANK-HOLES": g.XR - g.XPU, "REG-C-SIDEPOD-INLET": f.params && f.params.sidepods ? f.params.sidepods.inlet_cm2 : null,
+    "REG-C-FLOOR-ROOF": "floor.throat_mm " + f.floor.throat_mm + " (\"above Z=0\" by its label)", "PKG-PU-FIXED": "PU rows and option as the baseline",
+    "REG-C-MAT-PERMITTED": Object.keys(m.materials || {}).map(k => k + ": " + m.materials[k].material).join(", ") || "baseline materials",
   };
   return Object.prototype.hasOwnProperty.call(V, id) ? V[id] : null;
 }
@@ -207,15 +211,22 @@ function ruleLimit(r, f) {
   if (r.id === "REG-C-MASS-REAR") return "≥ " + r3(0.54 * mm.kg) + " kg";
   if (r.id === "PKG-WB") return "≥ " + r3(f.geometry.wheelbase_min_mm) + " mm";
   if (r.kind === "range") return r.min + "–" + r.max + " " + (r.unit || "");
+  if (r.value === undefined) return r.kind === "requires" ? "required" : "—";
   const op = { max: "≤", min: "≥", "count-max": "≤", requires: "≥", info: "" }[r.kind] || "";
   return (op ? op + " " : "") + r.value + " " + (r.unit || "");
 }
 // the full legality report: every rule regs.js knows (FIA articles + model rules), plus the campaign guards
 function legalityReport(d, violations, pc) {
   const f = design.facts(d), vio = new Map(); for (const v of violations) vio.set(v.id, v);
+  if (!f.params) f.params = d.params;
+  // info rules regs.checkPhysical does check on the PhysicalCar (bench runs it on every car)
+  const PHYS = ["REG-C-ERS-K", "REG-C-ES-SOC", "REG-C-ES-RECHARGE", "REG-C-FUEL-FLOW"];
+  const NOT_CHECKED = { "REG-C-FLOOR-ROOF": "NOT CHECKED: parameter definition conflict (FIA_CHECKLIST.md); fix pending in claude/sim-v3-fia" };
   const rows = (regs.ALL_RULES || regs.RULES.concat(regs.MODEL_RULES)).map(r => ({
-    id: r.id, article: r.article, kind: r.kind, verified: r.verified, text: r.text, limit: ruleLimit(r, f), value: ruleValue(r.id, f),
-    status: vio.has(r.id) ? "FAIL" : (bench.PHYSICAL_SKIP || []).includes(r.id) ? "not enforced yet (model input pending)" : r.kind === "info" ? "info (recorded; " + (r.modelled_as ? "not a shape/mass check" : "not checkable here") + ")" : "pass",
+    id: r.id, article: r.article, kind: r.kind, verified: r.verified, text: r.text, limit: ruleLimit(r, f),
+    value: { "REG-C-ERS-K": pc.pu.mguk_kw, "REG-C-ES-SOC": pc.pu.es_soc_window_mj, "REG-C-ES-RECHARGE": pc.pu.es_harvest_mj_per_lap + " (cap; the lap's own: ENERGY-LIMIT)", "REG-C-FUEL-FLOW": "ICE " + pc.pu.ice_kw + " kW (fuel-flow curve inside the sim)" }[r.id] !== undefined
+      ? { "REG-C-ERS-K": pc.pu.mguk_kw, "REG-C-ES-SOC": pc.pu.es_soc_window_mj, "REG-C-ES-RECHARGE": pc.pu.es_harvest_mj_per_lap + " (cap; the lap's own: ENERGY-LIMIT)", "REG-C-FUEL-FLOW": "ICE " + pc.pu.ice_kw + " kW (fuel-flow curve inside the sim)" }[r.id] : ruleValue(r.id, f),
+    status: vio.has(r.id) ? "FAIL" : (bench.PHYSICAL_SKIP || []).includes(r.id) ? "not enforced yet (model input pending)" : NOT_CHECKED[r.id] ? NOT_CHECKED[r.id] : PHYS.includes(r.id) && regs.checkPhysical ? "pass (regs.checkPhysical on the PhysicalCar; the lap's energy: ENERGY-LIMIT)" : r.kind === "info" ? "info (recorded; " + (r.modelled_as ? "not a shape/mass check" : "not checkable here") + ")" : "pass",
   }));
   const H = bench.homologatedPU(d.team || null);
   rows.push({ id: "PU-HOMOLOGATED", article: bench.PU_RULE, kind: "campaign", verified: true, text: "PhysicalCar PU = the homologated " + H.name + " (ICE, MGU-K, ES figures, PU masses, MGU-K transmission option)", limit: "identical", value: "ICE " + pc.pu.ice_kw + " kW, MGU-K " + pc.pu.mguk_kw + " kW, ES " + pc.pu.es_soc_window_mj + " / " + pc.pu.es_harvest_mj_per_lap + " MJ", status: vio.has("PU-HOMOLOGATED") ? "FAIL" : "pass" });
