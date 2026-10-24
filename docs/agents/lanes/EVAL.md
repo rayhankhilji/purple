@@ -1,8 +1,18 @@
 # Lane EVAL
 
-Status: done through P3.T1 (sheet, scorer, README with real provider baseline; PR open); idle until v2 trains. Owner: agent C (session `session_01Ma6U13odw1SA1vFhepRj8u`). Branch: `claude/eval-p3-expect2`.
+Status: wind-cap fix + exam rebuild (PR open, priority), newest-3 rules (PR #32 open); idle until v2 trains. Owner: agent C (session `session_01Ma6U13odw1SA1vFhepRj8u`). Branch: `claude/eval-p3-windcap`.
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
+
+### 2026-10-24 04:45 London — agent C (EVAL) — evaluator wind-cap bug (confirmed by the correctness review), exam rebuilt
+- Status: done; `npm test` 80/80. Branch `claude/eval-p3-windcap` (from the integration branch at 2578d34; independent of the open rules PR #32). No Mubit calls. **No aero constant changed, label stays "aero map v1"** (integrator decision: evaluator timing bug, not a model change); fixtures untouched and byte-identical.
+- Bug: `evaluateOne` passed the still-air terminal speed as `vcap` into `timing()`, which clamps every sample at it, while the profile (js/ai.js) already caps each sample at its own terminal speed against the local headwind. Tailwind samples were clipped back to 331.2 km/h, so every windy lap leaned slow. Reproduced (Silverstone baseline, 10 m/s on the Hangar Straight): head 80.830, tail 81.354, cross 81.025; still air 80.800.
+- Fix: `timing(track, prof, Infinity, circuit)`; `terminal_kmh` still reports the still-air terminal for display. After: head **80.805**, tail **81.103**, cross **80.943**, still air **80.800** (unchanged; a new test asserts lap/sectors/vmax/vmin/multipliers byte-identical to both fixtures). Tailwind straight vmax now 349.1 km/h (> still-air terminal, as it should be with 10 m/s behind). New test: tailwind raises the Hangar sector's vmax above still air.
+- Exam rebuilt (`npm run exam:build`, seed 2026): **all 20 truths unchanged**; ids unchanged; the three wind items' scenario numbers changed: `exam-02` Δ −0.015 → −0.008, `exam-03` Δ +0.037 → +0.133, `exam-04` Δ +0.105 → +0.098 (verdicts retest / reject / reject as before). Still 4 promote / 5 retest / 11 reject. The provider's stored answers for 02/03/04 were given to the old scenario text: a provider re-run is the integrator's call (truths did not move, so the 20/20 · 10/20 score is very likely to stand).
+- Sheet regenerated (`npm run exam:sheet`): hardest eight are now `exam-rw8, 14, 15, 02, 16, 20, 05, 12` (`exam-03` at +0.133 is no longer near a threshold; `exam-12`, a promote at Δ −0.078, replaces it). README "What to expect" table rebuilt from `status.exam.details`; wind items marked † (pre-fix scenario text).
+- **Collected data, logged not hidden**: the v1 collection had ~11 windy scenarios of 50 and v2 had 5 of 40; their `result.delta_lap` and `vmax_kmh` carried the slightly-slow wind numbers (laps up to ~0.25 s slow in a strong tailwind, deltas off by a few hundredths at most since both baseline and candidate were clipped alike). They stay as collected in the ledger and in the Mubit task; the verdict labels are unaffected in all but borderline cases.
+- Decision proposed (for TASK_LOG): D-E? "wind cap fix is an evaluator bug fix, no aero-map version bump; exam.json rebuilt with unchanged truths; sheet hardest-8 changed (exam-03 out, exam-12 in)".
+- Blockers / questions for Tanuj: none. Next: PR #32 (newest-3 rules) is already open and independent; idle until v2 trains.
 
 ### 2026-10-24 03:55 London — agent C (EVAL) — Try-models README: real provider answers in "What to expect"
 - Status: done; `npm test` 74/74. Branch `claude/eval-p3-expect2` (from the integration branch after PR #19 and SERVER's exam-details persistence merged). Docs only; no Mubit calls.
