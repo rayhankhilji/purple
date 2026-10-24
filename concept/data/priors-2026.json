@@ -1,0 +1,1820 @@
+{
+ "_meta": {
+  "what": "Public priors (value or range, unit, kind, source, access date, how obtained) for the PURPLE 2026 car-identification fit.",
+  "built": "2026-10-24",
+  "branch_base": "fffca7d",
+  "kinds": {
+   "official": "FIA, Pirelli, Brembo, F1, team statements or regulation text read in the source",
+   "reported": "journalism, blogs, forum posts, Wikipedia, third-party simulations",
+   "academic": "papers, theses, engineering publications",
+   "engineering-estimate": "arithmetic on cited numbers, or the researcher's judgement, stated in 'how'"
+  },
+  "how_values": "'page fetched and read' = the number was read in the page text; 'web-search result summary only' = taken from a search summary and the page was not read (treat as unconfirmed). Items with value null are 'not public' (searched, nothing found).",
+  "rules": "Regulation items are cited by key in concept/data/regs-2026-key.json, not repeated. fit_prior_judgement and recommended_fit_priors are the researcher's judgement, not public numbers.",
+  "nominal_tyre_mass_found": false,
+  "no_mubit_calls": true
+ },
+ "sources": {
+  "fia_news": {
+   "title": "FIA: A New Era of Competition (2026 regulations showcase)",
+   "url": "https://fia.com/node/51855",
+   "accessed": "2026-10-24",
+   "how": "page fetched and read"
+  },
+  "f1chron_dd": {
+   "title": "F1 Chronicle: Downforce and Drag, 2026 vs 2025 (2 Mar 2026)",
+   "url": "https://f1chronicle.com/2026-f1-downforce-drag-comparison/",
+   "accessed": "2026-10-24",
+   "how": "page fetched and read"
+  },
+  "perantoni": {
+   "title": "Perantoni & Limebeer, Optimal Control for a Formula One Car with Variable Parameters (VSD, 2014 draft), Appendix B tables 3-4",
+   "url": "https://ora.ox.ac.uk/objects/uuid:ce1a7106-0a2c-41af-8449-41541220809f/files/m776aa23411ad9d78c36f96620a0e0f0b",
+   "accessed": "2026-10-24",
+   "how": "PDF downloaded, text extracted with pdftotext, tables read"
+  },
+  "maxtaylor": {
+   "title": "Max Taylor Aero (blog): Estimating F1 aero coefficients with lap simulation (27 Feb 2023)",
+   "url": "https://maxtayloraero.com/2023/02/27/estimating-f1-aero-coefficients-with-lap-simulation/",
+   "accessed": "2026-10-24",
+   "how": "page fetched and read"
+  },
+  "anderson_ge": {
+   "title": "Gary Anderson, The Race: What 2022-style F1 ground effect looks like (25 Jan 2022)",
+   "url": "https://www.the-race.com/formula-1/gary-anderson-what-2022-style-f1-ground-effect-looks-like/",
+   "accessed": "2026-10-24",
+   "how": "page fetched and read"
+  },
+  "symonds_porp": {
+   "title": "Pat Symonds, Autosport GP Racing column on porpoising (May 2022)",
+   "url": "https://www.autosport.com/f1/news/porpoising-explained-by-the-architect-of-f1-2022s-technical-rules/10300633/",
+   "accessed": "2026-10-24",
+   "how": "page fetched and read"
+  },
+  "f1_2022": {
+   "title": "formula1.com: 10 things you need to know about the all-new 2022 F1 car",
+   "url": "https://www.formula1.com/en/latest/article/10-things-you-need-to-know-about-the-all-new-2022-f1-car.4OLg8DrXyzHzdoGrbqp6ye",
+   "accessed": "2026-10-24",
+   "how": "page fetched and read"
+  },
+  "raceteq_sm": {
+   "title": "Raceteq: F1 2026 straightline mode will slash drag (21 Oct 2025), simulation by Bramble",
+   "url": "https://www.raceteq.com/articles/2025/10/2026-straightline-mode-replacing-drs-simulations",
+   "accessed": "2026-10-24",
+   "how": "page fetched and read"
+  },
+  "sf_sm": {
+   "title": "ScuderiaFans: How F1 Straight Mode cuts drag by 21% (1 Mar 2026)",
+   "url": "https://scuderiafans.com/how-f1-straight-mode-cuts-drag-by-21-and-why-the-floor-becomes-even-more-critical/",
+   "accessed": "2026-10-24",
+   "how": "page fetched and read"
+  },
+  "pf1_bahrain": {
+   "title": "PlanetF1: Leclerc data, 2026 vs 2025 pre-season lap times",
+   "url": "https://www.planetf1.com/features/f1-2026-2025-lap-times-compared-bahrain-testing",
+   "accessed": "2026-10-24",
+   "how": "page fetched and read"
+  },
+  "wiki_2025gb": {
+   "title": "Wikipedia: 2025 British Grand Prix (pole time)",
+   "url": "https://en.wikipedia.org/wiki/2025_British_Grand_Prix",
+   "accessed": "2026-10-24",
+   "how": "web-search result summary only (page not read or fetch failed)"
+  },
+  "pirelli_pr": {
+   "title": "Pirelli press release: 2026 F1 tyres reveal",
+   "url": "https://press.pirelli.com/pirelli-reveals-2026-f1-tyres-a-fresh-logo-design-and-new-compounds/",
+   "accessed": "2026-10-24",
+   "how": "page fetched and read"
+  },
+  "pirelli_race": {
+   "title": "Pirelli Racing Spot: F1 2026, what is changing on track",
+   "url": "https://www.pirelli.com/global/en-ww/race/racingspot/formula-1/new-2026-f1-rules-187730/",
+   "accessed": "2026-10-24",
+   "how": "page fetched and read"
+  },
+  "race_tyres": {
+   "title": "The Race: Two big tyre changes for F1 2026 revealed (June 2025)",
+   "url": "https://www.the-race.com/formula-1/two-big-tyre-changes-for-f1-2026-revealed/",
+   "accessed": "2026-10-24",
+   "how": "page fetched and read"
+  },
+  "merc_tyres": {
+   "title": "Mercedes-AMG F1: tyre options for the 2026 British GP (sizes 705/280 and 710/375)",
+   "url": "https://www.mercedesamgf1.com/news/what-are-the-tyre-options-for-the-2026-british-gp",
+   "accessed": "2026-10-24",
+   "how": "page fetched and read"
+  },
+  "racefans_ntm": {
+   "title": "RaceFans: FIA's 2026 F1 weight limit 'plucked from the air' (3 May 2025)",
+   "url": "https://www.racefans.net/2025/05/03/fias-2026-f1-weight-limit-was-plucked-from-the-air-and-very-hard-to-hit-horner/",
+   "accessed": "2026-10-24",
+   "how": "page fetched and read"
+  },
+  "race_plucked": {
+   "title": "The Race: 'Plucked out of the air' (3 May 2025, J. Noble)",
+   "url": "https://www.the-race.com/formula-1/plucked-out-of-the-air-new-complaints-over-expensive-2026-f1-rule",
+   "accessed": "2026-10-24",
+   "how": "page fetched and read"
+  },
+  "race_weight": {
+   "title": "The Race: Why F1 teams' 2026 weight panic is wrong",
+   "url": "https://www.the-race.com/formula-1/f1-2026-minimum-weight-complaints-miss-the-point/",
+   "accessed": "2026-10-24",
+   "how": "page fetched and read"
+  },
+  "rb_guide": {
+   "title": "Red Bull Racing: Bulls' Guide to the F1 2026 regulations, technical (NTM definition, 768 kg, 0.3-0.4 s per 10 kg)",
+   "url": "https://www.redbullracing.com/int-en/projects/bulls-guide-to-the-f1-2026-regulations/technical-regulations",
+   "accessed": "2026-10-24",
+   "how": "web-search result summary only (page not read or fetch failed) (the page text came back empty in the fetch; numbers taken from search summaries)"
+  },
+  "fia_tr_i8": {
+   "title": "FIA 2026 Technical Regulations Issue 8 (24 Jun 2024), Nominal Tyre Mass definition",
+   "url": "https://www.fia.com/sites/default/files/fia_2026_formula_1_technical_regulations_issue_8_-_2024-06-24.pdf",
+   "accessed": "2026-10-24",
+   "how": "web-search result summary only (page not read or fetch failed) (definition text relayed in the search summary; PDF not opened)"
+  },
+  "planetf1_williams": {
+   "title": "PlanetF1: Williams publishes FW48 weight (4 Feb 2026)",
+   "url": "https://www.planetf1.com/news/williams-fw48-f1-2026-car-weight",
+   "accessed": "2026-10-24",
+   "how": "page fetched and read"
+  },
+  "mclaren_spec": {
+   "title": "McLaren: technical specification of the MCL40 (11 Feb 2026)",
+   "url": "https://www.mclaren.com/racing/formula-1/2026/what-is-the-technical-specification-of-our-2026-formula-1/",
+   "accessed": "2026-10-24",
+   "how": "page fetched and read"
+  },
+  "anderson_wd": {
+   "title": "Gary Anderson, The Race: the one 2026 rule F1 needs to drop (13 Oct 2024)",
+   "url": "https://www.the-race.com/formula-1/gary-anderson-drop-this-f1-2026-rule/",
+   "accessed": "2026-10-24",
+   "how": "page fetched and read"
+  },
+  "thorv": {
+   "title": "jthorvaldur.github.io: F1 2026 weight distribution page (press-compiled declared masses; sensitivity unsourced)",
+   "url": "https://jthorvaldur.github.io/f1_stats/weight.html",
+   "accessed": "2026-10-24",
+   "how": "page fetched and read"
+  },
+  "pirelli_window": {
+   "title": "Pirelli: Seeing through the window (2017)",
+   "url": "https://www.pirelli.com/global/en-ww/race/seeing-through-the-window",
+   "accessed": "2026-10-24",
+   "how": "page fetched and read"
+  },
+  "gp247_isola": {
+   "title": "grandprix247: Pirelli warns Silverstone's high-speed test (2026 preview)",
+   "url": "https://www.grandprix247.com/formula-1-news/pirelli-warns-silverstones-high-speed-test-will-push-tyres-to-the-limit-as-sprint-weekend-raises-the-stakes",
+   "accessed": "2026-10-24",
+   "how": "page fetched and read"
+  },
+  "f1chron_deg": {
+   "title": "F1 Chronicle (via Yahoo Sports, 13 Jul 2026): F1 tyre degradation in 2026",
+   "url": "https://sports.yahoo.com/articles/f1-tyre-degradation-2026-data-112619253.html",
+   "accessed": "2026-10-24",
+   "how": "page fetched and read"
+  },
+  "pirelli_race_pr": {
+   "title": "Pirelli press: challenges of Silverstone / Silverstone 2026 strategy statements (Marrafuschi)",
+   "url": "https://press.pirelli.com/the-challenges-of-silverstone-the-cradle-of-motorsport/",
+   "accessed": "2026-10-24",
+   "how": "web-search result summary only (page not read or fetch failed)"
+  },
+  "brembo_uk": {
+   "title": "Brembo: 5 facts about the British GP 2026",
+   "url": "https://www.brembo.com/en/motorsport/formula1/2026/facts-uk-2026",
+   "accessed": "2026-10-24",
+   "how": "page fetched and read"
+  },
+  "brembo_es": {
+   "title": "Brembo: 5 facts about the Barcelona-Catalunya GP 2026",
+   "url": "https://www.brembo.com/en/motorsport/formula1/2026/facts-spain-2026",
+   "accessed": "2026-10-24",
+   "how": "page fetched and read"
+  },
+  "brembo_rules": {
+   "title": "Brembo: how 2026 rules will change F1",
+   "url": "https://www.brembo.com/en/motorsport/formula1/f1-rules-2026",
+   "accessed": "2026-10-24",
+   "how": "page fetched and read"
+  },
+  "drive_brembo": {
+   "title": "The Drive: How Brembo redesigned F1 brakes for 2026",
+   "url": "https://www.thedrive.com/news/how-brembo-redesigned-f1-brakes-for-the-2026-power-unit-revolution",
+   "accessed": "2026-10-24",
+   "how": "page fetched and read"
+  },
+  "sf_brembo": {
+   "title": "ScuderiaFans: Brembo data shows major braking changes for 2026 (18 Apr 2026)",
+   "url": "https://scuderiafans.com/brembo-data-shows-major-braking-changes-for-2026-f1-cars/",
+   "accessed": "2026-10-24",
+   "how": "page fetched and read"
+  },
+  "sf_monza": {
+   "title": "ScuderiaFans: Italian GP 2026 Monza braking changes (Brembo figures)",
+   "url": "https://scuderiafans.com/italian-gp-2026-monza-braking-changes-and-f1-energy-limits-explained/",
+   "accessed": "2026-10-24",
+   "how": "web-search result summary only (page not read or fetch failed)"
+  },
+  "f1_brakes": {
+   "title": "formula1.com Tech Tuesday: how teams cope with brake-killer Canada (undated in fetched text)",
+   "url": "https://www.formula1.com/en/latest/article/tech-tuesday-how-teams-cope-with-brake-killer-canada.3kBWl0EqlqGoMAAIiIMAoi",
+   "accessed": "2026-10-24",
+   "how": "page fetched and read"
+  },
+  "xu_2023": {
+   "title": "Xu (2023), Thermodynamic evaluation of 2026 PU regulation changes (school-level conference paper; Monaco braking energy citation)",
+   "url": "https://ace.ewapub.com/article/view/5615.pdf",
+   "accessed": "2026-10-24",
+   "how": "PDF downloaded, text extracted with pdftotext"
+  },
+  "sf_ice": {
+   "title": "ScuderiaFans: F1 2026 ICE power revealed (dated 20 Apr 2026)",
+   "url": "https://scuderiafans.com/f1-2026-ice-power-revealed-big-gap-to-mercedes-opportunity-for-ferrari/",
+   "accessed": "2026-10-24",
+   "how": "page fetched and read"
+  },
+  "msm_pu": {
+   "title": "Motor Sport Magazine: key aspects changing on F1's 2026 engines (updated 22 Jan 2026)",
+   "url": "https://www.motorsportmagazine.com/articles/single-seaters/f1/all-the-key-aspects-changing-on-f1s-2026-engines/",
+   "accessed": "2026-10-24",
+   "how": "page fetched and read"
+  },
+  "race_clip": {
+   "title": "The Race: super clipping, how it works (25 Feb 2026, J. Noble)",
+   "url": "https://www.the-race.com/formula-1/super-clipping-how-it-works-why-controversial-key-f1-2026/",
+   "accessed": "2026-10-24",
+   "how": "page fetched and read"
+  },
+  "crash_apr": {
+   "title": "Crash.net: FIA power unit changes from Miami GP (updated 20 Apr 2026)",
+   "url": "https://www.crash.net/f1/news/1093248/1/fia-president-confirms-f1-power-unit-changes-have-been-agreed",
+   "accessed": "2026-10-24",
+   "how": "page fetched and read"
+  },
+  "pf1_recharge": {
+   "title": "PlanetF1: FIA clarifies Miami GP recharge limits (1 May 2026)",
+   "url": "https://www.planetf1.com/news/fia-miami-gp-energy-recharge-rules-no-reduction-update-clarification",
+   "accessed": "2026-10-24",
+   "how": "page fetched and read"
+  },
+  "ar1_cr": {
+   "title": "autoracing1: thermal expansion and compression ratio controversy (10-11 kW claim)",
+   "url": "https://www.autoracing1.com/pl/468685/thermal-expansion-and-compression-ratio-in-formula-1-engines-the-2026-controversy/",
+   "accessed": "2026-10-24",
+   "how": "web-search result summary only (page not read or fetch failed)"
+  },
+  "michelin": {
+   "title": "Michelin Motorsport Canopy: Showing our sensitive side (2 Oct 2018)",
+   "url": "https://simulation.michelin.com/canopy/technical-articles/showing-our-sensitive-side",
+   "accessed": "2026-10-24",
+   "how": "page fetched and read"
+  },
+  "forum_mass": {
+   "title": "Autosport forum threads: weight versus lap times (Benzing and Symonds figures, second-hand)",
+   "url": "https://forums.autosport.com/topic/58983-weight-versus-lap-times/",
+   "accessed": "2026-10-24",
+   "how": "web-search result summary only (page not read or fetch failed)"
+  },
+  "forum_mu": {
+   "title": "f1technical.net forum: coefficient of friction for F1 tyre (poster estimates)",
+   "url": "https://www.f1technical.net/forum/viewtopic.php?t=20627",
+   "accessed": "2026-10-24",
+   "how": "web-search result summary only (page not read or fetch failed)"
+  },
+  "repo_data": {
+   "title": "Repo: docs/concept/DATA.md, concept/data/regs-2026-key.json, silverstone-2026-weekend.json, grid-2026.json, redbull-2026.json (read-only)",
+   "url": "concept/data/",
+   "accessed": "2026-10-24",
+   "how": "local files, read before research"
+  }
+ },
+ "sections": {
+  "aero": [
+   {
+    "key": "fia_target_downforce_change",
+    "value": -30,
+    "unit": "% vs reference",
+    "kind": "official",
+    "source": "fia_news",
+    "accessed": "2026-10-24",
+    "how": "read on FIA page: 'Downforce has been reduced by 30% and drag by 55%.'",
+    "note": "Reference stated only as 'current cars' when the FIA page was written (the 2022-2025 generation); F1 Chronicle words it as '2022-to-2025 cars'. Not stated: which circuit or trim, and whether the figure is for Corner or Straight Mode. A design estimate, not a measurement.",
+    "fit_prior_judgement": "Treat as the ratio 2026 corner-mode ClA / 2022-25 ClA = 0.70, with +-0.1 slack."
+   },
+   {
+    "key": "fia_target_drag_change",
+    "value": -55,
+    "unit": "% vs reference",
+    "kind": "official",
+    "source": "fia_news",
+    "accessed": "2026-10-24",
+    "how": "same FIA sentence",
+    "note": "Same reference caveats. Sources attribute most of the drag cut to the active wings, so it plausibly describes Straight Mode or a mixed lap; not stated.",
+    "fit_prior_judgement": "Do not apply to corner-mode CdA directly; see Straight/Corner ratio prior."
+   },
+   {
+    "key": "downforce_target_alt_reports",
+    "value": "downforce -15 to -30, drag -40 to -55",
+    "unit": "% vs reference",
+    "kind": "reported",
+    "source": "f1chron_dd",
+    "accessed": "2026-10-24",
+    "how": "search-result summaries of secondary guides gave looser ranges; the F1 Chronicle page itself repeats FIA 30/55",
+    "note": "Low-grade, inconsistent between outlets.",
+    "fit_prior_judgement": "Ignore for the fit; use FIA 30/55."
+   },
+   {
+    "key": "ref_car_academic_CdA",
+    "value": 1.35,
+    "unit": "m2 (Cd 0.9 x A 1.5)",
+    "kind": "academic",
+    "source": "perantoni",
+    "accessed": "2026-10-24",
+    "how": "read Table 4 (vehicle parameters)",
+    "note": "A pre-2022 F1 model car (660 kg, 3.4 m wheelbase, paper dated 2014). Not a ground-effect car. Cl 3.0 x A 1.5 = ClA 4.5 m2.",
+    "fit_prior_judgement": "Anchor for 'old-rule' CdA; 2022-25 cars are not public."
+   },
+   {
+    "key": "ref_car_academic_ClA",
+    "value": 4.5,
+    "unit": "m2 (Cl 3.0 x A 1.5)",
+    "kind": "academic",
+    "source": "perantoni",
+    "accessed": "2026-10-24",
+    "how": "read Table 4",
+    "note": "Same pre-2022 model car."
+   },
+   {
+    "key": "ref_2022_ClA_fit_blog",
+    "value": [
+     5.84,
+     6.61
+    ],
+    "unit": "m2 (Cl at A = 1 m2; Silverstone not in the published text)",
+    "kind": "engineering-estimate",
+    "source": "maxtaylor",
+    "accessed": "2026-10-24",
+    "how": "read text: 2022 fits Monza -5.841, Spielberg -6.293, Budapest -6.613; four-track average -6.351 (2020 average -6.445)",
+    "note": "One person's lap-simulation fit to FastF1 qualifying telemetry, frontal area set to 1 m2 so ClA equals Cl. Tyre grip is tuned in the same fit, so ClA and mu are coupled. Drag values are not given in the text. Budapest, Silverstone and Interlagos are described as highest-downforce tracks.",
+    "fit_prior_judgement": "Use as the upper end of the 2022-25 ClA reference."
+   },
+   {
+    "key": "ref_2021_car_numerical_Cl_Cd",
+    "value": {
+     "Cl": [
+      -4.598,
+      -5.6
+     ],
+     "Cd": [
+      1.746,
+      1.83
+     ]
+    },
+    "unit": "dimensionless (area normalisation not stated in extracted text)",
+    "kind": "engineering-estimate",
+    "source": "maxtaylor",
+    "accessed": "2026-10-24",
+    "how": "read; quoted by the blog as comparison values for the 2021 Williams FW43B from two third-party analyses",
+    "note": "Pre-ground-effect car; reference area unknown. Context only.",
+    "fit_prior_judgement": "Not used for priors."
+   },
+   {
+    "key": "ref_2021_car_aero_split_illustration",
+    "value": {
+     "front_wing_kg": 600,
+     "total_kg": 1800,
+     "centre_of_pressure_front_fraction": 0.4,
+     "front_axle_load_kg": 740,
+     "rear_axle_load_kg": 1080
+    },
+    "unit": "kg of downforce at an unstated speed",
+    "kind": "engineering-estimate",
+    "source": "anderson_ge",
+    "accessed": "2026-10-24",
+    "how": "read; Gary Anderson's worked example for a 2021 car",
+    "note": "Illustration by a former F1 technical director, not team data. Gives front share 740/1820 = 0.41. The 65 % floor split in the same article is for a 1977-82 scenario, not for 2022.",
+    "fit_prior_judgement": "Supports front aero share about 0.40-0.44."
+   },
+   {
+    "key": "aero_balance_ref_car_derived",
+    "value": 0.44,
+    "unit": "front share of aero load",
+    "kind": "engineering-estimate",
+    "source": "perantoni",
+    "accessed": "2026-10-24",
+    "how": "arithmetic: (wheelbase 3.4 - CP distance from front axle 1.9) / 3.4",
+    "note": "Model car, pre-2022. Aero balance of 2022-26 cars is not public."
+   },
+   {
+    "key": "floor_share_of_downforce",
+    "value": [
+     0.47,
+     0.6
+    ],
+    "unit": "fraction of total downforce",
+    "kind": "reported",
+    "source": "sf_sm",
+    "accessed": "2026-10-24",
+    "how": "ScuderiaFans simulation article: floor about 47 % in Corner Mode, about 76 % in Straight Mode; separate secondary sources (search summaries only) say about 60 % for 2017-21 and 2022+ cars",
+    "note": "Unnamed third-party simulation; no conditions given.",
+    "fit_prior_judgement": "0.45-0.65 in corner mode."
+   },
+   {
+    "key": "straight_mode_drag_change_sim_bramble",
+    "value": -18,
+    "unit": "% total drag",
+    "kind": "reported",
+    "source": "raceteq_sm",
+    "accessed": "2026-10-24",
+    "how": "read: 'an 18% decrease in drag overall' (simulation by Bramble, analysed by Raceteq, 21 Oct 2025)",
+    "note": "Simulation of an assumed 2026-style car, not a team car. Straight Mode is not used in corners, so real downforce loss is lower. Article says the front floor may gain suction in this mode."
+   },
+   {
+    "key": "straight_mode_downforce_change_sim_bramble",
+    "value": -25,
+    "unit": "% total downforce",
+    "kind": "reported",
+    "source": "raceteq_sm",
+    "accessed": "2026-10-24",
+    "how": "read: 'a 25% reduction in downforce when straightline mode is deployed'",
+    "note": "Same caveats."
+   },
+   {
+    "key": "straight_mode_drag_change_sim_sf",
+    "value": -21,
+    "unit": "% total CdA",
+    "kind": "reported",
+    "source": "sf_sm",
+    "accessed": "2026-10-24",
+    "how": "read: Straight Mode 'reduces total drag (CdA) by approximately 21%'; rear-wing drag about -70 %, front-wing drag about -43 %",
+    "note": "Unnamed simulation (the article gives no author, software or conditions); article itself says there is 'room for improvement in the model'."
+   },
+   {
+    "key": "straight_mode_downforce_change_sim_sf",
+    "value": -31,
+    "unit": "% total downforce",
+    "kind": "reported",
+    "source": "sf_sm",
+    "accessed": "2026-10-24",
+    "how": "read: 'Total downforce drops by roughly 31%'",
+    "note": "Same caveats."
+   },
+   {
+    "key": "straight_mode_CdA_sim_sf",
+    "value": 0.715,
+    "unit": "m2",
+    "kind": "reported",
+    "source": "sf_sm",
+    "accessed": "2026-10-24",
+    "how": "read: 'The simulation reports a CdA of 0.715 in Straight Mode.'",
+    "note": "Corner-mode CdA is not stated; implied 0.715 / 0.79 = 0.905 m2 (arithmetic). The article adds: 'highly optimised real-world F1 cars can achieve figures below 0.6' in low-drag configurations (unsourced quote).",
+    "fit_prior_judgement": "Straight CdA prior spans 0.60-1.00."
+   },
+   {
+    "key": "straight_mode_flap_angle",
+    "value": null,
+    "unit": "deg",
+    "kind": "official",
+    "source": "repo_data",
+    "accessed": "2026-10-24",
+    "how": "not fixed by the rules",
+    "note": "Reported rear-flap rotation of about 160-180 deg for the RB22 is in docs/concept/REDBULL.md (unconfirmed).",
+    "regs_ref": "concept/data/regs-2026-key.json items.aero.active_aero_flap_angle_deg"
+   },
+   {
+    "key": "active_aero_rules",
+    "value": "see regulation items",
+    "unit": "",
+    "kind": "official",
+    "source": "repo_data",
+    "accessed": "2026-10-24",
+    "how": "cite, not duplicated",
+    "note": "Transition <= 400 ms, fail-safe Corner Mode, Silverstone activation zones A1-A4: cited by id only.",
+    "regs_ref": "concept/data/regs-2026-key.json items.aero.active_aero_transition_max_ms, active_aero_failsafe, active_aero_usage; silverstone-2026-weekend.json active_aero_straight_mode"
+   },
+   {
+    "key": "lap_time_gap_pole_2025_to_2026_silverstone",
+    "value": 3.219,
+    "unit": "s",
+    "kind": "engineering-estimate",
+    "source": "wiki_2025gb",
+    "accessed": "2026-10-24",
+    "how": "arithmetic: 2026 pole 88.111 s (official, in repo data) minus 2025 pole 84.892 s (Wikipedia 2025 British GP page, search summary only)",
+    "note": "Different sessions and weather; useful only as the order of magnitude (+3.8 %) for the total effect of the rules change.",
+    "fit_prior_judgement": "Sanity check for the absolute-level calibration."
+   },
+   {
+    "key": "preseason_bahrain_best_lap_gap",
+    "value": 2.644,
+    "unit": "s",
+    "kind": "reported",
+    "source": "pf1_bahrain",
+    "accessed": "2026-10-24",
+    "how": "read: Leclerc 1:31.992 (2026) vs Sainz 1:29.348 (2025); difference is my arithmetic",
+    "note": "Testing, fuel and engine modes unknown. Same article: peak speed 328 km/h (LEC 2026) vs 314 km/h (SAI 2025); Audi 341 km/h in 2026."
+   },
+   {
+    "key": "wake_downforce_loss_design_target_2022",
+    "value": {
+     "2021_cars_20m": -35,
+     "2021_cars_10m": -47,
+     "2022_car_20m": -4,
+     "2022_car_10m": -18
+    },
+    "unit": "% downforce lost behind a leader",
+    "kind": "official",
+    "source": "f1_2022",
+    "accessed": "2026-10-24",
+    "how": "read on formula1.com",
+    "note": "Design-target statement for the 2022 generation; not directly needed for a single-car lap fit."
+   },
+   {
+    "key": "porpoising_frequencies",
+    "value": {
+     "bounce_hz": [
+      4,
+      5
+     ],
+     "pitch_hz_max": 7,
+     "observed_porpoising_hz": [
+      4.8,
+      5.4
+     ]
+    },
+    "unit": "Hz",
+    "kind": "official",
+    "source": "symonds_porp",
+    "accessed": "2026-10-24",
+    "how": "read: Pat Symonds' column (Autosport)",
+    "note": "No amplitude, stall speed or ride-height numbers are given. 2022 cars run much lower rear ride heights than before (qualitative)."
+   },
+   {
+    "key": "floor_edge_raise_2023",
+    "value": 15,
+    "unit": "mm",
+    "kind": "reported",
+    "source": "symonds_porp",
+    "accessed": "2026-10-24",
+    "how": "search summary of Autosport coverage (page text read did not state it); FIA raised the minimum floor-edge height by 15 mm for 2023",
+    "note": "Context only; 2026 floor geometry is in the regulation items."
+   },
+   {
+    "key": "plank_thickness",
+    "value": "10 mm (+-0.2), not less than 8 mm worn",
+    "unit": "mm",
+    "kind": "official",
+    "source": "repo_data",
+    "accessed": "2026-10-24",
+    "how": "cite",
+    "regs_ref": "concept/data/regs-2026-key.json items.aero.plank_thickness_mm (C3.6.1)"
+   },
+   {
+    "key": "ride_height_sensitivity_downforce",
+    "value": null,
+    "unit": "% per mm",
+    "kind": "official",
+    "source": "repo_data",
+    "accessed": "2026-10-24",
+    "how": "not public",
+    "note": "No team or FIA number found for 2022-26 cars. CONCEPT.md already uses -0.6 %/mm at 35 mm.",
+    "fit_prior_judgement": "Weak prior only: 0.3-0.8 %/mm (judgement, no source)."
+   },
+   {
+    "key": "wheel_and_cooling_drag_share",
+    "value": null,
+    "unit": "% of CdA",
+    "kind": "official",
+    "source": "repo_data",
+    "accessed": "2026-10-24",
+    "how": "not public (several searches found no number)",
+    "note": "Qualitative only: the FIA/Pirelli say narrower tyres help drag and weight; no share is quoted."
+   },
+   {
+    "key": "absolute_CdA_ClA_2026",
+    "value": null,
+    "unit": "m2",
+    "kind": "official",
+    "source": "repo_data",
+    "accessed": "2026-10-24",
+    "how": "not public for any 2026 car or for the 2022-25 cars",
+    "note": "All absolute values here are academic, blog fits or third-party simulations."
+   }
+  ],
+  "tyres": [
+   {
+    "key": "front_width_diameter_2026",
+    "value": {
+     "width_mm": 280,
+     "diameter_mm": 705
+    },
+    "unit": "mm",
+    "kind": "official",
+    "source": "merc_tyres",
+    "accessed": "2026-10-24",
+    "how": "read on Mercedes-AMG F1 team page: 'Front tyres: 705mm height, 280mm width (a 25mm decrease)'",
+    "note": "Pirelli's own release gives only the deltas (width -25 mm, overall diameter -15 mm). 2022-25 base: 305 mm wide, 720 mm diameter (search summary), so 720 - 15 = 705 matches.",
+    "fit_prior_judgement": "Use 705 mm OD front."
+   },
+   {
+    "key": "rear_width_diameter_2026",
+    "value": {
+     "width_mm": 375,
+     "diameter_mm": 710
+    },
+    "unit": "mm",
+    "kind": "official",
+    "source": "merc_tyres",
+    "accessed": "2026-10-24",
+    "how": "read on Mercedes-AMG F1 team page: 'Rear tyres: 710mm height, 375mm width (a 30mm reduction)'",
+    "note": "Pirelli deltas: width -30 mm, diameter -10 mm; base 405 mm wide, 720 mm. Consistent.",
+    "fit_prior_judgement": "Use 710 mm OD rear."
+   },
+   {
+    "key": "pirelli_size_deltas",
+    "value": {
+     "front_width_mm": -25,
+     "rear_width_mm": -30,
+     "front_diameter_mm": -15,
+     "rear_diameter_mm": -10
+    },
+    "unit": "mm",
+    "kind": "official",
+    "source": "pirelli_pr",
+    "accessed": "2026-10-24",
+    "how": "read: 'tread width is 25mm less at the front and 30mm less at the rear ... 15mm less at the front and 10mm less at the rear'",
+    "note": "Rim 18 inch unchanged; rim values are in the regulation items.",
+    "regs_ref": "concept/data/regs-2026-key.json items.wheels_tyres (C10.7.2)"
+   },
+   {
+    "key": "unloaded_radius_derived",
+    "value": {
+     "front_m": 0.3525,
+     "rear_m": 0.355
+    },
+    "unit": "m",
+    "kind": "official",
+    "source": "merc_tyres",
+    "accessed": "2026-10-24",
+    "how": "arithmetic: half of the published overall diameters",
+    "note": "Loaded rolling radius is smaller and speed-dependent (engineering judgement, not public).",
+    "fit_prior_judgement": "Loaded rolling radius 0.340-0.355 m."
+   },
+   {
+    "key": "tyre_mass_change_vs_2025",
+    "value": {
+     "front_each_g": -300,
+     "rear_each_g": -500,
+     "set_of_four_kg": -1.6
+    },
+    "unit": "g / kg",
+    "kind": "official",
+    "source": "pirelli_race",
+    "accessed": "2026-10-24",
+    "how": "Pirelli page: 'the 4 tyres on every car are 1.6 kilos lighter than last season'; The Race (June 2025): 'a front slick 300 grammes lighter and a rear 500 grammes less' (2x0.3 + 2x0.5 = 1.6)",
+    "note": "An earlier Autosport piece (June 2024) estimated 4-5 kg; superseded."
+   },
+   {
+    "key": "absolute_tyre_mass_per_tyre",
+    "value": null,
+    "unit": "kg",
+    "kind": "official",
+    "source": "repo_data",
+    "accessed": "2026-10-24",
+    "how": "not public: no per-tyre or per-axle mass found from Pirelli or the FIA",
+    "note": "A forum post (13-inch era) says about 9.5 kg front / 11.5 kg rear; unverified and not 2026."
+   },
+   {
+    "key": "nominal_tyre_mass_final_value",
+    "value": null,
+    "unit": "kg",
+    "kind": "official",
+    "source": "fia_tr_i8",
+    "accessed": "2026-10-24",
+    "how": "NOT FOUND. Searched FIA, Pirelli, team and press sources; no published final value",
+    "note": "Rule text (per Issue 8 summary and Red Bull's guide): mean mass of a sample of 50 tyres per axle, rounded to nearest 1 kg, published by Pirelli after the final pre-season test; adjusted if tyre spec changes. Estimates only: see next three rows.",
+    "regs_ref": "concept/data/regs-2026-key.json items.mass.nominal_tyre_mass_kg (C4.7 in repo; text reads C4.1)"
+   },
+   {
+    "key": "nominal_tyre_mass_FIA_2024_estimate",
+    "value": 46,
+    "unit": "kg",
+    "kind": "official",
+    "source": "fia_news",
+    "accessed": "2026-10-24",
+    "how": "read on FIA page: '722kg Car and Driver + 46kg estimated tyres mass' = 768 kg",
+    "note": "Estimate before the final rule wording. The Race (May 2025) quotes 726 kg + estimated 46.4 kg = 772.4 kg for qualifying (page read: 'the estimated 46.4kg accounted for tyres').",
+    "fit_prior_judgement": "Central 46 kg."
+   },
+   {
+    "key": "nominal_tyre_mass_RaceFans_assumption",
+    "value": 44,
+    "unit": "kg",
+    "kind": "reported",
+    "source": "racefans_ntm",
+    "accessed": "2026-10-24",
+    "how": "read footnote: 'Assuming a Nominal Tyre Mass of 44kg'",
+    "note": "An assumption used for illustration (724 + 44 = 768), not a measurement."
+   },
+   {
+    "key": "nominal_tyre_mass_upper_bound_from_declared_masses",
+    "value": 48,
+    "unit": "kg",
+    "kind": "engineering-estimate",
+    "source": "mclaren_spec",
+    "accessed": "2026-10-24",
+    "how": "arithmetic: McLaren published 772 kg (incl. driver, no fuel) and Williams 772.4 kg; a legal car must be >= 724 + NTM, so NTM <= about 48 kg, if these are race-trim weights at or above the limit",
+    "note": "Weak: declared launch weights, trim and instrumentation unknown (Williams' team principal says weight cannot be fully known yet). Williams' 772.4 kg equals 726 + 46.4 exactly, which may be coincidence.",
+    "fit_prior_judgement": "Bound: NTM in 44-48 kg; central 46."
+   },
+   {
+    "key": "fia_grip_statement",
+    "value": "minimal loss in grip",
+    "unit": "",
+    "kind": "official",
+    "source": "fia_news",
+    "accessed": "2026-10-24",
+    "how": "read: 'the width of the front tyres has been reduced by 25mm and the rears by 30mm but with minimal loss in grip'",
+    "note": "FIA's Monchaux (Autosport, June 2024): 'might be a slight reduction'. No percentage published."
+   },
+   {
+    "key": "mu_peak_load_table_academic",
+    "value": {
+     "mu_x_at_2kN": 1.75,
+     "mu_x_at_6kN": 1.4,
+     "mu_y_at_2kN": 1.8,
+     "mu_y_at_6kN": 1.45,
+     "slip_ratio_peak": [
+      0.11,
+      0.1
+     ],
+     "slip_angle_peak_deg": [
+      9,
+      8
+     ],
+     "shape_factor": 1.9
+    },
+    "unit": "dimensionless",
+    "kind": "academic",
+    "source": "perantoni",
+    "accessed": "2026-10-24",
+    "how": "read Table 3 (tyre friction parameters, 'a paucity of publicly available Formula One tyre data')",
+    "note": "Pre-2022 model tyre, same model front and rear, friction 'treated as linear functions of the normal load'. Loads of 2 and 6 kN bracket the per-tyre load of a 2026 car (static about 1.7-2.1 kN, about 4.5-5 kN at 70 m/s with ClA 3.9 m2: arithmetic).",
+    "fit_prior_judgement": "mu_y 1.6-2.0 at 2 kN, mu_x 1.5-1.9 at 2 kN."
+   },
+   {
+    "key": "load_sensitivity_derived",
+    "value": [
+     4.9,
+     5.0
+    ],
+    "unit": "% of mu(2 kN) lost per kN",
+    "kind": "engineering-estimate",
+    "source": "perantoni",
+    "accessed": "2026-10-24",
+    "how": "arithmetic on Table 3: (1.80-1.45)/1.80/4 kN = 4.9 %/kN lateral; (1.75-1.40)/1.75/4 = 5.0 %/kN longitudinal",
+    "note": "From the same model tyre.",
+    "fit_prior_judgement": "3-6 %/kN, central 4.5."
+   },
+   {
+    "key": "mu_forum_estimates",
+    "value": {
+     "mu_1_to_3kN": 1.6,
+     "mu_near_6kN": 1.4,
+     "sustained_low_speed_corner": 2.0
+    },
+    "unit": "dimensionless",
+    "kind": "reported",
+    "source": "forum_mu",
+    "accessed": "2026-10-24",
+    "how": "search summary of forum posts; not opened",
+    "note": "Anonymous poster estimates, lowest grade; they agree with the academic table at 6 kN.",
+    "fit_prior_judgement": "Context only."
+   },
+   {
+    "key": "peak_lateral_load_silverstone",
+    "value": ">5",
+    "unit": "g (tyre loading)",
+    "kind": "official",
+    "source": "gp247_isola",
+    "accessed": "2026-10-24",
+    "how": "read in Pirelli's Silverstone 2026 preview: 'Some corners subject the tyres to forces exceeding 5G'",
+    "note": "Pirelli's wording; basis not stated."
+   },
+   {
+    "key": "slick_working_window",
+    "value": {
+     "width_c": 30,
+     "high_range_compounds_peak_above_c": 100
+    },
+    "unit": "deg C",
+    "kind": "official",
+    "source": "pirelli_window",
+    "accessed": "2026-10-24",
+    "how": "read Pirelli 2017 page: each slick 'cover a working range of about 30 degrees' and soft/hard 'peaking at more than 100 degrees'",
+    "note": "2017, 13-inch era; per-compound table is an image. A secondary source quotes Isola as 105-135 deg C for hard/soft and 85-115 deg C for medium/supersoft (search summary only). Pirelli said 2026 tyres run at a lower thermal regime (Marrafuschi; search summary). No 2026 18-inch window published.",
+    "fit_prior_judgement": "Not a fit parameter; if needed treat as 85-120 deg C."
+   },
+   {
+    "key": "silverstone_pressures_camber",
+    "value": {
+     "min_start_psi_front": 28,
+     "min_start_psi_rear": 26,
+     "camber_limit_deg_front": -2.75,
+     "camber_limit_deg_rear": -1.5
+    },
+    "unit": "psi / deg",
+    "kind": "official",
+    "source": "repo_data",
+    "accessed": "2026-10-24",
+    "how": "cite: FIA Pirelli preview, in silverstone-2026-weekend.json tyres"
+   },
+   {
+    "key": "compound_offsets_silverstone_2026",
+    "value": null,
+    "unit": "s per lap",
+    "kind": "official",
+    "source": "repo_data",
+    "accessed": "2026-10-24",
+    "how": "not published: no per-compound lap-time gap found for Silverstone 2026 (Pirelli, Mercedes, press searched)",
+    "note": "Pirelli's design target for compound spacing was 'at least half a second' (The Race, June 2025; the article's context is the C6 prototype versus C5, currently 'around two tenths'). C1/C2/C3 were the Silverstone nominations.",
+    "fit_prior_judgement": "Fit one compound; treat offsets as free."
+   },
+   {
+    "key": "compound_degradation_2026",
+    "value": {
+     "soft": 0.063,
+     "medium": 0.065,
+     "hard": 0.071,
+     "britain_circuit_mean": 0.044,
+     "compound_spread": 0.008
+    },
+    "unit": "s per lap of tyre age",
+    "kind": "reported",
+    "source": "f1chron_deg",
+    "accessed": "2026-10-24",
+    "how": "read: median of per-stint fits, nine dry 2026 races, official timing; fuel-correction 0.03-0.08 s/lap tested",
+    "note": "Third-party analysis, not Pirelli. Soft-vs-hard gap over 25 laps about 2.4 s in 2026 versus about 16 s in 2022 (same article)."
+   },
+   {
+    "key": "one_stop_vs_two_stop_silverstone",
+    "value": 13,
+    "unit": "s faster (one-stop)",
+    "kind": "reported",
+    "source": "pirelli_race_pr",
+    "accessed": "2026-10-24",
+    "how": "search summary: Pirelli's Marrafuschi quoted 'around 13 seconds quicker' from simulations (pre-race)",
+    "note": "Page not opened; Pirelli's post-race note says two neutralisations forced extra stops."
+   }
+  ],
+  "braking": [
+   {
+    "key": "silverstone_T3_2025_vs_2026",
+    "value": {
+     "decel_g": [
+      4.5,
+      2.9
+     ],
+     "speed_lost_kmh": [
+      165,
+      131
+     ],
+     "pedal_kg": [
+      152,
+      78
+     ],
+     "braking_power_kW": [
+      2260,
+      869
+     ]
+    },
+    "unit": "g / km/h / kg / kW (2025, 2026)",
+    "kind": "reported",
+    "source": "brembo_uk",
+    "accessed": "2026-10-24",
+    "how": "read on brembo.com; Brembo simulations, 2025 vs 2026",
+    "note": "Simulated by the brake supplier, not measured telemetry."
+   },
+   {
+    "key": "silverstone_T16_2026",
+    "value": {
+     "decel_g": 3.1,
+     "speed_kmh": [
+      268,
+      116
+     ],
+     "time_s": 2.45,
+     "distance_m": 125,
+     "pedal_kg": 86,
+     "braking_power_kW": 1081
+    },
+    "unit": "g / km/h / s / m / kg / kW",
+    "kind": "reported",
+    "source": "brembo_uk",
+    "accessed": "2026-10-24",
+    "how": "read on brembo.com",
+    "note": "Hardest braking point at Silverstone in Brembo's simulation. Silverstone has 3 brake applications per lap, just over 6.5 s total; difficulty 1 of 5."
+   },
+   {
+    "key": "melbourne_T11_2025_vs_2026",
+    "value": {
+     "decel_g": [
+      4.8,
+      3.3
+     ],
+     "distance_m": [
+      96,
+      116
+     ],
+     "time_s": [
+      1.8,
+      2.16
+     ],
+     "pedal_kg": [
+      153,
+      88
+     ]
+    },
+    "unit": "g / m / s / kg (2025, 2026)",
+    "kind": "reported",
+    "source": "sf_brembo",
+    "accessed": "2026-10-24",
+    "how": "read: Brembo simulation as relayed by ScuderiaFans, 18 Apr 2026",
+    "note": "Brembo and Mercedes figures differ."
+   },
+   {
+    "key": "barcelona_T10_2025_vs_2026",
+    "value": {
+     "decel_g": [
+      4.0,
+      3.3
+     ],
+     "speed_lost_kmh": [
+      204,
+      175
+     ],
+     "distance_m": [
+      125,
+      151
+     ],
+     "time_s": [
+      2.46,
+      2.96
+     ],
+     "pedal_kg": [
+      133,
+      88
+     ]
+    },
+    "unit": "g / km/h / m / s / kg (2025, 2026)",
+    "kind": "reported",
+    "source": "brembo_es",
+    "accessed": "2026-10-24",
+    "how": "read on brembo.com",
+    "note": "Barcelona curve 1 (hardest): 304 to 164 km/h, 1.95 s, 121 m, 3.6 g, 96 kg, 1393 kW."
+   },
+   {
+    "key": "monza_T1_2026",
+    "value": {
+     "decel_g": 3.8,
+     "speed_kmh": [
+      318,
+      87
+     ],
+     "time_s": 3.22,
+     "distance_m": 153,
+     "pedal_kg": 111,
+     "braking_power_kW": 1637
+    },
+    "unit": "g / km/h / s / m / kg / kW",
+    "kind": "reported",
+    "source": "sf_monza",
+    "accessed": "2026-10-24",
+    "how": "search summary of a ScuderiaFans article citing Brembo; not opened",
+    "note": "Same article: Roggia 4.5 g (2025) to 3.7 g (2026). Madring (simulated, no race yet): 294 to 137 km/h in 1.8 s, 4.3 g, 1782 kW. Baku T1: 313 to 140 km/h in 2.13 s (Brembo page, search summary)."
+   },
+   {
+    "key": "peak_decel_high_vs_low_speed",
+    "value": {
+     "2025_range_g": [
+      4.0,
+      4.8
+     ],
+     "2026_range_g": [
+      2.9,
+      3.8
+     ],
+     "2026_high_speed_entry_g": [
+      3.1,
+      3.8
+     ],
+     "2026_mid_speed_g": [
+      2.9,
+      3.3
+     ]
+    },
+    "unit": "g",
+    "kind": "reported",
+    "source": "brembo_uk",
+    "accessed": "2026-10-24",
+    "how": "synthesis of the Brembo rows above (all simulated)",
+    "note": "No 2026 low-speed hairpin figure found. Brembo/ScuderiaFans attribute the drop to less downforce and narrower tyres. At low speed the limit is the tyre: about mu_x x g (arithmetic).",
+    "fit_prior_judgement": "High-speed entry 3.1-3.8 g; mid-speed 2.9-3.3 g; low-speed limit about 1.5-1.9 g."
+   },
+   {
+    "key": "brake_by_wire_architecture",
+    "value": {
+     "front": "hydraulic",
+     "rear": "brake-by-wire",
+     "rear_torque_without_PU_Nm_per_wheel": 2500,
+     "at_caliper_pressure_bar": 150,
+     "rear_pressure_max_ratio_to_driver": 1.2
+    },
+    "unit": "",
+    "kind": "official",
+    "source": "brembo_rules",
+    "accessed": "2026-10-24",
+    "how": "read on brembo.com",
+    "note": "McLaren's MCL40 sheet also lists 'rear brake-by-wire'."
+   },
+   {
+    "key": "mguk_regen_limits",
+    "value": {
+     "harvest_power_max_kW": 350,
+     "recharge_per_lap_max_MJ": 8.5
+    },
+    "unit": "kW / MJ",
+    "kind": "official",
+    "source": "repo_data",
+    "accessed": "2026-10-24",
+    "how": "cite",
+    "note": "Silverstone-specific recharge limits (race 8.0/8.5 MJ, Q 6.5 MJ) are in silverstone-2026-weekend.json energy_limits.",
+    "regs_ref": "concept/data/regs-2026-key.json items.power_unit.mguk_power_max_kW (C5.2.7), recharge_per_lap_max_MJ (C5.2.10)"
+   },
+   {
+    "key": "mguk_share_of_peak_braking_power",
+    "value": [
+     0.32,
+     0.4
+    ],
+    "unit": "fraction",
+    "kind": "engineering-estimate",
+    "source": "brembo_uk",
+    "accessed": "2026-10-24",
+    "how": "arithmetic: 350 kW / 1081 kW (T16) = 0.32; 350 kW / 869 kW (T3) = 0.40",
+    "note": "Upper bound at the moment of peak braking power; the rear-only MGU-K can supply at most this share at those points. The actual regen/friction split is not public.",
+    "fit_prior_judgement": "Regen share of braking energy is a fit parameter bounded by 8.5 MJ and 350 kW."
+   },
+   {
+    "key": "silverstone_braking_energy_upper_bound",
+    "value": 7.0,
+    "unit": "MJ per lap",
+    "kind": "engineering-estimate",
+    "source": "brembo_uk",
+    "accessed": "2026-10-24",
+    "how": "arithmetic: peak braking power 1.081 MW x 6.5 s total braking time (3 applications)",
+    "note": "A ceiling, since power is not constant during a stop. It is below the 8.5 MJ harvest allowance, so harvesting at Silverstone relies partly on lift-and-coast and super clipping (reported). Monaco 2023 estimate in a school-level paper: 9.77 MJ per 1:15 lap (low grade).",
+    "fit_prior_judgement": "Braking energy 3-7 MJ per Silverstone lap."
+   },
+   {
+    "key": "disc_hardware_2026",
+    "value": {
+     "front_disc_max_mm": 345,
+     "rear_disc_mm": [
+      260,
+      280
+     ],
+     "thickness_mm": [
+      32,
+      34
+     ],
+     "front_disc_mass_kg": [
+      1.75,
+      2.0
+     ],
+     "vent_holes": "1,050 x 3 mm to 1,440 x 2.5 mm"
+    },
+    "unit": "mm / kg",
+    "kind": "reported",
+    "source": "drive_brembo",
+    "accessed": "2026-10-24",
+    "how": "read; Brembo rules page: rear ~900 holes, front slightly >1000",
+    "note": "The two pages differ on hole counts."
+   },
+   {
+    "key": "disc_temperature_window",
+    "value": {
+     "min_effective_c": 400,
+     "oxidation_above_c": 800,
+     "peak_c_up_to": 1200
+    },
+    "unit": "deg C",
+    "kind": "reported",
+    "source": "f1_brakes",
+    "accessed": "2026-10-24",
+    "how": "read: 'around 400-degrees' effective, 'beyond 800' oxidises (formula1.com, undated text); peaks up to 1,200 deg on the most severe tracks (Brembo 2020 news, search summary only)",
+    "note": "Pre-2026 statements. For 2026 reports say less friction braking makes discs cooler and some rear-brake behaviour less predictable (secondary). Brembo rates Silverstone thermal risk 1 of 5 (search summary).",
+    "fit_prior_judgement": "Working band 400-800 deg C."
+   }
+  ],
+  "power_unit": [
+   {
+    "key": "ice_power_generic",
+    "value": 400,
+    "unit": "kW (536 hp)",
+    "kind": "official",
+    "source": "fia_news",
+    "accessed": "2026-10-24",
+    "how": "read: 'the power derived from the ICE element drops from 550-560kw to 400kw'; Motor Sport Magazine prints the same 400 kW",
+    "note": "Design figure; the rules set no ICE power cap. Total about 750 kW.",
+    "fit_prior_judgement": "Central 400-405 kW."
+   },
+   {
+    "key": "ice_power_by_manufacturer_estimates",
+    "value": {
+     "Mercedes": 430,
+     "Red Bull Ford": 421,
+     "Ferrari": 408,
+     "Audi": 406,
+     "Honda": 387
+    },
+    "unit": "kW (converted from hp: 576 / ~565 / 547 / 545 / ~519)",
+    "kind": "reported",
+    "source": "sf_ice",
+    "accessed": "2026-10-24",
+    "how": "read: ScuderiaFans, dated 20 Apr 2026, unnamed estimator; full-throttle samples above 99 % throttle, equal CdA assumed for all cars, ERS deployment estimated and subtracted; kW conversion is mine (1 hp = 0.7457 kW)",
+    "note": "Journalistic estimate; method assumes the same drag for every car. Conflicts with the FIA ADUO ranking relayed in docs/concept/REDBULL.md (Mercedes 2-4 % below the best ICE, reported to be Red Bull Ford). grid-2026.json has Mercedes 420 kW / 571 bhp and Audi 540-550 bhp (PlanetF1, unnamed Italian report).",
+    "fit_prior_judgement": "Spread 385-430 kW; per-team ordering is not reliable."
+   },
+   {
+    "key": "ice_efficiency_implied",
+    "value": [
+     0.464,
+     0.516
+    ],
+    "unit": "fraction (ICE shaft power / fuel energy flow)",
+    "kind": "engineering-estimate",
+    "source": "sf_ice",
+    "accessed": "2026-10-24",
+    "how": "arithmetic: fuel flow 3000 MJ/h = 833.3 kW; 387 kW / 833.3 = 0.464; 430 / 833.3 = 0.516; 400 / 833.3 = 0.48",
+    "note": "No manufacturer has published a 2026 thermal-efficiency figure (searched Mercedes, Ferrari, Honda, Audi, Red Bull Ford). Assumes the flow cap is fully used.",
+    "fit_prior_judgement": "0.46-0.52, central 0.485.",
+    "regs_ref": "concept/data/regs-2026-key.json items.power_unit.fuel_energy_flow_max_MJ_per_h (C5.2.3)"
+   },
+   {
+    "key": "compression_ratio_dispute_gain",
+    "value": "10 to 11",
+    "unit": "kW (claimed)",
+    "kind": "reported",
+    "source": "ar1_cr",
+    "accessed": "2026-10-24",
+    "how": "search summary: simulations suggest a hot compression ratio above 16:1 could add about 10-11 kW; unconfirmed rumour about Mercedes and possibly Red Bull Ford",
+    "note": "FIA upheld the ambient measurement per the source; the repo rules text has the hot check from 1 June 2026 (C5.4.3).",
+    "fit_prior_judgement": "Do not use."
+   },
+   {
+    "key": "mguk_mech_power",
+    "value": 339.5,
+    "unit": "kW (350 x 0.97)",
+    "kind": "official",
+    "source": "repo_data",
+    "accessed": "2026-10-24",
+    "how": "arithmetic on regulation values (C5.2.7 and the fixed 0.97 conversion in C5.2.21, as documented in redbull-2026.json)",
+    "regs_ref": "concept/data/regs-2026-key.json items.power_unit.mguk_power_max_kW"
+   },
+   {
+    "key": "mguk_taper_and_overtake",
+    "value": "see regulation items",
+    "unit": "",
+    "kind": "official",
+    "source": "repo_data",
+    "accessed": "2026-10-24",
+    "how": "cite",
+    "note": "FIA's design statement: Overtake gives '350kW up to 337kph' and +0.5 MJ (FIA page). The rule curves are in the regulation items.",
+    "regs_ref": "concept/data/regs-2026-key.json items.power_unit.mguk_power_vs_speed_overtake_not_active, mguk_power_vs_speed_overtake_active (C5.2.8)"
+   },
+   {
+    "key": "super_clipping_harvest_power",
+    "value": {
+     "early_2026_kW": 250,
+     "from_Miami_kW": 350
+    },
+    "unit": "kW",
+    "kind": "reported",
+    "source": "crash_apr",
+    "accessed": "2026-10-24",
+    "how": "read: FIA changes from Miami (20 Apr 2026): 'Peak superclip power raised from 250 kW to 350 kW', also in race; target max superclip duration about 2-4 s per lap",
+    "note": "The Race (25 Feb 2026, read): harvest up to 350 kW in braking and lift-and-coast, 250 kW in super clipping at end of straights and fast corners. Example speed loss at Bahrain T12 in early running: 267 to 233 km/h (the article says 'about 30km/h'). McLaren trialled 350 kW at the second Bahrain test.",
+    "fit_prior_judgement": "Silverstone (July) is after the April change: use 350 kW, 2-4 s per lap, as the upper envelope."
+   },
+   {
+    "key": "deployment_zone_caps_from_Miami",
+    "value": {
+     "key_acceleration_zones_kW": 350,
+     "elsewhere_kW": 250,
+     "boost_cap_race_kW_single_source": 150
+    },
+    "unit": "kW",
+    "kind": "reported",
+    "source": "crash_apr",
+    "accessed": "2026-10-24",
+    "how": "read Crash.net (20 Apr 2026): deployment 350 kW in key acceleration zones, 250 kW elsewhere; 'Boost capped at +150 kW' in race (one source only)",
+    "note": "Silverstone's own sector table (alternative power curves, 350 kW sectors, resets) is official and in silverstone-2026-weekend.json energy_limits; the Miami zone list is event-specific."
+   },
+   {
+    "key": "recharge_limits_conflict",
+    "value": {
+     "Miami_race_overtake_MJ": 9,
+     "Miami_race_MJ": 8.5,
+     "Miami_quali_MJ": 8,
+     "Silverstone_race_MJ": [
+      8.0,
+      8.5
+     ],
+     "Silverstone_Q_MJ": 6.5
+    },
+    "unit": "MJ per lap",
+    "kind": "official",
+    "source": "pf1_recharge",
+    "accessed": "2026-10-24",
+    "how": "Miami values read in PlanetF1 (1 May 2026, FIA statement to the site); Silverstone values from the FIA PU information document in repo data",
+    "note": "Limits are set per event. Use the Silverstone document for the fit. Note the repo's Issue 21 change (Q floor 5 to 4 MJ) after Silverstone.",
+    "fit_prior_judgement": "Q harvest 5.0-6.5 MJ; race 8.0-8.5 MJ.",
+    "regs_ref": "concept/data/regs-2026-key.json items.power_unit.recharge_per_lap_max_MJ, recharge_qualifying_floor_MJ"
+   },
+   {
+    "key": "mclaren_stated_ers_numbers",
+    "value": {
+     "max_energy_recovery_and_deployment_MJ_per_lap": 9,
+     "es_storage_MJ": 4,
+     "mguk_max_rpm": 60000
+    },
+    "unit": "",
+    "kind": "official",
+    "source": "mclaren_spec",
+    "accessed": "2026-10-24",
+    "how": "read on McLaren's MCL40 page",
+    "note": "Team sheet; the 9 MJ figure differs from the 8.5 MJ rule value and the event limits above."
+   },
+   {
+    "key": "es_deploy_per_lap",
+    "value": null,
+    "unit": "MJ",
+    "kind": "official",
+    "source": "repo_data",
+    "accessed": "2026-10-24",
+    "how": "not a rule: C5.2 has no per-lap deployment cap; state-of-charge window 4 MJ",
+    "note": "Net over a lap, deployment is about equal to harvest plus the SoC change (arithmetic).",
+    "regs_ref": "concept/data/regs-2026-key.json items.power_unit.es_deploy_per_lap_MJ, es_soc_window_MJ"
+   }
+  ],
+  "vehicle": [
+   {
+    "key": "declared_car_masses",
+    "value": {
+     "McLaren_MCL40": 772,
+     "Williams_FW48": 772.4,
+     "range_press_compiled_to_round_17": [
+      770,
+      796
+     ]
+    },
+    "unit": "kg (incl. driver, excl. fuel)",
+    "kind": "reported",
+    "source": "mclaren_spec",
+    "accessed": "2026-10-24",
+    "how": "read: McLaren 772 kg (11 Feb 2026); Williams 772.4 kg (PlanetF1, 4 Feb 2026, 'weighed in at 772.4 kilograms'); a compiled page lists 770-796 kg by team to round 17 (self-reported or press-derived)",
+    "note": "Launch weights, trim unknown. Red Bull entries are in docs/concept/REDBULL.md. Minimum is 724 (race) or 726 (SQ/Q) kg + NTM.",
+    "fit_prior_judgement": "Silverstone car about 770-780 kg incl. driver, no fuel, before the RB-specific excess.",
+    "regs_ref": "concept/data/regs-2026-key.json items.mass.min_mass_qualifying_kg_excl_tyres, min_mass_other_sessions_kg_excl_tyres"
+   },
+   {
+    "key": "cog_height",
+    "value": null,
+    "unit": "m",
+    "kind": "official",
+    "source": "repo_data",
+    "accessed": "2026-10-24",
+    "how": "not public for 2022-26 cars",
+    "note": "Model parameter 0.30 m in the academic F1 model (nominal value). Michelin sensitivity: +1 mm costs 0.015 s per lap (Barcelona, 2018). Only the PU CoG floor (Z >= 200 mm) is regulated. CONCEPT.md uses 0.325 m above ground.",
+    "fit_prior_judgement": "0.27-0.34 m above ground, central 0.30 (judgement).",
+    "regs_ref": "concept/data/regs-2026-key.json items.mass.pu_cog_min_z_mm (C5.5.3)"
+   },
+   {
+    "key": "cog_height_academic_model",
+    "value": 0.3,
+    "unit": "m",
+    "kind": "academic",
+    "source": "perantoni",
+    "accessed": "2026-10-24",
+    "how": "read Table 4",
+    "note": "Pre-2022 car."
+   },
+   {
+    "key": "weight_distribution",
+    "value": [
+     0.44,
+     0.46
+    ],
+    "unit": "front fraction",
+    "kind": "official",
+    "source": "mclaren_spec",
+    "accessed": "2026-10-24",
+    "how": "read: McLaren lists '44% to 46% on the front axle'; Anderson (Oct 2024) worked the old-rule window as 44.5-46.0 % front",
+    "note": "Rule floors: front >= 0.44, rear >= 0.54 of minimum mass, so the free band is 0.44-0.46 front. Academic model car: 0.47.",
+    "fit_prior_judgement": "0.44-0.46, central 0.45.",
+    "regs_ref": "concept/data/regs-2026-key.json items.mass.mass_distribution_front_min_fraction, mass_distribution_rear_min_fraction (C4.2)"
+   },
+   {
+    "key": "yaw_inertia",
+    "value": null,
+    "unit": "kg m2",
+    "kind": "official",
+    "source": "repo_data",
+    "accessed": "2026-10-24",
+    "how": "not public for 2022-26 cars",
+    "note": "Academic model: Iz 450 kg m2 at 660 kg (radius of gyration 0.826 m). Scaling the same radius of gyration to 770-780 kg gives about 525-535 kg m2 (arithmetic).",
+    "fit_prior_judgement": "480-620 kg m2, central 540 (judgement)."
+   },
+   {
+    "key": "yaw_inertia_academic_model",
+    "value": 450,
+    "unit": "kg m2",
+    "kind": "academic",
+    "source": "perantoni",
+    "accessed": "2026-10-24",
+    "how": "read Table 4 (M 660 kg, wheelbase 3.4 m, a = 1.8 m)",
+    "note": "Pre-2022 car."
+   },
+   {
+    "key": "wheel_rolling_radius",
+    "value": {
+     "unloaded_front_m": 0.3525,
+     "unloaded_rear_m": 0.355
+    },
+    "unit": "m",
+    "kind": "official",
+    "source": "merc_tyres",
+    "accessed": "2026-10-24",
+    "how": "arithmetic on published diameters",
+    "note": "Academic model uses 0.33 m for a 660 mm tyre (0.5 x OD).",
+    "fit_prior_judgement": "0.340-0.355 m, central 0.348."
+   },
+   {
+    "key": "rolling_resistance_coefficient",
+    "value": null,
+    "unit": "dimensionless",
+    "kind": "official",
+    "source": "repo_data",
+    "accessed": "2026-10-24",
+    "how": "not public for F1 slicks",
+    "note": "No usable F1 value found (an Optimum Lap car file on a forum uses 0.01, which the poster calls probably unrealistic). Generic road-tyre values are 0.008-0.015.",
+    "fit_prior_judgement": "0.008-0.020, central 0.012 (judgement; low sensitivity at race speeds)."
+   },
+   {
+    "key": "drivetrain_efficiency",
+    "value": null,
+    "unit": "fraction",
+    "kind": "official",
+    "source": "repo_data",
+    "accessed": "2026-10-24",
+    "how": "not public. The 0.97 in C5.2.21 is the fixed MGU-K electrical-to-mechanical factor, not gearbox efficiency",
+    "fit_prior_judgement": "0.93-0.97, central 0.95 (judgement).",
+    "regs_ref": "concept/data/regs-2026-key.json items.power_unit (C5.2.21 documented in redbull-2026.json)"
+   }
+  ],
+  "lap_time_sensitivities": [
+   {
+    "key": "mass_horner",
+    "value": 0.035,
+    "unit": "s per kg per lap (0.35 s per 10 kg)",
+    "kind": "reported",
+    "source": "race_weight",
+    "accessed": "2026-10-24",
+    "how": "read: Horner, 'Every 10kg is about 0.35 seconds' (The Race, 2025; same quote in RaceFans, 3 May 2025)",
+    "note": "Generic, not track-specific."
+   },
+   {
+    "key": "mass_red_bull_guide",
+    "value": "0.03 to 0.04",
+    "unit": "s per kg per lap",
+    "kind": "official",
+    "source": "rb_guide",
+    "accessed": "2026-10-24",
+    "how": "search summary: 'every 10kg ... adding around 0.3-0.4s'",
+    "note": "Page text did not load; confirm."
+   },
+   {
+    "key": "mass_michelin_barcelona_2018",
+    "value": 0.03,
+    "unit": "s per kg per lap",
+    "kind": "academic",
+    "source": "michelin",
+    "accessed": "2026-10-24",
+    "how": "read: 'Slower by 0.03s per additional kg' (Barcelona, typical F1 values, October 2018, generic car)",
+    "note": "Not Silverstone; 2018 car."
+   },
+   {
+    "key": "mass_by_circuit_speed_second_hand",
+    "value": {
+     "low_speed": 0.04,
+     "medium_speed": 0.03,
+     "high_speed": 0.02
+    },
+    "unit": "s per kg per lap",
+    "kind": "reported",
+    "source": "forum_mass",
+    "accessed": "2026-10-24",
+    "how": "search summary of a forum post quoting Benzing; Symonds' mass-sensitivity paper cited there as 0.036-0.037 s/kg/lap",
+    "note": "Second-hand and low grade. Suggests a fast track like Silverstone sits below the 0.03 average.",
+    "fit_prior_judgement": "Silverstone 0.025-0.035 s/kg, central 0.030."
+   },
+   {
+    "key": "mass_repo_derived",
+    "value": "0.029 to 0.033",
+    "unit": "s per kg per lap",
+    "kind": "engineering-estimate",
+    "source": "repo_data",
+    "accessed": "2026-10-24",
+    "how": "docs/concept/REDBULL.md: about +6 to 7 kg is worth about 0.2 s per lap (The Race, inferred)",
+    "note": "Cited, not recomputed."
+   },
+   {
+    "key": "downforce_michelin_barcelona_2018",
+    "value": 0.03,
+    "unit": "s per lap per downforce 'point' (faster)",
+    "kind": "academic",
+    "source": "michelin",
+    "accessed": "2026-10-24",
+    "how": "read: 'Faster by 0.03s per additional point'",
+    "note": "'Point' is not defined in the article. A snippet of another Michelin article gives an isochronal ratio (downforce vs drag giving no lap-time change) of 2.05 (not opened)."
+   },
+   {
+    "key": "drag_michelin_barcelona_2018",
+    "value": 0.06,
+    "unit": "s per lap per drag 'point' (slower)",
+    "kind": "academic",
+    "source": "michelin",
+    "accessed": "2026-10-24",
+    "how": "read: 'Slower by 0.06s per additional point of drag'",
+    "note": "Same caveat; Barcelona is not Silverstone."
+   },
+   {
+    "key": "power_michelin_barcelona_2018",
+    "value": 0.15,
+    "unit": "s per lap per +1 % engine power (faster)",
+    "kind": "academic",
+    "source": "michelin",
+    "accessed": "2026-10-24",
+    "how": "read",
+    "note": "2018 power level; a proportional effect should carry to 2026 only loosely."
+   },
+   {
+    "key": "cog_height_michelin",
+    "value": 0.015,
+    "unit": "s per lap per +1 mm (slower)",
+    "kind": "academic",
+    "source": "michelin",
+    "accessed": "2026-10-24",
+    "how": "read"
+   },
+   {
+    "key": "per_kph_top_speed",
+    "value": null,
+    "unit": "s per lap per km/h",
+    "kind": "official",
+    "source": "repo_data",
+    "accessed": "2026-10-24",
+    "how": "not found: no quoted s per km/h figure for Silverstone or generally",
+    "note": "Derive from the sim, not from a public quote."
+   },
+   {
+    "key": "silverstone_specific_values",
+    "value": null,
+    "unit": "",
+    "kind": "official",
+    "source": "repo_data",
+    "accessed": "2026-10-24",
+    "how": "not public: no Silverstone-specific mass, downforce or drag sensitivity found"
+   }
+  ]
+ },
+ "recommended_fit_priors": [
+  {
+   "key": "CLA_corner",
+   "unit": "m2",
+   "lo": 3.2,
+   "central": 3.9,
+   "hi": 4.6,
+   "basis": "academic 4.5 and blog fits 5.8-6.6 for 2022-25 cars, times 0.70 (FIA -30 %), with slack. Repo 3.8 is inside.",
+   "section": "aero",
+   "kind": "engineering-estimate (judgement of this researcher; not a public number)"
+  },
+  {
+   "key": "CDA_corner",
+   "unit": "m2",
+   "lo": 0.75,
+   "central": 1.0,
+   "hi": 1.25,
+   "basis": "low end: FIA -55 % read literally on a 1.35 reference gives straight 0.61, corner 0.61/0.80 = 0.76; upper end near the old-rule 1.35 less the active-aero gain. Wide because the FIA reference is undefined. Repo 1.10 is inside, upper half.",
+   "section": "aero",
+   "kind": "engineering-estimate (judgement of this researcher; not a public number)"
+  },
+  {
+   "key": "CDA_straight",
+   "unit": "m2",
+   "lo": 0.6,
+   "central": 0.75,
+   "hi": 1.0,
+   "basis": "third-party simulation 0.715; 1.35 x 0.45 = 0.61 from the FIA figure; repo 0.97 sits at the top edge.",
+   "section": "aero",
+   "kind": "engineering-estimate (judgement of this researcher; not a public number)"
+  },
+  {
+   "key": "CDA_straight_over_corner",
+   "unit": "ratio",
+   "lo": 0.75,
+   "central": 0.82,
+   "hi": 0.92,
+   "basis": "simulations: 0.82 (-18 %) and 0.79 (-21 %); repo model about 0.88.",
+   "section": "aero",
+   "kind": "engineering-estimate (judgement of this researcher; not a public number)"
+  },
+  {
+   "key": "CLA_straight_over_corner",
+   "unit": "ratio",
+   "lo": 0.68,
+   "central": 0.72,
+   "hi": 0.8,
+   "basis": "simulations: 0.75 (-25 %) and 0.69 (-31 %); the floor takes more of the load in Straight Mode.",
+   "section": "aero",
+   "kind": "engineering-estimate (judgement of this researcher; not a public number)"
+  },
+  {
+   "key": "aero_balance_front",
+   "unit": "fraction",
+   "lo": 0.4,
+   "central": 0.435,
+   "hi": 0.47,
+   "basis": "0.41 (Anderson 2021 example), 0.44 (academic CP); repo 0.435.",
+   "section": "aero",
+   "kind": "engineering-estimate (judgement of this researcher; not a public number)"
+  },
+  {
+   "key": "floor_share_of_downforce",
+   "unit": "fraction",
+   "lo": 0.45,
+   "central": 0.55,
+   "hi": 0.65,
+   "basis": "47 % (simulation) to about 60 % (secondary reports).",
+   "section": "aero",
+   "kind": "engineering-estimate (judgement of this researcher; not a public number)"
+  },
+  {
+   "key": "downforce_ride_height_sensitivity",
+   "unit": "% per mm",
+   "lo": 0.3,
+   "central": 0.5,
+   "hi": 0.8,
+   "basis": "no public number; judgement only.",
+   "section": "aero",
+   "kind": "engineering-estimate (judgement of this researcher; not a public number)"
+  },
+  {
+   "key": "mu_y_peak_at_2kN",
+   "unit": "-",
+   "lo": 1.6,
+   "central": 1.8,
+   "hi": 2.0,
+   "basis": "academic 1.80; forum 1.6-2.0; FIA 'minimal loss in grip' for the narrower 2026 tyre.",
+   "section": "tyres",
+   "kind": "engineering-estimate (judgement of this researcher; not a public number)"
+  },
+  {
+   "key": "mu_x_peak_at_2kN",
+   "unit": "-",
+   "lo": 1.5,
+   "central": 1.75,
+   "hi": 1.9,
+   "basis": "academic 1.75.",
+   "section": "tyres",
+   "kind": "engineering-estimate (judgement of this researcher; not a public number)"
+  },
+  {
+   "key": "mu_at_6kN_over_mu_at_2kN",
+   "unit": "ratio",
+   "lo": 0.77,
+   "central": 0.8,
+   "hi": 0.86,
+   "basis": "academic 0.81 (1.45/1.80, 1.40/1.75); forum 1.4/1.6 = 0.88.",
+   "section": "tyres",
+   "kind": "engineering-estimate (judgement of this researcher; not a public number)"
+  },
+  {
+   "key": "load_sensitivity",
+   "unit": "% per kN",
+   "lo": 3.0,
+   "central": 4.5,
+   "hi": 6.0,
+   "basis": "arithmetic on the academic table 4.9-5.0; repo uses 4.",
+   "section": "tyres",
+   "kind": "engineering-estimate (judgement of this researcher; not a public number)"
+  },
+  {
+   "key": "tyre_loaded_rolling_radius",
+   "unit": "m",
+   "lo": 0.34,
+   "central": 0.348,
+   "hi": 0.355,
+   "basis": "published ODs give 0.3525 / 0.355 unloaded.",
+   "section": "tyres",
+   "kind": "engineering-estimate (judgement of this researcher; not a public number)"
+  },
+  {
+   "key": "nominal_tyre_mass",
+   "unit": "kg",
+   "lo": 44,
+   "central": 46,
+   "hi": 48,
+   "basis": "NOT published in any source found; FIA 46, RaceFans 44, The Race 46.4, declared-mass bound <= 48.",
+   "section": "tyres",
+   "kind": "engineering-estimate (judgement of this researcher; not a public number)"
+  },
+  {
+   "key": "peak_decel_high_speed_entry",
+   "unit": "g",
+   "lo": 3.1,
+   "central": 3.4,
+   "hi": 3.8,
+   "basis": "Brembo simulations (T16 3.1, Barcelona 3.6, Monza 3.8).",
+   "section": "braking",
+   "kind": "engineering-estimate (judgement of this researcher; not a public number)"
+  },
+  {
+   "key": "peak_decel_mid_speed",
+   "unit": "g",
+   "lo": 2.9,
+   "central": 3.1,
+   "hi": 3.3,
+   "basis": "Brembo simulations (T3 2.9, T10/T11 3.3).",
+   "section": "braking",
+   "kind": "engineering-estimate (judgement of this researcher; not a public number)"
+  },
+  {
+   "key": "mguk_share_of_peak_braking_power",
+   "unit": "fraction",
+   "lo": 0.3,
+   "central": 0.36,
+   "hi": 0.4,
+   "basis": "350 kW over 869-1081 kW (arithmetic).",
+   "section": "braking",
+   "kind": "engineering-estimate (judgement of this researcher; not a public number)"
+  },
+  {
+   "key": "silverstone_braking_energy",
+   "unit": "MJ per lap",
+   "lo": 3.0,
+   "central": 5.0,
+   "hi": 7.0,
+   "basis": "ceiling 7.0 (1.081 MW x 6.5 s); lower end is judgement.",
+   "section": "braking",
+   "kind": "engineering-estimate (judgement of this researcher; not a public number)"
+  },
+  {
+   "key": "ICE_crank_power",
+   "unit": "kW",
+   "lo": 385,
+   "central": 405,
+   "hi": 430,
+   "basis": "reported estimates 387-430; FIA design 400.",
+   "section": "power_unit",
+   "kind": "engineering-estimate (judgement of this researcher; not a public number)"
+  },
+  {
+   "key": "ICE_efficiency_vs_3000MJ_per_h",
+   "unit": "fraction",
+   "lo": 0.46,
+   "central": 0.485,
+   "hi": 0.52,
+   "basis": "arithmetic from the power range.",
+   "section": "power_unit",
+   "kind": "engineering-estimate (judgement of this researcher; not a public number)"
+  },
+  {
+   "key": "super_clip_harvest_power_Silverstone",
+   "unit": "kW",
+   "lo": 250,
+   "central": 350,
+   "hi": 350,
+   "basis": "350 kW from Miami onwards; 250 before.",
+   "section": "power_unit",
+   "kind": "engineering-estimate (judgement of this researcher; not a public number)"
+  },
+  {
+   "key": "harvest_per_lap_qualifying",
+   "unit": "MJ",
+   "lo": 5.0,
+   "central": 6.0,
+   "hi": 6.5,
+   "basis": "FIA Silverstone document cap 6.5; Issue 19 floor 5.",
+   "section": "power_unit",
+   "kind": "engineering-estimate (judgement of this researcher; not a public number)"
+  },
+  {
+   "key": "harvest_per_lap_race",
+   "unit": "MJ",
+   "lo": 8.0,
+   "central": 8.25,
+   "hi": 8.5,
+   "basis": "FIA Silverstone document.",
+   "section": "power_unit",
+   "kind": "engineering-estimate (judgement of this researcher; not a public number)"
+  },
+  {
+   "key": "car_mass_incl_driver_no_fuel",
+   "unit": "kg",
+   "lo": 770,
+   "central": 774,
+   "hi": 780,
+   "basis": "declared 770-778; minimum 724/726 + NTM; add RB-specific excess from REDBULL.md.",
+   "section": "vehicle",
+   "kind": "engineering-estimate (judgement of this researcher; not a public number)"
+  },
+  {
+   "key": "front_weight_fraction",
+   "unit": "fraction",
+   "lo": 0.44,
+   "central": 0.45,
+   "hi": 0.46,
+   "basis": "C4.2 floor and McLaren 44-46 %.",
+   "section": "vehicle",
+   "kind": "engineering-estimate (judgement of this researcher; not a public number)"
+  },
+  {
+   "key": "cog_height_above_ground",
+   "unit": "m",
+   "lo": 0.27,
+   "central": 0.3,
+   "hi": 0.34,
+   "basis": "no public value; academic 0.30; repo 0.325.",
+   "section": "vehicle",
+   "kind": "engineering-estimate (judgement of this researcher; not a public number)"
+  },
+  {
+   "key": "yaw_inertia_Izz",
+   "unit": "kg m2",
+   "lo": 480,
+   "central": 540,
+   "hi": 620,
+   "basis": "academic 450 at 660 kg, scaled by mass.",
+   "section": "vehicle",
+   "kind": "engineering-estimate (judgement of this researcher; not a public number)"
+  },
+  {
+   "key": "rolling_resistance_Crr",
+   "unit": "-",
+   "lo": 0.008,
+   "central": 0.012,
+   "hi": 0.02,
+   "basis": "not public; generic.",
+   "section": "vehicle",
+   "kind": "engineering-estimate (judgement of this researcher; not a public number)"
+  },
+  {
+   "key": "drivetrain_efficiency",
+   "unit": "fraction",
+   "lo": 0.93,
+   "central": 0.95,
+   "hi": 0.97,
+   "basis": "not public; repo 0.95.",
+   "section": "vehicle",
+   "kind": "engineering-estimate (judgement of this researcher; not a public number)"
+  },
+  {
+   "key": "mass_sensitivity_Silverstone",
+   "unit": "s per kg per lap",
+   "lo": 0.025,
+   "central": 0.03,
+   "hi": 0.035,
+   "basis": "Horner 0.035, Michelin 0.03, Benzing high-speed 0.02 (second-hand).",
+   "section": "lap_time_sensitivities",
+   "kind": "engineering-estimate (judgement of this researcher; not a public number)"
+  }
+ ],
+ "not_public": [
+  "Final Nominal Tyre Mass (C4.1/C4.7)",
+  "Absolute per-tyre mass, front and rear",
+  "CdA and ClA of any 2022-26 F1 car, per trim or per mode; 2026 aero balance",
+  "Wheel and cooling share of drag",
+  "Ride-height sensitivity of downforce (2022-26)",
+  "Pirelli 2026 friction coefficient and load sensitivity; 18-inch temperature windows",
+  "Compound lap-time offsets at Silverstone 2026",
+  "Brake-by-wire regen/friction split; Silverstone disc temperatures",
+  "ICE power and efficiency per manufacturer (official); Ferrari, Honda, Red Bull Ford figures beyond press estimates",
+  "CoG height, yaw inertia, rolling resistance, drivetrain efficiency for F1 cars",
+  "Lap-time sensitivity per km/h top speed; any Silverstone-specific mass/downforce/drag sensitivity"
+ ]
+}
