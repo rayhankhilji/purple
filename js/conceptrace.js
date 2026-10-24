@@ -105,7 +105,7 @@
   if (!q || q.get('concept') !== '1' || q.get('lab') === '1') return;
   api.active = true;
   // the concept car's own geometry (EI.conceptView.buildCar, docs/concept/VIEW.md): the design layer and the viewer, loaded only here
-  const VIEW_SCRIPTS = ['concept/regs.js', 'concept/parts.js', 'concept/aeromap.js', 'concept/design.js', 'concept/view/view3d.js'];
+  const VIEW_SCRIPTS = ['concept/regs.js', 'concept/materials.js', 'concept/parts.js', 'concept/aeromap.js', 'concept/design.js', 'concept/view/mesh3d.js', 'concept/view/car3d.js', 'concept/view/parts3d.js', 'concept/view/view3d.js'];   // concept/view/index.html order + the three geometry files view3d would fetch
   api.viewReady = VIEW_SCRIPTS.reduce((p, src) => p.then(() => new Promise((res) => {
     const e = document.createElement('script'); e.src = src; e.async = false; e.onload = () => res(true); e.onerror = () => { console.warn('concept race: ' + src + ' did not load: game car model instead'); res(false); }; document.head.appendChild(e);
   })), Promise.resolve(true));
@@ -238,7 +238,7 @@
       } else g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
       // the viewer's clear-coat paint is tuned for its dark studio (envMapIntensity 1); under the game's bright sky environment it reads
       // pale, so it takes the game's own paint level (js/carglb.js paint: 0.62). These paint materials belong to this buildCar instance.
-      g.traverse((o) => { if (!o.isMesh) return; for (const m of Array.isArray(o.material) ? o.material : [o.material]) if (m && m.customProgramCacheKey && /^cv-paint/.test(String(m.customProgramCacheKey()))) m.envMapIntensity = 0.62; });
+      g.traverse((o) => { if (!o.isMesh) return; for (const m of Array.isArray(o.material) ? o.material : [o.material]) if (m && m.customProgramCacheKey && /^cv\d*-paint/.test(String(m.customProgramCacheKey()))) m.envMapIntensity = 0.62; });
       car.group.add(g); k.body3d = g; k.flap = 0;
       api.bodies = (api.bodies || 0) + 1;
     }, (e) => { console.warn('concept race: buildCar assets failed, game car model instead', e); if (k.spec.ghost) ghostify(car); });

@@ -40,8 +40,8 @@ Illegal designs get no lap (same rule as the lab) and the page says so; malforme
    test asserts the two lap times are identical). The reference ghost is `simulateLap(guardEnergy(baselineCar("redbull")))`. The
    real pole lap is `concept/data/telemetry/silverstone-2026-q-ant.json` (ANT 88.111 s, OpenF1 car_data on a 5 m grid).
 2. **Time per sample** is the sim's own forward-pass clock (`debug.tAt`, shifted to the control line); last sample `(L, lap_s)`.
-   Independent check: ∫ds/v over the trace's speeds gives 88.751 s for the RB22 (sim 88.749) and 88.088 s for the optimised design
-   (sim 88.085). The pole ghost uses OpenF1's own clock, which ends at 88.111 s = the official lap.
+   Independent check: ∫ds/v over the trace's speeds agrees within a few ms (g37.4: 88.297 s against the sim's 88.294 s).
+   The pole ghost uses OpenF1's own clock, which ends at 88.111 s = the official lap.
 3. **The game view** is `index.html?concept=1&track=silverstone` in an iframe. `js/conceptrace.js` receives the payload by
    `postMessage` (same origin, from the parent only), builds three cars with the lab grid builder, then **replaces `race.update` on
    that race instance**: every 120 Hz step sets each car's position, heading, speed, gear, rpm, Straight Mode flap and ERS state
@@ -69,11 +69,13 @@ Illegal designs get no lap (same rule as the lab) and the page says so; malforme
    ERS state is **derived** from the sim's threshold strategy (deploy below v\*, superclip above it when the lap superclips, harvest
    where the car slows): the sim reports v\* and the totals, not a per-sample flag; the tooltip and the car panel say so. The pole
    ghost has no aero / ERS channel (OpenF1 carries neither).
-6. **Car models.** The concept car and the RB22 ghost are `EI.conceptView.buildCar(design, { lod })` (docs/concept/VIEW.md: the
-   game's car deformed and rebuilt from the design parameters), placed in the game car's group (same frame), Straight Mode flaps
-   driven by the sim's aero mode with a 400 ms swing. The ghost's materials are cloned and translucent. The pole ghost is the game's
-   GLB car in Mercedes livery, forced to its one-draw-call LOD and translucent. Wheels do not turn on the buildCar bodies (static
-   mesh). If `buildCar` is missing or fails, the game's car stays (warning in the console).
+6. **Car models.** The concept car and the RB22 ghost are `EI.conceptView.buildCar(design, { lod })` (docs/concept/VIEW.md; view v3:
+   built procedurally from the design parameters at true dimensions), placed in the game car's group (same frame: +x forward, +y up,
+   +z right, ground y = 0), Straight Mode flaps driven by the sim's aero mode with a 400 ms swing. Its clear-coat paint takes the
+   game's own paint level (envMapIntensity 0.62) under the game's sky. The ghost's materials are cloned and translucent. The pole ghost
+   is the game's GLB car in Mercedes livery, forced to its one-draw-call LOD and translucent. Wheels are not animated on the buildCar
+   bodies. If `buildCar` is missing or fails, the game's car stays (warning in the console). With the flag, `js/conceptrace.js` loads
+   `concept/{regs,materials,parts,aeromap,design}.js` and `concept/view/{mesh3d,car3d,parts3d,view3d}.js`.
 
 ## Game race (cinematic)
 
@@ -89,7 +91,7 @@ cinematic label. In race mode the two cars keep the lab's liveries (baseline Wil
   (helpers, `active: false`).
 - `js/main.js`: `const CONCEPT = !LAB && EI.ConceptRace && EI.ConceptRace.active ? EI.ConceptRace : null;` and, in `hideLoading`,
   `else if (CONCEPT) CONCEPT.start(EI.debug);`. Nothing else in the game changed; `?lab=1` takes precedence.
-- With the flag, `js/conceptrace.js` loads `concept/{regs,parts,aeromap,design}.js` + `concept/view/view3d.js` for `buildCar`, hides
+- With the flag, `js/conceptrace.js` loads the design layer and the view scripts for `buildCar`, hides
   the game's menu / HUD panels, and takes the keys it uses (so the game's pause menu or R-restart cannot start an AI race).
 
 ## Messages
@@ -103,21 +105,26 @@ cinematic label. In race mode the two cars keep the lab's liveries (baseline Wil
 | game → page | `purple:concept-finish` | each car's sim lap, replay finish (clock), difference |
 | page → game | `purple:concept-cmd` | `restart`, `pause`, `rate` (value), `cam` (`auto`, `tv`, `chase`, `tcam`) |
 
-## Verification (2026-10-24, headless Chromium / SwiftShader at ~2-3 fps, playback 16x, `docs/concept/race-shots/`)
+## Verification (2026-10-24, headless Chromium / SwiftShader at ~2 fps, playback 16x, `docs/concept/race-shots/`)
 
 | Run | sim lap | replay finish (clock) | Δ | console errors |
 |---|---|---|---|---|
-| optimised design g39.4 (`node concept/cli.js --gens 40 --seed 7 --baseline redbull --sim physics`) | 88.086 | 88.086 | 0.000 | 0 |
-| ↳ RB22 ghost (sim) | 88.750 | 88.750 | 0.000 | |
-| ↳ ANT pole ghost (real, OpenF1) | 88.111 | 88.108 | −0.003 | |
-| RB22 baseline design (`?design` omitted) | 88.750 | 88.750 | 0.000 | 0 |
-| ↳ ANT pole ghost | 88.111 | 88.109 | −0.002 | |
+| optimised design g37.4 (`node concept/cli.js --gens 40 --seed 7 --baseline redbull --sim physics`, view v3 body) | 88.294 | 88.294 | 0.000 | 0 |
+| ↳ RB22 ghost (sim, `baselineCar("redbull")`) | 88.747 | 88.747 | 0.000 | |
+| ↳ ANT pole ghost (real, OpenF1) | 88.111 | 88.109 | −0.002 | |
 
+Earlier in the session (view v2, sim before the v2 merge) the RB22 baseline design (`?design` omitted) replayed 88.750 / 88.750 and an
+optimised design 88.086 / 88.086, both with 0 console errors. After the merge that older optimised design is illegal under the
+tightened front-wing check (REG-C-FW-PROFILES-Z) and the page refuses it with the violation in the banner, as intended.
 The pole ghost's few-ms difference is the replay's linear interpolation inside one 16x step across the telemetry's speed jump at the
 line (ANT lifted before the line: 247 km/h at the end of the lap, 267 km/h at its start). Both concept bodies came from
 `EI.conceptView.buildCar` (`EI.ConceptRace.bodies` = 2). Plain `/` with no flag: menu shown, `EI.ConceptRace.active === false`, no
-concept HUD, 0 console errors. Shots: `best-*` (optimised design: chase at the Loop, TV at Brooklands, chase after Copse, T-cam on the
-Hangar Straight in Straight Mode, the finish), `baseline-*`, `cinematic-grid` (the 2026 grid mode), `check-plain-game-menu`.
+concept HUD, 0 console errors. `?lab=1` broadcast race (seed 7, 1 lap, multipliers ×1 vs { df 1.05, cd 1.02 }): fast-forwarded through the
+game's own `race.update` and posted by the real render loop, the `purple:result` from this branch is **byte-identical** to the one
+from the integration head's `index.html` + `main.js` (served side by side; baseline 84.362 s, candidate 85.444 s game seconds;
+vmax / vmin null on both because the fast-forward skips main.js's per-step sampler). `?lab=1&mode=grid&driver=HAD` (the 2026 grid
+cinematic) starts racing with 0 console errors (`cinematic-grid.jpg`). Shots: `v3best-*` (optimised design g37.4 with the view v3 body: chase on the Hamilton Straight, TV, T-cam on the Hangar Straight
+in Straight Mode, the finish), `cinematic-grid` (the 2026 grid mode), `check-plain-game-menu`.
 
 Tests: `test/concept-race.test.js` (payload, legality, URL round trip, wind, mapping on the game's geometry, replay clock, hooks
 opt-in, honesty words).

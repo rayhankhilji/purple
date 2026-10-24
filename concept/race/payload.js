@@ -150,7 +150,7 @@
       line: { x: Array.from(track.x), z: Array.from(track.z), ds: track.ds, L: track.L, source: "the sim's racing line: mean of 11 team qualifying laps (OpenF1 X/Y), aligned to the OSM centreline" + (track.reference.alignment ? " (similarity fit: " + (track.reference.alignment.reflect ? "reflection, " : "") + track.reference.alignment.rotation_deg + "° rotation, " + track.reference.alignment.rms_m + " m RMS)" : "") },
       timing: { sectors: track.timing.sectors.slice(), L: track.L, note: "sim timing frame: metres from the OpenF1 control line" },
       ers_note: ersNote(rc.energy),
-      car_note: "Car models: the concept car and the " + R.short + " ghost are built from their designs by EI.conceptView.buildCar (the game's car deformed and rebuilt from the design parameters; schematic, not a CAD model; static wheels); the pole ghost is the game's car in Mercedes livery.",
+      car_note: "Car models: the concept car and the " + R.short + " ghost are built from their design parameters by EI.conceptView.buildCar (schematic, not a CAD model; wheels not animated in the replay); the pole ghost is the game's car in Mercedes livery.",
       cars,
     };
     return { ok: errors.length === 0, errors, payload, bench: b, design: d, cinematic: cinematic(b.physical, bench, ref) };
