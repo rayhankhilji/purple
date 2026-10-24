@@ -1,8 +1,19 @@
 # Lane GAME
 
-Status: in_progress (PR: postMessage target origin = location.origin; everything else merged). Owner: agent A (Claude, session `session_019VA5sAvTHuQ3bGbWV5CX4M`). Branch: `claude/game-lane-film`; merged: `claude/game-p1-aero` (P1.T1), `claude/game-p1-aero-broadcast` (P1.T2), `claude/game-p3-grid` (P3.T3).
+Status: done for the lane plan (PR #31 open: postMessage origin + the browser-run numbers; everything else merged). Standing by. Owner: agent A (Claude, session `session_019VA5sAvTHuQ3bGbWV5CX4M`). Branch: `claude/game-lane-film`; merged: `claude/game-p1-aero` (P1.T1), `claude/game-p1-aero-broadcast` (P1.T2), `claude/game-p3-grid` (P3.T3).
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
+
+### 2026-10-24 06:30 London — agent A (Claude) — P1.T2 browser run landed (T-F04-AC1 + AC2 in a real page, 1 lap)
+- **Result:** Playwright + headless Chromium (software GL, 400×225, 39 min wall for 86 s of race time), game in an iframe of a parent page listening for `message`. Auto-start, lights, 1 lap with no input, both cars finished, the parent received `{ type: 'purple:result', experiment_id: 'exp-test-rw8', seed: 42, laps: 1, cars: [...] }`; **0 page errors, 0 console errors**. Saved as `lab1_result.json` in the session scratchpad.
+
+| car | lap (standing start, line to line) | sectors | vmax km/h | Becketts vmin km/h |
+|---|---|---|---|---|
+| baseline (RW 20°) | 84.380 | 26.960 / 25.779 / 30.217 | 323.6 | 201.9 |
+| candidate (RW 28°) | 85.844 | 25.594 / 25.906 / 30.270 | 314.7 | 212.2 |
+
+- **Agreement with the headless race (same seed, lap 1):** direction and size match: vmax −8.9 (headless −9.4), Becketts +10.3 (headless +9.8); lap-1 times 84.38 / 85.84 vs headless 84.66 / 86.26. The browser laps are ~0.3 s quicker for both because `js/pit.js` (loaded in the page, not in the headless loader) puts the field on its best starting compound, and the lap-1 deltas are not a fair setup comparison anyway: the pole car crosses the Line from a standstill while the car 80 m behind crosses it at speed (hence the candidate's quicker S1). That is why the contract races **3 laps** and reports the **best lap** (lap 2 or 3): the headless 3-lap numbers (80.742 vs 81.260, Δ +0.518 s) remain the measured ones for the ledger sentence.
+- No code changed. File: this file only (on the PR #31 branch).
 
 ### 2026-10-24 06:10 London — agent A (Claude) — security audit item: postMessage target origin
 - Status: **done** (PR from `claude/game-post-origin` into `claude/amazing-planck-804i13`). `npm test` green.
