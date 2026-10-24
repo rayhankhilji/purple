@@ -1,8 +1,14 @@
 # Lane EVAL
 
-Status: done P2.T5, P2.T6, P3.T1 prep + scorer (PR open into `claude/amazing-planck-804i13`); idle until v2 trains. Owner: agent C (session `session_01Ma6U13odw1SA1vFhepRj8u`). Branch: `claude/eval-p3-score`.
+Status: done P2.T5, P2.T6, P3.T1 prep + scorer + README (PR for the README addendum open); idle until v2 trains. Owner: agent C (session `session_01Ma6U13odw1SA1vFhepRj8u`). Branch: `claude/eval-p3-expect`.
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
+
+### 2026-10-24 02:30 London — agent C (EVAL) — Try-models README "What to expect" (optional item from the integrator)
+- Status: done; `npm test` 74/74. Branch `claude/eval-p3-expect` (from the integration branch after PR #15 merged). No Mubit calls; nothing but `docs/try-models/README.md` and this file changed.
+- What: a per-item table for the 8 sheet scenarios: Δ lap, truth verdict and next step, and what a wrong adapter answer looks like, plus the reading of the eight together (five retest items; a reject-only adapter scores ~3/8 by construction). Derived only: the provider's per-item answers are **not persisted** anywhere (`calls.jsonl` exam rows hold ids/tokens/status, `status.json` holds the 20/20 · 10/20 totals; the ledger has no exam rows), so they are not quoted; because the provider was 20/20 on verdicts, its verdict on every sheet item equals the truth column, which the README says.
+- Proposed for SERVER: persist `runExam()`'s `details` array as `status.exam.details` (one line in `runExam`) so the next provider run records the actual answers and the README can quote them.
+- Blockers / questions for Tanuj: none. Next: idle until v2 trains; then score the sheet with `npm run exam:score`.
 
 ### 2026-10-24 02:20 London — agent C (EVAL) — P3.T1 Try-models scorer + README
 - Status: done; `npm test` 72/72. Branch `claude/eval-p3-score` (from the integration branch after PR #9 merged). No Mubit calls; `lab/prompt.js`, aero constants, `data/exam.json`, `sheet.md` untouched.
