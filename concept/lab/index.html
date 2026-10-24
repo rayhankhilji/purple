@@ -26,6 +26,8 @@
     <label class="f" for="seed">seed <input type="number" id="seed" min="0" max="999999" step="1" value="1"></label>
     <label class="f" for="gens">gens <input type="number" id="gens" min="1" max="5000" step="1" value="200"></label>
     <label class="f" for="speed">speed <select id="speed"><option value="300">1×</option><option value="60">4×</option><option value="0" selected>max</option></select></label>
+    <label class="f" for="team" title="the car the optimiser starts from">baseline <select id="team"><option value="redbull" selected>Red Bull RB22</option><option value="generic">generic 2026</option></select></label>
+    <label class="f" for="simSel" title="lap simulator: the physics lap sim (concept/sim) or sim v0 (the game's lap model, relative)">sim <select id="simSel"><option value="physics" selected>physics</option><option value="v0">v0</option></select></label>
   </form>
   <span class="badge" id="genBadge">gen 0 / 200</span>
   <a class="src back" href="../../lab/" title="the setup research lab">research lab →</a>
@@ -86,6 +88,13 @@
 <script src="../../js/ai.js"></script>
 <script src="../../lab/aero.js"></script>
 <script src="../../lab/evaluator.js"></script>
+<!-- the physics lap sim (docs/concept/SIM.md): needs js/data/silverstone.js; exports window.EI.conceptSim -->
+<script src="../sim/track.js"></script>
+<script src="../sim/line-silverstone.js"></script>
+<script src="../sim/lapsim.js"></script>
+<script src="../sim/fitted.js"></script>
+<script src="../sim/fit.js"></script>
+<script src="../sim/index.js"></script>
 <!-- the concept engine (docs/concept/CONCEPT.md §3 load order) -->
 <script src="../regs.js"></script>
 <script src="../parts.js"></script>
@@ -94,10 +103,9 @@
 <script src="../physical.js"></script>
 <script src="../bench.js"></script>
 <script src="../optimize.js"></script>
-<!-- optional modules: picked up when present (EI.concept.sim.simulateLap, EI.concept.weekend.score); add their script tags here
-     when they land, e.g. <script src="../sim/sim.js"></script> and <script src="../weekend/weekend.js"></script> -->
-<!-- 3D viewer (EI.conceptView); if the file is missing the page shows a schematic plan view instead -->
+<!-- the race-weekend model (the optimiser's objective: weekend score) -->
 <script src="../weekend/weekend.js"></script>
+<!-- 3D viewer (EI.conceptView); if the file is missing the page shows a schematic plan view instead -->
 <script src="../view/view3d.js" onerror="window.__conceptViewMissing = true"></script>
 <script src="concept-lab.js"></script>
 </body>

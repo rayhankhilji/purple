@@ -9,7 +9,7 @@ const noMs = r => JSON.parse(JSON.stringify(r, (k, v) => (k === "ms" ? undefined
 const RP = bench.racepace().silverstone;
 
 test("weekend: the baseline concept car (sim v0) qualifies on pole and races at the front, score ≈ 0", () => {
-  const s = W.score(PC);
+  const s = W.score(PC, { sim: "v0" });
   // v0 anchors the baseline to the real 2026 pole (88.111 s); a tie goes to our car, as in bench.weekend()
   assert.equal(s.quali.lap_s, RP.pole.s); assert.equal(s.quali.pos, 1); assert.equal(s.quali.gap_to_pole_s, 0); assert.equal(s.quali.field_size, 23);
   assert.ok(s.race.pos <= 3, "race P" + s.race.pos); assert.equal(s.race.field_size, 23);
@@ -19,6 +19,7 @@ test("weekend: the baseline concept car (sim v0) qualifies on pole and races at 
   assert.equal(s.race.strategy.stops, 1);
   assert.match(s.label, /^concept weekend model · .*sim v0.* · real 2026 British GP lap data$/);
   assert.equal(s.race.classification.length, 23); assert.equal(s.race.classification[s.race.pos - 1].code, "CONCEPT");
+  assert.equal(s.field.frame, "real"); assert.equal(s.field.fuel_basis, "coefficient");
 });
 
 test("weekend: a car with a midfield lap lands in the midfield in both sessions", () => {
@@ -40,8 +41,8 @@ test("weekend: a faster car moves up (lap sweep and a real design change)", () =
     prev = s;
   }
   // straight-mode flaps make the concept car quicker under sim v0 -> a better weekend
-  const d = design.clone(B); d.params.rear_wing.sm_delta_deg = 20; d.params.front_wing.sm_delta_deg = 12;
-  const base = W.score(PC), fast = W.score(d);   // a Design is accepted and converted with physical()
+  const d = design.clone(B); d.params.rear_wing.sm_delta_deg = 25; d.params.front_wing.sm_delta_deg = 12;
+  const base = W.score(PC, { sim: "v0" }), fast = W.score(d, { sim: "v0" });   // a Design is accepted and converted with physical()
   assert.ok(fast.quali.lap_s < base.quali.lap_s); assert.ok(fast.weekend_score > base.weekend_score);
   assert.ok(fast.components.quali_margin_s > 0 && fast.components.race_margin_s_per_lap > 0);
 });
@@ -95,9 +96,10 @@ test("weekend: deterministic; seeded noise is reproducible; replace drops a real
 
 test("weekend: the sim is pluggable - sim(physicalCar, trackId, conditions) at quali fuel on softs", () => {
   const calls = [];
-  const fake = (pc, track, cond) => { calls.push({ fuel: pc.fuel_kg, compound: pc.tyres.compound, track, cond }); return { lap_s: 88.4 + 0.01 * (pc.fuel_kg - 10), label: "fake sim" }; };
+  const qf = W.params().quali_fuel_kg;
+  const fake = (pc, track, cond) => { calls.push({ fuel: pc.fuel_kg, compound: pc.tyres.compound, track, cond }); return { lap_s: 88.4 + 0.01 * (pc.fuel_kg - qf), label: "fake sim" }; };
   const s = W.score(PC, { sim: fake, conditions: { wet: false } });
-  assert.equal(calls.length, 1); assert.deepEqual(calls[0], { fuel: 10, compound: "soft", track: "silverstone", cond: { wet: false } });
+  assert.equal(calls.length, 1); assert.deepEqual(calls[0], { fuel: qf, compound: "soft", track: "silverstone", cond: { wet: false } });
   assert.equal(s.quali.lap_s, 88.4); assert.equal(s.quali.pos, 3); assert.equal(s.quali.gap_to_pole_s, 0.289);
   assert.equal(s.label, "concept weekend model · fake sim · real 2026 British GP lap data");
   // fuel: "sim" measures the sim's own fuel-mass sensitivity (lap at start fuel vs quali fuel)
@@ -108,8 +110,8 @@ test("weekend: the sim is pluggable - sim(physicalCar, trackId, conditions) at q
 });
 
 test("weekend: < 200 ms per full weekend after warm-up (sim v0)", () => {
-  W.score(PC);
-  const t0 = process.hrtime.bigint(); for (let i = 0; i < 10; i++) W.score(PC);
+  W.score(PC, { sim: "v0" });
+  const t0 = process.hrtime.bigint(); for (let i = 0; i < 10; i++) W.score(PC, { sim: "v0" });
   const ms = Number(process.hrtime.bigint() - t0) / 1e6 / 10;
   assert.ok(ms < 200, ms.toFixed(1) + " ms");
 });
