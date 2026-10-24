@@ -87,12 +87,56 @@
     const idx = F.map((v, i) => i).sort((a, b) => F[a].f - F[b].f || a - b);
     return F[idx[0]];
   }
-  const EST = { iters: 320, step: 0.15, lap_weight: 25, prior_sigma: [0.15, 0.3, 0.3, 0.7], prior_weight: 10 };   // [mu, CLA, CDA, load_sens]
+  // v2: 7 global physical parameters, each with a prior from concept/data/priors-2026.json (recommended_fit_priors; the lo-hi
+  // range read as +-1 sigma on a log scale, centred on priorCar()), plus model-independent measurements of the same car from
+  // concept/data/cars-2026-derived.json (the pole car's team, telemetry-derived: lateral limit at 150 / 250 km/h, Corner and
+  // Straight Mode CdA) and the brake supplier's 2026 Silverstone peak deceleration, all as Gaussian data terms.
+  //   x = log of [mu_y scale, mu_x/mu_y ratio scale, CLA scale (both modes), Corner CDA scale, Straight/Corner CDA ratio scale,
+  //               load sensitivity scale, ICE power scale]
+  const EST = {
+    iters: 700, step: 0.12, lap_weight: 25, prior_weight: 10,
+    names: ["mu_y", "mu_x_ratio", "cla", "cda", "cda_straight_ratio", "load_sens", "ice"],
+    prior_sigma: [0.105, 0.10, 0.165, 0.22, 0.07, 0.29, 0.04],
+    // brake supplier simulation for 2026 Silverstone (priors-2026 peak_decel_high_speed_entry 3.1-3.8 g, central 3.4)
+    brake_peak_g: { kmh: 260, g: 3.4, sd: 0.4 },
+  };
   function estimatedCar(prior, x) {
-    const c = JSON.parse(JSON.stringify(prior)), [mu, cla, cda, ls] = x.map(Math.exp);
-    for (const m of ["corner", "straight"]) { c.aero[m].CLA_front_m2 *= cla; c.aero[m].CLA_rear_m2 *= cla; c.aero[m].CDA_m2 *= cda; }
-    c.tyres.mu_x *= mu; c.tyres.mu_y *= mu; c.tyres.load_sens *= ls;
+    const c = JSON.parse(JSON.stringify(prior)), [mu, mxr, cla, cda, sr, ls, ice] = x.map(Math.exp);
+    const ratio0 = prior.aero.straight.CDA_m2 / prior.aero.corner.CDA_m2;
+    for (const m of ["corner", "straight"]) { c.aero[m].CLA_front_m2 *= cla; c.aero[m].CLA_rear_m2 *= cla; }
+    c.aero.corner.CDA_m2 *= cda; c.aero.straight.CDA_m2 = c.aero.corner.CDA_m2 * Math.min(1, ratio0 * sr);
+    c.tyres.mu_y *= mu; c.tyres.mu_x = c.tyres.mu_y * (prior.tyres.mu_x / prior.tyres.mu_y) * mxr; c.tyres.load_sens *= ls;
+    c.pu.ice_kw *= ice;
     return c;
+  }
+  // telemetry-derived measurements of one team's car (concept/data/cars-2026-derived.json, Node only; null if absent)
+  let derivedCache = null;
+  function derivedFile() {
+    if (derivedCache !== null) return derivedCache;
+    derivedCache = false;
+    if (typeof require !== "function") return derivedCache;
+    try {
+      const fs = require("fs"), path = require("path"), f = path.join(__dirname, "..", "data", "cars-2026-derived.json");
+      if (fs.existsSync(f)) derivedCache = JSON.parse(fs.readFileSync(f, "utf8"));
+    } catch (e) { derivedCache = false; }
+    return derivedCache;
+  }
+  function derivedStats(teamId) {
+    const j = derivedFile(), t = j && j.teams && j.teams[teamId];
+    if (!t || !t.stats) return null;
+    const st = k => (t.stats[k] ? { v: t.stats[k].central, sd: t.stats[k].sd_robust || t.stats[k].sd } : null);
+    return { team: teamId, driver: t.fit_driver, mass_kg: t.mass && t.mass.kg, ay150_g: st("ay150_g"), ay250_g: st("ay250_g"), cda_c: st("CdA_c"), cda_s: st("CdA_s"), mu_x: st("mu_x"), gearing: t.gearing || null, ice_kw: t.physical_car && t.physical_car.pu && t.physical_car.pu.ice_kw };
+  }
+  // Gaussian data terms comparing a car with its team's derived measurements (chi^2 contributions, and a table for SIM.md)
+  function derivedAgreement(car, d, cond) {
+    if (!d) return { chi2: 0, rows: [] };
+    const c150 = S.capacity(car, 150, cond), c250 = S.capacity(car, 250, cond), rows = [];
+    const add = (name, sim, m) => { if (m && m.sd > 0) rows.push({ name, sim: +sim.toFixed(3), derived: m.v, sd: m.sd, z: +((sim - m.v) / m.sd).toFixed(2) }); };
+    add("lateral limit at 150 km/h (g)", c150.ay_g, d.ay150_g);
+    add("lateral limit at 250 km/h (g)", c250.ay_g, d.ay250_g);
+    add("CdA Corner Mode (m2)", car.aero.corner.CDA_m2, d.cda_c);
+    add("CdA Straight Mode (m2)", car.aero.straight.CDA_m2, d.cda_s);
+    return { chi2: rows.reduce((p, r) => p + r.z * r.z, 0), rows };
   }
   function calibrate(opts) {
     opts = opts || {};
@@ -100,24 +144,28 @@
     if (!ref) throw new Error("concept sim: calibrate needs the telemetry reference lap (concept/sim/line-" + trackId + ".js)");
     const prior = opts.prior || S.priorCar(), cond = opts.conditions || {}, ident = { grip_scale: 1, drag_scale: 1 };
     if (ref.gearing_estimate) prior.gearing = ref.gearing_estimate;
+    const dstat = opts.derived !== undefined ? opts.derived : derivedStats("mercedes");   // the pole car (ANT, Mercedes)
+    const bp = EST.brake_peak_g;
     const f = x => {
       const car = estimatedCar(prior, x), r = S.simulateLap(car, trackId, cond, { trace: true, cal: ident });
       const rms = traceError(r, ref, tr);
-      // MAP: log-normal priors around the sourced prior car keep weakly identified directions (e.g. CLA vs rolling load) at
-      // physically plausible values; widths EST.prior_sigma (log scale), weight EST.prior_weight (km/h^2 per sigma^2)
-      const pen = x.reduce((p, v, i) => p + (v / EST.prior_sigma[i]) ** 2, 0) * EST.prior_weight;
-      return { f: rms * rms + EST.lap_weight * (r.lap_s - ref.reference.lap_s) ** 2 + pen, rms, r, car, x };
+      const pen = x.reduce((p, v, i) => p + (v / EST.prior_sigma[i]) ** 2, 0);
+      const dat = derivedAgreement(car, dstat, cond).chi2 + ((S.capacity(car, bp.kmh, cond).brake_g - bp.g) / bp.sd) ** 2;
+      return { f: rms * rms + EST.lap_weight * (r.lap_s - ref.reference.lap_s) ** 2 + EST.prior_weight * (pen + dat), rms, r, car, x };
     };
-    const best = nelderMead(f, [0, 0, 0, 0], EST.step, opts.iters || EST.iters);
+    const best = nelderMead(f, opts.x0 || new Array(EST.names.length).fill(0), EST.step, opts.iters || EST.iters);
     const c = best.car, r1 = v => Math.round(v * 1e4) / 1e4;
     for (const m of ["corner", "straight"]) for (const k of ["CLA_front_m2", "CLA_rear_m2", "CDA_m2"]) c.aero[m][k] = r1(c.aero[m][k]);
     for (const k of ["mu_x", "mu_y", "load_sens"]) c.tyres[k] = r1(c.tyres[k]);
-    const r = best.r;
+    c.pu.ice_kw = Math.round(c.pu.ice_kw * 10) / 10;
+    const r = best.r, scales = {};
+    EST.names.forEach((k, i) => { scales[k] = r1(Math.exp(best.x[i])); });
     return {
-      method: "MAP (Nelder-Mead, " + (opts.iters || EST.iters) + " iterations) on the pole lap's speed trace + lap time; 4 global parameters with log-normal priors (sigma mu 0.15, CLA 0.3, CDA 0.3, load_sens 0.7)",
-      scales: { mu: r1(Math.exp(best.x[0])), cla: r1(Math.exp(best.x[1])), cda: r1(Math.exp(best.x[2])), load_sens: r1(Math.exp(best.x[3])) },
-      estimate: { aero: { corner: c.aero.corner, straight: c.aero.straight }, tyres: { mu_x: c.tyres.mu_x, mu_y: c.tyres.mu_y, load_sens: c.tyres.load_sens }, gearing: prior.gearing || null },
+      method: "MAP (Nelder-Mead, " + (opts.iters || EST.iters) + " iterations) on the pole lap's speed trace + lap time; " + EST.names.length + " global parameters (" + EST.names.join(", ") + ") with log-normal priors from concept/data/priors-2026.json, plus Gaussian terms for the pole team's telemetry-derived lateral limits and CdA (cars-2026-derived.json) and the brake supplier's 2026 Silverstone peak deceleration",
+      scales,
+      estimate: { aero: { corner: c.aero.corner, straight: c.aero.straight }, tyres: { mu_x: c.tyres.mu_x, mu_y: c.tyres.mu_y, load_sens: c.tyres.load_sens }, pu: { ice_kw: c.pu.ice_kw }, gearing: prior.gearing || null },
       fit_lap: { driver: ref.reference.driver, lap_real_s: ref.reference.lap_s, lap_sim_s: r.lap_s, sectors_real_s: ref.reference.sectors_s, sectors_sim_s: r.sectors_s, trap_real_kmh: ref.reference.speed_trap_kmh, trap_sim_kmh: r.speed_trap_kmh, trace_rms_kmh: Math.round(best.rms * 100) / 100 },
+      derived_agreement: derivedAgreement(c, dstat, cond).rows,
       label: S.LABEL,
     };
   }
@@ -222,7 +270,7 @@
   function baseOf(f) {
     const c = S.priorCar(), e = f && f.baseline_estimate;
     c.id = "baseline-2026"; c.label = "baseline 2026 car (prior + parameters estimated from the 2026 British GP pole lap)";
-    if (e) { c.aero.corner = Object.assign({}, e.aero.corner); c.aero.straight = Object.assign({}, e.aero.straight); Object.assign(c.tyres, e.tyres); if (e.gearing) c.gearing = JSON.parse(JSON.stringify(e.gearing)); }
+    if (e) { c.aero.corner = Object.assign({}, e.aero.corner); c.aero.straight = Object.assign({}, e.aero.straight); Object.assign(c.tyres, e.tyres); if (e.pu) Object.assign(c.pu, e.pu); if (e.gearing) c.gearing = JSON.parse(JSON.stringify(e.gearing)); }
     return c;
   }
   // optional per-team physical overrides derived elsewhere from telemetry, e.g. concept/data/redbull-2026-derived.json
@@ -264,7 +312,7 @@
   }
   function teamCars(fit) { const f = fit || fitted(); return f.teams.map(t => teamCar(t.team, f)); }
 
-  const api = { baseOf, derivedOverrides, TEAM_FIT, EST, CORNER_WINDOWS, reference, teamTargets, scaledCar, calibrate, fitTeams, heldOut, compareLap, traceError, teamCar, teamCars, fitted };
+  const api = { baseOf, derivedOverrides, derivedStats, derivedAgreement, estimatedCar, TEAM_FIT, EST, CORNER_WINDOWS, reference, teamTargets, scaledCar, calibrate, fitTeams, heldOut, compareLap, traceError, teamCar, teamCars, fitted };
   EI.conceptSimFit = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();

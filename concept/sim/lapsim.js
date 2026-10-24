@@ -42,15 +42,21 @@
     superclip_kw: 350,          // full-throttle harvest power when superclipping (reported 2026 change; Section B, unverified)
     wet_mu: 0.75,               // tyre friction multiplier on a wet track (intermediates; assumption)
     wet_crr: 1.5,               // rolling resistance multiplier in the wet (standing water)
+    slip_angle_rad: 0.08,       // tyre slip angle at the lateral limit, for slip drag (assumption, as concept/tools/derive-car.js; 0.04-0.12)
+    heave_n_per_mm: 1500,       // aero-platform heave stiffness, N per mm of ride-height drop (car.aero.heave_n_per_mm overrides; estimated)
+    // ground-effect floor (concept/aeromap.js v0 FLOOR: effective gap 66.7 mm at the 35 mm base ride height, stall below 58 mm,
+    // quadratic roll-off over 25 mm to 0.4, 5 mm dynamic compression); share of the car's load from priors-2026 (0.45-0.65)
+    floor: { share: 0.55, gap_mm: 66.7, stall_gap_mm: 58, stall_w_mm: 25, stall_floor: 0.4, dyn_mm: 5 },
     floor_stall_cla_factor: 0.5, // a stalled floor (PhysicalCar.floor_stalled) keeps half of the car's CLA (assumption: floor ~50-60 % of load)
     aero_switch_s: 0.4,         // Corner -> Straight Mode transition time (C3.10.10 o / C3.11.6 d: at most 400 ms; worst case used)
     straight_lat_frac: 0.5,     // Straight Mode is closed if lateral demand exceeds this share of Straight Mode grip
     u_max: 115, du: 0.5,        // air-speed table range and step (m/s)
     vcap: 105,                  // apex-limit search ceiling (m/s, 378 km/h)
     pressure_hpa: 1007.6,       // used when the conditions give neither density nor pressure (2026 British GP qualifying mid-range)
-    default_strategy: "threshold", // energy strategy used when opts.strategy is not given (see section 3)
+    default_strategy: "optimal", // energy strategy used when opts.strategy is not given (see section 3)
     clip_rho: 1,                // "marginal" strategy: superclip where sensitivity < rho x deploy threshold (cal.clip_rho overrides)
     lambda_iters: 22,           // bisection iterations of the strategy threshold
+    opt_refine: 0,              // "optimal": re-derive the value of a joule on the solved lap this many times (0: not self-consistent, it can flip)
     clip_search: 5,             // golden-section evaluations of the superclip amount (phi)
     clip_search_iters: 13,      // bisection iterations inside that search
   };
@@ -71,22 +77,25 @@
 
   // ---- a plausible 2026 car (SIM.md §3 has the source / status of every number)
   // generic prior (sourced magnitudes / assumptions); baselineCar() replaces the estimated fields with fitted.js values
+  // v2: central values of concept/data/priors-2026.json (recommended_fit_priors) where it has one; SIM.md §4.2 lists each
   function priorCar() {
     return {
       id: "prior-2026", label: "generic 2026 prior car (sourced magnitudes, not estimated)",
-      mass_kg: 768,              // C4.1 qualifying: 726 kg + Nominal Tyre Mass (~42 kg assumed); car + driver, no fuel
-      fuel_kg: 8,                // qualifying run fuel (assumption)
+      mass_kg: 770,              // C4.1 qualifying 726 kg + Nominal Tyre Mass 44 kg; priors 770-780 (Mercedes reported at the minimum)
+      fuel_kg: 5,                // qualifying run fuel (assumption, as concept/data/cars-2026-derived.json)
       wheelbase_m: 3.4,          // C2.3.3 maximum
       track_front_m: 1.6, track_rear_m: 1.55, // assumption (1900 mm max car width)
-      cog_height_m: 0.28,        // assumption
-      weight_dist_front: 0.45,   // between C4.2 limits (front >= 0.44, rear >= 0.54 of minimum mass)
+      cog_height_m: 0.30,        // priors 0.27-0.34 m above the ground (central)
+      weight_dist_front: 0.45,   // priors 0.44-0.46 (C4.2 floor)
       aero: {
-        corner: { CLA_front_m2: 1.8, CLA_rear_m2: 2.3, CDA_m2: 1.0 },     // assumption: ~30 % less load than a ~5.5-6 m2 2025 car (FIA 2024 claim)
-        straight: { CLA_front_m2: 0.8, CLA_rear_m2: 0.8, CDA_m2: 0.55 },  // assumption: wings opened (C3.10 / C3.11 Straight Mode), ~55 % less drag
-        ride_height_mm: 35, ride_sens_per_mm: 0.006,                      // CLA above is at this ride height; sensitivity is informational
+        // priors: Corner Mode CLA 3.2-4.6 (3.9) m2 with front share 0.435; CDA 0.75-1.25 (1.0) m2
+        corner: { CLA_front_m2: 1.70, CLA_rear_m2: 2.20, CDA_m2: 1.0 },
+        // priors: Straight Mode CLA x 0.72 (0.68-0.80), CDA x 0.82 (0.75-0.92); derived activation step dCdA 0.27 +- 0.06 m2
+        straight: { CLA_front_m2: 1.22, CLA_rear_m2: 1.58, CDA_m2: 0.80 },
+        ride_height_mm: 35, ride_sens_per_mm: 0.005,                      // static ride height of the CLA above; see MODEL.heave
       },
-      pu: { ice_kw: 400, mguk_kw: 350, es_deploy_mj_per_lap: 12.5, es_harvest_mj_per_lap: 8.5 },
-      tyres: { mu_x: 1.7, mu_y: 1.8, load_sens: 0.15, radius_m: 0.36, compound: "soft" },
+      pu: { ice_kw: 400, mguk_kw: 350, es_deploy_mj_per_lap: 12.5, es_harvest_mj_per_lap: 8.5 },   // ICE priors 385-430 kW
+      tyres: { mu_x: 1.75, mu_y: 1.8, load_sens: 0.086, radius_m: 0.348, compound: "soft" },      // priors mu 1.6-2.0 / 1.5-1.9 at 2 kN; 4.5 %/kN
       brakes: { max_decel_g_mech: 5.0 },
       drivetrain_eff: 0.95,
     };
@@ -99,7 +108,7 @@
     c.id = "baseline-2026"; c.label = "baseline 2026 car (prior + parameters estimated from the 2026 British GP pole lap)";
     if (e) {
       c.aero.corner = Object.assign({}, e.aero.corner); c.aero.straight = Object.assign({}, e.aero.straight);
-      Object.assign(c.tyres, e.tyres);
+      Object.assign(c.tyres, e.tyres); if (e.pu) Object.assign(c.pu, e.pu);
       if (e.gearing) c.gearing = JSON.parse(JSON.stringify(e.gearing));
     }
     return c;
@@ -156,11 +165,27 @@
     // capped at the Corner Mode values (closes an optimiser exploit: no straight-mode drag without its downforce loss and v.v.)
     const cm = car.aero.corner, sm0 = car.aero.straight;
     const smCapped = { CLA_front_m2: Math.min(sm0.CLA_front_m2, cm.CLA_front_m2), CLA_rear_m2: Math.min(sm0.CLA_rear_m2, cm.CLA_rear_m2), CDA_m2: Math.min(sm0.CDA_m2, cm.CDA_m2) };
+    const FL = MODEL.floor, kh = isFinite(+car.aero.heave_n_per_mm) && +car.aero.heave_n_per_mm > 50 ? +car.aero.heave_n_per_mm : MODEL.heave_n_per_mm;
+    // compression (mm) at which the floor starts to stall: the design layer's dynamic stall margin + its 5 mm dynamic compression
+    const sm = car.aero.stall_margin_mm, onset = isFinite(+sm) && sm !== null ? Math.max(0, +sm) + FL.dyn_mm : FL.gap_mm - FL.stall_gap_mm;
+    const gap0 = FL.stall_gap_mm + onset;
+    const floorF = dh => { const g = Math.max(1, gap0 - dh), st = g >= FL.stall_gap_mm ? 1 : Math.max(FL.stall_floor, 1 - ((FL.stall_gap_mm - g) / FL.stall_w_mm) ** 2); return (gap0 / g) * st; };
+    const factor = dh => 1 - FL.share + FL.share * floorF(dh);
+    function aeroFactor(qa) {
+      if (qa <= 0) return 1;
+      let lo = 0, hi = (qa * 3) / kh;
+      for (let it = 0; it < 32; it++) { const mid = 0.5 * (lo + hi); if (kh * mid < qa * factor(mid)) lo = mid; else hi = mid; }
+      return factor(0.5 * (lo + hi));
+    }
     for (const mode of ["corner", "straight"]) {
       const a = mode === "corner" ? cm : smCapped, AY = new Float64Array(NU), AYR = new Float64Array(NU), TR = new Float64Array(NU), BR = new Float64Array(NU), DR = new Float64Array(NU), RR = new Float64Array(NU);
       for (let k = 0; k < NU; k++) {
         const u = k * MODEL.du, q = 0.5 * rho * u * u;
-        const Fzf = m * G * wf + q * a.CLA_front_m2 * rhf, Fzr = m * G * wr + q * a.CLA_rear_m2 * rhf;
+        // aero platform (v2): the aero load F compresses the car by dh = F / k_heave; the ground-effect floor (MODEL.floor.share of
+        // the load) gains as its gap closes (load ~ 1 / gap, as concept/aeromap.js) until the gap reaches the stall gap, then
+        // stalls (quadratic roll-off to stall_floor, as aeromap). Solved for dh by bisection: k dh = q CLA factor(dh).
+        const qa = q * (a.CLA_front_m2 + a.CLA_rear_m2) * rhf, hv = aeroFactor(qa);
+        const Fzf = m * G * wf + q * a.CLA_front_m2 * rhf * hv, Fzr = m * G * wr + q * a.CLA_rear_m2 * rhf * hv;
         // axle lateral capacity with load sensitivity and lateral load transfer (split by axle mass share):
         // F = mu [Fz (1 + ls) - ls (Fz^2/2 + 2 dF^2) / Fz0], dF = m_axle a h / track  ->  quadratic in a
         const axle = (Fz, Fz0, mAx, tw, mu) => {
@@ -172,7 +197,7 @@
         AY[k] = Math.min(ayf, ayr); AYR[k] = ayr;
         const cap = (Fz, Fz0) => (Fz > 0 ? Math.max(0, Fz * (1 + ls) - (ls * Fz * Fz) / (2 * Fz0)) : 0);
         DR[k] = q * a.CDA_m2 * cal.drag_scale;
-        RR[k] = MODEL.crr * crrMul * (m * G + q * (a.CLA_front_m2 + a.CLA_rear_m2) * rhf);
+        RR[k] = MODEL.crr * crrMul * (m * G + qa * hv);
         // longitudinal load transfer dF = m a_x h / wheelbase (v2): under braking the front axle gains what the rear loses, under
         // traction the driven rear axle gains. With load-sensitive tyres this lowers the braking capacity a little and raises
         // low-speed traction; fixed point (4 iterations) on the car's own deceleration / acceleration. Ideal brake balance.
@@ -206,6 +231,10 @@
     const w = new Float64Array(n);
     if (c.wind_ms) for (let i = 0; i < n; i++) w[i] = headwind(c, tr.heading[i]);
     const mechB = carF.brakes.max_decel_g_mech * G * m;
+    // tyre slip drag (v2): cornering at lateral acceleration a_y with slip angle alpha costs F = m a_y tan(alpha), alpha growing
+    // with the share r of the lateral limit used (alpha = MODEL.slip_angle_rad at the limit). It is why real 2026 laps lose
+    // speed at full throttle through Abbey, Farm, Copse and Maggotts.
+    const slipA = MODEL.slip_angle_rad, slipDrag = (ay, r) => m * ay * Math.tan(slipA * (r < 1 ? r : 1));
 
     // 1. apex limits: largest v with v^2 |kappa| <= ay_max(v + headwind), Corner Mode
     const vlim = new Float64Array(n), C0 = tab[0];
@@ -227,7 +256,7 @@
       const i = (iMin - k + n) % n, j = (i + 1) % n, v = vb[j], u = Math.max(0, v + w[j]);
       const ay = v * v * Math.abs(kap[j]), aym = L(C0.AY, u), r = aym > 0 ? Math.min(1, ay / aym) : 1;
       const Fb = Math.min(L(C0.BR, u) * Math.sqrt(1 - r * r), mechB);
-      const dec = (Fb + L(C0.DR, u) + L(C0.RR, u) + m * G * grade[i]) / me;
+      const dec = (Fb + L(C0.DR, u) + L(C0.RR, u) + slipDrag(ay, r) + m * G * grade[i]) / me;
       const v2 = v * v + 2 * seg[i] * Math.max(dec, 0);
       vb[i] = Math.min(vlim[i], Math.sqrt(v2));
     }
@@ -293,7 +322,7 @@
         const Fice = (eff * (PiceN - PclipElec / ETA)) / vv, Ffull = Fice + (eff * PkMech) / vv;
         const Fx = Ffull < Ftrac ? Ffull : Ftrac;
         const PkUsed = Fx > Fice ? Math.min(PkMech, ((Fx - Fice) * vv) / eff) : 0;
-        const a = (Fx - (RES[g0] + ft * (RES[g0 + 1] - RES[g0])) - gF[i]) / me;
+        const a = (Fx - (RES[g0] + ft * (RES[g0 + 1] - RES[g0])) - slipDrag(ay, r) - gF[i]) / me;
         const v2 = v * v + 2 * a * ds;
         let vn = v2 > 1 ? Math.sqrt(v2) : 1, dt;
         if (vn > vb[j]) {
@@ -302,7 +331,7 @@
           let u0 = 0.5 * (v + vn) + w[i]; if (u0 < 0) u0 = 0;
           let x0 = u0 * inv; if (x0 > uTop) x0 = uTop;
           const h0 = x0 | 0, f0 = x0 - h0;
-          const Fbrake = (me * (v * v - vn * vn)) / (2 * ds) - (RES0[h0] + f0 * (RES0[h0 + 1] - RES0[h0])) - gF[i];
+          const Fbrake = (me * (v * v - vn * vn)) / (2 * ds) - (RES0[h0] + f0 * (RES0[h0 + 1] - RES0[h0])) - slipDrag(ay, r) - gF[i];
           if (Fbrake > 0 && EharvBrake < harvCap) {
             const P = Math.min(kW, rbs * Fbrake * 0.5 * (v + vn));
             EharvBrake = Math.min(harvCap, EharvBrake + P * dt);
@@ -319,13 +348,110 @@
         i = j;
       }
       const Eharv = Math.min(harvCap, EharvBrake + Eclip);
-      return { t, Edep, Eharv, EharvBrake, Eclip, vEnd: v };
+      return { t, Edep, Eharv, EharvBrake, Eclip, EharvPart: 0, vEnd: v };
+    }
+    // ---- v2 "optimal" strategy (the default): bang-bang deployment and superclip chosen by the lap-time value of a joule.
+    // forwardOpt(x, y): the K deploys (C5.2.8 taper, traction permitting) where sens >= x and superclips at full clip power where
+    // 0 < sens <= y; x < 0 is the reference lap (deploy everywhere, no clip). Where the speed is set by grip (braking, or part
+    // throttle through a corner) the K harvests for free: the rear-axle share of the brake force, and at part throttle the ICE's
+    // surplus over what the corner lets the car use (the ICE stays at full fuel flow; C5.2.10 counts all of it as Recharge).
+    const lim = new Uint8Array(n), tl = new Uint8Array(n), pw = new Float64Array(n);
+    const partHarv = opts.part_throttle_harvest !== false;
+    function forwardOpt(x, y, record) {
+      let v = vb[iMin], t = 0, Edep = 0, Eclip = 0, EharvBrake = 0, EharvPart = 0, zoneT = zone[iMin] ? -1e9 : Infinity;
+      if (record) { vf[iMin] = v; tAt[iMin] = 0; }
+      for (let k = 0, i = iMin; k < n; k++) {
+        const j = i + 1 === n ? 0 : i + 1, ds = seg[i];
+        let u = v + w[i]; if (u < 0) u = 0;
+        let xg = u * inv; if (xg > uTop) xg = uTop;
+        const g0 = xg | 0, ft = xg - g0;
+        const ay = v * v * absK[i];
+        let md = 0;
+        if (!zone[i]) zoneT = Infinity;
+        else { if (zoneT === Infinity) zoneT = t; if (t - zoneT >= swS && ay <= latF * (AY1[g0] + ft * (AY1[g0 + 1] - AY1[g0]))) md = 1; }
+        const AY = md ? AY1 : AY0, TR = md ? TR1 : TR0, RES = md ? RES1 : RES0;
+        const aym = AY[g0] + ft * (AY[g0 + 1] - AY[g0]);
+        const r = aym > 0 ? (ay < aym ? ay / aym : 1) : 1;
+        const Ftrac = (TR[g0] + ft * (TR[g0 + 1] - TR[g0])) * Math.sqrt(1 - r * r);
+        const vv = v > 3 ? v : 3, s = sens[i];
+        let PkMech = 0, PclipElec = 0;
+        if (x < 0 || s >= x) { const tp = mgukTaperKw(v * 3.6, overtake); PkMech = ETA * 1e3 * (tp < kKw ? (tp > 0 ? tp : 0) : kKw); }
+        else if (!noClip && s > 0 && s <= y) PclipElec = PclipMax;
+        const PiceN = gr ? Pice * iceFactor(v * 3.6) : Pice;
+        if (PclipElec > ETA * PiceN) PclipElec = ETA * PiceN;
+        const Fice = (eff * (PiceN - PclipElec / ETA)) / vv, Ffull = Fice + (eff * PkMech) / vv;
+        const Fx = Ffull < Ftrac ? Ffull : Ftrac;
+        const PkUsed = Fx > Fice ? Math.min(PkMech, ((Fx - Fice) * vv) / eff) : 0;
+        const resF = RES[g0] + ft * (RES[g0 + 1] - RES[g0]);
+        const slip = slipDrag(ay, r), a = (Fx - resF - slip - gF[i]) / me;
+        const v2 = v * v + 2 * a * ds;
+        let vn = v2 > 1 ? Math.sqrt(v2) : 1, dt;
+        if (vn > vb[j]) {
+          vn = vb[j]; dt = (2 * ds) / (v + vn);
+          const vm = 0.5 * (v + vn);
+          let u0 = vm + w[i]; if (u0 < 0) u0 = 0;
+          let x0 = u0 * inv; if (x0 > uTop) x0 = uTop;
+          const h0 = x0 | 0, f0 = x0 - h0, R0 = md ? RES1 : RES0;
+          const Freq = (me * (vn * vn - v * v)) / (2 * ds) + (R0[h0] + f0 * (R0[h0 + 1] - R0[h0])) + slip + gF[i];   // > 0: part throttle
+          if (Freq < 0) EharvBrake += Math.min(kW, rbs * -Freq * vm) * dt;
+          else {
+            const crank = (Freq * vm) / eff;   // crank power the corner lets the car use
+            if (crank > PiceN) Edep += ((crank - PiceN) / ETA) * dt;   // the K tops up (counted against the budget)
+            else if (partHarv) EharvPart += Math.min(kW, ETA * (PiceN - crank)) * dt;
+          }
+          if (record) { modeAt[i] = md; brk[i] = Freq < 0 ? 1 : 0; lim[i] = 1; tl[i] = 0; pw[i] = 0; }
+        } else {
+          dt = (2 * ds) / (v + vn);
+          Edep += (PkUsed / ETA) * dt;
+          if (PclipElec > 0) Eclip += PclipElec * dt;
+          if (record) { modeAt[i] = md; brk[i] = 0; lim[i] = 0; tl[i] = Ffull >= Ftrac ? 1 : 0; pw[i] = Ffull * vv; }
+        }
+        t += dt; v = vn;
+        if (record && k < n - 1) { vf[j] = v; tAt[j] = t; }
+        i = j;
+      }
+      const free = EharvBrake + EharvPart, Eharv = Math.min(harvCap, free + Eclip);
+      return { t, Edep, Eharv, EharvBrake: Math.min(EharvBrake, Eharv), EharvPart: Math.min(EharvPart, Math.max(0, Eharv - EharvBrake)), Eclip, vEnd: v };
+    }
+    // costate of kinetic energy along a recorded lap (seconds gained per J/kg added at i): backward recursion
+    // sens_i = ds/v^3 + sens_{i+1} (1 + ds dF/de), dF/de = (dF_prop/dv - dF_res/dv) / (m_e v), with dF_prop/dv = -P/v^2 when
+    // power-limited and 0 when traction-limited; reset to 0 where the speed is set by grip (braking or a corner). Two sweeps so
+    // the lap wrap-around settles. This is the adjoint of the forward pass: deploying where it is largest buys the most time per
+    // joule, and superclipping where it is smallest costs the least - deploy hard early on a straight, harvest at its end.
+    function computeSens() {
+      let acc = 0; sMin = Infinity; sMax = 0;
+      for (let sweep = 0; sweep < 2; sweep++) for (let k = n - 1; k >= 0; k--) {
+        const i = (iMin + k) % n;
+        if (lim[i]) acc = 0;
+        else {
+          const v = vf[i] > 3 ? vf[i] : 3, R = modeAt[i] ? RES1 : RES0;
+          let x0 = (v + w[i] > 0 ? v + w[i] : 0) * inv; if (x0 > uTop) x0 = uTop;
+          const h0 = x0 | 0, dRes = (R[h0 + 1] - R[h0]) * inv, dProp = tl[i] ? 0 : -pw[i] / (v * v);
+          const f = 1 + (seg[i] * (dProp - dRes)) / (me * v);
+          acc = acc * (f > 0 ? f : 0) + seg[i] / (v * v * v);
+        }
+        sens[i] = acc;
+      }
+      for (let i = 0; i < n; i++) if (sens[i] > 0) { if (sens[i] < sMin) sMin = sens[i]; if (sens[i] > sMax) sMax = sens[i]; }
+    }
+    // superclip threshold that fills what free harvest leaves of the recharge cap, on a recorded lap (cheapest joules first)
+    function clipCapSens(r) {
+      const left = harvCap - (r.EharvBrake + r.EharvPart);
+      if (noClip || left <= 0) return 0;
+      const pts = [];
+      for (let i = 0; i < n; i++) if (!lim[i] && sens[i] > 0) {
+        const j = (i + 1) % n, P = Math.min(PclipMax, ETA * (gr ? Pice * iceFactor(vf[i] * 3.6) : Pice));
+        pts.push([sens[i], (P * 2 * seg[i]) / (vf[i] + vf[j])]);
+      }
+      pts.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+      let e = 0; for (const [sv, de] of pts) { e += de; if (e >= left) return sv; }
+      return Infinity;
     }
     const budget = r => Math.min(depCap, soc + r.Eharv);
-    let res = forward(-1, true), lam = -1;   // reference lap: deploy everywhere, no superclip
+    let sMin = Infinity, sMax = 0, yOut = null;
+    let res = optimal ? forwardOpt(-1, 0, true) : forward(-1, true), lam = -1;   // reference lap: deploy everywhere, no superclip
     // lap-time sensitivity per joule from the reference lap (two sweeps so the wrap-around settles)
-    let sMin = Infinity, sMax = 0;
-    if (res.Edep > budget(res) && (optimal || marginal)) {
+    if (res.Edep > budget(res) && marginal) {
       // soft reset: the running sum decays with the reference lap's deceleration (none while coasting below 1 m/s2, full above
       // 5 m/s2), so a marginal lift does not split a straight - sens stays a continuous function of the car
       let acc = 0;
@@ -379,20 +505,19 @@
       res = forward(lam, true);
       clipFrac = clipFracOf(lam);
     } else if (res.Edep > budget(res)) {
-      clipCap = Math.max(0, harvCap - res.EharvBrake);
-      // superclip goes to the cheapest points first: the sensitivity below which clipping (on reference-lap times) fills clipCap,
-      // so the cap is never used up early in lap order
-      if (!noClip) {
-        const pts = [];
-        for (let i = 0; i < n; i++) if (!brk[i]) { const j = (i + 1) % n; pts.push([sens[i], (2 * seg[i]) / (vf[i] + vf[j])]); }
-        pts.sort((a, b) => a[0] - b[0]);
-        const P = Math.min(clipKw * 1e3, ETA * Pice); let e = 0; clipSens = Infinity;
-        for (const [sv, dt] of pts) { e += P * dt; if (e >= clipCap) { clipSens = sv; break; } }
+      // "optimal" (v2 default): equal marginal value. Deploy where sens >= x; superclip where sens <= y = min(x eta^2, y_cap):
+      // a superclipped joule costs sens/eta of mechanical work and returns eta of it when deployed, so clipping pays only below
+      // x eta^2, and y_cap stops it at what free harvest leaves of the recharge cap. Raising x lowers deployment and raises
+      // clipping, so the budget closes by one bisection on x. MODEL.opt_refine re-derives sens and y_cap on the solved lap.
+      for (let pass = 0; pass <= MODEL.opt_refine; pass++) {
+        computeSens();
+        const yCap = clipCapSens(res);
+        let lo = Math.log(sMin) - 1, hi = Math.log(sMax) + 1;   // feasible at hi (no deploy), infeasible at lo
+        const yOf = x => Math.min(x * clipGate, yCap);
+        for (let it = 0; it < MODEL.lambda_iters; it++) { const mid = 0.5 * (lo + hi), x = Math.exp(mid), r = forwardOpt(x, yOf(x), false); if (r.Edep <= budget(r)) hi = mid; else lo = mid; }
+        lam = Math.exp(hi); yOut = yOf(lam);
+        res = forwardOpt(lam, yOut, true);
       }
-      let lo = Math.log(sMin) - 1, hi = Math.log(sMax) + 1;   // feasible at hi (no deploy), infeasible at lo
-      for (let it = 0; it < MODEL.lambda_iters; it++) { const mid = 0.5 * (lo + hi), r = forward(Math.exp(mid), false); if (r.Edep <= budget(r)) hi = mid; else lo = mid; }
-      lam = Math.exp(hi);
-      res = forward(lam, true);
     }
 
     // 4. outputs in the FIA timing frame (TIMING): S1 control line -> sector line 1, S2 -> line 2, S3 -> control line
@@ -406,7 +531,7 @@
     const out = {
       lap_s: r3(lap), sectors_s: [r3(s1), r3(s2), r3(s3)],
       vmax_kmh: r1(vmax * 3.6), speed_trap_kmh: r1(vAt(tim.trap_s) * 3.6), vmin_kmh: r1(vmin * 3.6),
-      energy: { deployed_mj: r3(res.Edep / 1e6), harvested_mj: r3(res.Eharv / 1e6), harvested_braking_mj: r3(Math.min(res.EharvBrake, res.Eharv) / 1e6), harvested_superclip_mj: r3(Math.max(0, res.Eharv - res.EharvBrake) / 1e6), recharge_cap_mj: r3(harvCap / 1e6), superclip_share: optimal ? null : r3(clipFrac), superclip_fill: optimal ? null : r3(phiOut), energy_limited: lam >= 0, strategy: strat, deploy_ceiling_kmh: strat === "threshold" && lam >= 0 ? r1(lam * 3.6) : null },
+      energy: { deployed_mj: r3(res.Edep / 1e6), harvested_mj: r3(res.Eharv / 1e6), harvested_braking_mj: r3(Math.min(res.EharvBrake, res.Eharv) / 1e6), harvested_superclip_mj: r3(Math.max(0, res.Eharv - Math.min(res.EharvBrake, res.Eharv) - (res.EharvPart || 0)) / 1e6), harvested_part_throttle_mj: r3((res.EharvPart || 0) / 1e6), recharge_cap_mj: r3(harvCap / 1e6), superclip_share: optimal ? null : r3(clipFrac), superclip_fill: optimal ? null : r3(phiOut), energy_limited: lam >= 0, strategy: strat, deploy_ceiling_kmh: strat === "threshold" && lam >= 0 ? r1(lam * 3.6) : null },
       speeds_kmh: { intermediate_1: r1(vAt(tim.i1_s) * 3.6), intermediate_2: r1(vAt(tim.i2_s) * 3.6), finish_line: r1(vAt(tim.control_s) * 3.6) },
       air_density_kgm3: r3(rho), label: LABEL,
     };
@@ -417,8 +542,20 @@
       out.trace = { s_m, v_kmh, aero_mode: mode };
       if (gr) { out.trace.gear = v_kmh.map(v => gearOf(v) + 1); out.trace.rpm = v_kmh.map(v => Math.round(gr.rpm_per_kmh[gearOf(v)] * v)); }
     }
-    if (opts.debug) out.debug = { vf, vb, vlim, tAt, sens, track: tr, iMin, lambda: lam };
+    if (opts.debug) out.debug = { vf, vb, vlim, tAt, sens, track: tr, iMin, lambda: lam, clip_threshold: yOut, lim, modeAt };
     return out;
+  }
+
+  // grip envelope of a car at one speed (still air, default conditions unless given): lateral limit (Corner Mode, min of the
+  // axles), braking deceleration (tyres + drag + rolling, capped by brakes.max_decel_g_mech), traction-limited acceleration. In g.
+  // Used to compare the sim's cars with model-independent telemetry measurements (lateral limit vs speed, braking).
+  function capacity(car, kmh, conditions) {
+    checkCar(car);
+    const c = Object.assign({}, DEFAULT_CONDITIONS, conditions || {}), rho = airDensity(c), m = car.mass_kg + car.fuel_kg;
+    const tab = buildTables(car, rho, { grip_scale: 1, drag_scale: 1 }, c.wet ? MODEL.wet_mu : 1, c.wet ? MODEL.wet_crr : 1)[0];
+    const x = Math.min(tab.AY.length - 1.001, kmh / 3.6 / MODEL.du), i = x | 0, f = x - i, L = a => a[i] + f * (a[i + 1] - a[i]);
+    const Fb = Math.min(L(tab.BR), car.brakes.max_decel_g_mech * G * m);
+    return { ay_g: L(tab.AY) / G, brake_g: (Fb + L(tab.DR) + L(tab.RR)) / (m * MODEL.rot_mass_factor * G), traction_g: (L(tab.TR) - L(tab.DR) - L(tab.RR)) / (m * MODEL.rot_mass_factor * G) };
   }
 
   // ---- weekend conditions from concept/data (Node only, optional). Reads concept/data/silverstone-2026-weekend.json when
@@ -452,7 +589,7 @@
     } catch (e) { return null; }
   }
 
-  const api = { LABEL, REGS, MODEL, DEFAULT_CONDITIONS, TIMING, mgukTaperKw, parseWeekend, baselineCar, priorCar, simulateLap, airDensity, headwind, loadWeekendConditions, activeCal };
+  const api = { LABEL, REGS, MODEL, DEFAULT_CONDITIONS, TIMING, mgukTaperKw, capacity, parseWeekend, baselineCar, priorCar, simulateLap, airDensity, headwind, loadWeekendConditions, activeCal };
   EI.conceptSim = Object.assign(EI.conceptSim || {}, api);
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();
