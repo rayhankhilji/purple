@@ -47,8 +47,8 @@
   const missing = need.filter(k => !C[k]);
   const M = { regs: C.regs, parts: C.parts, design: C.design, physical: C.physical, bench: C.bench, optimize: C.optimize };
   function simModule() { const s = EI.conceptSim; return s && typeof s.simulateLap === "function" ? s : null; }
-  const physicsOn = () => S.sim === "physics" && !!simModule();
-  function benchOpts() { return { circuit: CIRCUIT, sim: physicsOn() ? "physics" : "v0" }; }
+  const physicsOn = st => (st || S).sim === "physics" && !!simModule();
+  function benchOpts(st) { return { circuit: CIRCUIT, sim: physicsOn(st) ? "physics" : "v0" }; }
   // yield to the browser between candidate laps: a MessageChannel task (no 4 ms timer clamp)
   const chan = typeof MessageChannel === "function" ? new MessageChannel() : null, waiting = [];
   if (chan) chan.port1.onmessage = () => { const f = waiting.shift(); if (f) f(); };
@@ -66,6 +66,7 @@
   const spec = (part, param) => M.design.spec(part, param) || { label: param, unit: "", step: 1, min: 0, max: 1 };
   const decimals = step => { const s = String(step); return s.includes(".") ? s.split(".")[1].length : 0; };
   function fmtParam(part, param, v) {
+    if (typeof v !== "number" && !isFinite(+v)) return String(v);
     const s = spec(part, param), u = s.unit;
     const n = (+v).toFixed(decimals(s.step));
     return n + (!u ? "" : u === "°" ? "°" : " " + u);
@@ -100,14 +101,25 @@
   const REAL_LABEL = "real 2026 British GP qualifying (FIA/formula1.com via js/data/racepace2026.js)";
 
   // ---- state
-  const S = {
+  // Two sources share one layout: "mubit" (the default view: the autonomous engineer, driven by Mubit; its data comes from
+  // concept/lab/mubit-first.js through EI.conceptLab.mubit) and "noai" (the in-browser optimiser below, "Compare: no AI").
+  // NO is the optimiser's own state (it keeps running or paused while the other view shows); MU is the Mubit run as the layout
+  // draws it; S is whichever one is on screen. V holds what both share: the 3D view and the render scheduler.
+  const NO = {
+    src: "noai",
     status: "idle",            // idle | running | paused | done | error
     token: 0, gate: null, run: null,
     seed: 1, gens: 200, delay: 0,
     baseline: null, baseResult: null, best: null, bestResult: null, rows: [], lastKept: null,
-    view: null, viewError: null, mode: "solid", simLabel: "", weekendNote: null, team: "redbull", sim: "physics", curLap: null, maxGap: 0,
-    dirty: {}, raf: 0,
+    simLabel: "", weekendNote: null, team: "redbull", sim: "physics", curLap: null, maxGap: 0,
   };
+  const MU = {
+    src: "mubit", who: "Mubit", status: "idle", gens: 12, baseline: null, baseResult: null, best: null, bestResult: null, rows: [], lastKept: null,
+    simLabel: "", team: "redbull", sim: "physics", curLap: null, maxGap: 0, feedCard: null, feedNote: "", timing: null,
+  };
+  const V = { view: null, viewError: null, mode: "solid", dirty: {}, raf: 0 };
+  let S = qs.get("view") === "noai" ? NO : MU;
+  const isMu = () => S === MU;
 
   // ---- the run: concept/optimize.js optimizeAsync with the default ES proposer behind a gate. The gate is where the page yields to
   // the browser (setTimeout per generation) and where Pause / Step hold the loop. The ES proposer draws from ctx.rng only, so the
@@ -119,91 +131,93 @@
   }
   function gate(token) {
     return new Promise((resolve, reject) => {
-      if (token !== S.token) return reject(STOP);
+      if (token !== NO.token) return reject(STOP);
       const g = { resolve, reject, token };
-      if (S.status === "running") setTimeout(() => (token === S.token ? resolve() : reject(STOP)), S.delay);
-      else S.gate = g;   // paused (or stepping): held until Run / Step
+      if (NO.status === "running") setTimeout(() => (token === NO.token ? resolve() : reject(STOP)), NO.delay);
+      else NO.gate = g;   // paused (or stepping): held until Run / Step
     });
   }
-  function release() { const g = S.gate; S.gate = null; if (g) setTimeout(() => (g.token === S.token ? g.resolve() : g.reject(STOP)), 0); }
+  function release() { const g = NO.gate; NO.gate = null; if (g) setTimeout(() => (g.token === NO.token ? g.resolve() : g.reject(STOP)), 0); }
 
   function readInputs() {
     const seed = parseInt($("#seed").value, 10), gens = parseInt($("#gens").value, 10);
-    S.seed = Number.isFinite(seed) && seed >= 0 ? seed : 1; S.gens = Number.isFinite(gens) && gens >= 1 ? Math.min(gens, 5000) : 200;
-    $("#seed").value = S.seed; $("#gens").value = S.gens;
-    S.delay = +$("#speed").value || 0;
-    S.team = $("#team").value === "generic" ? null : $("#team").value;
-    S.sim = $("#simSel").value === "v0" ? "v0" : "physics";
-    if (S.sim === "physics" && !simModule()) { $("#simSel").value = "v0"; S.sim = "v0"; }
+    NO.seed = Number.isFinite(seed) && seed >= 0 ? seed : 1; NO.gens = Number.isFinite(gens) && gens >= 1 ? Math.min(gens, 5000) : 200;
+    $("#seed").value = NO.seed; $("#gens").value = NO.gens;
+    NO.delay = +$("#speed").value || 0;
+    NO.team = $("#team").value === "generic" ? null : $("#team").value;
+    NO.sim = $("#simSel").value === "v0" ? "v0" : "physics";
+    if (NO.sim === "physics" && !simModule()) { $("#simSel").value = "v0"; NO.sim = "v0"; }
   }
 
   function reset() {
-    S.token++;
-    if (S.gate) { const g = S.gate; S.gate = null; g.reject(STOP); }
+    NO.token++;
+    if (NO.gate) { const g = NO.gate; NO.gate = null; g.reject(STOP); }
     readInputs();
-    S.status = "idle"; S.run = null; S.rows = []; S.lastKept = null;
-    S.baseline = M.design.baseline(S.team ? { team: S.team } : undefined);
-    S.baseResult = M.bench.bench(S.baseline, benchOpts());
-    S.best = M.design.clone(S.baseline); S.bestResult = S.baseResult; S.curLap = lapOf(S.baseResult);
-    S.simLabel = S.baseResult.sim_label || (S.baseResult.circuits[CIRCUIT] && S.baseResult.circuits[CIRCUIT].label) || "";
-    $("#feedLines").replaceChildren(el("div", { class: "empty", text: "Press Run (or Step) to start. Each generation the optimiser proposes " + LAMBDA + " reshaped cars from the current best; the bench checks each against the 2026 regulations and laps the legal ones; the fastest legal one is kept only if it beats its parent." }));
-    if (S.view) { try { S.view.setDesign(S.baseline, { baseline: S.baseline, animate: false, livery: S.baseline.livery }); S.view.setHighlight([]); } catch (e) { viewFailed(e); } }
+    NO.status = "idle"; NO.run = null; NO.rows = []; NO.lastKept = null;
+    NO.baseline = M.design.baseline(NO.team ? { team: NO.team } : undefined);
+    NO.baseResult = M.bench.bench(NO.baseline, benchOpts(NO));
+    NO.best = M.design.clone(NO.baseline); NO.bestResult = NO.baseResult; NO.curLap = lapOf(NO.baseResult);
+    NO.simLabel = NO.baseResult.sim_label || (NO.baseResult.circuits[CIRCUIT] && NO.baseResult.circuits[CIRCUIT].label) || "";
+    if (S !== NO) return;
+    if (V.view) { try { V.view.setDesign(NO.baseline, { baseline: NO.baseline, animate: false, livery: NO.baseline.livery }); V.view.setHighlight([]); } catch (e) { viewFailed(e); } }
     markAll(); renderNow();
   }
 
   function start(paused) {
-    const token = S.token;
-    S.status = paused ? "paused" : "running";
-    S.run = M.optimize.optimizeAsync({
-      gens: S.gens, seed: S.seed, lambda: LAMBDA, proposer: makeProposer(token), bench: benchOpts(), start: S.baseline,
-      yield: () => (token === S.token ? yieldTask() : Promise.reject(STOP)), slice_ms: 12,
-      onGeneration: row => { if (token === S.token) onRow(row); },
+    const token = NO.token;
+    NO.status = paused ? "paused" : "running";
+    NO.run = M.optimize.optimizeAsync({
+      gens: NO.gens, seed: NO.seed, lambda: LAMBDA, proposer: makeProposer(token), bench: benchOpts(NO), start: NO.baseline,
+      yield: () => (token === NO.token ? yieldTask() : Promise.reject(STOP)), slice_ms: 12,
+      onGeneration: row => { if (token === NO.token) onRow(row); },
     }).then(res => {
-      if (token !== S.token) return;
-      S.best = res.best; S.bestResult = res.best_result;
-      S.status = "done"; markAll(); schedule();
+      if (token !== NO.token) return;
+      NO.best = res.best; NO.bestResult = res.best_result;
+      NO.status = "done"; markAll(); schedule();
     }).catch(e => {
-      if (e === STOP || token !== S.token) return;
-      S.status = "error"; banner("optimiser", String(e && e.message || e)); schedule();
+      if (e === STOP || token !== NO.token) return;
+      NO.status = "error"; banner("optimiser", String(e && e.message || e)); schedule();
     });
   }
   function run() {
     readInputs();
-    if (S.status === "done") reset();
-    if (S.status === "idle") { start(false); schedule("ctl"); return; }
-    if (S.status === "paused") { S.status = "running"; release(); schedule("ctl"); }
+    if (NO.status === "done") reset();
+    if (NO.status === "idle") { start(false); schedule("ctl"); return; }
+    if (NO.status === "paused") { NO.status = "running"; release(); schedule("ctl"); }
   }
-  function pause() { if (S.status === "running") { S.status = "paused"; schedule("ctl"); } }
+  function pause() { if (NO.status === "running") { NO.status = "paused"; schedule("ctl"); } }
   function step() {
-    if (S.status === "done") reset();
-    if (S.status === "idle") { readInputs(); start(true); }
-    if (S.status === "running") S.status = "paused";
+    if (NO.status === "done") reset();
+    if (NO.status === "idle") { readInputs(); start(true); }
+    if (NO.status === "running") NO.status = "paused";
     release(); schedule("ctl");
   }
 
   function onRow(row) {
-    row._lb = S.curLap; row._la = row.legal && row.result ? row.result.lap_s : null;   // laps before / after (the score is the weekend score, not a lap)
-    S.rows.push(row);
+    row._lb = NO.curLap; row._la = row.legal && row.result ? row.result.lap_s : null;   // laps before / after (the score is the weekend score, not a lap)
+    NO.rows.push(row);
     if (row.kept) {
-      S.curLap = row._la;
-      S.best = M.design.applyChanges(S.best, row.changes.map(c => ({ part: c.part, param: c.param, to: c.to })), { id: row.id, parent: row.parent, label: "generation " + row.gen + " best" }).design;
-      S.bestResult = M.bench.bench(S.best, benchOpts());   // cached by the bench: the kept candidate was just measured
-      S.lastKept = row;
-      if (S.view) {
-        try { S.view.setDesign(S.best, { baseline: S.baseline, animate: !reduced(), livery: S.baseline.livery }); S.view.setHighlight(uniq(row.changes.map(c => c.part))); }
+      NO.curLap = row._la;
+      NO.best = M.design.applyChanges(NO.best, row.changes.map(c => ({ part: c.part, param: c.param, to: c.to })), { id: row.id, parent: row.parent, label: "generation " + row.gen + " best" }).design;
+      NO.bestResult = M.bench.bench(NO.best, benchOpts(NO));   // cached by the bench: the kept candidate was just measured
+      NO.lastKept = row;
+      if (S !== NO) return;   // the optimiser runs on while the Mubit view shows; its panels redraw when "Compare: no AI" is opened
+      if (V.view) {
+        try { V.view.setDesign(NO.best, { baseline: NO.baseline, animate: !reduced(), livery: NO.baseline.livery }); V.view.setHighlight(uniq(row.changes.map(c => c.part))); }
         catch (e) { viewFailed(e); }
       }
-      S.dirty.kept = true;
+      V.dirty.kept = true;
     }
-    S.dirty.row = true; schedule();
+    if (S !== NO) return;
+    V.dirty.row = true; schedule();
   }
   const uniq = a => Array.from(new Set(a));
 
   // ---- rendering: coalesced on requestAnimationFrame; heavy panels only when a change is kept
-  function markAll() { S.dirty = { all: true }; }
-  function schedule(what) { if (what) S.dirty[what] = true; if (!S.raf) S.raf = requestAnimationFrame(renderNow); }
+  function markAll() { V.dirty = { all: true }; }
+  function schedule(what) { if (what) V.dirty[what] = true; if (!V.raf) V.raf = requestAnimationFrame(renderNow); }
   function renderNow() {
-    S.raf = 0; const d = S.dirty; S.dirty = {};
+    V.raf = 0; const d = V.dirty; V.dirty = {};
     renderCtl();
     if (d.all) { $("#feedLines").querySelectorAll(".ln").forEach(n => n.remove()); S.feedCount = 0; }
     if (d.all || d.row) { renderFeed(); renderChart(); renderHero(); }
@@ -211,15 +225,15 @@
   }
 
   function renderCtl() {
-    const st = S.status, n = S.rows.length;
+    const st = NO.status, n = NO.rows.length;
     const runBtn = $("#btnRun");
     runBtn.textContent = st === "running" ? "Pause" : st === "paused" ? "Resume" : st === "done" ? "Run again" : "Run";
     runBtn.classList.toggle("primary", st !== "running");
     $("#btnStep").disabled = st === "error";
     $("#seed").disabled = $("#gens").disabled = $("#team").disabled = $("#simSel").disabled = st === "running" || st === "paused";
-    const kept = S.rows.filter(r => r.kept).length;
+    const kept = NO.rows.filter(r => r.kept).length;
     const g = $("#genBadge");
-    g.textContent = "gen " + n + " / " + S.gens + " · kept " + kept + (st === "paused" ? " · paused" : st === "done" ? " · done" : "");
+    g.textContent = "gen " + n + " / " + NO.gens + " · kept " + kept + (st === "paused" ? " · paused" : st === "done" ? " · done" : "");
     g.className = "badge " + (st === "running" ? "purple" : st === "done" ? "green" : st === "paused" ? "amber" : "");
   }
 
@@ -230,7 +244,7 @@
     const dBase = isNum(best) && isNum(base) ? best - base : null;
     const pole = RP && RP.pole ? RP.pole.s : null, dPole = isNum(best) && isNum(pole) ? best - pole : null;
     const c = S.bestResult && S.bestResult.circuits && S.bestResult.circuits[CIRCUIT];
-    $("#heroBL").replaceChildren(
+    $("#heroBL").replaceChildren(...[
       el("div", { class: "kpis" },
         el("div", { class: "kpi" }, el("span", { class: "label", text: "best lap" }), el("span", { class: "big", text: fmtT(best) })),
         el("div", { class: "kpi" }, el("span", { class: "label", text: "vs baseline car" }), el("span", { class: "big delta " + dcls(dBase), text: fmtD(dBase) })),
@@ -239,19 +253,24 @@
       ),
       el("div", { class: "kpi-sub" },
         c ? "S1 " + fmtT(c.sectors_s[0]) + " · S2 " + fmtT(c.sectors_s[1]) + " · S3 " + fmtT(c.sectors_s[2]) + " · trap " + Math.round(c.speed_trap_kmh) + " km/h · min " + Math.round(c.vmin_kmh) + " km/h" : ""),
-      el("div", { class: "src one", title: S.simLabel, text: S.simLabel }),
-    );
+      isMu() && MU.timing ? el("div", { class: "mu-time", title: MU.timing.title }, MU.timing.parts.map((t, i) => [i ? el("span", { class: "sep", text: " · " }) : null, el("span", { class: i ? "" : "mu-w", text: t })])) : null,
+      el("div", { class: "src one", title: isMu() ? MU.simTitle : S.simLabel, text: S.simLabel }),
+    ].filter(Boolean));
     const lk = S.lastKept;
     const tr = $("#heroBR");
     if (lk) {
-      tr.replaceChildren(el("div", { class: "label", text: "last kept change · gen " + lk.gen }),
-        ...lk.changes.map(ch => el("div", { class: "chg one", title: changeText(ch) }, el("span", { class: "dotp" }), changeText(ch))),
-        el("div", { class: "delta faster", text: fmtD(lapAfter(lk) - lapBefore(lk)) + " s" }));
+      const shown = lk.changes.slice(0, 4);
+      tr.replaceChildren(...[el("div", { class: "label", text: isMu() ? "last kept change · " + MU.who + " decision #" + lk.gen : "last kept change · gen " + lk.gen }),
+        ...shown.map(ch => el("div", { class: "chg one", title: changeText(ch) }, el("span", { class: "dotp" }), changeText(ch))),
+        lk.changes.length > shown.length ? el("div", { class: "chg muted", text: "+ " + (lk.changes.length - shown.length) + " more" }) : null,
+        el("div", { class: "delta faster", text: fmtD(isMu() ? lk._gain : lapAfter(lk) - lapBefore(lk)) + " s" })].filter(Boolean));
     } else tr.replaceChildren(el("div", { class: "label", text: S.team ? "baseline · Red Bull RB22 · DM01" : "baseline 2026-style concept car" }), el("div", { class: "chg muted", text: "no change kept yet" }));
     const n = S.rows.length;
     $("#heroTL").replaceChildren(
-      el("span", { class: "badge " + (S.status === "running" ? "purple" : ""), text: S.status === "idle" ? "baseline" : "generation " + n }),
-      el("span", { class: "badge", title: "ghost = the baseline concept car", text: "ghost = baseline" }),
+      isMu()
+        ? el("span", { class: "badge " + (S.status === "running" || S.status === "playing" ? "mubit-b" : ""), text: n ? MU.who + " decision " + n + " / " + S.gens : "baseline" })
+        : el("span", { class: "badge " + (S.status === "running" ? "purple" : ""), text: S.status === "idle" ? "baseline" : "generation " + n }),
+      el("span", { class: "badge", title: isMu() ? "ghost = the Red Bull RB22 baseline car" : "ghost = the baseline concept car", text: "ghost = baseline" }),
     );
   }
   // per-row lap before / after (recorded in onRow from the lineage row's bench summary)
@@ -263,25 +282,25 @@
   function mountView() {
     const host = $("#view3d");
     if (!EI.conceptView || typeof EI.conceptView.mount !== "function") {
-      S.viewError = window.__conceptViewMissing ? "3D view loading module missing (concept/view/view3d.js not found)" : "3D view loading module missing (EI.conceptView not defined)";
+      V.viewError = window.__conceptViewMissing ? "3D view loading module missing (concept/view/view3d.js not found)" : "3D view loading module missing (EI.conceptView not defined)";
       host.hidden = true; $("#plan").hidden = false; renderModeButtons(); return;
     }
     try {
-      S.view = EI.conceptView.mount(host, { baseline: S.baseline, design: S.best, parts: M.parts, mode: S.mode, label: false, legend: false, livery: S.baseline.livery });   // the page prints labelText() in its own overlay
-      S.view.setDesign(S.best, { baseline: S.baseline, animate: false, livery: S.baseline.livery });
+      V.view = EI.conceptView.mount(host, { baseline: S.baseline, design: S.best, parts: M.parts, mode: V.mode, label: false, legend: false, livery: S.baseline.livery });   // the page prints labelText() in its own overlay
+      V.view.setDesign(S.best, { baseline: S.baseline, animate: false, livery: S.baseline.livery });
     } catch (e) { viewFailed(e); }
     renderModeButtons();
   }
   function viewFailed(e) {
-    S.viewError = "3D view error: " + String(e && e.message || e);
-    try { if (S.view && S.view.dispose) S.view.dispose(); } catch (_) { /* already broken */ }
-    S.view = null; $("#view3d").hidden = true; $("#plan").hidden = false; renderModeButtons(); schedule("kept");
+    V.viewError = "3D view error: " + String(e && e.message || e);
+    try { if (V.view && V.view.dispose) V.view.dispose(); } catch (_) { /* already broken */ }
+    V.view = null; $("#view3d").hidden = true; $("#plan").hidden = false; renderModeButtons(); schedule("kept");
   }
   function renderModeButtons() {
     const tr = $("#heroModes");
-    if (!S.view) { tr.replaceChildren(); return; }
-    const b = (m, t) => el("button", { type: "button", class: "btn small" + (S.mode === m ? " primary" : ""), "aria-pressed": S.mode === m ? "true" : "false", onclick: () => { S.mode = m; try { S.view.setMode(m); } catch (e) { viewFailed(e); } renderModeButtons(); } }, t);
-    let lbl = ""; try { lbl = S.view.labelText ? S.view.labelText() : ""; } catch (_) { lbl = ""; }
+    if (!V.view) { tr.replaceChildren(); return; }
+    const b = (m, t) => el("button", { type: "button", class: "btn small" + (V.mode === m ? " primary" : ""), "aria-pressed": V.mode === m ? "true" : "false", onclick: () => { V.mode = m; try { V.view.setMode(m); } catch (e) { viewFailed(e); } renderModeButtons(); } }, t);
+    let lbl = ""; try { lbl = V.view.labelText ? V.view.labelText() : ""; } catch (_) { lbl = ""; }
     tr.replaceChildren(el("div", { class: "modes" }, b("solid", "solid"), b("xray-mass", "x-ray mass")), lbl ? el("div", { class: "src vlabel", text: lbl }) : null);
   }
 
@@ -313,7 +332,7 @@
     return { nodes: out, g };
   }
   function renderPlan() {
-    if (S.view) return;
+    if (V.view) return;
     const host = $("#plan"); if (host.hidden) return;
     const hi = S.lastKept ? uniq(S.lastKept.changes.map(c => c.part)) : [];
     const base = planShapes(S.baseline, "ghost", []), best = planShapes(S.best, "cur", hi);
@@ -328,7 +347,7 @@
     const svg = sv("svg", { viewBox: "-1700 -1250 6100 2560", preserveAspectRatio: "xMidYMid meet", role: "img", "aria-label": "schematic plan view: current best over the baseline ghost" },
       sv("g", { class: "ghostg" }, base.nodes), sv("g", { class: "curg" }, best.nodes), ballast, cog, dim,
       sv("text", { class: "ptxt dir", x: -1650, y: -1150, text: "← front" }));
-    host.replaceChildren(svg, el("div", { class: "plan-note src" }, el("div", { class: "warn", text: S.viewError || "" }), el("div", { text: "fallback: schematic plan view from concept/parts.js geometry · dashed = baseline · purple = current best · amber = last kept change" })));
+    host.replaceChildren(svg, el("div", { class: "plan-note src" }, el("div", { class: "warn", text: V.viewError || "" }), el("div", { text: "fallback: schematic plan view from concept/parts.js geometry · dashed = baseline · purple = current best · amber = last kept change" })));
   }
 
   // ---- leaderboard: the real 2026 order with the concept car inserted at its lap
@@ -339,7 +358,7 @@
     const rows = Object.entries(RP.q).filter(([, s]) => isNum(s) && s > 0).map(([code, s]) => ({ code, s, team: teamOf(code), kind: "real" }));
     const best = lapOf(S.bestResult), base = lapOf(S.baseResult);
     if (isNum(best)) rows.push({ code: "PURPLE", s: best, kind: "concept" });
-    const showBase = isNum(base) && S.status !== "idle" && Math.abs(base - best) > 1e-9;
+    const showBase = isNum(base) && (S.status !== "idle" || isMu()) && Math.abs(base - best) > 1e-9;
     if (showBase) rows.push({ code: "BASE", s: base, kind: "base" });
     // ties: a concept lap equal to a real lap goes ahead of it (bench weekend(): 1 + real laps strictly faster)
     const rank = { concept: 0, base: 1, real: 2 };
@@ -349,7 +368,7 @@
       if (r.kind !== "base") pos++;
       const gap = r.s - pole;
       const color = r.kind === "real" ? (r.team && r.team.colors && r.team.colors.primary) || "#8a8a94" : r.kind === "concept" ? "var(--purple)" : "transparent";
-      const name = r.kind === "concept" ? (S.status === "idle" ? (S.team ? "RB22 baseline (sim)" : "concept · baseline") : (S.team ? "RB22 concept · gen " : "concept · gen ") + (S.lastKept ? S.lastKept.gen : 0))
+      const name = r.kind === "concept" ? (isMu() ? (S.lastKept ? "PURPLE · " + MU.who + " decision #" + S.lastKept.gen : "RB22 baseline (sim)") : S.status === "idle" ? (S.team ? "RB22 baseline (sim)" : "concept · baseline") : (S.team ? "RB22 concept · gen " : "concept · gen ") + (S.lastKept ? S.lastKept.gen : 0))
         : r.kind === "base" ? (S.team ? "RB22 baseline (sim)" : "baseline (ghost)") : (r.team ? r.team.name : "—");
       out.push(el("div", { class: "brow " + r.kind, title: r.kind === "real" ? r.code + " · " + (r.team ? r.team.full + " " + r.team.chassis : "") + " · " + REAL_LABEL : S.simLabel },
         el("span", { class: "pos", text: r.kind === "base" ? "" : String(pos) }),
@@ -365,6 +384,12 @@
     const w = S.bestResult && S.bestResult.weekend;
     $("#boardMeta").textContent = "pole " + RP.pole.code + " " + fmtT(pole);
     const wk = weekendNote();
+    if (isMu()) {
+      $("#boardSrc").replaceChildren(
+        el("div", { title: REAL_LABEL }, el("span", { class: "tag real", text: "real" }), " real times: OpenF1 2026 qualifying"),
+        el("div", { class: "one", title: MU.simTitle }, el("span", { class: "tag concept", text: "PURPLE" }), " " + MU.simLabel));
+      return;
+    }
     $("#boardSrc").replaceChildren(
       el("div", null, el("span", { class: "tag real", text: "real" }), " " + REAL_LABEL),
       el("div", { class: "one", title: S.simLabel }, el("span", { class: "tag concept", text: "concept" }), " " + S.simLabel.replace(/^concept · /, "")),
@@ -400,7 +425,9 @@
       nodes.push(sv("line", { class: "grid", x1: pad.l, x2: W - pad.r, y1: Y(v), y2: Y(v) }), sv("text", { class: "ax", x: pad.l - 6, y: Y(v) + 3, "text-anchor": "end", text: v.toFixed(stepY < 0.1 ? 2 : 1) }));
     }
     const stepX = niceStep(gN / 6);
-    for (let g = 0; g <= gN + 1e-9; g += stepX) nodes.push(sv("text", { class: "ax", x: X(g), y: H - 5, "text-anchor": "middle", text: String(g) }));
+    const mu = isMu();
+    for (let g = 0; g <= gN + 1e-9; g += stepX) if (!mu || X(g) < W - pad.r - 118) nodes.push(sv("text", { class: "ax", x: X(g), y: H - 5, "text-anchor": "middle", text: String(g) }));
+    if (mu) nodes.push(sv("text", { class: "ax ttl mu-ax", x: W - pad.r, y: H - 5, "text-anchor": "end", text: MU.who + " decision # →" }));
     // references: real pole and the baseline car
     if (isNum(pole)) nodes.push(sv("line", { class: "ref pole", x1: pad.l, x2: W - pad.r, y1: Y(pole), y2: Y(pole) }), sv("text", { class: "reft", x: W - pad.r - 4, y: Y(pole) - 4, "text-anchor": "end", text: "real pole " + (RP ? RP.pole.code + " " : "") + fmtT(pole) }));
     if (isNum(base) && Math.abs(base - pole) > 0.01) nodes.push(sv("line", { class: "ref base", x1: pad.l, x2: W - pad.r, y1: Y(base), y2: Y(base) }), sv("text", { class: "reft", x: W - pad.r - 4, y: Y(base) + 11, "text-anchor": "end", text: "baseline " + fmtT(base) }));
@@ -413,35 +440,43 @@
     // best-so-far step line, kept points on top
     if (isNum(base)) {
       let d = `M${X(0)},${yC(base)}`, cur = base;
-      for (const r of rows) if (r.kept) { const la = lapAfter(r); d += ` H${X(r.gen)} V${yC(la)}`; cur = la; }
-      d += ` H${X(rows.length)}`;
+      // the Mubit view draws the best car so far (the engine can keep a car on a new branch that is not the fastest yet)
+      if (mu) { for (const r of rows) if (isNum(r._peak) && r._peak < cur - 1e-9) { d += ` H${X(r.gen)} V${yC(r._peak)}`; cur = r._peak; } d += ` H${X(rows.length ? rows[rows.length - 1].gen : 0)}`; }
+      else { for (const r of rows) if (r.kept) { const la = lapAfter(r); d += ` H${X(r.gen)} V${yC(la)}`; cur = la; } d += ` H${X(rows.length)}`; }
       nodes.push(sv("path", { class: "bestline", d }));
-      for (const r of rows) if (r.kept) nodes.push(sv("circle", { class: "kept", cx: X(r.gen), cy: yC(lapAfter(r)), r: 3 }, sv("title", { text: "gen " + r.gen + " kept · " + fmtT(lapAfter(r)) + " s" })));
+      for (const r of rows) if (r.kept && isNum(lapAfter(r))) nodes.push(sv("circle", { class: "kept", cx: X(r.gen), cy: yC(lapAfter(r)), r: 3 }, sv("title", { text: (mu ? MU.who + " decision #" : "gen ") + r.gen + " kept · " + fmtT(lapAfter(r)) + " s" })));
     }
-    const svg = sv("svg", { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Silverstone lap per generation" }, nodes);
-    if (!rows.length) svg.append(sv("text", { class: "ax hint", x: pad.l + iw / 2, y: pad.t + ih / 2, "text-anchor": "middle", text: "lap per generation appears here once the optimiser runs" }));
+    const svg = sv("svg", { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": mu ? "Silverstone lap per Mubit decision" : "Silverstone lap per generation" }, nodes);
+    if (!rows.length) svg.append(sv("text", { class: "ax hint", x: pad.l + iw / 2, y: pad.t + ih / 2, "text-anchor": "middle", text: mu ? "the lap after each Mubit decision appears here" : "lap per generation appears here once the optimiser runs" }));
     wrap.replaceChildren(svg);
     const kept = rows.filter(r => r.kept).length, ill = rows.filter(r => !r.legal).length;
     $("#chartLegend").replaceChildren(
       el("span", { class: "lg" }, el("i", { class: "k" }), "kept " + kept),
       el("span", { class: "lg" }, el("i", { class: "r" }), "rejected " + (rows.length - kept - ill)),
       ...(ill ? [el("span", { class: "lg" }, el("i", { class: "x" }), "no legal car " + ill)] : []),
-      el("span", { class: "src", text: "lap s · faster ↑" }),
+      el("span", { class: "src", title: mu ? MU.simTitle : null, text: mu ? "faster ↑ · physics lap sim" : "lap s · faster ↑" }),
     );
+    $("#chartLabel").textContent = mu ? "Progress · Silverstone lap per " + MU.who + " decision" : "Progress · Silverstone lap per generation";
   }
   function niceStep(raw) { const p = Math.pow(10, Math.floor(Math.log10(Math.max(raw, 1e-9)))), f = raw / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p; }
 
   // ---- lineage feed: newest first; appended incrementally
+  const EMPTY_NOAI = "Press Run (or Step) to start. Each generation the optimiser proposes " + LAMBDA + " reshaped cars from the current best; the bench checks each against the 2026 regulations and laps the legal ones; the fastest legal one is kept only if it beats its parent.";
   function renderFeed() {
     const host = $("#feedLines");
     const have = S.feedCount || 0;
-    if (have === 0 && S.rows.length) { const e = host.querySelector(".empty"); if (e) e.remove(); }
+    const e0 = host.querySelector(".empty");
+    if (S.rows.length) { if (e0) e0.remove(); }
+    else { const t = isMu() ? MU.emptyText || "Mubit decisions appear here." : EMPTY_NOAI; if (!e0) host.prepend(el("div", { class: "empty", text: t })); else e0.textContent = t; }
+    $("#feedLabel").textContent = isMu() ? "Mubit feed" : "Lineage";
+    $("#feedLabel").classList.toggle("mu-t", isMu());
     const frag = [];
-    for (let i = have; i < S.rows.length; i++) frag.push(feedLine(S.rows[i]));
+    for (let i = have; i < S.rows.length; i++) frag.push(isMu() && MU.feedCard ? MU.feedCard(S.rows[i]) : feedLine(S.rows[i]));
     S.feedCount = S.rows.length;
     for (const n of frag) host.prepend(n);
     while (host.children.length > FEED_MAX) host.lastChild.remove();
     const kept = S.rows.filter(r => r.kept).length;
+    if (isMu()) { $("#feedMeta").textContent = MU.feedNote || ""; return; }
     $("#feedMeta").textContent = S.rows.length ? S.rows.length + " generations · " + kept + " kept · " + M.optimize.esProposer(LAMBDA).name + " · seed " + S.seed : "verdict = numbers (legal and faster), not a model's opinion";
   }
   function feedLine(r) {
@@ -542,7 +577,7 @@
       el("span", { class: "dc src", text: r.ch + "/" + r.n }),
       el("span", { class: "dt src one", text: r.top.length ? r.top.slice(0, 2).map(t => pname(r.id, t.k) + " " + fmtD(t.to - t.from, decimals(spec(r.id, t.k).step))).join(", ") : "—" }),
     )));
-    $("#distMeta").textContent = S.status === "idle" ? "baseline" : "gen " + (S.lastKept ? S.lastKept.gen : 0) + " best vs baseline";
+    $("#distMeta").textContent = isMu() ? (S.lastKept ? "best car (" + MU.who + " decision #" + S.lastKept.gen + ") vs RB22 baseline" : "baseline") : S.status === "idle" ? "baseline" : "gen " + (S.lastKept ? S.lastKept.gen : 0) + " best vs baseline";
   }
 
   function renderFooter() {
@@ -572,28 +607,84 @@
     if (!simModule()) { $("#simSel").value = "v0"; $("#simSel").querySelector("option[value=physics]").disabled = true; }
     // baseline or sim changes restart from the new baseline (an idle / done run only; a running one is reset)
     for (const id of ["#team", "#simSel"]) $(id).addEventListener("change", () => { try { reset(); } catch (e) { banner("bench", String(e && e.message || e)); } });
-    $("#btnRun").addEventListener("click", () => (S.status === "running" ? pause() : run()));
+    $("#btnRun").addEventListener("click", () => (NO.status === "running" ? pause() : run()));
     $("#btnStep").addEventListener("click", step);
     $("#btnReset").addEventListener("click", reset);
     // "watch on Silverstone": the current best car's lap replayed on the game's 3D track (concept/race, docs/concept/RACE.md)
     $("#raceLink").addEventListener("click", ev => {
-      const R = window.EI && EI.concept && EI.concept.race; if (!R || !S.best) return;   // plain link to the baseline replay
-      ev.currentTarget.href = R.url(S.best, { base: "../race/", ref: S.team || "redbull" });
+      ev.currentTarget.href = raceHref();
     });
-    const fast = () => $("#feedLines").classList.toggle("fast", !S.delay || reduced());
-    $("#speed").addEventListener("change", () => { S.delay = +$("#speed").value || 0; fast(); });
-    document.addEventListener("keydown", e => { if (e.target.closest && e.target.closest("input,select,textarea")) return; if (e.key === " ") { e.preventDefault(); $("#btnRun").click(); } else if (e.key === "s") step(); });
-    try { reset(); } catch (e) { banner("bench", String(e && e.message || e)); return; }
+    const fast = () => $("#feedLines").classList.toggle("fast", isMu() || !NO.delay || reduced());
+    $("#speed").addEventListener("change", () => { NO.delay = +$("#speed").value || 0; fast(); });
+    document.addEventListener("keydown", e => { if (isMu() || document.body.classList.contains("exam-on") || document.body.classList.contains("eng2-on")) return; if (e.target.closest && e.target.closest("input,select,textarea,button,a")) return; if (e.key === " ") { e.preventDefault(); $("#btnRun").click(); } else if (e.key === "s") step(); });
+    try { reset(); muReset({ total: 12 }); } catch (e) { banner("bench", String(e && e.message || e)); return; }
     mountView(); markAll(); renderNow(); fast();
     if (window.ResizeObserver) new ResizeObserver(() => schedule("row")).observe($("#chartWrap"));
     if (qs.get("run") === "1") run();
   }
-  // test / demo hook (read-only state and the same actions as the buttons)
+  // "watch on Silverstone": the "Qualifying lap" mode of concept/race with the car on screen (its lap is the one this page shows)
+  function raceHref() {
+    const R = EI.concept && EI.concept.race; if (!R || !S.best) return "../race/?mode=quali";
+    return R.url(S.best, { base: "../race/", ref: S.team || "redbull", mode: "quali", lap_s: lapOf(S.bestResult) });
+  }
+
+  // ---- the Mubit source (driven by concept/lab/mubit-first.js; this file never talks to a server)
+  const MU_SIM = "physics lap sim · Silverstone · model prediction";
+  // "rear_wing.chord_mm 420->395; diffuser.expansion_deg 14->16.5" -> [{ part, param, from, to }]
+  function parseChange(s) {
+    return String(s || "").split(/;\s*/).map(x => /^([a-z_0-9]+)\.([a-z_0-9]+)\s+(\S+)->(\S+)$/.exec(x.trim())).filter(Boolean)
+      .map(m => ({ part: m[1], param: m[2], from: isFinite(+m[3]) ? +m[3] : m[3], to: isFinite(+m[4]) ? +m[4] : m[4] }));
+  }
+  function muReset(o) {
+    o = o || {};
+    MU.status = o.status || "ready"; MU.gens = o.total || MU.gens || 12; MU.team = "redbull";
+    MU.baseline = M.design.baseline({ team: "redbull" }); MU.baseResult = M.bench.bench(MU.baseline, benchOpts(MU));
+    MU.best = M.design.clone(MU.baseline); MU.bestResult = MU.baseResult; MU.curLap = MU.peakLap = lapOf(MU.baseResult);
+    MU.rows = []; MU.lastKept = null; MU.feedCount = 0; MU.timing = null;
+    MU.simLabel = MU_SIM; MU.simTitle = MU.baseResult.sim_label + " · a model prediction, not a real car's lap";
+    if (S === MU) { showOnView(MU); markAll(); schedule(); }
+  }
+  // one Mubit decision: { n, kept, legal, lap, peakLap, design (the best car after it, when it set a new best), change, card, timing }
+  function muAdd(d) {
+    const row = { gen: d.n, kept: !!d.kept, legal: d.legal !== false, _lb: MU.curLap, _la: isNum(d.lap) ? d.lap : null, _peak: isNum(d.peakLap) ? d.peakLap : MU.peakLap, changes: parseChange(d.change), mubit: d.card || null };
+    if (row.kept && isNum(row._la)) MU.curLap = row._la;
+    if (d.design && isNum(d.peakLap) && d.peakLap < MU.peakLap - 1e-9) {
+      row._gain = d.peakLap - MU.peakLap; MU.peakLap = d.peakLap;
+      MU.best = d.design; MU.bestResult = M.bench.bench(MU.best, benchOpts(MU)); MU.lastKept = row;
+      if (S === MU) { showOnView(MU, true); V.dirty.kept = true; }
+    }
+    if (d.timing) MU.timing = d.timing;
+    MU.rows.push(row);
+    if (S === MU) { V.dirty.row = true; schedule(); }
+    return row;
+  }
+  function showOnView(st, animate) {
+    if (!V.view || !st.best) { renderPlan(); return; }
+    try { V.view.setDesign(st.best, { baseline: st.baseline, animate: !!animate && !reduced(), livery: st.baseline.livery }); V.view.setHighlight(st.lastKept ? uniq(st.lastKept.changes.map(c => c.part)) : []); } catch (e) { viewFailed(e); }
+  }
+  // switch the layout between the Mubit run and the no-AI optimiser (each keeps its own state)
+  function source(name) {
+    const next = name === "noai" ? NO : MU;
+    if (next === S) return;
+    S = next; showOnView(S);
+    const f = $("#feedLines"); if (f) f.classList.toggle("fast", S === MU || !NO.delay || reduced());
+    markAll(); renderNow();
+  }
+
+  // test / demo hook (read-only state and the same actions as the buttons; state / lineage / best = the no-AI optimiser)
   EI.conceptLab = {
-    run, pause, step, reset,
-    state: () => ({ status: S.status, gens: S.gens, seed: S.seed, generations: S.rows.length, kept: S.rows.filter(r => r.kept).length, best_lap_s: lapOf(S.bestResult), baseline_lap_s: lapOf(S.baseResult), grid_position: S.bestResult && S.bestResult.weekend && S.bestResult.weekend.grid_position, view: !!S.view, sim_label: S.simLabel, sim: S.bestResult && S.bestResult.sim, team: S.team, baseline_id: S.baseline && S.baseline.id, livery: S.baseline && S.baseline.livery || null, weekend: S.bestResult && S.bestResult.weekend_model ? { score: S.bestResult.weekend_model.weekend_score, quali_pos: S.bestResult.weekend_model.quali_pos, race_pos: S.bestResult.weekend_model.race_pos } : null, max_gap_ms: S.maxGap }),
-    lineage: () => JSON.parse(JSON.stringify(S.rows)),
-    best: () => M.design.clone(S.best),
+    run, pause, step, reset, source, raceHref,
+    source_now: () => S.src,
+    mubit: {
+      reset: muReset, add: muAdd, parseChange,
+      set: o => { Object.assign(MU, o); if (S === MU) schedule("row"); },
+      redrawAll: () => { if (S === MU) { markAll(); schedule(); } },
+      state: () => ({ status: MU.status, decisions: MU.rows.length, total: MU.gens, best_lap_s: lapOf(MU.bestResult), baseline_lap_s: lapOf(MU.baseResult), grid_position: MU.bestResult && MU.bestResult.weekend && MU.bestResult.weekend.grid_position, last_kept: MU.lastKept ? MU.lastKept.gen : null }),
+      best: () => M.design.clone(MU.best), bestLap: () => lapOf(MU.bestResult),
+    },
+    state: () => ({ status: NO.status, gens: NO.gens, seed: NO.seed, generations: NO.rows.length, kept: NO.rows.filter(r => r.kept).length, best_lap_s: lapOf(NO.bestResult), baseline_lap_s: lapOf(NO.baseResult), grid_position: NO.bestResult && NO.bestResult.weekend && NO.bestResult.weekend.grid_position, view: !!V.view, sim_label: NO.simLabel, sim: NO.bestResult && NO.bestResult.sim, team: NO.team, baseline_id: NO.baseline && NO.baseline.id, livery: NO.baseline && NO.baseline.livery || null, weekend: NO.bestResult && NO.bestResult.weekend_model ? { score: NO.bestResult.weekend_model.weekend_score, quali_pos: NO.bestResult.weekend_model.quali_pos, race_pos: NO.bestResult.weekend_model.race_pos } : null, max_gap_ms: NO.maxGap }),
+    lineage: () => JSON.parse(JSON.stringify(NO.rows)),
+    best: () => M.design.clone(NO.best),
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();

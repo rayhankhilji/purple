@@ -1,0 +1,102 @@
+/* PURPLE concept lab - the Mubit-first view (mubit-first.js): the Mubit strip under the title bar, the run controls in the header, the
+   Mubit feed cards (lineage card style) and the timing line under the car. On top of lab/lab.css + concept-lab.css. Dark only. */
+body.mubit-on .noai-only, body.mubit-on #genBadge { display: none !important; }
+body:not(.mubit-on) .mubit-only { display: none !important; }
+body.exam-on .mubit-only, body.eng2-on .mubit-only { display: none !important; }
+
+/* header controls */
+.mctl { flex: none; display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.mctl .btn { min-width: 0; }
+.mctl #muPlay { min-width: 70px; }
+.mctl .mu-run { background: #1a1a20; border: 1px solid var(--line); border-radius: var(--r); padding: 3px 6px; font: 500 11.5px/1.2 var(--mono); color: var(--text); max-width: 210px; }
+.mu-seg { display: inline-flex; }
+.mu-seg .btn { border-radius: 0; padding-left: 7px; padding-right: 7px; }
+.mu-seg .btn:first-child { border-radius: var(--r) 0 0 var(--r); }
+.mu-seg .btn:last-child { border-radius: 0 var(--r) var(--r) 0; }
+.mu-seg .btn + .btn { border-left: none; }
+.mu-seg .btn.on { border-color: var(--mubit); background: rgba(255, 69, 0, .14); color: var(--text); }
+.mu-golive-g { display: inline-flex; align-items: center; gap: 4px; padding-left: 6px; border-left: 1px solid var(--line); }
+.mu-golive { border-color: var(--mubit); color: var(--text); }
+.mu-golive:hover:not(:disabled) { background: rgba(255, 69, 0, .14); border-color: var(--mubit); }
+.mu-golive.off { color: var(--muted); border-color: var(--line); }
+.mu-demo { color: var(--amber); }
+.viewsw #btnViewMubit.on { border-color: var(--mubit); background: rgba(255, 69, 0, .16); }
+
+/* the leaderboard keeps our row in view: offsetTop must be measured inside the scrolling list (both views) */
+.board .rows { position: relative; }
+
+/* the Mubit strip */
+.mustrip { flex: none; display: grid; grid-template-columns: minmax(0, 16fr) minmax(0, 17fr) minmax(0, 35fr) minmax(0, 32fr); gap: 12px; padding: 10px 12px 0; }
+.mu-mark { display: flex; flex-direction: column; justify-content: center; gap: 5px; padding: 6px 12px; min-width: 0; border: 1px solid rgba(255, 69, 0, .5); border-radius: var(--r); background: linear-gradient(110deg, rgba(255, 69, 0, .16), var(--panel) 75%); }
+.mu-logo { font: 700 22px/1 var(--sans); letter-spacing: -.01em; color: var(--mubit); }
+.mu-logo::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 7px; border-radius: 2px; background: var(--mubit); vertical-align: 2px; }
+.mu-mode { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.mu-badge { flex: none; font-size: 10.5px; padding: 1px 6px; }
+.mu-badge.replay { border-color: var(--mubit); color: var(--mubit); }
+.mu-badge.live { border-color: var(--mubit); background: var(--mubit); color: #fff; animation: mu-pulse 1.6s ease-in-out infinite; }
+@keyframes mu-pulse { 50% { opacity: .65; } }
+@media (prefers-reduced-motion: reduce) { .mu-badge.live { animation: none; } }
+.mu-line { min-width: 0; font: 500 11px/1.3 var(--sans); color: var(--muted); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.mu-ctr { display: flex; flex-direction: column; justify-content: center; gap: 3px; padding: 7px 12px 8px; min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); }
+.mu-ctr-top { display: flex; align-items: baseline; gap: 9px; min-width: 0; }
+.mu-ctr-v { flex: none; font: 600 26px/1 var(--mono); color: var(--text); }
+.mu-ctr-l { min-width: 0; font: 600 12.5px/1.25 var(--sans); color: var(--text); }
+.mu-ctr-s { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 10.5px; }
+.mu-ctr.mubit .mu-ctr-v { color: var(--mubit); }
+.mu-ctr.good .mu-ctr-v { color: var(--green); }
+.mu-ctr-tot { font: 500 11.5px/1.3 var(--sans); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mu-ctr-tot b { color: var(--green); font: 600 13px/1 var(--mono); }
+.mu-model { border-color: rgba(255, 69, 0, .4); }
+.mu-model .mu-ctr-l { color: var(--mubit); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+.mu-model-l { font: 500 13px/1.35 var(--sans); color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mu-model-l b { display: inline-block; min-width: 20px; color: var(--mubit); font: 600 12px/1 var(--mono); }
+.mu-prog { flex: none; margin: 8px 12px 0; padding: 5px 10px; border: 1px solid rgba(255, 69, 0, .4); border-radius: var(--r); background: rgba(255, 69, 0, .06); font: 500 12px/1.3 var(--sans); color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mu-prog[hidden] { display: none; }
+.mu-prog b { color: var(--mubit); font-weight: 600; }
+
+/* hero: the timing line under the car, the decision badge */
+.hero-bl .mu-time { font: 500 12px/1.35 var(--mono); color: var(--text); pointer-events: auto; }
+.hero-bl .mu-time .mu-w { color: var(--mubit); }
+.hero-bl .mu-time .sep { color: var(--muted); }
+.badge.mubit-b { border-color: var(--mubit); color: var(--mubit); }
+.svgwrap .ax.mu-ax { fill: var(--mubit); }
+
+/* the Mubit feed (cards in the lineage card style) */
+#feedLabel.mu-t { color: var(--mubit); }
+.ln.mu-card { padding: 6px 12px 7px; }
+.ln.mu-card.ok { border-left-color: var(--green); }
+.ln.mu-card.kept:not(.ok) { border-left-color: var(--purple); }
+.ln.mu-card .l1 .spacer { flex: 1 1 auto; }
+.ln.mu-card .g { width: auto; min-width: 30px; }
+.mu-rid { font: 500 10.5px/1 var(--mono); color: var(--muted); cursor: help; }
+.mu-hyp { margin-top: 3px; font: 400 12px/1.38 var(--sans); color: var(--text); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.mu-chg { margin-top: 2px; font: 500 11.5px/1.4 var(--sans); color: #c9c9d2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mu-chg .k { color: var(--muted); }
+.mu-l3 { margin-top: 4px; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.mu-eng { min-width: 0; font: 500 11px/1.3 var(--sans); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mu-eng.kept { color: var(--purple); }
+.mu-v { flex: none; padding: 1px 7px; border: 1px solid var(--line); border-radius: 999px; font: 600 11.5px/1.3 var(--sans); white-space: nowrap; cursor: help; }
+.mu-v.good { color: var(--green); border-color: rgba(74, 222, 128, .55); background: rgba(74, 222, 128, .08); }
+.mu-v.bad { color: var(--red); border-color: rgba(240, 80, 110, .5); background: rgba(240, 80, 110, .07); }
+.mu-chip { flex: none; display: inline-block; padding: 1px 7px; border: 1px solid var(--line); border-radius: 999px; font: 600 11px/1.3 var(--sans); white-space: nowrap; }
+.mu-chip.sm { font-size: 10px; padding: 0 6px; }
+.mu-chip.mubit { color: var(--mubit); border-color: rgba(255, 69, 0, .5); }
+.mu-chip.mubit.on { color: #fff; background: var(--mubit); border-color: var(--mubit); }
+.mu-chip.mubit.pend { opacity: .7; }
+.mu-chip.muted { color: var(--muted); }
+.mu-chip.bad { color: var(--red); border-color: rgba(240, 80, 110, .5); }
+
+@media (max-width: 1365px) {
+  .mustrip { gap: 10px; padding: 8px 10px 0; }
+  .mu-ctr-v { font-size: 22px; }
+  .mu-model-l { font-size: 12px; }
+  .mctl .mu-run { max-width: 150px; }
+}
+@media (max-width: 1199px) {
+  .mustrip { grid-template-columns: 1fr 1fr; }
+  .mctl { flex-wrap: wrap; }
+}
+@media (max-width: 560px) {
+  .mustrip { grid-template-columns: 1fr; padding: 8px 16px 0; }
+  .mu-ctr-s, .mu-ctr-tot, .mu-model-l { white-space: normal; }
+}
