@@ -543,4 +543,4 @@ async function main(argv) {
   return 0;
 }
 if (require.main === module) main(process.argv.slice(2)).then(c => { process.exitCode = c; }, e => { console.error("concept campaign: " + (e.stack || e)); process.exitCode = 1; });
-module.exports = { runCampaign, runSeed, refine, report, screen, legalityReport, summaryMarkdown, parseArgs, qualiConditions, CAMPAIGN_LABEL };
+module.exports = { runCampaign, runSeed, refine, report, screen, legalityReport, summaryMarkdown, parseArgs, qualiConditions, conceptSwitches, coolingRepair, CAMPAIGN_LABEL };

@@ -286,6 +286,22 @@ C11.1 p. C119).
 | C11.1.1, C11.1.4, C11.6 (C119-C120) | One pedal, two master cylinders (bores within 3 mm), one circuit per axle; changes on track only by the driver's direct input; rear BBW ≤ 1.2 × the driver's rear pressure | `setup.brake_bias` | info `REG-C-BRAKE-BALANCE` | concept-factors "brake balance" | fixed (one balance for the lap) |
 | C10.8.1 (C115) | Tyres used as supplied by the appointed supplier (minimum pressures and camber limits are the supplier's per-event prescriptions, not Section C text) | (pressures / camber: not parameters) | — | — | fixed |
 
+## N. Concept families (redesigns v1, docs/concept/REDESIGNS.md)
+
+Rules in `regs.CONCEPT_RULES` (kept apart from `RULES` / `COMBO_RULES`, like section M). The three `PKG-` rows are concept
+definitions (`verified: false`); the `REG-C-` rows record the Section C articles a concept touches without checking their geometry.
+
+| Article | Rule | Touches | Check | Test | Status |
+|---|---|---|---|---|---|
+| concept packaging model | A zeropod's inlet ≤ 760 cm² (both sides) | `sidepods.concept` 1 × `sidepods.inlet_cm2` | **new** `PKG-ZEROPOD-INLET` | concept-redesigns, oracle | checked (model rule) |
+| concept packaging model | A ramp pod's undercut ≥ 120 mm | `sidepods.concept` 2 × `sidepods.undercut_mm` | **new** `PKG-RAMP-UNDERCUT` | concept-redesigns, oracle | checked (model rule) |
+| concept packaging model | Airbox + gills cooling only with the high-fin cover | `cooling.layout` 1 × `engine_cover.style` | **new** `PKG-AIRBOX-COVER` | concept-redesigns, oracle | checked (model rule) |
+| C3.8.1, App. C2 §16 | Sidepod inside RV-SIDEPOD | every `sidepods.concept` shape | info `REG-C-SIDEPOD-VOLUME` | — | not checked (shape drawn by the view) |
+| C3.8.2, C3.16.10-C3.16.12 | Engine cover inside RV-EC; louvre / cooling apertures only where permitted | `cooling.layout` 1 / 2, `engine_cover.style` | info `REG-C-EC-APERTURES` | — | not checked |
+| C3.10.2-C3.10.9, App. C2 §23-27 | Endplate, footplate, diveplane, pylon, strake volumes | `front_wing.endplate`, `nose.concept` 1 (pylons) | info `REG-C-FW-ENDPLATE-VOLUMES` | — | not checked |
+| front impact structure test | The nose passes the FIA frontal impact test at any length | `nose.concept` 1 | info `REG-C-NOSE-IMPACT` (+1.2 kg assumption) | — | not modelled |
+| C10.2.2, C10.2.4-C10.2.6 | Push or pull rods: both passive, both permitted | `suspension.front` | info `REG-C-SUSP-ACTUATION` | — | fixed |
+
 ## Combinations covered
 
 Front-wing span × chord × setting × volume count (X and Z envelope, `REG-C-FW-PROFILES-Z`); the same with the straight-mode delta
