@@ -1,0 +1,1410 @@
+{
+ "_meta": {
+  "what": "The 2026 grid as raced at Silverstone (round 9), per team, for physics-model calibration. kind: official = FIA/formula1.com document; reported = journalism or Wikipedia.",
+  "built": "2026-10-24",
+  "units": {
+   "time": "seconds",
+   "speed": "km/h"
+  }
+ },
+ "sources": {
+  "fia_entry": {
+   "url": "https://www.fia.com/system/files/decision-document/2026_british_grand_prix_-_entry_list.pdf",
+   "title": "FIA Entry List (Doc 11, 03 Jul 2026)",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "fia_q_class": {
+   "url": "https://www.fia.com/system/files/decision-document/2026_british_grand_prix_-_final_qualifying_classification.pdf",
+   "title": "FIA Final Qualifying Classification (Doc 63)",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "f1_quali": {
+   "url": "https://www.formula1.com/en/results/2026/races/1289/great-britain/qualifying",
+   "title": "formula1.com Qualifying results",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "fia_t_q_speeds": {
+   "url": "https://www.fia.com/sites/default/files/2026_09_gbr_f1_q0_timing_qualifyingsessionmaximumspeeds_v01.pdf",
+   "title": "FIA timing: Qualifying Session Maximum Speeds",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "fia_t_r_speeds": {
+   "url": "https://www.fia.com/sites/default/files/2026_09_gbr_f1_r0_timing_racemaximumspeeds_v01.pdf",
+   "title": "FIA timing: Race Maximum Speeds",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "fia_car_pres": {
+   "url": "https://www.fia.com/system/files/decision-document/2026_british_grand_prix_-_car_presentation_submissions.pdf",
+   "title": "FIA Car Presentation Submissions (Doc 13, 03 Jul 2026)",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "fia_monza_q_speeds": {
+   "url": "https://www.fia.com/sites/default/files/2026_13_ita_f1_q0_timing_qualifyingsessionmaximumspeeds_v01.pdf",
+   "title": "FIA timing: Italian GP 2026 Qualifying Maximum Speeds",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "fia_monza_r_speeds": {
+   "url": "https://www.fia.com/sites/default/files/2026_13_ita_f1_r0_timing_racemaximumspeeds_v01.pdf",
+   "title": "FIA timing: Italian GP 2026 Race Maximum Speeds",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  },
+  "wiki_2026": {
+   "url": "https://en.wikipedia.org/wiki/2026_Formula_One_World_Championship",
+   "title": "Wikipedia: 2026 Formula One World Championship, Entries table (wikitext via API)",
+   "kind": "reported",
+   "accessed": "2026-10-24"
+  },
+  "rn365_weights": {
+   "url": "https://racingnews365.com/the-weights-of-every-f1-car-in-2026",
+   "title": "RacingNews365: The weights of every F1 car in 2026 (RN365 Staff, 2 April 2026)",
+   "kind": "reported",
+   "accessed": "2026-10-24"
+  },
+  "planetf1_audi_pu": {
+   "url": "https://www.planetf1.com/news/audi-f1-2026-update-given-amid-rumours-engine-down-on-power",
+   "title": "PlanetF1: Audi F1 2026 update given amid rumours engine is down on power (25 Oct 2025)",
+   "kind": "reported",
+   "accessed": "2026-10-24"
+  },
+  "repo_season": {
+   "url": "js/data/season2026.js (EI.SEASON.sources)",
+   "title": "Repo file: car notes compiled from the-race.com / racefans.net / Wikipedia (not re-fetched here)",
+   "kind": "reported",
+   "accessed": "2026-10-24"
+  },
+  "fia_c19": {
+   "url": "https://www.fia.com/system/files/documents/fia_2026_f1_regulations_-_section_c_technical_-_iss_19_-_2026-06-25.pdf",
+   "title": "2026 F1 Regulations Section C [Technical], Issue 19, 25 June 2026",
+   "kind": "official",
+   "accessed": "2026-10-24"
+  }
+ },
+ "teams": [
+  {
+   "id": "mercedes",
+   "entrant": {
+    "value": "Mercedes-AMG PETRONAS F1 Team",
+    "kind": "official",
+    "source": "fia_entry"
+   },
+   "constructor": {
+    "value": "Mercedes",
+    "kind": "official",
+    "source": "fia_entry"
+   },
+   "chassis": {
+    "value": "F1 W17",
+    "kind": "reported",
+    "source": "wiki_2026",
+    "note": "Not printed in the FIA entry list; matches js/data/season2026.js."
+   },
+   "power_unit": {
+    "value": "Mercedes-AMG F1 M17",
+    "kind": "reported",
+    "source": "wiki_2026",
+    "manufacturer_official": "Mercedes",
+    "manufacturer_source": "fia_entry (constructor name)"
+   },
+   "drivers_at_silverstone": [
+    {
+     "code": "RUS",
+     "number": 63,
+     "name": "George Russell"
+    },
+    {
+     "code": "ANT",
+     "number": 12,
+     "name": "Kimi Antonelli"
+    }
+   ],
+   "silverstone_2026": {
+    "kind": "official",
+    "sources": [
+     "fia_q_class",
+     "fia_t_q_speeds",
+     "fia_t_r_speeds"
+    ],
+    "best_quali_lap": {
+     "s": 88.111,
+     "code": "ANT",
+     "session": "Q3"
+    },
+    "max_speed_trap_quali_kmh": 302.6,
+    "max_speed_trap_race_kmh": 332.5,
+    "drivers": [
+     {
+      "code": "ANT",
+      "number": 12,
+      "name": "Kimi Antonelli",
+      "quali_pos": 1,
+      "q1_s": 89.719,
+      "q2_s": 88.493,
+      "q3_s": 88.111,
+      "best_s": 88.111,
+      "best_session": "Q3",
+      "speed_trap_quali_kmh": 302.6,
+      "speed_trap_race_kmh": 322.3
+     },
+     {
+      "code": "RUS",
+      "number": 63,
+      "name": "George Russell",
+      "quali_pos": 4,
+      "q1_s": 89.985,
+      "q2_s": 88.92,
+      "q3_s": 88.481,
+      "best_s": 88.481,
+      "best_session": "Q3",
+      "speed_trap_quali_kmh": 299.8,
+      "speed_trap_race_kmh": 332.5
+     }
+    ],
+    "upgrades": []
+   },
+   "monza_2026_top_speed": {
+    "kind": "official",
+    "sources": [
+     "fia_monza_q_speeds",
+     "fia_monza_r_speeds"
+    ],
+    "note": "Italian GP 2026 (round 13), team max of the FIA speed trap (car numbers below). Team assignment at Monza (car 30 LAW at Red Bull, car 22 TSU at Racing Bulls) is taken from js/data/racepace2026.js seat map and js/data/season2026.js driverChanges; consistent with car 6 being absent from both FIA Monza speed lists, but the Monza entry list was not read.",
+    "max_speed_trap_quali_kmh": 338.1,
+    "max_speed_trap_race_kmh": 330.9,
+    "car_numbers": [
+     12,
+     63
+    ]
+   },
+   "mass_vs_minimum": {
+    "value": "Under the limit",
+    "kind": "reported",
+    "source": "rn365_weights",
+    "note": "Early-season estimate (2 April 2026) against a 768 kg minimum; 'approximate, from multiple sources with knowledge of the matter'. No official per-team car mass is published."
+   },
+   "pu_power": [
+    {
+     "value": "420 kW (571 bhp)",
+     "kind": "reported",
+     "source": "planetf1_audi_pu",
+     "note": "Pre-season (Oct 2025) relay of an unnamed Italian report; whether ICE-only or total is not stated. Rumour grade."
+    }
+   ],
+   "concept_note": {
+    "value": "best all-round car and power unit; poor launches (MGU-H-less clutch/turbo-lag issue)",
+    "kind": "reported",
+    "source": "repo_season",
+    "note": "Carried from js/data/season2026.js; that file cites the-race.com and racefans.net articles. Not re-fetched in this pass."
+   }
+  },
+  {
+   "id": "ferrari",
+   "entrant": {
+    "value": "Scuderia Ferrari HP",
+    "kind": "official",
+    "source": "fia_entry"
+   },
+   "constructor": {
+    "value": "Ferrari",
+    "kind": "official",
+    "source": "fia_entry"
+   },
+   "chassis": {
+    "value": "SF-26",
+    "kind": "reported",
+    "source": "wiki_2026",
+    "note": "Not printed in the FIA entry list; matches js/data/season2026.js."
+   },
+   "power_unit": {
+    "value": "Ferrari 067/6",
+    "kind": "reported",
+    "source": "wiki_2026",
+    "manufacturer_official": "Ferrari",
+    "manufacturer_source": "fia_entry (constructor name)"
+   },
+   "drivers_at_silverstone": [
+    {
+     "code": "LEC",
+     "number": 16,
+     "name": "Charles Leclerc"
+    },
+    {
+     "code": "HAM",
+     "number": 44,
+     "name": "Lewis Hamilton"
+    }
+   ],
+   "silverstone_2026": {
+    "kind": "official",
+    "sources": [
+     "fia_q_class",
+     "fia_t_q_speeds",
+     "fia_t_r_speeds"
+    ],
+    "best_quali_lap": {
+     "s": 88.286,
+     "code": "LEC",
+     "session": "Q3"
+    },
+    "max_speed_trap_quali_kmh": 317.9,
+    "max_speed_trap_race_kmh": 351.5,
+    "drivers": [
+     {
+      "code": "LEC",
+      "number": 16,
+      "name": "Charles Leclerc",
+      "quali_pos": 2,
+      "q1_s": 89.534,
+      "q2_s": 88.626,
+      "q3_s": 88.286,
+      "best_s": 88.286,
+      "best_session": "Q3",
+      "speed_trap_quali_kmh": 307.4,
+      "speed_trap_race_kmh": 315.1
+     },
+     {
+      "code": "HAM",
+      "number": 44,
+      "name": "Lewis Hamilton",
+      "quali_pos": 3,
+      "q1_s": 89.644,
+      "q2_s": 88.864,
+      "q3_s": 88.458,
+      "best_s": 88.458,
+      "best_session": "Q3",
+      "speed_trap_quali_kmh": 317.9,
+      "speed_trap_race_kmh": 351.5
+     }
+    ],
+    "upgrades": [
+     {
+      "component": "Rear Corner",
+      "reason": "Performance - Local Load and Cooling",
+      "change": "Increased cooling inlet and outlet sections, updated lower deflector, re-optimized rearward winglet cluster"
+     }
+    ]
+   },
+   "monza_2026_top_speed": {
+    "kind": "official",
+    "sources": [
+     "fia_monza_q_speeds",
+     "fia_monza_r_speeds"
+    ],
+    "note": "Italian GP 2026 (round 13), team max of the FIA speed trap (car numbers below). Team assignment at Monza (car 30 LAW at Red Bull, car 22 TSU at Racing Bulls) is taken from js/data/racepace2026.js seat map and js/data/season2026.js driverChanges; consistent with car 6 being absent from both FIA Monza speed lists, but the Monza entry list was not read.",
+    "max_speed_trap_quali_kmh": 330.2,
+    "max_speed_trap_race_kmh": 333.1,
+    "car_numbers": [
+     16,
+     44
+    ]
+   },
+   "mass_vs_minimum": {
+    "value": "Under the limit",
+    "kind": "reported",
+    "source": "rn365_weights",
+    "note": "Early-season estimate (2 April 2026) against a 768 kg minimum; 'approximate, from multiple sources with knowledge of the matter'. No official per-team car mass is published."
+   },
+   "pu_power": [
+    {
+     "value": null,
+     "kind": "unverified",
+     "note": "No sourced figure found."
+    }
+   ],
+   "concept_note": {
+    "value": "strong traction (small turbo), good race pace on tyres",
+    "kind": "reported",
+    "source": "repo_season",
+    "note": "Carried from js/data/season2026.js; that file cites the-race.com and racefans.net articles. Not re-fetched in this pass."
+   }
+  },
+  {
+   "id": "mclaren",
+   "entrant": {
+    "value": "McLaren Mastercard F1 Team",
+    "kind": "official",
+    "source": "fia_entry"
+   },
+   "constructor": {
+    "value": "McLaren Mercedes",
+    "kind": "official",
+    "source": "fia_entry"
+   },
+   "chassis": {
+    "value": "MCL40",
+    "kind": "reported",
+    "source": "wiki_2026",
+    "note": "Not printed in the FIA entry list; matches js/data/season2026.js."
+   },
+   "power_unit": {
+    "value": "Mercedes-AMG F1 M17",
+    "kind": "reported",
+    "source": "wiki_2026",
+    "manufacturer_official": "Mercedes",
+    "manufacturer_source": "fia_entry (constructor name)"
+   },
+   "drivers_at_silverstone": [
+    {
+     "code": "PIA",
+     "number": 81,
+     "name": "Oscar Piastri"
+    },
+    {
+     "code": "NOR",
+     "number": 1,
+     "name": "Lando Norris"
+    }
+   ],
+   "silverstone_2026": {
+    "kind": "official",
+    "sources": [
+     "fia_q_class",
+     "fia_t_q_speeds",
+     "fia_t_r_speeds"
+    ],
+    "best_quali_lap": {
+     "s": 88.877,
+     "code": "NOR",
+     "session": "Q3"
+    },
+    "max_speed_trap_quali_kmh": 308.2,
+    "max_speed_trap_race_kmh": 338.9,
+    "drivers": [
+     {
+      "code": "NOR",
+      "number": 1,
+      "name": "Lando Norris",
+      "quali_pos": 6,
+      "q1_s": 90.186,
+      "q2_s": 89.383,
+      "q3_s": 88.877,
+      "best_s": 88.877,
+      "best_session": "Q3",
+      "speed_trap_quali_kmh": 304.3,
+      "speed_trap_race_kmh": 310.9
+     },
+     {
+      "code": "PIA",
+      "number": 81,
+      "name": "Oscar Piastri",
+      "quali_pos": 8,
+      "q1_s": 89.971,
+      "q2_s": 89.218,
+      "q3_s": 89.032,
+      "best_s": 89.032,
+      "best_session": "Q3",
+      "speed_trap_quali_kmh": 308.2,
+      "speed_trap_race_kmh": 338.9
+     }
+    ],
+    "upgrades": [
+     {
+      "component": "Front Corner",
+      "reason": "Performance - Flow Conditioning",
+      "change": "New Front Brake Duct"
+     },
+     {
+      "component": "Floor Furniture",
+      "reason": "Performance - Flow Conditioning",
+      "change": "Revised Floor Board and Furniture"
+     }
+    ]
+   },
+   "monza_2026_top_speed": {
+    "kind": "official",
+    "sources": [
+     "fia_monza_q_speeds",
+     "fia_monza_r_speeds"
+    ],
+    "note": "Italian GP 2026 (round 13), team max of the FIA speed trap (car numbers below). Team assignment at Monza (car 30 LAW at Red Bull, car 22 TSU at Racing Bulls) is taken from js/data/racepace2026.js seat map and js/data/season2026.js driverChanges; consistent with car 6 being absent from both FIA Monza speed lists, but the Monza entry list was not read.",
+    "max_speed_trap_quali_kmh": 327.7,
+    "max_speed_trap_race_kmh": 338.1,
+    "car_numbers": [
+     1,
+     81
+    ]
+   },
+   "mass_vs_minimum": {
+    "value": "Right on the limit",
+    "kind": "reported",
+    "source": "rn365_weights",
+    "note": "Early-season estimate (2 April 2026) against a 768 kg minimum; 'approximate, from multiple sources with knowledge of the matter'. No official per-team car mass is published."
+   },
+   "pu_power": [
+    {
+     "value": null,
+     "kind": "unverified",
+     "note": "No sourced figure found."
+    }
+   ],
+   "concept_note": {
+    "value": "high-speed specialist, weak in slow corners",
+    "kind": "reported",
+    "source": "repo_season",
+    "note": "Carried from js/data/season2026.js; that file cites the-race.com and racefans.net articles. Not re-fetched in this pass."
+   }
+  },
+  {
+   "id": "redbull",
+   "entrant": {
+    "value": "Oracle Red Bull Racing",
+    "kind": "official",
+    "source": "fia_entry"
+   },
+   "constructor": {
+    "value": "Red Bull Racing Red Bull Ford",
+    "kind": "official",
+    "source": "fia_entry"
+   },
+   "chassis": {
+    "value": "RB22",
+    "kind": "reported",
+    "source": "wiki_2026",
+    "note": "Not printed in the FIA entry list; matches js/data/season2026.js."
+   },
+   "power_unit": {
+    "value": "Red Bull Ford DM01",
+    "kind": "reported",
+    "source": "wiki_2026",
+    "manufacturer_official": "Red Bull Ford",
+    "manufacturer_source": "fia_entry (constructor name)"
+   },
+   "drivers_at_silverstone": [
+    {
+     "code": "VER",
+     "number": 3,
+     "name": "Max Verstappen"
+    },
+    {
+     "code": "HAD",
+     "number": 6,
+     "name": "Isack Hadjar"
+    }
+   ],
+   "silverstone_2026": {
+    "kind": "official",
+    "sources": [
+     "fia_q_class",
+     "fia_t_q_speeds",
+     "fia_t_r_speeds"
+    ],
+    "best_quali_lap": {
+     "s": 88.746,
+     "code": "HAD",
+     "session": "Q3"
+    },
+    "max_speed_trap_quali_kmh": 305.8,
+    "max_speed_trap_race_kmh": 331.7,
+    "drivers": [
+     {
+      "code": "HAD",
+      "number": 6,
+      "name": "Isack Hadjar",
+      "quali_pos": 5,
+      "q1_s": 89.276,
+      "q2_s": 89.069,
+      "q3_s": 88.746,
+      "best_s": 88.746,
+      "best_session": "Q3",
+      "speed_trap_quali_kmh": 305.8,
+      "speed_trap_race_kmh": 331.7
+     },
+     {
+      "code": "VER",
+      "number": 3,
+      "name": "Max Verstappen",
+      "quali_pos": 7,
+      "q1_s": 89.549,
+      "q2_s": 89.113,
+      "q3_s": 88.893,
+      "best_s": 88.893,
+      "best_session": "Q3",
+      "speed_trap_quali_kmh": 304.3,
+      "speed_trap_race_kmh": 330.8
+     }
+    ],
+    "upgrades": [
+     {
+      "component": "Rear Corner",
+      "reason": "Performance - Local Load",
+      "change": "Rear wheel bodywork winglets (number of cascade elements changed)"
+     }
+    ]
+   },
+   "monza_2026_top_speed": {
+    "kind": "official",
+    "sources": [
+     "fia_monza_q_speeds",
+     "fia_monza_r_speeds"
+    ],
+    "note": "Italian GP 2026 (round 13), team max of the FIA speed trap (car numbers below). Team assignment at Monza (car 30 LAW at Red Bull, car 22 TSU at Racing Bulls) is taken from js/data/racepace2026.js seat map and js/data/season2026.js driverChanges; consistent with car 6 being absent from both FIA Monza speed lists, but the Monza entry list was not read.",
+    "max_speed_trap_quali_kmh": 326.7,
+    "max_speed_trap_race_kmh": 333.5,
+    "car_numbers": [
+     3,
+     30
+    ]
+   },
+   "mass_vs_minimum": {
+    "value": "+ 9/10 kg",
+    "kind": "reported",
+    "source": "rn365_weights",
+    "note": "Early-season estimate (2 April 2026) against a 768 kg minimum; 'approximate, from multiple sources with knowledge of the matter'. No official per-team car mass is published."
+   },
+   "pu_power": [
+    {
+     "value": null,
+     "kind": "unverified",
+     "note": "No sourced figure found."
+    }
+   ],
+   "concept_note": {
+    "value": "low-drag concept, very strong low-speed traction, strong Red Bull Ford PU",
+    "kind": "reported",
+    "source": "repo_season",
+    "note": "Carried from js/data/season2026.js; that file cites the-race.com and racefans.net articles. Not re-fetched in this pass."
+   }
+  },
+  {
+   "id": "racingbulls",
+   "entrant": {
+    "value": "Visa Cash App Racing Bulls F1 Team",
+    "kind": "official",
+    "source": "fia_entry"
+   },
+   "constructor": {
+    "value": "Racing Bulls Red Bull Ford",
+    "kind": "official",
+    "source": "fia_entry"
+   },
+   "chassis": {
+    "value": "VCARB 03",
+    "kind": "reported",
+    "source": "wiki_2026",
+    "note": "Not printed in the FIA entry list; matches js/data/season2026.js."
+   },
+   "power_unit": {
+    "value": "Red Bull Ford DM01",
+    "kind": "reported",
+    "source": "wiki_2026",
+    "manufacturer_official": "Red Bull Ford",
+    "manufacturer_source": "fia_entry (constructor name)"
+   },
+   "drivers_at_silverstone": [
+    {
+     "code": "LIN",
+     "number": 41,
+     "name": "Arvid Lindblad"
+    },
+    {
+     "code": "LAW",
+     "number": 30,
+     "name": "Liam Lawson"
+    }
+   ],
+   "silverstone_2026": {
+    "kind": "official",
+    "sources": [
+     "fia_q_class",
+     "fia_t_q_speeds",
+     "fia_t_r_speeds"
+    ],
+    "best_quali_lap": {
+     "s": 89.3,
+     "code": "LAW",
+     "session": "Q1"
+    },
+    "max_speed_trap_quali_kmh": 306.9,
+    "max_speed_trap_race_kmh": 331.6,
+    "drivers": [
+     {
+      "code": "LAW",
+      "number": 30,
+      "name": "Liam Lawson",
+      "quali_pos": 10,
+      "q1_s": 89.3,
+      "q2_s": 89.429,
+      "q3_s": 89.716,
+      "best_s": 89.3,
+      "best_session": "Q1",
+      "speed_trap_quali_kmh": 306.0,
+      "speed_trap_race_kmh": 317.4
+     },
+     {
+      "code": "LIN",
+      "number": 41,
+      "name": "Arvid Lindblad",
+      "quali_pos": 9,
+      "q1_s": 89.661,
+      "q2_s": 89.324,
+      "q3_s": 89.305,
+      "best_s": 89.305,
+      "best_session": "Q3",
+      "speed_trap_quali_kmh": 306.9,
+      "speed_trap_race_kmh": 331.6
+     }
+    ],
+    "upgrades": [
+     {
+      "component": "Floor Edge & Diffuser",
+      "reason": "Performance - Local Load",
+      "change": "Updated floor corner & diffuser geometry"
+     },
+     {
+      "component": "Rear Corner",
+      "reason": "Performance - Flow Conditioning",
+      "change": "New forward deflector geometry"
+     }
+    ]
+   },
+   "monza_2026_top_speed": {
+    "kind": "official",
+    "sources": [
+     "fia_monza_q_speeds",
+     "fia_monza_r_speeds"
+    ],
+    "note": "Italian GP 2026 (round 13), team max of the FIA speed trap (car numbers below). Team assignment at Monza (car 30 LAW at Red Bull, car 22 TSU at Racing Bulls) is taken from js/data/racepace2026.js seat map and js/data/season2026.js driverChanges; consistent with car 6 being absent from both FIA Monza speed lists, but the Monza entry list was not read.",
+    "max_speed_trap_quali_kmh": 326.9,
+    "max_speed_trap_race_kmh": 331.5,
+    "car_numbers": [
+     41,
+     22
+    ]
+   },
+   "mass_vs_minimum": {
+    "value": "+ 4/5 kg",
+    "kind": "reported",
+    "source": "rn365_weights",
+    "note": "Early-season estimate (2 April 2026) against a 768 kg minimum; 'approximate, from multiple sources with knowledge of the matter'. No official per-team car mass is published."
+   },
+   "pu_power": [
+    {
+     "value": null,
+     "kind": "unverified",
+     "note": "No sourced figure found."
+    }
+   ],
+   "concept_note": {
+    "value": "Red Bull Ford PU, sister car",
+    "kind": "reported",
+    "source": "repo_season",
+    "note": "Carried from js/data/season2026.js; that file cites the-race.com and racefans.net articles. Not re-fetched in this pass."
+   }
+  },
+  {
+   "id": "alpine",
+   "entrant": {
+    "value": "BWT Alpine F1 Team",
+    "kind": "official",
+    "source": "fia_entry"
+   },
+   "constructor": {
+    "value": "Alpine Mercedes",
+    "kind": "official",
+    "source": "fia_entry"
+   },
+   "chassis": {
+    "value": "A526",
+    "kind": "reported",
+    "source": "wiki_2026",
+    "note": "Not printed in the FIA entry list; matches js/data/season2026.js."
+   },
+   "power_unit": {
+    "value": "Mercedes-AMG F1 M17",
+    "kind": "reported",
+    "source": "wiki_2026",
+    "manufacturer_official": "Mercedes",
+    "manufacturer_source": "fia_entry (constructor name)"
+   },
+   "drivers_at_silverstone": [
+    {
+     "code": "GAS",
+     "number": 10,
+     "name": "Pierre Gasly"
+    },
+    {
+     "code": "COL",
+     "number": 43,
+     "name": "Franco Colapinto"
+    }
+   ],
+   "silverstone_2026": {
+    "kind": "official",
+    "sources": [
+     "fia_q_class",
+     "fia_t_q_speeds",
+     "fia_t_r_speeds"
+    ],
+    "best_quali_lap": {
+     "s": 90.063,
+     "code": "GAS",
+     "session": "Q2"
+    },
+    "max_speed_trap_quali_kmh": 307.0,
+    "max_speed_trap_race_kmh": 344.0,
+    "drivers": [
+     {
+      "code": "GAS",
+      "number": 10,
+      "name": "Pierre Gasly",
+      "quali_pos": 12,
+      "q1_s": 90.345,
+      "q2_s": 90.063,
+      "q3_s": null,
+      "best_s": 90.063,
+      "best_session": "Q2",
+      "speed_trap_quali_kmh": 307.0,
+      "speed_trap_race_kmh": 344.0
+     },
+     {
+      "code": "COL",
+      "number": 43,
+      "name": "Franco Colapinto",
+      "quali_pos": 19,
+      "q1_s": 91.321,
+      "q2_s": null,
+      "q3_s": null,
+      "best_s": 91.321,
+      "best_session": "Q1",
+      "speed_trap_quali_kmh": 300.2,
+      "speed_trap_race_kmh": 343.9
+     }
+    ],
+    "upgrades": []
+   },
+   "monza_2026_top_speed": {
+    "kind": "official",
+    "sources": [
+     "fia_monza_q_speeds",
+     "fia_monza_r_speeds"
+    ],
+    "note": "Italian GP 2026 (round 13), team max of the FIA speed trap (car numbers below). Team assignment at Monza (car 30 LAW at Red Bull, car 22 TSU at Racing Bulls) is taken from js/data/racepace2026.js seat map and js/data/season2026.js driverChanges; consistent with car 6 being absent from both FIA Monza speed lists, but the Monza entry list was not read.",
+    "max_speed_trap_quali_kmh": 335.2,
+    "max_speed_trap_race_kmh": 332.4,
+    "car_numbers": [
+     10,
+     43
+    ]
+   },
+   "mass_vs_minimum": {
+    "value": "+ 2 kg (printed '+ 2/ kg')",
+    "kind": "reported",
+    "source": "rn365_weights",
+    "note": "Early-season estimate (2 April 2026) against a 768 kg minimum; 'approximate, from multiple sources with knowledge of the matter'. No official per-team car mass is published."
+   },
+   "pu_power": [
+    {
+     "value": null,
+     "kind": "unverified",
+     "note": "No sourced figure found."
+    }
+   ],
+   "concept_note": {
+    "value": "Mercedes PU, low-drag strength (Monza pole)",
+    "kind": "reported",
+    "source": "repo_season",
+    "note": "Carried from js/data/season2026.js; that file cites the-race.com and racefans.net articles. Not re-fetched in this pass."
+   }
+  },
+  {
+   "id": "haas",
+   "entrant": {
+    "value": "TGR Haas F1 Team",
+    "kind": "official",
+    "source": "fia_entry"
+   },
+   "constructor": {
+    "value": "Haas Ferrari",
+    "kind": "official",
+    "source": "fia_entry"
+   },
+   "chassis": {
+    "value": "VF-26",
+    "kind": "reported",
+    "source": "wiki_2026",
+    "note": "Not printed in the FIA entry list; matches js/data/season2026.js."
+   },
+   "power_unit": {
+    "value": "Ferrari 067/6",
+    "kind": "reported",
+    "source": "wiki_2026",
+    "manufacturer_official": "Ferrari",
+    "manufacturer_source": "fia_entry (constructor name)"
+   },
+   "drivers_at_silverstone": [
+    {
+     "code": "OCO",
+     "number": 31,
+     "name": "Esteban Ocon"
+    },
+    {
+     "code": "BEA",
+     "number": 87,
+     "name": "Oliver Bearman"
+    }
+   ],
+   "silverstone_2026": {
+    "kind": "official",
+    "sources": [
+     "fia_q_class",
+     "fia_t_q_speeds",
+     "fia_t_r_speeds"
+    ],
+    "best_quali_lap": {
+     "s": 90.501,
+     "code": "BEA",
+     "session": "Q2"
+    },
+    "max_speed_trap_quali_kmh": 302.0,
+    "max_speed_trap_race_kmh": 339.4,
+    "drivers": [
+     {
+      "code": "BEA",
+      "number": 87,
+      "name": "Oliver Bearman",
+      "quali_pos": 14,
+      "q1_s": 90.57,
+      "q2_s": 90.501,
+      "q3_s": null,
+      "best_s": 90.501,
+      "best_session": "Q2",
+      "speed_trap_quali_kmh": 302.0,
+      "speed_trap_race_kmh": 339.4
+     },
+     {
+      "code": "OCO",
+      "number": 31,
+      "name": "Esteban Ocon",
+      "quali_pos": 17,
+      "q1_s": 90.68,
+      "q2_s": null,
+      "q3_s": null,
+      "best_s": 90.68,
+      "best_session": "Q1",
+      "speed_trap_quali_kmh": 298.3,
+      "speed_trap_race_kmh": 332.8
+     }
+    ],
+    "upgrades": [
+     {
+      "component": "Rear Wing",
+      "reason": "Performance - Local Load",
+      "change": "New Rear Wing profiles (flap geometry)"
+     },
+     {
+      "component": "Rear Wing Endplate",
+      "reason": "Performance - Flow Conditioning",
+      "change": "Rear Wing Endplate with external protrusions"
+     }
+    ]
+   },
+   "monza_2026_top_speed": {
+    "kind": "official",
+    "sources": [
+     "fia_monza_q_speeds",
+     "fia_monza_r_speeds"
+    ],
+    "note": "Italian GP 2026 (round 13), team max of the FIA speed trap (car numbers below). Team assignment at Monza (car 30 LAW at Red Bull, car 22 TSU at Racing Bulls) is taken from js/data/racepace2026.js seat map and js/data/season2026.js driverChanges; consistent with car 6 being absent from both FIA Monza speed lists, but the Monza entry list was not read.",
+    "max_speed_trap_quali_kmh": 332.5,
+    "max_speed_trap_race_kmh": 337.0,
+    "car_numbers": [
+     31,
+     87
+    ]
+   },
+   "mass_vs_minimum": {
+    "value": "+ 1 kg",
+    "kind": "reported",
+    "source": "rn365_weights",
+    "note": "Early-season estimate (2 April 2026) against a 768 kg minimum; 'approximate, from multiple sources with knowledge of the matter'. No official per-team car mass is published."
+   },
+   "pu_power": [
+    {
+     "value": null,
+     "kind": "unverified",
+     "note": "No sourced figure found."
+    }
+   ],
+   "concept_note": {
+    "value": "Ferrari PU, struggles on slow street tracks (Monaco)",
+    "kind": "reported",
+    "source": "repo_season",
+    "note": "Carried from js/data/season2026.js; that file cites the-race.com and racefans.net articles. Not re-fetched in this pass."
+   }
+  },
+  {
+   "id": "audi",
+   "entrant": {
+    "value": "Audi Revolut F1 Team",
+    "kind": "official",
+    "source": "fia_entry"
+   },
+   "constructor": {
+    "value": "Audi",
+    "kind": "official",
+    "source": "fia_entry"
+   },
+   "chassis": {
+    "value": "R26",
+    "kind": "reported",
+    "source": "wiki_2026",
+    "note": "Not printed in the FIA entry list; matches js/data/season2026.js."
+   },
+   "power_unit": {
+    "value": "Audi AFR 26 Hybrid",
+    "kind": "reported",
+    "source": "wiki_2026",
+    "manufacturer_official": "Audi",
+    "manufacturer_source": "fia_entry (constructor name)"
+   },
+   "drivers_at_silverstone": [
+    {
+     "code": "HUL",
+     "number": 27,
+     "name": "Nico Hulkenberg"
+    },
+    {
+     "code": "BOR",
+     "number": 5,
+     "name": "Gabriel Bortoleto"
+    }
+   ],
+   "silverstone_2026": {
+    "kind": "official",
+    "sources": [
+     "fia_q_class",
+     "fia_t_q_speeds",
+     "fia_t_r_speeds"
+    ],
+    "best_quali_lap": {
+     "s": 89.461,
+     "code": "BOR",
+     "session": "Q2"
+    },
+    "max_speed_trap_quali_kmh": 300.1,
+    "max_speed_trap_race_kmh": 339.3,
+    "drivers": [
+     {
+      "code": "BOR",
+      "number": 5,
+      "name": "Gabriel Bortoleto",
+      "quali_pos": 11,
+      "q1_s": 90.269,
+      "q2_s": 89.461,
+      "q3_s": null,
+      "best_s": 89.461,
+      "best_session": "Q2",
+      "speed_trap_quali_kmh": 298.5,
+      "speed_trap_race_kmh": 332.1
+     },
+     {
+      "code": "HUL",
+      "number": 27,
+      "name": "Nico Hulkenberg",
+      "quali_pos": 13,
+      "q1_s": 89.539,
+      "q2_s": 90.076,
+      "q3_s": null,
+      "best_s": 89.539,
+      "best_session": "Q1",
+      "speed_trap_quali_kmh": 300.1,
+      "speed_trap_race_kmh": 339.3
+     }
+    ],
+    "upgrades": []
+   },
+   "monza_2026_top_speed": {
+    "kind": "official",
+    "sources": [
+     "fia_monza_q_speeds",
+     "fia_monza_r_speeds"
+    ],
+    "note": "Italian GP 2026 (round 13), team max of the FIA speed trap (car numbers below). Team assignment at Monza (car 30 LAW at Red Bull, car 22 TSU at Racing Bulls) is taken from js/data/racepace2026.js seat map and js/data/season2026.js driverChanges; consistent with car 6 being absent from both FIA Monza speed lists, but the Monza entry list was not read.",
+    "max_speed_trap_quali_kmh": 328.7,
+    "max_speed_trap_race_kmh": 331.2,
+    "car_numbers": [
+     5,
+     27
+    ]
+   },
+   "mass_vs_minimum": {
+    "value": "Under the limit",
+    "kind": "reported",
+    "source": "rn365_weights",
+    "note": "Early-season estimate (2 April 2026) against a 768 kg minimum; 'approximate, from multiple sources with knowledge of the matter'. No official per-team car mass is published."
+   },
+   "pu_power": [
+    {
+     "value": "540-550 bhp; 'as much as 31bhp behind Mercedes'",
+     "kind": "reported",
+     "source": "planetf1_audi_pu",
+     "note": "Pre-season (Oct 2025) relay of unnamed reports; disputed by Audi. Rumour grade."
+    }
+   ],
+   "concept_note": {
+    "value": "new Audi PU, midfield",
+    "kind": "reported",
+    "source": "repo_season",
+    "note": "Carried from js/data/season2026.js; that file cites the-race.com and racefans.net articles. Not re-fetched in this pass."
+   }
+  },
+  {
+   "id": "williams",
+   "entrant": {
+    "value": "Atlassian Williams F1 Team",
+    "kind": "official",
+    "source": "fia_entry"
+   },
+   "constructor": {
+    "value": "Atlassian Williams Mercedes",
+    "kind": "official",
+    "source": "fia_entry"
+   },
+   "chassis": {
+    "value": "FW48",
+    "kind": "reported",
+    "source": "wiki_2026",
+    "note": "Not printed in the FIA entry list; matches js/data/season2026.js."
+   },
+   "power_unit": {
+    "value": "Mercedes-AMG F1 M17",
+    "kind": "reported",
+    "source": "wiki_2026",
+    "manufacturer_official": "Mercedes",
+    "manufacturer_source": "fia_entry (constructor name)"
+   },
+   "drivers_at_silverstone": [
+    {
+     "code": "ALB",
+     "number": 23,
+     "name": "Alexander Albon"
+    },
+    {
+     "code": "SAI",
+     "number": 55,
+     "name": "Carlos Sainz"
+    }
+   ],
+   "silverstone_2026": {
+    "kind": "official",
+    "sources": [
+     "fia_q_class",
+     "fia_t_q_speeds",
+     "fia_t_r_speeds"
+    ],
+    "best_quali_lap": {
+     "s": 90.562,
+     "code": "SAI",
+     "session": "Q1"
+    },
+    "max_speed_trap_quali_kmh": 315.2,
+    "max_speed_trap_race_kmh": 338.9,
+    "drivers": [
+     {
+      "code": "SAI",
+      "number": 55,
+      "name": "Carlos Sainz",
+      "quali_pos": 15,
+      "q1_s": 90.562,
+      "q2_s": 90.623,
+      "q3_s": null,
+      "best_s": 90.562,
+      "best_session": "Q1",
+      "speed_trap_quali_kmh": 315.2,
+      "speed_trap_race_kmh": 338.9
+     },
+     {
+      "code": "ALB",
+      "number": 23,
+      "name": "Alexander Albon",
+      "quali_pos": 16,
+      "q1_s": 90.638,
+      "q2_s": 91.341,
+      "q3_s": null,
+      "best_s": 90.638,
+      "best_session": "Q1",
+      "speed_trap_quali_kmh": 296.9,
+      "speed_trap_race_kmh": 305.5
+     }
+    ],
+    "upgrades": [
+     {
+      "component": "Front Wing",
+      "reason": "Performance - Flow Conditioning",
+      "change": "New front wing geometry with updated profiles and endplate surfaces"
+     }
+    ]
+   },
+   "monza_2026_top_speed": {
+    "kind": "official",
+    "sources": [
+     "fia_monza_q_speeds",
+     "fia_monza_r_speeds"
+    ],
+    "note": "Italian GP 2026 (round 13), team max of the FIA speed trap (car numbers below). Team assignment at Monza (car 30 LAW at Red Bull, car 22 TSU at Racing Bulls) is taken from js/data/racepace2026.js seat map and js/data/season2026.js driverChanges; consistent with car 6 being absent from both FIA Monza speed lists, but the Monza entry list was not read.",
+    "max_speed_trap_quali_kmh": 333.1,
+    "max_speed_trap_race_kmh": 334.2,
+    "car_numbers": [
+     23,
+     55
+    ]
+   },
+   "mass_vs_minimum": {
+    "value": "+ 26 kg",
+    "kind": "reported",
+    "source": "rn365_weights",
+    "note": "Early-season estimate (2 April 2026) against a 768 kg minimum; 'approximate, from multiple sources with knowledge of the matter'. No official per-team car mass is published."
+   },
+   "pu_power": [
+    {
+     "value": null,
+     "kind": "unverified",
+     "note": "No sourced figure found."
+    }
+   ],
+   "concept_note": {
+    "value": "Mercedes PU, overweight early, back of midfield",
+    "kind": "reported",
+    "source": "repo_season",
+    "note": "Carried from js/data/season2026.js; that file cites the-race.com and racefans.net articles. Not re-fetched in this pass."
+   }
+  },
+  {
+   "id": "astonmartin",
+   "entrant": {
+    "value": "Aston Martin Aramco F1 Team",
+    "kind": "official",
+    "source": "fia_entry"
+   },
+   "constructor": {
+    "value": "Aston Martin Aramco Honda",
+    "kind": "official",
+    "source": "fia_entry"
+   },
+   "chassis": {
+    "value": "AMR26",
+    "kind": "reported",
+    "source": "wiki_2026",
+    "note": "Not printed in the FIA entry list; matches js/data/season2026.js."
+   },
+   "power_unit": {
+    "value": "Honda RA626H",
+    "kind": "reported",
+    "source": "wiki_2026",
+    "manufacturer_official": "Honda",
+    "manufacturer_source": "fia_entry (constructor name)"
+   },
+   "drivers_at_silverstone": [
+    {
+     "code": "STR",
+     "number": 18,
+     "name": "Lance Stroll"
+    },
+    {
+     "code": "ALO",
+     "number": 14,
+     "name": "Fernando Alonso"
+    }
+   ],
+   "silverstone_2026": {
+    "kind": "official",
+    "sources": [
+     "fia_q_class",
+     "fia_t_q_speeds",
+     "fia_t_r_speeds"
+    ],
+    "best_quali_lap": {
+     "s": 92.863,
+     "code": "STR",
+     "session": "Q1"
+    },
+    "max_speed_trap_quali_kmh": 292.6,
+    "max_speed_trap_race_kmh": 334.8,
+    "drivers": [
+     {
+      "code": "STR",
+      "number": 18,
+      "name": "Lance Stroll",
+      "quali_pos": 21,
+      "q1_s": 92.863,
+      "q2_s": null,
+      "q3_s": null,
+      "best_s": 92.863,
+      "best_session": "Q1",
+      "speed_trap_quali_kmh": 292.5,
+      "speed_trap_race_kmh": 309.9
+     },
+     {
+      "code": "ALO",
+      "number": 14,
+      "name": "Fernando Alonso",
+      "quali_pos": 22,
+      "q1_s": 93.025,
+      "q2_s": null,
+      "q3_s": null,
+      "best_s": 93.025,
+      "best_session": "Q1",
+      "speed_trap_quali_kmh": 292.6,
+      "speed_trap_race_kmh": 334.8
+     }
+    ],
+    "upgrades": []
+   },
+   "monza_2026_top_speed": {
+    "kind": "official",
+    "sources": [
+     "fia_monza_q_speeds",
+     "fia_monza_r_speeds"
+    ],
+    "note": "Italian GP 2026 (round 13), team max of the FIA speed trap (car numbers below). Team assignment at Monza (car 30 LAW at Red Bull, car 22 TSU at Racing Bulls) is taken from js/data/racepace2026.js seat map and js/data/season2026.js driverChanges; consistent with car 6 being absent from both FIA Monza speed lists, but the Monza entry list was not read.",
+    "max_speed_trap_quali_kmh": 314.7,
+    "max_speed_trap_race_kmh": 314.7,
+    "car_numbers": [
+     14,
+     18
+    ]
+   },
+   "mass_vs_minimum": {
+    "value": "+9/10 kg",
+    "kind": "reported",
+    "source": "rn365_weights",
+    "note": "Early-season estimate (2 April 2026) against a 768 kg minimum; 'approximate, from multiple sources with knowledge of the matter'. No official per-team car mass is published."
+   },
+   "pu_power": [
+    {
+     "value": null,
+     "kind": "unverified",
+     "note": "No sourced figure found."
+    }
+   ],
+   "concept_note": {
+    "value": "Honda PU down on power and reliability early; improving since Hungary",
+    "kind": "reported",
+    "source": "repo_season",
+    "note": "Carried from js/data/season2026.js; that file cites the-race.com and racefans.net articles. Not re-fetched in this pass."
+   }
+  },
+  {
+   "id": "cadillac",
+   "entrant": {
+    "value": "Cadillac Formula 1 Team",
+    "kind": "official",
+    "source": "fia_entry"
+   },
+   "constructor": {
+    "value": "Cadillac Ferrari",
+    "kind": "official",
+    "source": "fia_entry"
+   },
+   "chassis": {
+    "value": "MAC-26",
+    "kind": "reported",
+    "source": "wiki_2026",
+    "note": "Not printed in the FIA entry list; matches js/data/season2026.js."
+   },
+   "power_unit": {
+    "value": "Ferrari 067/6",
+    "kind": "reported",
+    "source": "wiki_2026",
+    "manufacturer_official": "Ferrari",
+    "manufacturer_source": "fia_entry (constructor name)"
+   },
+   "drivers_at_silverstone": [
+    {
+     "code": "PER",
+     "number": 11,
+     "name": "Sergio Perez"
+    },
+    {
+     "code": "BOT",
+     "number": 77,
+     "name": "Valtteri Bottas"
+    }
+   ],
+   "silverstone_2026": {
+    "kind": "official",
+    "sources": [
+     "fia_q_class",
+     "fia_t_q_speeds",
+     "fia_t_r_speeds"
+    ],
+    "best_quali_lap": {
+     "s": 91.227,
+     "code": "BOT",
+     "session": "Q1"
+    },
+    "max_speed_trap_quali_kmh": 304.7,
+    "max_speed_trap_race_kmh": 325.2,
+    "drivers": [
+     {
+      "code": "BOT",
+      "number": 77,
+      "name": "Valtteri Bottas",
+      "quali_pos": 18,
+      "q1_s": 91.227,
+      "q2_s": null,
+      "q3_s": null,
+      "best_s": 91.227,
+      "best_session": "Q1",
+      "speed_trap_quali_kmh": 304.7,
+      "speed_trap_race_kmh": 316.1
+     },
+     {
+      "code": "PER",
+      "number": 11,
+      "name": "Sergio Perez",
+      "quali_pos": 20,
+      "q1_s": 91.451,
+      "q2_s": null,
+      "q3_s": null,
+      "best_s": 91.451,
+      "best_session": "Q1",
+      "speed_trap_quali_kmh": 303.9,
+      "speed_trap_race_kmh": 325.2
+     }
+    ],
+    "upgrades": []
+   },
+   "monza_2026_top_speed": {
+    "kind": "official",
+    "sources": [
+     "fia_monza_q_speeds",
+     "fia_monza_r_speeds"
+    ],
+    "note": "Italian GP 2026 (round 13), team max of the FIA speed trap (car numbers below). Team assignment at Monza (car 30 LAW at Red Bull, car 22 TSU at Racing Bulls) is taken from js/data/racepace2026.js seat map and js/data/season2026.js driverChanges; consistent with car 6 being absent from both FIA Monza speed lists, but the Monza entry list was not read.",
+    "max_speed_trap_quali_kmh": 324.0,
+    "max_speed_trap_race_kmh": 322.8,
+    "car_numbers": [
+     11,
+     77
+    ]
+   },
+   "mass_vs_minimum": {
+    "value": "+ 6/7 kg",
+    "kind": "reported",
+    "source": "rn365_weights",
+    "note": "Early-season estimate (2 April 2026) against a 768 kg minimum; 'approximate, from multiple sources with knowledge of the matter'. No official per-team car mass is published."
+   },
+   "pu_power": [
+    {
+     "value": null,
+     "kind": "unverified",
+     "note": "No sourced figure found."
+    }
+   ],
+   "concept_note": {
+    "value": "Ferrari PU, new team, least downforce",
+    "kind": "reported",
+    "source": "repo_season",
+    "note": "Carried from js/data/season2026.js; that file cites the-race.com and racefans.net articles. Not re-fetched in this pass."
+   }
+  }
+ ]
+}
