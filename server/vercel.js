@@ -140,7 +140,10 @@ function create() {
   const same = (a, b) => { const x = Buffer.from(String(a)), y = Buffer.from(String(b)); return x.length === y.length && crypto.timingSafeEqual(x, y); };
   const cookieFor = exp => "live." + exp + "." + hmac("live." + exp);
   const cookieOk = v => { const m = /^live\.(\d+)\.([A-Za-z0-9_-]+)$/.exec(v || ""); return !!m && +m[1] > Date.now() && same(hmac("live." + m[1]), m[2]); };
-  const authorized = c => { if (!PASS()) return false; const h = c.req.header("x-purple-passcode"); if (h != null && h !== "") return same(h, PASS()); return cookieOk(getCookie(c, "purple_live")); };
+  // owner decision 2026-10-24 ~20:00 BST: the autonomous engineer's live runs need no passcode on the public site (the research lab and the
+  // designer loop still do). PURPLE_OPEN_LIVE=0 restores the passcode for the engine too. Per-IP / global hourly limits still apply.
+  const openEngine = c => process.env.PURPLE_OPEN_LIVE !== "0" && /^\/api\/concept\/engine(\/|$)/.test(c.req.path || "");
+  const authorized = c => { if (openEngine(c)) return true; if (!PASS()) return false; const h = c.req.header("x-purple-passcode"); if (h != null && h !== "") return same(h, PASS()); return cookieOk(getCookie(c, "purple_live")); };
   const mintTicket = o => { const p = Buffer.from(JSON.stringify(o)).toString("base64url"); return p + "." + hmac("ticket." + p); };
   const readTicket = t => { const m = /^([A-Za-z0-9_-]+)\.([A-Za-z0-9_-]+)$/.exec(t || ""); if (!m || !same(hmac("ticket." + m[1]), m[2])) return null; try { const o = JSON.parse(Buffer.from(m[1], "base64url").toString("utf8")); return o.exp > Date.now() ? o : null; } catch (e) { return null; } };
 
@@ -166,7 +169,7 @@ function create() {
   const limiter = Limiter();
   const ipOf = c => (c.req.header("x-real-ip") || (c.req.header("x-forwarded-for") || "").split(",")[0] || "unknown").trim();
   const STORAGE = "ephemeral: this server instance's /tmp. The research ledger starts from " + (seeded.snapshot || "an empty store") + " (a read-only copy in the deploy); everything written here vanishes when Vercel recycles the instance, and other instances do not see it. The real data/ is never touched.";
-  const info = (c, mubit, extra) => Object.assign({ host: "vercel", storage: STORAGE, mubit, live: { available: !liveOff(), off_reason: liveOff(), unlocked: authorized(c), unlock: "/api/unlock" } }, extra || {});
+  const info = (c, mubit, extra) => Object.assign({ host: "vercel", storage: STORAGE, mubit, live: { available: !liveOff(), off_reason: liveOff(), unlocked: authorized(c), engine_open: process.env.PURPLE_OPEN_LIVE !== "0", unlock: "/api/unlock" } }, extra || {});
   const envelope = (c, status, code, message, extra) => c.json({ ok: false, error: Object.assign({ code, message }, extra || {}), deploy: info(c, "mock") }, status);
   const liveRefusal = c => { const why = liveOff(); if (why) return envelope(c, 503, "LIVE_OFF", "live Mubit calls are off on this deployment: " + why); if (!authorized(c)) return envelope(c, 403, "PASSCODE_REQUIRED", "live Mubit calls from the public site need the passcode: open /api/unlock in this browser (or send the x-purple-passcode header). Without it, use mock mode."); return null; };
   const reserve = (c, bucket, n) => {

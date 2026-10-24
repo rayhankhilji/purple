@@ -177,7 +177,7 @@
       const j = await getJson(API + "/api/concept/engine/info");
       const info = j && j.data; S.deploy = j && j.deploy || null; S.apiOk = !!info;
       if (!info) { S.liveOk = false; S.liveWhy = "the engine API did not answer"; }
-      else if (S.deploy) { S.liveOk = !!(S.deploy.live && S.deploy.live.available && S.deploy.live.unlocked); S.liveWhy = !S.deploy.live.available ? "live calls are off on this deployment" : !S.deploy.live.unlocked ? "unlock first" : ""; }
+      else if (S.deploy) { S.liveOk = !!(S.deploy.live && S.deploy.live.available && (S.deploy.live.unlocked || S.deploy.live.engine_open)); S.liveWhy = !S.deploy.live.available ? "live calls are off on this deployment" : !(S.deploy.live.unlocked || S.deploy.live.engine_open) ? "unlock first" : ""; }
       else { S.liveOk = !!info.live_available; S.liveWhy = info.mock ? "server runs with MUBIT_MOCK=1" : !info.live_available ? "no MUBIT_API_KEY on this server" : ""; }
     } catch (e) { S.apiOk = false; S.liveOk = false; S.liveWhy = "no engine API reachable"; }
     renderCtl();
