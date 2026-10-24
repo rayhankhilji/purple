@@ -193,7 +193,8 @@ function createApp(opts) {
       }
     }
     await Promise.all([worker(), worker()]);
-    const st = db.readStatus(); st.exam = Object.assign({}, st.exam, { provider: score, total: exam.length, provider_param: paramScore }); st.updated_at = now(); db.writeStatus(st); emit("status", statusView());
+    // the totals the widget shows plus every item's actual answer (EVAL request): the next `npm run exam` records what the provider said
+    const st = db.readStatus(); st.exam = Object.assign({}, st.exam, { provider: score, total: exam.length, provider_param: paramScore, ran_at: now(), details }); st.updated_at = now(); db.writeStatus(st); emit("status", statusView());
     return { provider: score, total: exam.length, provider_param: paramScore, details };
   }
 
