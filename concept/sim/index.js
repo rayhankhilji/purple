@@ -51,7 +51,44 @@
     });
   }
 
+  // ---- contributions: where a car gains or loses time against a reference car, corner by corner and straight by straight. The
+  // lap (telemetry line) is cut into corner zones (each MultiViewer marker -100 / +100 m, never past halfway to its neighbours)
+  // and the straights between them; each segment's time comes from the two cars' own time traces, so the segment deltas add up
+  // exactly to the lap delta. contributions(car, refCar?, conditions?, opts?) - refCar defaults to the baseline car.
+  function segmentsOf(tr) {
+    const K = (tr.corners || []).filter(k => k.d != null).slice().sort((a, b) => a.d - b.d), L = tr.L, out = [];
+    if (!K.length) return [{ kind: "lap", name: "lap", s0: 0, s1: L }];
+    const names = S.CORNER_NAMES[tr.id] || {}, nm = k => (names[k.n] || "T") + " (T" + k.n + ")";
+    const zone = K.map((k, i) => {
+      const prev = K[(i - 1 + K.length) % K.length].d - (i === 0 ? L : 0), next = K[(i + 1) % K.length].d + (i === K.length - 1 ? L : 0);
+      return { kind: "corner", name: nm(k), n: k.n, s0: Math.max(k.d - 100, (prev + k.d) / 2), s1: Math.min(k.d + 100, (k.d + next) / 2) };
+    });
+    zone.forEach((z, i) => {
+      out.push(z);
+      const nx = zone[(i + 1) % zone.length], a = z.s1, b = nx.s0 + (i === zone.length - 1 ? L : 0);
+      if (b - a > 1) out.push({ kind: "straight", name: "T" + z.n + " -> T" + nx.n, s0: a, s1: b });
+    });
+    return out;
+  }
+  function contributions(car, refCar, conditions, opts) {
+    opts = opts || {};
+    const trackId = opts.trackId || "silverstone", tr = T.buildTrack(trackId);
+    const run = c => S.simulateLap(c, trackId, conditions, Object.assign({}, opts.simOpts || {}, { trace: true }));
+    const a = run(car), b = run(refCar || S.baselineCar());
+    const L = tr.L, n = a.trace.t_s.length, step = L / n;
+    const tAt = (r, s) => { const x = (((s % L) + L) % L) / step, i = Math.floor(x) % n, f = x - Math.floor(x), j = (i + 1) % n; const t0 = r.trace.t_s[i], t1 = j === 0 ? r.lap_s : r.trace.t_s[j]; return t0 + f * (t1 - t0); };
+    const dur = (r, s0, s1) => { const d = tAt(r, s1) - tAt(r, s0); return d < 0 ? d + r.lap_s : d; };
+    const vmin = (r, s0, s1) => { let m = Infinity; for (let s = s0; s <= s1; s += step) m = Math.min(m, r.trace.v_kmh[Math.round((((s % L) + L) % L) / step) % n]); return m; };
+    const r3 = x => Math.round(x * 1000) / 1000;
+    const segments = segmentsOf(tr).map(g => {
+      const ta = dur(a, g.s0, g.s1), tb = dur(b, g.s0, g.s1);
+      return { kind: g.kind, name: g.name, s0_m: Math.round(((g.s0 % L) + L) % L), s1_m: Math.round(((g.s1 % L) + L) % L), time_s: r3(ta), ref_time_s: r3(tb), delta_s: r3(ta - tb), min_kmh: vmin(a, g.s0, g.s1), ref_min_kmh: vmin(b, g.s0, g.s1) };
+    });
+    return { lap_s: a.lap_s, ref_lap_s: b.lap_s, delta_s: r3(a.lap_s - b.lap_s), segments, label: S.LABEL };
+  }
+
   const api = Object.assign({}, S, {
+    contributions, segmentsOf,
     calibrate: F.calibrate, fitTeams: F.fitTeams, teamCar: F.teamCar, teamCars: F.teamCars, teamTargets: F.teamTargets,
     fitted: F.fitted, reference: F.reference, heldOut: F.heldOut, cornerTable, CORNERS, buildTrack: T.buildTrack,
     baselineCar: teamId => (teamId ? F.teamCar(teamId) : S.baselineCar()),

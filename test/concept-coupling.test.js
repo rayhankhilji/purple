@@ -15,8 +15,8 @@ const lap = d => sim.simulateLap(physical.physical(d), "silverstone").lap_s;
 const claT = pc => pc.aero.corner.CLA_front_m2 + pc.aero.corner.CLA_rear_m2;
 const bal = pc => pc.aero.corner.CLA_front_m2 / claT(pc);
 
-test("baseline: physical(baseline) is still exactly the anchor car, and laps the same time (generic 88.312 s, RB22 88.749 s)", () => {
-  for (const [d, team, want] of [[GEN, null, 88.312], [RB, "redbull", 88.749]]) {
+test("baseline: physical(baseline) is still exactly the anchor car, and laps the same time (generic 88.115 s, RB22 88.752 s on sim v2)", () => {
+  for (const [d, team, want] of [[GEN, null, 88.115], [RB, "redbull", 88.752]]) {
     const pc = physical.physical(d), A = physical.anchor(team);
     assert.equal(pc.mass_kg, A.mass_kg); assert.equal(pc.cog_height_m, A.cog_height_m); assert.equal(pc.weight_dist_front, A.weight_dist_front);
     for (const k of ["CLA_front_m2", "CLA_rear_m2", "CDA_m2"]) assert.ok(Math.abs(pc.aero.corner[k] - A.aero.corner[k]) < 2e-6 && Math.abs(pc.aero.straight[k] - A.aero.straight[k]) < 2e-6, k);

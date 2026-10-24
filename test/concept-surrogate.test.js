@@ -156,7 +156,10 @@ test("uncertainty: Monte Carlo spread grows with the input spread, centred on th
   const small = S.predictWithUncertainty(rb, { aero: { corner: { CLA_front_m2: 0.03, CLA_rear_m2: 0.04, CDA_m2: 0.01 } }, tyres: { mu_y: 0.01 } }, 2000, opt);
   const large = S.predictWithUncertainty(rb, { aero: { corner: { CLA_front_m2: 0.09, CLA_rear_m2: 0.12, CDA_m2: 0.03 } }, tyres: { mu_y: 0.03 } }, 2000, opt);
   assert.ok(small.lap_s.std > 0.005 && large.lap_s.std > 2 * small.lap_s.std, small.lap_s.std + " / " + large.lap_s.std);
-  assert.ok(Math.abs(small.lap_s.mean - S.predictLap(rb, "silverstone", "physics")) < 0.02);
+  // sim v2: the Red Bull car sits at the axle-balance optimum (a kink in lap vs aero balance), so independent front/rear CLA
+  // noise can only move it off-balance: the Monte Carlo mean is slower than the point prediction, never faster, by < 1 std
+  const point = S.predictLap(rb, "silverstone", "physics");
+  assert.ok(small.lap_s.mean > point - 0.02 && small.lap_s.mean - point < small.lap_s.std, small.lap_s.mean + " vs " + point);
   assert.ok(small.lap_s.p05 < small.lap_s.mean && small.lap_s.mean < small.lap_s.p95);
   assert.equal(small.inputs.length, 4); assert.ok(small.frac_outside_box < 0.05);
   assert.throws(() => S.predictWithUncertainty(rb, { aero: { nope: 1 } }, 10, opt), /no numeric field/);

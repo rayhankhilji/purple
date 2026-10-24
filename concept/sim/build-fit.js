@@ -33,7 +33,7 @@ const fit = {
   reference_driver: est.fit_lap.driver,
   baseline_estimate: est.estimate,
   baseline_estimate_scales: est.scales,
-  calibration: { method: est.method, fit_lap: est.fit_lap },
+  calibration: { method: est.method, fit_lap: est.fit_lap, prior_check: est.prior_check, derived_agreement: est.derived_agreement },
   baseline: { lap_s: b.lap_s, sectors_s: b.sectors_s, vmax_kmh: b.vmax_kmh, speed_trap_kmh: b.speed_trap_kmh, vmin_kmh: b.vmin_kmh, energy: b.energy, speeds_kmh: b.speeds_kmh },
   team_fit: { iterations: teams.iterations, cost: teams.cost, sigma: teams.settings.sigma, bounds: teams.settings.bounds, pu_scale: teams.pu_scale },
   teams: teams.teams.map(t => Object.assign({}, t, { heldout: held.find(h => h.team === t.team) || null })),
