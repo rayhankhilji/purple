@@ -46,12 +46,12 @@
       "sources": ["TORAY-T800S", "FIA-C-ISS19"]
     },
     {
-      "id": "cfrp_t1100g", "name": "Carbon/epoxy prepreg, ultra-high strength (T1100G class, CC-UHS-eligible), quasi-isotropic", "class": "polymer_composite", "form": "laminate",
+      "id": "cfrp_t1100g", "name": "Carbon/epoxy prepreg, ultra-high strength (T1100G class), quasi-isotropic", "class": "polymer_composite", "form": "laminate",
       "density_kg_m3": 1562, "E_GPa": 74.7, "tensile_MPa": 1142,
       "fibre": { "name": "Toray T1100G (PAN)", "E_GPa": 324, "tensile_MPa": 7000, "density_kg_m3": 1790 },
       "ud": { "E1_GPa": 185, "E2_GPa_estimate": 8.5, "tensile_MPa": 3460 },
       "typical_f1_use": "concept baseline for the survival cell skins and impact structures (C15.5.3 requires CC-UHS plies, fibre Ftu > 6250 MPa)", "kind": "datasheet UD values + engineering estimate (QI rule)", "basis": "QI from UD per _meta.laminate_rule",
-      "fia": { "article": "C15.2.3(b)(i); C15.5.1(f) CC-UHS", "status": "permitted", "note": "7000 MPa fibre: under the 7100 MPa cap ('up to and including Toray T1100'), above the 6250 MPa CC-UHS threshold for the homologated survival-cell laminates", "verified": false },
+      "fia": { "article": "C15.2.3(b)(i); C15.5.1(f) CC-UHS", "status": "permitted", "note": "7000 MPa fibre: under the 7100 MPa cap ('up to and including Toray T1100') and above the 6250 MPa CC-UHS fibre threshold; CC-UHS is a woven carbon cloth epoxy prepreg (C15.5.1(f)), so the fibre qualifies for the homologated survival-cell laminates in woven-cloth form (this row is a quasi-isotropic laminate: wording only, no verdict change)", "verified": false },
       "sources": ["TORAY-T1100G", "FIA-C-ISS19"]
     },
     {
@@ -78,7 +78,7 @@
       "fibre": { "name": "Kevlar 49 (aramid)", "E_GPa": 112, "tensile_MPa": 3000, "density_kg_m3": 1440 },
       "ud": { "E1_GPa": 76, "E2_GPa_estimate": 5.5, "tensile_MPa": 1380 },
       "typical_f1_use": "anti-splinter and prescribed laminates (PL-HALO KC60, PL-HEADREST), wheel tethers, fairings", "kind": "handbook UD values + engineering estimate (QI rule)", "basis": "QI from UD per _meta.laminate_rule",
-      "fia": { "article": "C15.2.3(b)(ii); C15.5", "status": "permitted", "note": "aramid fibres are permitted reinforcing; KC60/KC170 aramid cloths are prescribed in PL-HALO and PL-HEADREST", "verified": false },
+      "fia": { "article": "C15.2.3(b)(ii); C15.5", "status": "permitted", "note": "aramid fibres are permitted reinforcing; the prescribed laminates PL-HALO [KC60, CC100, KC60] and PL-HEADREST [KC60, KC60] use KC60 aramid cloth only (C15.5.2); KC170 is defined in C15.5.1(c) but used by neither", "verified": false },
       "sources": ["DUPONT-KEVLAR", "HANDBOOK-COMPOSITES", "FIA-C-ISS19"]
     },
     {
@@ -149,10 +149,10 @@
       "sources": ["HANDBOOK-METALS", "FIA-C-ISS19"]
     },
     {
-      "id": "mg_we43", "name": "Magnesium alloy WE43 (T6)", "class": "metal", "form": "metal",
+      "id": "mg_we43", "name": "Magnesium alloy WE43C (UNS M18434), T6", "class": "metal", "form": "metal", "grade": "WE43C", "uns": "M18434",
       "density_kg_m3": 1840, "E_GPa": 44, "tensile_MPa": 250,
       "typical_f1_use": "gearbox and ancillary housings outside the PU", "kind": "handbook typical", "basis": "T6 casting / wrought typical values",
-      "fia": { "article": "C15.2.1(c)(i)-(ii)", "status": "permitted", "note": "WE43B / WE43C listed (ASTM B107-13); not in the PU (C15.6.1(a))", "verified": false },
+      "fia": { "article": "C15.2.1(c)", "status": "permitted", "note": "WE43C (UNS M18434, ASTM B107-13) is listed in C15.2.1(c) (with WE43B, M18432); WE43A (M18430) is not; property values are WE43 T6 typical; not in the PU (C15.6.1(a))", "verified": false },
       "sources": ["HANDBOOK-METALS", "FIA-C-ISS19"]
     },
     {
@@ -180,7 +180,7 @@
       "id": "tungsten_ha", "name": "Tungsten heavy alloy (≈ 95 % W, W-Ni-Fe, ASTM B777 class 3)", "class": "metal", "form": "metal",
       "density_kg_m3": 18000, "E_GPa": 360, "tensile_MPa": 758,
       "typical_f1_use": "ballast (free and driver ballast): the densest practical choice", "kind": "standard minimum / typical", "basis": "density mid of the B777 class 3 band 17.75-18.35 g/cm³; tensile = the class minimum; E typical (estimate)",
-      "fia": { "article": "C15.2.1(g); C4.3.2(d); C15.6.1(g), (l)", "status": "permitted", "note": "tungsten alloys: any (outside the PU; prohibited in the PU, as is any material denser than 18 400 kg/m³ there); > 7500 kg/m³ as C4.3.2(d) wants for driver ballast", "verified": false },
+      "fia": { "article": "C15.2.1(g); C4.3.2(d); C15.6.1(g)", "status": "permitted", "note": "tungsten alloys: any, outside the PU; excluded from the PU as a tungsten-base alloy (C15.6.1(g)); at 18,000 kg/m³ it is under the 18,400 kg/m³ PU density limit, so C15.6.1(l) does not apply; > 7500 kg/m³ as C4.3.2(d) wants for driver ballast", "verified": false },
       "sources": ["ASTM-B777", "FIA-C-ISS19"]
     },
     {

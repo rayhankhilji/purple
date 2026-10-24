@@ -124,7 +124,9 @@
       const ps = parts.MATERIAL_PARTS.filter(id => !(opts.locked || []).includes(id + ".material"));
       if (ps.length) {
         const part = ps[Math.floor(rng() * ps.length) % ps.length], cur = M.materialOf(d.params, part);
-        const pool = M.MATERIALS.filter(m => m.id !== cur && !M.problem(part, m.id));
+        // only materials the regulations allow on this part (concept/regs.js materialViolations: C15 status, component articles)
+        const R = C.regs || (typeof require === "function" ? require("./regs.js") : null);
+        const pool = M.MATERIALS.filter(m => m.id !== cur && !M.problem(part, m.id) && (!R || !R.materialViolations(part, m.id).length));
         if (pool.length) { picked.pop(); const extra = applyChanges(d, [{ part, param: "material", to: pool[Math.floor(rng() * pool.length) % pool.length].id }]); return picked.length ? (r => ({ design: r.design, changes: extra.changes.concat(r.changes) }))(applyChanges(extra.design, numeric(picked))) : extra; }
       }
     }
@@ -138,6 +140,20 @@
     }); }
   }
 
+  // migrate(d): a design written with the v1 floor parameterisation (floor.throat_mm 80-130 "above Z=0", which lay above the
+  // C3.5.1(a) RV-FLOOR-BODY roof at Z=75) mapped onto v2 (concept/aeromap.js FLOOR: throat_v2 = 0.6 × throat_v1, the aero map's
+  // c = throat_k · throat unchanged). Values above the v2 domain (v1 > 125 mm) are clamped to the 75 mm roof, a real change: those
+  // v1 designs had a floor the regulations do not allow. A throat already inside the v2 domain (≤ 75) is left alone (v1 started at 80).
+  const THROAT_V1_TO_V2 = 0.6;
+  function migrate(d) {
+    const out = clone(d), fl = out.params && out.params.floor;
+    if (fl && typeof fl.throat_mm === "number" && fl.throat_mm > parts.BY_ID.floor.params.throat_mm.max) {
+      const s = spec("floor", "throat_mm"), was = fl.throat_mm;
+      fl.throat_mm = quant(s, was * THROAT_V1_TO_V2);
+      out.migrated = (out.migrated || []).concat([{ part: "floor", param: "throat_mm", from: was, to: fl.throat_mm, rule: "v1 → v2 × " + THROAT_V1_TO_V2 + (was * THROAT_V1_TO_V2 > s.max ? ", clamped to the C3.5.1(a) roof" : "") }]);
+    }
+    return out;
+  }
   // diff(a, b): every parameter that differs, b relative to a (material swaps carry delta null)
   function diff(a, b) {
     const out = [];
@@ -169,14 +185,14 @@
   function facts(d, opts) {
     const p = d.params, g = parts.geometry(p);
     return {
-      geometry: g, front_wing: p.front_wing, rear_wing: p.rear_wing, floor: p.floor,
+      geometry: g, front_wing: p.front_wing, rear_wing: p.rear_wing, floor: p.floor, params: p,
       plank_wear_mm: +parts.plankWear(p.floor.ride_height_mm).toFixed(3),
       mass: parts.massSheet(p, { session: opts && opts.session, overrides: d.overrides }),
       aero: aeromap.evaluate(p),
     };
   }
 
-  const api = { seededRng, gauss, own, spec, baseline, REF_STRAIGHT_MODE, TEAMS, clone, validate, applyChanges, mutate, diff, describe, describeChange, facts };
+  const api = { seededRng, gauss, own, spec, THROAT_V1_TO_V2, migrate, baseline, REF_STRAIGHT_MODE, TEAMS, clone, validate, applyChanges, mutate, diff, describe, describeChange, facts };
   C.design = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();

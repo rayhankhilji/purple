@@ -116,6 +116,8 @@
   // RV-FLOOR-BODY roof (App. C2 §4.5, §4.11): Z = 75 at the centreline section from XF=1775 (§4.11; XF=1450 for the §4.1 part) to
   // XR=−600, the section is extruded across Y, and Floor Body must lie inside it (C3.5.1(a)). See REG-C-FLOOR-ROOF.
   const FLOOR_ROOF_Z = 75;
+  // C15.5.1(f): CC-UHS = woven carbon cloth, fibre Ftu > 6250 MPa, epoxy prepreg (the survival-cell skin material, C15.5.3)
+  const CC_UHS_FTU_MPA = 6250;
 
   // kind: "max" | "min" | "range" | "count-max" | "requires" | "info". `info` rules are recorded for the UI and the docs but are not
   // checkable with this model's degrees of freedom (stated in `modelled_as`). Values in mm / kg unless `unit` says otherwise.
@@ -174,7 +176,7 @@
     { id: "REG-C-PLANK-HOLES", article: "C3.6.1(c)", kind: "min", value: PLANK_HOLE.xpu_min + PLANK_HOLE.ahead_of_xr, unit: "mm (XR − XPU)", text: "The rearmost plank hole lies between XPU=470 and XPU=630 and on or ahead of XR=−500, so the rear axle must be at least 970 mm behind the ICE mounting face", verified: true },
     { id: "REG-C-SIDEPOD-INLET", article: "C3.16.9", kind: "max", value: SIDEPOD_INLET_MAX_CM2, unit: "cm² (both sides)", text: "Sidepod Inlet aperture ≤ 80,000 mm² per side, above Z=275", verified: true, modelled_as: "sidepods.inlet_cm2 (both sides) ≤ 1600 cm²; the Z=275 and RV position conditions are not parameters" },
     { id: "REG-C-SUSP-WIDTH", article: "C10.10.1, C2.1.3(a), C10.7.2(a)", kind: "max", value: 603, unit: "mm |Y| of the wheel coordinate origin (front 603, rear 525)", text: "Front Wheel Coordinate System origin (inboard rim plane) not outboard of Y=603, rear not outboard of Y=525", verified: true, modelled_as: "checked on the mass sheet's wheel rows when they carry y_mm (wheel centre plane − half the rim overall width 334 / 420.3 mm); concept/parts.js does not expose y_mm yet (see FIA_CHECKLIST.md)" },
-    { id: "REG-C-FLOOR-ROOF", article: "C3.5.1(a), App. C2 §4.5, §4.11", kind: "info", value: FLOOR_ROOF_Z, unit: "mm (Z) between XF=1775 and XR=−600", text: "Floor Body lies within RV-FLOOR-BODY, whose roof is Z=75 from XF=1775 to XR=−600 at every Y, so no floor channel can be more than 75 mm above Z=0 there", verified: true, modelled_as: "NOT CHECKED: floor.throat_mm is labelled 'Venturi throat height above Z=0' with domain 80-130 mm (base 100), entirely above this roof under that label; the parameter needs a regulation-consistent definition first (FIA_CHECKLIST.md, fix requested in concept/parts.js + concept/aeromap.js)" },
+    { id: "REG-C-FLOOR-ROOF", article: "C3.5.1(a), App. C2 §4.5, §4.11", kind: "max", value: FLOOR_ROOF_Z, unit: "mm (Z) between XF=1775 and XR=−600", text: "Floor Body lies within RV-FLOOR-BODY, whose roof is Z=75 from XF=1775 to XR=−600 at every Y, so no floor channel can be more than 75 mm above Z=0 there", verified: true, modelled_as: "floor.throat_mm (the venturi roof's height above Z=0, concept/parts.js; v2 parameterisation, domain 40-75) ≤ 75" },
     { id: "REG-C-HEAT-HAZARD", article: "C4.1, C4.6(a)", kind: "info", value: 5, unit: "kg", text: "When a Heat Hazard is declared, the Minimum Mass rises by 5 kg", verified: true, modelled_as: "not modelled: no Heat Hazard in the concept's Silverstone sessions (qualifying air 25.2 °C)" },
     { id: "REG-C-BALLAST", article: "C4.3.1-C4.3.3", kind: "info", text: "Ballast fixed to the sprung mass with tools needed to remove it; driver ballast between the ends of the cockpit entry template, on the survival cell, density > 7500 kg/m³ (C4.3.2); ballast ahead of XA=0 must be present in the front impact test (C4.3.3)", verified: true, modelled_as: "ballast sits between XF=0 and XR (x_frac 0-1), never ahead of XA=0; driver ballast at XC−750 (in the cockpit); densities checked when materials are assigned (REG-C-MAT-DENSITY)" },
     { id: "PKG-PU-FIXED", article: "concept PU lock (owner constraint: the baseline team's homologated PU, C5.5.7, App. C4)", kind: "requires", text: "The power unit is the baseline team's, unchanged: every PU part's mass and position (relative to XPU=0 / XC=0), the MGU-K transmission option and the PU energy figures handed to the lap sims must equal the baseline's (only the cooling derate may lower ICE power)", verified: false, source: "owner brief 2026-10-24 (same PU as the baseline team); PU rows of concept/parts.js massSheet (concept part masses v1, MASS.md)" },
@@ -388,7 +390,14 @@
     if (part === "skids") { if (!any(GRADES.skid, s)) comp("metallic skids: Ti6Al4V or 17-4PH only (C3.6.3(d))"); return out; }
     if (/uprights?$/.test(part)) { const ok = (c.family === "aluminium" && any(GRADES.upright_al, s) && mat.additive !== true) || (c.family === "titanium" && !c152(c, mat)) || (c.family === "mmc" && !c152(c, mat)) || (mat.additive === true && ["aluminium", "titanium"].includes(c.family) && !c152(c, mat)); if (!ok) comp("suspension uprights: wrought 2014/2618/7075/7022 aluminium, C15.2.1(e) titanium, C15.2.1(h) MMC or C15.2.2 AM Al/Ti (C15.3.3)"); return out; }
     if (/^(gear_pairs|gears|driveshafts)$/.test(part)) { if (c.family !== "iron") comp("gear ratio pairs and driveshafts must be steel (C9.6.4, C9.10)"); return out; }
-    if (part === "survival_cell" && !(c.family === "composite" && c.fibre === "carbon")) comp("survival cell homologated laminates are carbon-fibre composite skins (CC-UHS) on aluminium honeycomb (C15.5.3)");
+    if (part === "survival_cell") {
+      // C15.5.3: the homologated survival-cell laminates use CC-UHS skins, "woven carbon cloth, fibre Ftu > 6250MPa, epoxy prepreg"
+      // (C15.5.1(f)): a carbon composite whose fibre strength is not shown to exceed 6250 MPa cannot be one (T800S: 5880 MPa)
+      const fo = mat.fibre && typeof mat.fibre === "object" ? mat.fibre : {}, fr = FIBRES.find(x => x[0].test(s));
+      const ft = num(mat.fibre_strength_MPa) != null ? mat.fibre_strength_MPa : num(fo.tensile_MPa) != null ? fo.tensile_MPa : fr ? fr[2] : null;
+      if (!(c.family === "composite" && c.fibre === "carbon")) comp("survival cell homologated laminates are carbon-fibre composite skins (CC-UHS) on aluminium honeycomb (C15.5.3)");
+      else if (!(ft != null && ft > CC_UHS_FTU_MPA)) comp("survival cell skins must be CC-UHS: carbon fibre Ftu > " + CC_UHS_FTU_MPA + " MPa (C15.5.1(f), C15.5.3); this fibre: " + (ft == null ? "not stated" : ft + " MPa"));
+    }
     if (part === "front_wing" && c.family !== "composite") comp("the front wing assembly includes the endplate, which must be made to laminate PL-ANTISPLINTER (C3.19.1, C15.5.2(b))");
     if (/roll_?(hoop|structure)/.test(part) && (c.family === "mmc" || (mat.particulate === true))) comp("the Primary Roll Structure may not use particulate-reinforced materials (C15.3.4)");
     if (part === "driver_ballast" && !(rho > 7500)) out.push(viol("REG-C-MAT-DENSITY", rho, 7500, ex));
@@ -416,10 +425,14 @@
   // checkPU(pu, { recharge_limit_mj }) -> violations (ids of the info rules REG-C-ERS-K, -ES-SOC, -ES-RECHARGE, -FUEL-FLOW)
   function checkPU(pu, opts) {
     const out = []; if (!pu) return out;
-    const rec = Math.min(8.5, opts && num(opts.recharge_limit_mj) != null ? opts.recharge_limit_mj : 8.5);
+    // C5.2.10: the declared harvest capability is checked against the 8.5 MJ/lap maximum; a session's lower limit (e.g. 6.5 MJ in
+    // Silverstone qualifying, conditions.recharge_limit_mj) binds what a LAP recharges, so it is checked against opts.harvested_mj
+    // (the lap sim's energy.harvested_mj) when given, never against the declared capability (every PhysicalCar declares 8.5)
+    const rec = opts && num(opts.recharge_limit_mj) != null ? Math.min(8.5, opts.recharge_limit_mj) : 8.5;
     if (!(pu.mguk_kw <= 350 + 1e-9)) out.push(viol("REG-C-ERS-K", pu.mguk_kw, 350));
     if (pu.es_soc_window_mj != null && !(pu.es_soc_window_mj <= 4 + 1e-9)) out.push(viol("REG-C-ES-SOC", pu.es_soc_window_mj, 4));
-    if (!(pu.es_harvest_mj_per_lap <= rec + 1e-9)) out.push(viol("REG-C-ES-RECHARGE", pu.es_harvest_mj_per_lap, rec));
+    if (!(pu.es_harvest_mj_per_lap <= 8.5 + 1e-9)) out.push(viol("REG-C-ES-RECHARGE", pu.es_harvest_mj_per_lap, 8.5));
+    if (opts && opts.harvested_mj != null && !(opts.harvested_mj <= rec + 1e-6)) out.push(viol("REG-C-ES-RECHARGE", opts.harvested_mj, rec + " (session limit, lap recharge)"));
     // what a lap can deploy is bounded by the 4 MJ window plus that lap's recharge (C5.2.9, C5.2.10; no separate deploy cap)
     if (!(pu.es_deploy_mj_per_lap <= 4 + 8.5 + 1e-9)) out.push(viol("REG-C-ES-SOC", pu.es_deploy_mj_per_lap, "4 + 8.5 = 12.5 MJ/lap deployable"));
     // the ICE cannot deliver more shaft power than the fuel energy flow it may burn: 3000 MJ/h = 833.3 kW (C5.2.3)
@@ -506,6 +519,7 @@
     const fwZ = fwProfilesChordLimit(fw);
     if (over(fw.chord_mm, fwZ)) out.push(viol("REG-C-FW-PROFILES-Z", fw.chord_mm, r1(fwZ)));
     if (under(g.XR - g.XPU, PLANK_HOLE.xpu_min + PLANK_HOLE.ahead_of_xr)) out.push(viol("REG-C-PLANK-HOLES", g.XR - g.XPU, PLANK_HOLE.xpu_min + PLANK_HOLE.ahead_of_xr));
+    if (fl && over(fl.throat_mm, FLOOR_ROOF_Z)) out.push(viol("REG-C-FLOOR-ROOF", fl.throat_mm, FLOOR_ROOF_Z));
     const sp = (f.params && f.params.sidepods) || f.sidepods;
     if (sp && over(sp.inlet_cm2, SIDEPOD_INLET_MAX_CM2)) out.push(viol("REG-C-SIDEPOD-INLET", sp.inlet_cm2, SIDEPOD_INLET_MAX_CM2));
     for (const r of m.parts || []) {
@@ -547,7 +561,7 @@
 
   const api = {
     SOURCE, DOC, NOMINAL_TYRE_MASS, QUALI_SESSIONS, SESSIONS, MGUK_TRANSMISSION, FLOOR_BODY_MAX_Y, RULES, MODEL_RULES, COMBO_RULES, MATERIAL_RULES, ALL_RULES, BY_ID,
-    PLANK_HOLE, SIDEPOD_INLET_MAX_CM2, SUSP_WIDTH, FLOOR_ROOF_Z, PU_PARTS, PU_LOCK, isQuali, minMass, fwEnvelopeX, fwChordLimit, fwStraightExtent, fwSectionZ, rwSectionZ,
+    PLANK_HOLE, SIDEPOD_INLET_MAX_CM2, SUSP_WIDTH, FLOOR_ROOF_Z, CC_UHS_FTU_MPA, PU_PARTS, PU_LOCK, isQuali, minMass, fwEnvelopeX, fwChordLimit, fwStraightExtent, fwSectionZ, rwSectionZ,
     fwProfilesChordLimit, rwProfilesChordLimit, setMaterials, materialTable, findMaterial, classify, materialViolations, materialsOf, checkMaterials, checkPU, checkPhysical,
     mgukLimitKw, checkFacts, check, describeViolation,
   };

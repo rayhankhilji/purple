@@ -73,15 +73,16 @@ test("physics: more mass -> slower; more power -> faster with a higher trap", ()
   assert.ok(run(base, { fuel_kg: 40 }).lap_s > BASE.lap_s, "fuel load is mass");
   const strong = clone(base); strong.pu.ice_kw *= 1.1;
   const r = run(strong);
-  // the threshold strategy superclips above its deploy ceiling, so more power raises the ceiling and the lap, not the trap plateau
-  assert.ok(r.lap_s < BASE.lap_s - 0.2 && r.energy.deploy_ceiling_kmh > BASE.energy.deploy_ceiling_kmh + 2 && r.speed_trap_kmh > BASE.speed_trap_kmh - 1.5, JSON.stringify([r.lap_s, r.speed_trap_kmh, r.energy.deploy_ceiling_kmh]));
+  assert.ok(r.lap_s < BASE.lap_s - 0.2 && r.speed_trap_kmh > BASE.speed_trap_kmh + 1, JSON.stringify([r.lap_s, r.speed_trap_kmh, BASE.speed_trap_kmh]));
 });
 
 test("physics: smooth response (no jumps) to small parameter changes - the optimiser needs it", () => {
   let prev = null;
   for (let f = 0.99; f <= 1.0101; f += 0.0025) {
     const r = run(scaleAero(base, "CLA", f));
-    if (prev) assert.ok(Math.abs(r.lap_s - prev.lap_s) < 0.035 && Math.abs(r.speed_trap_kmh - prev.speed_trap_kmh) < 5.5, f + ": " + prev.lap_s + "/" + prev.speed_trap_kmh + " -> " + r.lap_s + "/" + r.speed_trap_kmh);
+    // sim v3 (regulated strategy): the energy store's binding point can move between braking zones, so a 0.25 % step carries
+    // up to ~±0.015 s of noise around its ~0.02 s trend (SIM.md §3.5)
+    if (prev) assert.ok(Math.abs(r.lap_s - prev.lap_s) < 0.05 && Math.abs(r.speed_trap_kmh - prev.speed_trap_kmh) < 5.5, f + ": " + prev.lap_s + "/" + prev.speed_trap_kmh + " -> " + r.lap_s + "/" + r.speed_trap_kmh);
     prev = r;
   }
 });
@@ -99,14 +100,14 @@ test("energy: budgets respected (deploy <= SOC window + harvest, harvest <= rech
   const e = BASE.energy;
   assert.equal(e.recharge_cap_mj, 6.5, "Silverstone qualifying recharge limit");
   assert.ok(e.harvested_mj <= 6.5 + 1e-6 && e.deployed_mj <= 4 + e.harvested_mj + 1e-3, JSON.stringify(e));
-  assert.ok(Math.abs(e.harvested_braking_mj + e.harvested_superclip_mj - e.harvested_mj) < 0.002);
+  assert.ok(Math.abs(e.harvested_braking_mj + e.harvested_superclip_mj + e.harvested_part_throttle_mj - e.harvested_mj) < 0.002, JSON.stringify(e));
   for (const [k, v] of [["es_deploy_mj_per_lap", 6], ["es_harvest_mj_per_lap", 3]]) {
     const c = clone(base); c.pu[k] = v; const r = run(c);
     assert.ok(r.energy.deployed_mj <= c.pu.es_deploy_mj_per_lap + 1e-3 && r.energy.harvested_mj <= Math.min(c.pu.es_harvest_mj_per_lap, 6.5) + 1e-6, k + " " + JSON.stringify(r.energy));
     assert.ok(r.energy.deployed_mj <= 4 + r.energy.harvested_mj + 1e-3);
     assert.ok(r.lap_s > BASE.lap_s, "less energy is slower");
   }
-  for (const strategy of ["marginal", "optimal"]) {
+  for (const strategy of ["marginal", "optimal", "threshold"]) {
     const r = run(base, undefined, { strategy });
     assert.ok(r.energy.deployed_mj <= 4 + r.energy.harvested_mj + 1e-3 && r.energy.harvested_mj <= 6.5 + 1e-6, strategy);
   }
@@ -138,8 +139,8 @@ test("exploits closed: Straight Mode cannot add load or drag; a stalled floor lo
   const neg = clone(base); neg.aero.ride_sens_per_mm = -0.02; const zero = clone(base); zero.aero.ride_sens_per_mm = 0;
   assert.equal(run(neg).lap_s, run(zero).lap_s);
   // a smaller dynamic stall margin stalls the floor at a lower squat: slower at speed; a big margin is never worse than the default
-  const low = clone(base); low.aero.stall_margin_mm = -4; const big = clone(base); big.aero.stall_margin_mm = 30;
-  assert.ok(run(low).lap_s > BASE.lap_s + 0.01, "floor stalls under load: " + run(low).lap_s);
+  const low = clone(base); low.aero.stall_margin_mm = -8; const big = clone(base); big.aero.stall_margin_mm = 30;
+  assert.ok(run(low).lap_s > BASE.lap_s + 0.02, "floor stalls under load: " + run(low).lap_s);
   assert.ok(run(big).lap_s <= BASE.lap_s + 1e-9);
   const pf = sim.platform(base);
   assert.ok(pf.squatAt(17000) > 3 && pf.squatAt(17000) < 7, "~5 mm squat at ~17 kN (concept/aeromap.js dyn compression)");

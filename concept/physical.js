@@ -35,18 +35,18 @@
   // the energy rules (FIA 2026 Section C, Issue 19): regulation, not design
   const ENERGY = Object.freeze({ soc_window_mj: 4, recharge_max_mj: 8.5, deploy_mj: 12.5, mguk_max_kw: 350, basis: "C5.2.9 SoC window 4 MJ; C5.2.10 recharge ≤ 8.5 MJ/lap (Silverstone qualifying 6.5 MJ via conditions.recharge_limit_mj); deploy = window + recharge = 12.5 MJ/lap (no separate deploy cap); C5.2.7 MGU-K 350 kW" });
   // v0 absolute levels: used only when the physics sim is not loaded (uncalibrated estimates; see SOURCES)
-  const REF_V0 = { CLA_m2: 3.8, CDA_m2: 1.1, sm_cla_ratio: 0.6, sm_cda_ratio: 0.8, fuel_kg: 8, mass_kg: 770, track_front_m: 1.58, track_rear_m: 1.52, cog_height_m: 0.325, weight_dist_front: 0.4492, mu_x: 1.75, mu_y: 1.8, load_sens: 0.04, drivetrain_eff: 0.95, ice_kw: 400, decel_g: 5 };
+  const REF_V0 = { CLA_m2: 3.8, CDA_m2: 1.1, sm_cla_ratio: 0.6, sm_cda_ratio: 0.8, fuel_kg: 8, mass_kg: 770, track_front_m: 1.54, track_rear_m: 1.47, cog_height_m: 0.325, weight_dist_front: 0.4492, mu_x: 1.75, mu_y: 1.8, load_sens: 0.04, drivetrain_eff: 0.95, ice_kw: 400, decel_g: 5 };
   const REF = REF_V0;   // kept for callers of the v0 API
   const SOURCES = {
     mass_kg: { verified: false, basis: "the anchor car's mass (physics sim: 768 kg, C4.1 726 kg + reported tyre mass) + the design's mass-sheet change from its baseline (concept part-mass estimates + automatic ballast to the C4.1 minimum; the C4.1 check itself uses the mass sheet, 770 kg in qualifying)" },
     fuel_kg: { verified: false, basis: "8 kg qualifying-run fuel: the physics sim's assumption; fuel is outside Car Mass (Section C definitions)" },
     wheelbase_m: { verified: true, basis: "design parameter; C2.3.3 caps it at 3.400 m (the sim's point mass does not use it; sim v0 does)" },
-    track_m: { verified: false, basis: "the anchor car's track widths (physics sim assumption 1.60 / 1.55 m)" },
-    cog_height_m: { verified: false, basis: "anchor CoG height (physics sim assumption 0.28 m) + the design's mass-sheet CoG change from its baseline (Z frame + 10 mm plank + static ride height)" },
+    track_m: { verified: true, basis: "the anchor car's track widths: 1.540 / 1.470 m, the widest C10.10.1 allows (Wheel Coordinate System origin at |Y| ≤ 603 / 525 mm + half the C10.7.2(a) rim overall width; concept/parts.js wheel centres at |y| 770 / 735 mm)" },
+    cog_height_m: { verified: false, basis: "anchor CoG height (physics sim assumption 0.30 m) + the design's mass-sheet CoG change from its baseline (Z frame + 10 mm plank + static ride height)" },
     weight_dist_front: { verified: false, basis: "anchor front share + the design's static axle-load change from its baseline (C4.2 bounds the mass sheet in qualifying)" },
-    aero: { verified: false, basis: "the physics sim's estimated effective coefficients for the anchor car (estimated on the 2026 British GP pole lap: corner CLA 2.48 / 3.17 m², CDA 1.35 m²; Straight Mode 1.10 / 1.10, 0.74), times the concept aero map v0's relative change from the baseline design; the baseline's front 4° / rear 15° flap is the reference Straight Mode setting. Effective values of a point-mass model, not wind-on-car measurements. floor_stalled / stall_margin_mm: the floor's gap at the dynamic ride height against the modelled stall onset" },
+    aero: { verified: false, basis: "the physics sim's estimated effective coefficients for the anchor car (estimated on the 2026 British GP pole lap; the values are concept/sim/fitted.js baseline_estimate), times the concept aero map v0's relative change from the baseline design; the baseline's front 4° / rear 15° flap is the reference Straight Mode setting. Effective values of a point-mass model, not wind-on-car measurements. floor_stalled / stall_margin_mm: the floor's gap at the dynamic ride height against the modelled stall onset" },
     pu: { verified: "partial", basis: "ICE: the anchor's (400 kW reported generic 2026 figure × the team's inferred PU scale) × the cooling derate; MGU-K 350 kW (C5.2.7); " + ENERGY.basis },
-    tyres: { verified: false, basis: "the anchor's tyre friction and load sensitivity, estimated by the physics sim on the pole lap (μx 1.84, μy 1.95, load sensitivity 0.106)" },
+    tyres: { verified: false, basis: "the anchor's tyre friction, load sensitivity (power-law tyre, sim v3) and slip angle at the limit, estimated by the physics sim on the pole lap (concept/sim/fitted.js baseline_estimate.tyres)" },
     brakes: { verified: false, basis: "the anchor's mechanical deceleration cap (physics sim assumption 5 g); braking is tyre-limited below it" },
     drivetrain_eff: { verified: false, basis: "0.95: physics sim assumption for gearbox and driveline efficiency" },
     yaw_inertia_kgm2: { verified: false, basis: "the design's mass sheet: Σ m·((x − x_cog)² + y²) over the part point masses (no part's own inertia; concept part masses v1, estimates). Absolute, not anchored (no anchor car carries one); the physics sim does not read it yet" },
@@ -123,7 +123,7 @@
       ? { cla: A.aero.corner.CLA_front_m2 + A.aero.corner.CLA_rear_m2, claS: A.aero.straight.CLA_front_m2 + A.aero.straight.CLA_rear_m2, cda: A.aero.corner.CDA_m2, cdaS: A.aero.straight.CDA_m2, bal: A.aero.corner.CLA_front_m2 / (A.aero.corner.CLA_front_m2 + A.aero.corner.CLA_rear_m2), balS: A.aero.straight.CLA_front_m2 / Math.max(1e-9, A.aero.straight.CLA_front_m2 + A.aero.straight.CLA_rear_m2) }
       : { cla: V.CLA_m2, claS: V.CLA_m2 * V.sm_cla_ratio * (ra.df_sm / ra.df), cda: V.CDA_m2, cdaS: V.CDA_m2 * V.sm_cda_ratio * (ra.cd_sm / ra.cd), bal: ra.balance, balS: ra.balance_sm };
     const base = A
-      ? { mass_kg: A.mass_kg, fuel_kg: A.fuel_kg, cog: A.cog_height_m, wdf: A.weight_dist_front, tf: A.track_front_m, tr: A.track_rear_m, mu_x: A.tyres.mu_x, mu_y: A.tyres.mu_y, ls: A.tyres.load_sens, radius: A.tyres.radius_m, decel: A.brakes.max_decel_g_mech, eta: A.drivetrain_eff, ice: A.pu.ice_kw, gearing: A.gearing ? JSON.parse(JSON.stringify(A.gearing)) : undefined }
+      ? { mass_kg: A.mass_kg, fuel_kg: A.fuel_kg, cog: A.cog_height_m, wdf: A.weight_dist_front, tf: A.track_front_m, tr: A.track_rear_m, mu_x: A.tyres.mu_x, mu_y: A.tyres.mu_y, ls: A.tyres.load_sens, slip: A.tyres.slip_angle_rad, radius: A.tyres.radius_m, decel: A.brakes.max_decel_g_mech, eta: A.drivetrain_eff, ice: A.pu.ice_kw, gearing: A.gearing ? JSON.parse(JSON.stringify(A.gearing)) : undefined }
       : { mass_kg: V.mass_kg, fuel_kg: V.fuel_kg, cog: V.cog_height_m, wdf: V.weight_dist_front, tf: V.track_front_m, tr: V.track_rear_m, mu_x: V.mu_x, mu_y: V.mu_y, ls: V.load_sens, radius: parts.WHEEL.tyre_radius_mm / 1000, decel: V.decel_g, eta: V.drivetrain_eff, ice: V.ice_kw };
     // relative aero against the reference design (the team baseline)
     const df = a.df / ra.df, cd = a.cd / ra.cd, dfS = a.df_sm / ra.df, cdS = a.cd_sm / ra.cd, dfSRef = ra.df_sm / ra.df, cdSRef = ra.cd_sm / ra.cd;
@@ -169,7 +169,7 @@
       },
       materials: m.materials,
       pu: { ice_kw: r4(iceKw), mguk_kw: Math.min(ENERGY.mguk_max_kw, parts.BY_ID.pu_mguk.power_kw) * cal.power_scale, es_deploy_mj_per_lap: ENERGY.deploy_mj, es_harvest_mj_per_lap: ENERGY.recharge_max_mj, es_soc_window_mj: ENERGY.soc_window_mj },
-      tyres: { mu_x: r4(base.mu_x * cal.mu_scale), mu_y: r4(base.mu_y * cal.mu_scale), load_sens: base.ls, radius_m: base.radius, compound: "soft" },
+      tyres: Object.assign({ mu_x: r4(base.mu_x * cal.mu_scale), mu_y: r4(base.mu_y * cal.mu_scale), load_sens: base.ls, radius_m: base.radius, compound: "soft" }, base.slip != null ? { slip_angle_rad: base.slip } : {}),
       brakes: { max_decel_g_mech: base.decel },
       drivetrain_eff: base.eta,
       calibration: cal,

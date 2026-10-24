@@ -28,6 +28,31 @@ function lapXY(ch, frac) {
 }
 const meanX = [], meanY = [];
 for (let k = 0; k < n; k++) { let sx = 0, sy = 0; for (const ch of laps) { const [x, y] = lapXY(ch, c.distance_m[k] / Lt); sx += x; sy += y; } meanX.push(sx / laps.length); meanY.push(sy / laps.length); }
+// v3: position-aligned averaging. Averaging at equal lap FRACTIONS mixes points that are up to ~15 m apart along the track (each
+// lap's speed-integral distance drifts differently), which blurs the line where it turns hardest (Village, Vale-Club). So, PROJ_ITERS
+// times: every lap's points are projected onto the current mean line (nearest point, searched around the fraction's index) and the
+// median of the laps' lateral offsets per 5 m station moves the line; the stations stay on the pole lap's distance axis.
+const PROJ_ITERS = process.argv.includes("--fraction-only") ? 0 : 2;
+for (let it = 0; it < PROJ_ITERS; it++) {
+  const N = meanX.length, nx = new Float64Array(N), ny = new Float64Array(N), offs = Array.from({ length: N }, () => []);
+  for (let k = 0; k < N; k++) { const a = (k - 1 + N) % N, b = (k + 1) % N, dx = meanX[b] - meanX[a], dy = meanY[b] - meanY[a], l = Math.hypot(dx, dy) || 1; nx[k] = -dy / l; ny[k] = dx / l; }
+  for (const ch of laps) {
+    const m = ch.distance_m.length, L = ch.distance_m[m - 1], acc = new Map();
+    for (let q = 0; q < m; q++) {
+      const x = ch.x_m[q], y = ch.y_m[q]; if (!(isFinite(x) && isFinite(y))) continue;
+      const k0 = Math.round((ch.distance_m[q] / L) * N);
+      let best = -1, bd = Infinity;
+      for (let d = -8; d <= 8; d++) { const k = (((k0 + d) % N) + N) % N, e = (x - meanX[k]) ** 2 + (y - meanY[k]) ** 2; if (e < bd) { bd = e; best = k; } }
+      const o = (x - meanX[best]) * nx[best] + (y - meanY[best]) * ny[best];
+      if (!acc.has(best)) acc.set(best, []); acc.get(best).push(o);
+    }
+    for (const [k, v] of acc) offs[k].push(v.reduce((p, z) => p + z, 0) / v.length);
+  }
+  const med = a => { if (!a.length) return 0; const s = a.slice().sort((p, q) => p - q), h = s.length >> 1; return s.length % 2 ? s[h] : 0.5 * (s[h - 1] + s[h]); };
+  const raw = offs.map(med), sm = new Float64Array(N);
+  for (let k = 0; k < N; k++) { let s = 0, w = 0; for (let d = -2; d <= 2; d++) { const wt = Math.exp(-0.5 * d * d); s += wt * raw[(((k + d) % N) + N) % N]; w += wt; } sm[k] = s / w; }
+  for (let k = 0; k < N; k++) { meanX[k] += sm[k] * nx[k]; meanY[k] += sm[k] * ny[k]; }
+}
 const osm = T.buildTrack("silverstone", { line: "osm" });
 
 // 2. alignment

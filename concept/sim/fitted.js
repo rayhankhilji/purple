@@ -24,20 +24,21 @@
    "baseline_estimate": {
     "aero": {
      "corner": {
-      "CLA_front_m2": 1.9934,
-      "CLA_rear_m2": 2.4691,
-      "CDA_m2": 0.9817
+      "CLA_front_m2": 2.3489,
+      "CLA_rear_m2": 2.9715,
+      "CDA_m2": 1.1833
      },
      "straight": {
-      "CLA_front_m2": 1.4113,
-      "CLA_rear_m2": 1.7481,
-      "CDA_m2": 0.808
+      "CLA_front_m2": 1.6895,
+      "CLA_rear_m2": 2.1373,
+      "CDA_m2": 0.9494
      }
     },
     "tyres": {
-     "mu_x": 1.6647,
-     "mu_y": 1.9874,
-     "load_sens": 0.0643
+     "mu_x": 1.7155,
+     "mu_y": 1.8896,
+     "load_sens": 0.086,
+     "slip_angle_rad": 0.098
     },
     "pu": {
      "ice_kw": 400
@@ -58,107 +59,126 @@
     }
    },
    "baseline_estimate_scales": {
-    "mu_y": 1.9874,
-    "mu_x": 1.6647,
-    "cla": 4.4625,
-    "balance": 0.4467,
-    "cda": 0.9817,
-    "cda_straight": 0.808,
-    "cla_straight_ratio": 0.708,
-    "load_sens_pct_per_kN": 3.3701
+    "mu_y": 1.8896,
+    "mu_x": 1.7155,
+    "cla": 5.3204,
+    "balance": 0.4415,
+    "cda": 1.1833,
+    "cda_straight": 0.9494,
+    "cla_straight_ratio": 0.7193,
+    "load_sens_pct_per_kN": 4.5064,
+    "slip_angle": 0.098
    },
    "calibration": {
-    "method": "MAP (Nelder-Mead, 420 iterations + 2 restarts) on the pole lap's speed trace + lap time; 8 global parameters (mu_y, mu_x, cla, balance, cda, cda_straight, cla_straight_ratio, load_sens_pct_per_kN) bounded to the concept/data/priors-2026.json ranges with Gaussian priors (range = +-2 sd), plus Gaussian terms for the pole team's telemetry-derived lateral limits and CdA (cars-2026-derived.json) and the brake supplier's 2026 Silverstone peak deceleration",
+    "method": "MAP (Nelder-Mead, 420 iterations + 2 restarts) on the pole lap's speed trace + lap time; 9 global parameters (mu_y, mu_x, cla, balance, cda, cda_straight, cla_straight_ratio, load_sens_pct_per_kN, slip_angle) bounded to the concept/data/priors-2026.json ranges with Gaussian priors (range = +-2 sd), plus Gaussian terms for the pole team's telemetry-derived lateral limits and CdA (cars-2026-derived.json) and the brake supplier's 2026 Silverstone peak deceleration",
     "fit_lap": {
      "driver": "ANT",
      "lap_real_s": 88.111,
-     "lap_sim_s": 88.115,
+     "lap_sim_s": 88.107,
      "sectors_real_s": [
       28.348,
       35.521,
       24.242
      ],
      "sectors_sim_s": [
-      28.017,
-      36.126,
-      23.971
+      28.367,
+      35.674,
+      24.066
      ],
      "trap_real_kmh": 302,
-     "trap_sim_kmh": 314.7,
-     "trace_rms_kmh": 13.12
+     "trap_sim_kmh": 310.2,
+     "trace_rms_kmh": 10.26
     },
     "prior_check": [
      {
       "key": "CLA_corner",
-      "value": 4.4625,
+      "value": 5.3204,
       "lo": 3.2,
       "central": 3.9,
-      "hi": 4.6,
-      "inside": true
+      "hi": 6.5,
+      "inside": true,
+      "inside_sourced": false,
+      "sourced_lo": 3.2,
+      "sourced_hi": 4.6,
+      "widened": true
      },
      {
       "key": "aero_balance_front",
-      "value": 0.4467,
+      "value": 0.4415,
       "lo": 0.4,
       "central": 0.435,
       "hi": 0.47,
-      "inside": true
+      "inside": true,
+      "inside_sourced": true
      },
      {
       "key": "CDA_corner",
-      "value": 0.9817,
+      "value": 1.1833,
       "lo": 0.75,
       "central": 1,
-      "hi": 1.25,
-      "inside": true
+      "hi": 1.5,
+      "inside": true,
+      "inside_sourced": true,
+      "sourced_lo": 0.75,
+      "sourced_hi": 1.25,
+      "widened": true
      },
      {
       "key": "CDA_straight",
-      "value": 0.808,
+      "value": 0.9494,
       "lo": 0.6,
       "central": 0.75,
-      "hi": 1,
-      "inside": true
+      "hi": 1.25,
+      "inside": true,
+      "inside_sourced": true,
+      "sourced_lo": 0.6,
+      "sourced_hi": 1,
+      "widened": true
      },
      {
       "key": "CDA_straight_over_corner",
-      "value": 0.8231,
+      "value": 0.8023,
       "lo": 0.75,
       "central": 0.82,
       "hi": 0.92,
-      "inside": true
+      "inside": true,
+      "inside_sourced": true
      },
      {
       "key": "CLA_straight_over_corner",
-      "value": 0.708,
+      "value": 0.7193,
       "lo": 0.68,
       "central": 0.72,
       "hi": 0.8,
-      "inside": true
+      "inside": true,
+      "inside_sourced": true
      },
      {
       "key": "mu_y_peak_at_2kN",
-      "value": 1.9874,
+      "value": 1.8896,
       "lo": 1.6,
       "central": 1.8,
       "hi": 2,
-      "inside": true
+      "inside": true,
+      "inside_sourced": true
      },
      {
       "key": "mu_x_peak_at_2kN",
-      "value": 1.6647,
+      "value": 1.7155,
       "lo": 1.5,
       "central": 1.75,
       "hi": 1.9,
-      "inside": true
+      "inside": true,
+      "inside_sourced": true
      },
      {
       "key": "load_sensitivity",
-      "value": 3.3699,
+      "value": 4.5072,
       "lo": 3,
       "central": 4.5,
       "hi": 6,
-      "inside": true
+      "inside": true,
+      "inside_sourced": true
      },
      {
       "key": "ICE_crank_power",
@@ -166,75 +186,85 @@
       "lo": 385,
       "central": 405,
       "hi": 430,
-      "inside": true
+      "inside": true,
+      "inside_sourced": true
+     },
+     {
+      "key": "slip_angle_at_limit",
+      "value": 0.098,
+      "lo": 0.05,
+      "central": 0.08,
+      "hi": 0.16,
+      "inside": true,
+      "inside_sourced": true
      }
     ],
     "derived_agreement": [
      {
       "name": "lateral limit at 150 km/h (g)",
-      "sim": 2.896,
+      "sim": 3.007,
       "derived": 3.734,
       "sd": 0.232,
-      "z": -3.61
+      "z": -3.13
      },
      {
       "name": "lateral limit at 250 km/h (g)",
-      "sim": 4.394,
+      "sim": 5.03,
       "derived": 5.792,
       "sd": 0.677,
-      "z": -2.06
+      "z": -1.13
      },
      {
       "name": "CdA Corner Mode (m2)",
-      "sim": 0.982,
+      "sim": 1.183,
       "derived": 1.079,
       "sd": 0.176,
-      "z": -0.55
+      "z": 0.59
      },
      {
       "name": "CdA Straight Mode (m2)",
-      "sim": 0.808,
+      "sim": 0.949,
       "derived": 0.806,
       "sd": 0.176,
-      "z": 0.01
+      "z": 0.81
      }
     ]
    },
    "baseline": {
-    "lap_s": 88.115,
+    "lap_s": 88.107,
     "sectors_s": [
-     28.017,
-     36.126,
-     23.971
+     28.367,
+     35.674,
+     24.066
     ],
-    "vmax_kmh": 315.3,
-    "speed_trap_kmh": 314.7,
-    "vmin_kmh": 76.6,
+    "vmax_kmh": 320.1,
+    "speed_trap_kmh": 310.2,
+    "vmin_kmh": 73.6,
     "energy": {
-     "deployed_mj": 6.996,
-     "harvested_mj": 2.996,
-     "harvested_braking_mj": 2.668,
-     "harvested_superclip_mj": 0.329,
-     "harvested_part_throttle_mj": 0,
+     "deployed_mj": 8.15,
+     "harvested_mj": 4.15,
+     "harvested_braking_mj": 1.864,
+     "harvested_superclip_mj": 2.197,
+     "harvested_part_throttle_mj": 0.089,
      "recharge_cap_mj": 6.5,
-     "superclip_share": 0.026,
-     "superclip_fill": 0.09,
+     "superclip_share": null,
+     "superclip_fill": null,
      "energy_limited": true,
-     "soc_start_mj": null,
-     "soc_min_mj": null,
-     "soc_end_mj": null,
-     "strategy": "threshold",
-     "deploy_ceiling_kmh": 293.9
+     "soc_start_mj": 4,
+     "soc_min_mj": 0,
+     "soc_end_mj": 0,
+     "strategy": "regulated",
+     "deploy_ceiling_kmh": null
     },
     "speeds_kmh": {
-     "intermediate_1": 311.1,
-     "intermediate_2": 269.6,
-     "finish_line": 277.9
+     "intermediate_1": 290.2,
+     "intermediate_2": 262,
+     "finish_line": 266
     }
    },
    "team_fit": {
-    "iterations": 6,
-    "cost": 36.27,
+    "iterations": 8,
+    "cost": 24.811,
     "sigma": {
      "lap_s": 0.1,
      "trap_kmh": 2.5,
@@ -244,12 +274,12 @@
     },
     "bounds": {
      "cla": [
-      0.7170868347338936,
-      1.0308123249299719
+      0.7,
+      1.15
      ],
      "cda": [
       0.8,
-      1.2376237623762376
+      1.25
      ],
      "pu": [
       0.9625,
@@ -257,11 +287,11 @@
      ]
     },
     "pu_scale": {
-     "Audi AFR 26 Hybrid": 0.9927,
-     "Ferrari 067/6": 0.9847,
-     "Honda RA626H": 0.979,
-     "Mercedes-AMG F1 M17": 1.0077,
-     "Red Bull Ford DM01": 0.9965
+     "Audi AFR 26 Hybrid": 0.9868,
+     "Ferrari 067/6": 0.98,
+     "Honda RA626H": 0.9767,
+     "Mercedes-AMG F1 M17": 0.9867,
+     "Red Bull Ford DM01": 0.9902
     }
    },
    "teams": [
@@ -272,92 +302,92 @@
      "pu": "Mercedes-AMG F1 M17",
      "driver": "ANT",
      "q_real_s": 88.111,
-     "q_sim_s": 88.14,
-     "residual_lap_s": 0.029,
+     "q_sim_s": 88.117,
+     "residual_lap_s": 0.006,
      "trap_real_kmh": 302.6,
-     "trap_sim_kmh": 306.2,
-     "residual_trap_kmh": 3.6,
-     "residual_trap_rel_kmh": 3.6,
-     "cla_scale": 1.018,
-     "cda_scale": 1.0316,
-     "pu_scale": 1.0077,
+     "trap_sim_kmh": 304.5,
+     "residual_trap_kmh": 1.9,
+     "residual_trap_rel_kmh": 1.9,
+     "cla_scale": 1.0994,
+     "cda_scale": 1.0624,
+     "pu_scale": 0.9867,
      "at_bound": [],
      "heldout": {
       "team": "mercedes",
       "driver": "ANT",
       "used_in_fit": "trace (baseline estimate) + lap + trap",
-      "trace_rms_kmh": 13.3,
+      "trace_rms_kmh": 9.68,
       "sectors_real_s": [
        28.348,
        35.521,
        24.242
       ],
       "sectors_sim_s": [
-       28.034,
-       36.076,
-       24.03
+       28.548,
+       35.562,
+       24.007
       ],
       "sector_residuals_s": [
-       -0.314,
-       0.555,
-       -0.212
+       0.2,
+       0.041,
+       -0.235
       ],
       "vmax_real_kmh": 316.9,
-      "vmax_sim_kmh": 306.3,
+      "vmax_sim_kmh": 315.1,
       "corners": [
        {
         "corner": "Village T3",
         "real_kmh": 108.1,
-        "sim_kmh": 115.8,
-        "diff_kmh": 7.7
+        "sim_kmh": 118,
+        "diff_kmh": 9.9
        },
        {
         "corner": "Loop T4",
         "real_kmh": 87,
-        "sim_kmh": 77.1,
-        "diff_kmh": -9.9
+        "sim_kmh": 74.8,
+        "diff_kmh": -12.2
        },
        {
         "corner": "Brooklands T6",
         "real_kmh": 167,
-        "sim_kmh": 142.5,
-        "diff_kmh": -24.5
+        "sim_kmh": 146.6,
+        "diff_kmh": -20.4
        },
        {
         "corner": "Luffield T7",
         "real_kmh": 114,
-        "sim_kmh": 102.4,
-        "diff_kmh": -11.6
+        "sim_kmh": 103.4,
+        "diff_kmh": -10.6
        },
        {
         "corner": "Copse T9",
         "real_kmh": 282.1,
-        "sim_kmh": 291.5,
-        "diff_kmh": 9.4
+        "sim_kmh": 294.4,
+        "diff_kmh": 12.3
        },
        {
         "corner": "Becketts T12-13",
         "real_kmh": 219,
-        "sim_kmh": 191.5,
-        "diff_kmh": -27.5
+        "sim_kmh": 209.2,
+        "diff_kmh": -9.8
        },
        {
         "corner": "Stowe T15",
         "real_kmh": 236,
-        "sim_kmh": 197,
-        "diff_kmh": -39
+        "sim_kmh": 229.2,
+        "diff_kmh": -6.8
        },
        {
         "corner": "Vale T16",
         "real_kmh": 102.1,
-        "sim_kmh": 112.3,
-        "diff_kmh": 10.2
+        "sim_kmh": 111,
+        "diff_kmh": 8.9
        },
        {
         "corner": "Club T17",
         "real_kmh": 107.7,
-        "sim_kmh": 112.3,
-        "diff_kmh": 4.6
+        "sim_kmh": 111,
+        "diff_kmh": 3.3
        }
       ]
      }
@@ -369,92 +399,92 @@
      "pu": "Ferrari 067/6",
      "driver": "LEC",
      "q_real_s": 88.286,
-     "q_sim_s": 88.295,
-     "residual_lap_s": 0.009,
+     "q_sim_s": 88.287,
+     "residual_lap_s": 0.001,
      "trap_real_kmh": 307.4,
-     "trap_sim_kmh": 307.1,
-     "residual_trap_kmh": -0.3,
-     "residual_trap_rel_kmh": -0.3,
-     "cla_scale": 1.016,
-     "cda_scale": 1.0141,
-     "pu_scale": 0.9847,
+     "trap_sim_kmh": 307.5,
+     "residual_trap_kmh": 0.1,
+     "residual_trap_rel_kmh": 0.1,
+     "cla_scale": 1.0152,
+     "cda_scale": 0.9982,
+     "pu_scale": 0.98,
      "at_bound": [],
      "heldout": {
       "team": "ferrari",
       "driver": "LEC",
       "used_in_fit": "lap + trap only",
-      "trace_rms_kmh": 12.67,
+      "trace_rms_kmh": 9.92,
       "sectors_real_s": [
        28.292,
        35.614,
        24.38
       ],
       "sectors_sim_s": [
-       28.086,
-       36.165,
-       24.044
+       28.49,
+       35.66,
+       24.136
       ],
       "sector_residuals_s": [
-       -0.206,
-       0.551,
-       -0.336
+       0.198,
+       0.046,
+       -0.244
       ],
       "vmax_real_kmh": 316,
-      "vmax_sim_kmh": 307.2,
+      "vmax_sim_kmh": 318.3,
       "corners": [
        {
         "corner": "Village T3",
         "real_kmh": 113,
-        "sim_kmh": 115.7,
-        "diff_kmh": 2.7
+        "sim_kmh": 116.2,
+        "diff_kmh": 3.2
        },
        {
         "corner": "Loop T4",
         "real_kmh": 86.1,
-        "sim_kmh": 76.7,
-        "diff_kmh": -9.4
+        "sim_kmh": 73.7,
+        "diff_kmh": -12.4
        },
        {
         "corner": "Brooklands T6",
         "real_kmh": 168.4,
-        "sim_kmh": 142.5,
-        "diff_kmh": -25.9
+        "sim_kmh": 143.1,
+        "diff_kmh": -25.3
        },
        {
         "corner": "Luffield T7",
         "real_kmh": 110.4,
-        "sim_kmh": 102.3,
-        "diff_kmh": -8.1
+        "sim_kmh": 102.2,
+        "diff_kmh": -8.2
        },
        {
         "corner": "Copse T9",
         "real_kmh": 284,
-        "sim_kmh": 290.7,
-        "diff_kmh": 6.7
+        "sim_kmh": 297.4,
+        "diff_kmh": 13.4
        },
        {
         "corner": "Becketts T12-13",
         "real_kmh": 210.1,
-        "sim_kmh": 191.4,
-        "diff_kmh": -18.7
+        "sim_kmh": 199.5,
+        "diff_kmh": -10.6
        },
        {
         "corner": "Stowe T15",
         "real_kmh": 225,
-        "sim_kmh": 197,
-        "diff_kmh": -28
+        "sim_kmh": 216.6,
+        "diff_kmh": -8.4
        },
        {
         "corner": "Vale T16",
         "real_kmh": 108.5,
-        "sim_kmh": 112.3,
-        "diff_kmh": 3.8
+        "sim_kmh": 109.4,
+        "diff_kmh": 0.9
        },
        {
         "corner": "Club T17",
         "real_kmh": 112.4,
-        "sim_kmh": 112.3,
-        "diff_kmh": -0.1
+        "sim_kmh": 109.4,
+        "diff_kmh": -3
        }
       ]
      }
@@ -466,92 +496,92 @@
      "pu": "Mercedes-AMG F1 M17",
      "driver": "NOR",
      "q_real_s": 88.877,
-     "q_sim_s": 88.86,
-     "residual_lap_s": -0.017,
+     "q_sim_s": 88.874,
+     "residual_lap_s": -0.003,
      "trap_real_kmh": 304.3,
-     "trap_sim_kmh": 307.1,
-     "residual_trap_kmh": 2.8,
-     "residual_trap_rel_kmh": 2.8,
-     "cla_scale": 0.9759,
-     "cda_scale": 1.0693,
-     "pu_scale": 1.0077,
+     "trap_sim_kmh": 304.8,
+     "residual_trap_kmh": 0.5,
+     "residual_trap_rel_kmh": 0.5,
+     "cla_scale": 0.9975,
+     "cda_scale": 1.0451,
+     "pu_scale": 0.9867,
      "at_bound": [],
      "heldout": {
       "team": "mclaren",
       "driver": "NOR",
       "used_in_fit": "lap + trap only",
-      "trace_rms_kmh": 12.9,
+      "trace_rms_kmh": 10.16,
       "sectors_real_s": [
        28.458,
        35.976,
        24.443
       ],
       "sectors_sim_s": [
-       28.222,
-       36.424,
-       24.214
+       28.648,
+       35.914,
+       24.311
       ],
       "sector_residuals_s": [
-       -0.236,
-       0.448,
-       -0.229
+       0.19,
+       -0.062,
+       -0.132
       ],
       "vmax_real_kmh": 311,
-      "vmax_sim_kmh": 307.3,
+      "vmax_sim_kmh": 315.9,
       "corners": [
        {
         "corner": "Village T3",
         "real_kmh": 106.2,
-        "sim_kmh": 115,
-        "diff_kmh": 8.8
+        "sim_kmh": 115.8,
+        "diff_kmh": 9.6
        },
        {
         "corner": "Loop T4",
         "real_kmh": 84,
-        "sim_kmh": 76.5,
-        "diff_kmh": -7.5
+        "sim_kmh": 74.2,
+        "diff_kmh": -9.8
        },
        {
         "corner": "Brooklands T6",
         "real_kmh": 161.2,
-        "sim_kmh": 141.2,
-        "diff_kmh": -20
+        "sim_kmh": 142.3,
+        "diff_kmh": -18.9
        },
        {
         "corner": "Luffield T7",
         "real_kmh": 113.5,
-        "sim_kmh": 101.8,
-        "diff_kmh": -11.7
+        "sim_kmh": 102,
+        "diff_kmh": -11.5
        },
        {
         "corner": "Copse T9",
         "real_kmh": 276.2,
-        "sim_kmh": 286.3,
-        "diff_kmh": 10.1
+        "sim_kmh": 294.8,
+        "diff_kmh": 18.6
        },
        {
         "corner": "Becketts T12-13",
         "real_kmh": 207.1,
-        "sim_kmh": 188.6,
-        "diff_kmh": -18.5
+        "sim_kmh": 197.4,
+        "diff_kmh": -9.7
        },
        {
         "corner": "Stowe T15",
         "real_kmh": 229.2,
-        "sim_kmh": 194.1,
-        "diff_kmh": -35.1
+        "sim_kmh": 214,
+        "diff_kmh": -15.2
        },
        {
         "corner": "Vale T16",
         "real_kmh": 106.7,
-        "sim_kmh": 111.8,
-        "diff_kmh": 5.1
+        "sim_kmh": 109,
+        "diff_kmh": 2.3
        },
        {
         "corner": "Club T17",
         "real_kmh": 111.4,
-        "sim_kmh": 111.8,
-        "diff_kmh": 0.4
+        "sim_kmh": 109,
+        "diff_kmh": -2.4
        }
       ]
      }
@@ -563,92 +593,92 @@
      "pu": "Red Bull Ford DM01",
      "driver": "HAD",
      "q_real_s": 88.746,
-     "q_sim_s": 88.747,
-     "residual_lap_s": 0.001,
+     "q_sim_s": 88.748,
+     "residual_lap_s": 0.002,
      "trap_real_kmh": 305.8,
-     "trap_sim_kmh": 303.8,
-     "residual_trap_kmh": -2,
-     "residual_trap_rel_kmh": -2,
-     "cla_scale": 1.0085,
-     "cda_scale": 1.0749,
-     "pu_scale": 0.9965,
+     "trap_sim_kmh": 305.4,
+     "residual_trap_kmh": -0.4,
+     "residual_trap_rel_kmh": -0.4,
+     "cla_scale": 0.9992,
+     "cda_scale": 1.0392,
+     "pu_scale": 0.9902,
      "at_bound": [],
      "heldout": {
       "team": "redbull",
       "driver": "HAD",
       "used_in_fit": "lap + trap only",
-      "trace_rms_kmh": 12.48,
+      "trace_rms_kmh": 9.68,
       "sectors_real_s": [
        28.442,
        35.831,
        24.473
       ],
       "sectors_sim_s": [
-       28.223,
-       36.351,
-       24.173
+       28.611,
+       35.864,
+       24.274
       ],
       "sector_residuals_s": [
-       -0.219,
-       0.52,
-       -0.3
+       0.169,
+       0.033,
+       -0.199
       ],
       "vmax_real_kmh": 316,
-      "vmax_sim_kmh": 304,
+      "vmax_sim_kmh": 316.4,
       "corners": [
        {
         "corner": "Village T3",
         "real_kmh": 110.2,
-        "sim_kmh": 115.5,
-        "diff_kmh": 5.3
+        "sim_kmh": 115.8,
+        "diff_kmh": 5.6
        },
        {
         "corner": "Loop T4",
         "real_kmh": 86,
-        "sim_kmh": 76.7,
-        "diff_kmh": -9.3
+        "sim_kmh": 73.6,
+        "diff_kmh": -12.4
        },
        {
         "corner": "Brooklands T6",
         "real_kmh": 164,
-        "sim_kmh": 142.2,
-        "diff_kmh": -21.8
+        "sim_kmh": 142.4,
+        "diff_kmh": -21.6
        },
        {
         "corner": "Luffield T7",
         "real_kmh": 112.4,
-        "sim_kmh": 102.1,
-        "diff_kmh": -10.3
+        "sim_kmh": 101.9,
+        "diff_kmh": -10.5
        },
        {
         "corner": "Copse T9",
         "real_kmh": 280,
-        "sim_kmh": 288.6,
-        "diff_kmh": 8.6
+        "sim_kmh": 295.3,
+        "diff_kmh": 15.3
        },
        {
         "corner": "Becketts T12-13",
         "real_kmh": 214,
-        "sim_kmh": 190.8,
-        "diff_kmh": -23.2
+        "sim_kmh": 197.7,
+        "diff_kmh": -16.3
        },
        {
         "corner": "Stowe T15",
         "real_kmh": 225.2,
-        "sim_kmh": 196.4,
-        "diff_kmh": -28.8
+        "sim_kmh": 214.2,
+        "diff_kmh": -11
        },
        {
         "corner": "Vale T16",
         "real_kmh": 105.4,
-        "sim_kmh": 112.2,
-        "diff_kmh": 6.8
+        "sim_kmh": 109.1,
+        "diff_kmh": 3.7
        },
        {
         "corner": "Club T17",
         "real_kmh": 117.6,
-        "sim_kmh": 112.2,
-        "diff_kmh": -5.4
+        "sim_kmh": 109.1,
+        "diff_kmh": -8.5
        }
       ]
      }
@@ -660,92 +690,92 @@
      "pu": "Red Bull Ford DM01",
      "driver": "LAW",
      "q_real_s": 89.3,
-     "q_sim_s": 89.293,
-     "residual_lap_s": -0.007,
+     "q_sim_s": 89.297,
+     "residual_lap_s": -0.003,
      "trap_real_kmh": 306,
-     "trap_sim_kmh": 305.7,
-     "residual_trap_kmh": -0.3,
-     "residual_trap_rel_kmh": -0.3,
-     "cla_scale": 0.9513,
-     "cda_scale": 1.0732,
-     "pu_scale": 0.9965,
+     "trap_sim_kmh": 306.2,
+     "residual_trap_kmh": 0.2,
+     "residual_trap_rel_kmh": 0.2,
+     "cla_scale": 0.9558,
+     "cda_scale": 1.0571,
+     "pu_scale": 0.9902,
      "at_bound": [],
      "heldout": {
       "team": "racingbulls",
       "driver": "LAW",
       "used_in_fit": "lap + trap only",
-      "trace_rms_kmh": 10.89,
+      "trace_rms_kmh": 9.12,
       "sectors_real_s": [
        28.464,
        36.16,
        24.676
       ],
       "sectors_sim_s": [
-       28.332,
-       36.617,
-       24.344
+       28.635,
+       36.155,
+       24.508
       ],
       "sector_residuals_s": [
-       -0.132,
-       0.457,
-       -0.332
+       0.171,
+       -0.005,
+       -0.168
       ],
       "vmax_real_kmh": 316,
-      "vmax_sim_kmh": 305.9,
+      "vmax_sim_kmh": 316.5,
       "corners": [
        {
         "corner": "Village T3",
         "real_kmh": 106,
-        "sim_kmh": 114.6,
-        "diff_kmh": 8.6
+        "sim_kmh": 114.8,
+        "diff_kmh": 8.8
        },
        {
         "corner": "Loop T4",
         "real_kmh": 87,
-        "sim_kmh": 76.3,
-        "diff_kmh": -10.7
+        "sim_kmh": 73.3,
+        "diff_kmh": -13.7
        },
        {
         "corner": "Brooklands T6",
         "real_kmh": 158.1,
-        "sim_kmh": 140.4,
-        "diff_kmh": -17.7
+        "sim_kmh": 140.7,
+        "diff_kmh": -17.4
        },
        {
         "corner": "Luffield T7",
         "real_kmh": 117,
-        "sim_kmh": 101.5,
-        "diff_kmh": -15.5
+        "sim_kmh": 101.2,
+        "diff_kmh": -15.8
        },
        {
         "corner": "Copse T9",
         "real_kmh": 274,
-        "sim_kmh": 283.1,
-        "diff_kmh": 9.1
+        "sim_kmh": 294.8,
+        "diff_kmh": 20.8
        },
        {
         "corner": "Becketts T12-13",
         "real_kmh": 201.4,
-        "sim_kmh": 187.1,
-        "diff_kmh": -14.3
+        "sim_kmh": 193.1,
+        "diff_kmh": -8.3
        },
        {
         "corner": "Stowe T15",
         "real_kmh": 218,
-        "sim_kmh": 192.3,
-        "diff_kmh": -25.7
+        "sim_kmh": 208.5,
+        "diff_kmh": -9.5
        },
        {
         "corner": "Vale T16",
         "real_kmh": 105.7,
-        "sim_kmh": 111.4,
-        "diff_kmh": 5.7
+        "sim_kmh": 108.3,
+        "diff_kmh": 2.6
        },
        {
         "corner": "Club T17",
         "real_kmh": 112.3,
-        "sim_kmh": 111.4,
-        "diff_kmh": -0.9
+        "sim_kmh": 108.3,
+        "diff_kmh": -4
        }
       ]
      }
@@ -757,50 +787,50 @@
      "pu": "Mercedes-AMG F1 M17",
      "driver": "GAS",
      "q_real_s": 90.063,
-     "q_sim_s": 90.057,
-     "residual_lap_s": -0.006,
+     "q_sim_s": 90.055,
+     "residual_lap_s": -0.008,
      "trap_real_kmh": 307,
-     "trap_sim_kmh": 305.5,
-     "residual_trap_kmh": -1.5,
-     "residual_trap_rel_kmh": -1.5,
-     "cla_scale": 0.8574,
-     "cda_scale": 1.0347,
-     "pu_scale": 1.0077,
+     "trap_sim_kmh": 306.4,
+     "residual_trap_kmh": -0.6,
+     "residual_trap_rel_kmh": -0.6,
+     "cla_scale": 0.8765,
+     "cda_scale": 1.043,
+     "pu_scale": 0.9867,
      "at_bound": [],
      "heldout": {
       "team": "alpine",
       "driver": "GAS",
       "used_in_fit": "lap + trap only",
-      "trace_rms_kmh": 13.19,
+      "trace_rms_kmh": 10.51,
       "sectors_real_s": [
        28.53,
        36.404,
        25.129
       ],
       "sectors_sim_s": [
-       28.464,
-       36.957,
-       24.636
+       28.738,
+       36.501,
+       24.815
       ],
       "sector_residuals_s": [
-       -0.066,
-       0.553,
-       -0.493
+       0.208,
+       0.097,
+       -0.314
       ],
       "vmax_real_kmh": 322,
-      "vmax_sim_kmh": 305.6,
+      "vmax_sim_kmh": 317.5,
       "corners": [
        {
         "corner": "Village T3",
         "real_kmh": 103,
-        "sim_kmh": 113.1,
-        "diff_kmh": 10.1
+        "sim_kmh": 113.2,
+        "diff_kmh": 10.2
        },
        {
         "corner": "Loop T4",
         "real_kmh": 85,
-        "sim_kmh": 76.3,
-        "diff_kmh": -8.7
+        "sim_kmh": 73.5,
+        "diff_kmh": -11.5
        },
        {
         "corner": "Brooklands T6",
@@ -811,38 +841,38 @@
        {
         "corner": "Luffield T7",
         "real_kmh": 108.4,
-        "sim_kmh": 100.4,
-        "diff_kmh": -8
+        "sim_kmh": 100.2,
+        "diff_kmh": -8.2
        },
        {
         "corner": "Copse T9",
         "real_kmh": 275.3,
-        "sim_kmh": 269.4,
-        "diff_kmh": -5.9
+        "sim_kmh": 294.9,
+        "diff_kmh": 19.6
        },
        {
         "corner": "Becketts T12-13",
         "real_kmh": 197.6,
-        "sim_kmh": 181.3,
-        "diff_kmh": -16.3
+        "sim_kmh": 185.7,
+        "diff_kmh": -11.9
        },
        {
         "corner": "Stowe T15",
         "real_kmh": 208,
-        "sim_kmh": 186.2,
-        "diff_kmh": -21.8
+        "sim_kmh": 199.2,
+        "diff_kmh": -8.8
        },
        {
         "corner": "Vale T16",
         "real_kmh": 103.1,
-        "sim_kmh": 109.8,
-        "diff_kmh": 6.7
+        "sim_kmh": 106.9,
+        "diff_kmh": 3.8
        },
        {
         "corner": "Club T17",
         "real_kmh": 111.6,
-        "sim_kmh": 109.8,
-        "diff_kmh": -1.8
+        "sim_kmh": 106.9,
+        "diff_kmh": -4.7
        }
       ]
      }
@@ -854,56 +884,56 @@
      "pu": "Ferrari 067/6",
      "driver": "BEA",
      "q_real_s": 90.501,
-     "q_sim_s": 90.502,
-     "residual_lap_s": 0.001,
+     "q_sim_s": 90.493,
+     "residual_lap_s": -0.008,
      "trap_real_kmh": 302,
-     "trap_sim_kmh": 302.2,
-     "residual_trap_kmh": 0.2,
-     "residual_trap_rel_kmh": 0.2,
-     "cla_scale": 0.867,
-     "cda_scale": 1.0783,
-     "pu_scale": 0.9847,
+     "trap_sim_kmh": 302,
+     "residual_trap_kmh": 0,
+     "residual_trap_rel_kmh": 0,
+     "cla_scale": 0.906,
+     "cda_scale": 1.1042,
+     "pu_scale": 0.98,
      "at_bound": [],
      "heldout": {
       "team": "haas",
       "driver": "BEA",
       "used_in_fit": "lap + trap only",
-      "trace_rms_kmh": 12.21,
+      "trace_rms_kmh": 8.84,
       "sectors_real_s": [
        29.056,
        36.45,
        24.995
       ],
       "sectors_sim_s": [
-       28.629,
-       37.143,
-       24.731
+       28.941,
+       36.667,
+       24.885
       ],
       "sector_residuals_s": [
-       -0.427,
-       0.693,
-       -0.264
+       -0.115,
+       0.217,
+       -0.11
       ],
       "vmax_real_kmh": 311,
-      "vmax_sim_kmh": 302.3,
+      "vmax_sim_kmh": 313.7,
       "corners": [
        {
         "corner": "Village T3",
         "real_kmh": 109.2,
-        "sim_kmh": 113.2,
-        "diff_kmh": 4
+        "sim_kmh": 113.7,
+        "diff_kmh": 4.5
        },
        {
         "corner": "Loop T4",
         "real_kmh": 84.1,
-        "sim_kmh": 76.3,
-        "diff_kmh": -7.8
+        "sim_kmh": 73.7,
+        "diff_kmh": -10.4
        },
        {
         "corner": "Brooklands T6",
         "real_kmh": 158,
-        "sim_kmh": 138,
-        "diff_kmh": -20
+        "sim_kmh": 138.8,
+        "diff_kmh": -19.2
        },
        {
         "corner": "Luffield T7",
@@ -914,32 +944,32 @@
        {
         "corner": "Copse T9",
         "real_kmh": 275,
-        "sim_kmh": 270.7,
-        "diff_kmh": -4.3
+        "sim_kmh": 291.2,
+        "diff_kmh": 16.2
        },
        {
         "corner": "Becketts T12-13",
         "real_kmh": 201.1,
-        "sim_kmh": 181.8,
-        "diff_kmh": -19.3
+        "sim_kmh": 188.3,
+        "diff_kmh": -12.8
        },
        {
         "corner": "Stowe T15",
         "real_kmh": 212.2,
-        "sim_kmh": 186.7,
-        "diff_kmh": -25.5
+        "sim_kmh": 202.4,
+        "diff_kmh": -9.8
        },
        {
         "corner": "Vale T16",
         "real_kmh": 106,
-        "sim_kmh": 110.1,
-        "diff_kmh": 4.1
+        "sim_kmh": 107.4,
+        "diff_kmh": 1.4
        },
        {
         "corner": "Club T17",
         "real_kmh": 111.8,
-        "sim_kmh": 110.1,
-        "diff_kmh": -1.7
+        "sim_kmh": 107.4,
+        "diff_kmh": -4.4
        }
       ]
      }
@@ -951,92 +981,92 @@
      "pu": "Audi AFR 26 Hybrid",
      "driver": "BOR",
      "q_real_s": 89.461,
-     "q_sim_s": 89.458,
-     "residual_lap_s": -0.003,
+     "q_sim_s": 89.467,
+     "residual_lap_s": 0.006,
      "trap_real_kmh": 298.5,
-     "trap_sim_kmh": 300.8,
-     "residual_trap_kmh": 2.3,
-     "residual_trap_rel_kmh": 2.3,
-     "cla_scale": 0.972,
-     "cda_scale": 1.1109,
-     "pu_scale": 0.9927,
+     "trap_sim_kmh": 300.2,
+     "residual_trap_kmh": 1.7,
+     "residual_trap_rel_kmh": 1.7,
+     "cla_scale": 1.0284,
+     "cda_scale": 1.1233,
+     "pu_scale": 0.9868,
      "at_bound": [],
      "heldout": {
       "team": "audi",
       "driver": "BOR",
       "used_in_fit": "lap + trap only",
-      "trace_rms_kmh": 11.47,
+      "trace_rms_kmh": 9.28,
       "sectors_real_s": [
        28.468,
        36.312,
        24.681
       ],
       "sectors_sim_s": [
-       28.415,
-       36.653,
-       24.39
+       28.886,
+       36.153,
+       24.427
       ],
       "sector_residuals_s": [
-       -0.053,
-       0.341,
-       -0.291
+       0.418,
+       -0.159,
+       -0.254
       ],
       "vmax_real_kmh": 314,
-      "vmax_sim_kmh": 301,
+      "vmax_sim_kmh": 311.6,
       "corners": [
        {
         "corner": "Village T3",
         "real_kmh": 106.4,
-        "sim_kmh": 114.9,
-        "diff_kmh": 8.5
+        "sim_kmh": 116.3,
+        "diff_kmh": 9.9
        },
        {
         "corner": "Loop T4",
         "real_kmh": 85.4,
-        "sim_kmh": 76.9,
-        "diff_kmh": -8.5
+        "sim_kmh": 74.4,
+        "diff_kmh": -11
        },
        {
         "corner": "Brooklands T6",
         "real_kmh": 153,
-        "sim_kmh": 141.1,
-        "diff_kmh": -11.9
+        "sim_kmh": 143.5,
+        "diff_kmh": -9.5
        },
        {
         "corner": "Luffield T7",
         "real_kmh": 111,
-        "sim_kmh": 101.8,
-        "diff_kmh": -9.2
+        "sim_kmh": 102.4,
+        "diff_kmh": -8.6
        },
        {
         "corner": "Copse T9",
         "real_kmh": 280.2,
-        "sim_kmh": 284.8,
-        "diff_kmh": 4.6
+        "sim_kmh": 290.4,
+        "diff_kmh": 10.2
        },
        {
         "corner": "Becketts T12-13",
         "real_kmh": 208.2,
-        "sim_kmh": 188.3,
-        "diff_kmh": -19.9
+        "sim_kmh": 200.7,
+        "diff_kmh": -7.5
        },
        {
         "corner": "Stowe T15",
         "real_kmh": 216.4,
-        "sim_kmh": 193.8,
-        "diff_kmh": -22.6
+        "sim_kmh": 218.1,
+        "diff_kmh": 1.7
        },
        {
         "corner": "Vale T16",
         "real_kmh": 104.4,
-        "sim_kmh": 111.8,
-        "diff_kmh": 7.4
+        "sim_kmh": 109.6,
+        "diff_kmh": 5.2
        },
        {
         "corner": "Club T17",
         "real_kmh": 113.4,
-        "sim_kmh": 111.8,
-        "diff_kmh": -1.6
+        "sim_kmh": 109.6,
+        "diff_kmh": -3.8
        }
       ]
      }
@@ -1048,92 +1078,92 @@
      "pu": "Mercedes-AMG F1 M17",
      "driver": "SAI",
      "q_real_s": 90.562,
-     "q_sim_s": 90.515,
-     "residual_lap_s": -0.047,
+     "q_sim_s": 90.555,
+     "residual_lap_s": -0.007,
      "trap_real_kmh": 315.2,
-     "trap_sim_kmh": 308.7,
-     "residual_trap_kmh": -6.5,
-     "residual_trap_rel_kmh": -6.5,
-     "cla_scale": 0.7975,
-     "cda_scale": 0.9701,
-     "pu_scale": 1.0077,
+     "trap_sim_kmh": 313.1,
+     "residual_trap_kmh": -2.1,
+     "residual_trap_rel_kmh": -2.1,
+     "cla_scale": 0.7812,
+     "cda_scale": 0.9637,
+     "pu_scale": 0.9867,
      "at_bound": [],
      "heldout": {
       "team": "williams",
       "driver": "SAI",
       "used_in_fit": "lap + trap only",
-      "trace_rms_kmh": 13.62,
+      "trace_rms_kmh": 13.09,
       "sectors_real_s": [
        28.696,
        36.618,
        25.248
       ],
       "sectors_sim_s": [
-       28.537,
-       37.208,
-       24.77
+       28.928,
+       36.658,
+       24.969
       ],
       "sector_residuals_s": [
-       -0.159,
-       0.59,
-       -0.478
+       0.232,
+       0.04,
+       -0.279
       ],
       "vmax_real_kmh": 316,
-      "vmax_sim_kmh": 308.8,
+      "vmax_sim_kmh": 323.9,
       "corners": [
        {
         "corner": "Village T3",
         "real_kmh": 108,
-        "sim_kmh": 112.1,
-        "diff_kmh": 4.1
+        "sim_kmh": 111.4,
+        "diff_kmh": 3.4
        },
        {
         "corner": "Loop T4",
         "real_kmh": 83.2,
-        "sim_kmh": 75.6,
-        "diff_kmh": -7.6
+        "sim_kmh": 73,
+        "diff_kmh": -10.2
        },
        {
         "corner": "Brooklands T6",
         "real_kmh": 160,
-        "sim_kmh": 136.1,
-        "diff_kmh": -23.9
+        "sim_kmh": 134.4,
+        "diff_kmh": -25.6
        },
        {
         "corner": "Luffield T7",
         "real_kmh": 105,
-        "sim_kmh": 99.8,
-        "diff_kmh": -5.2
+        "sim_kmh": 99,
+        "diff_kmh": -6
        },
        {
         "corner": "Copse T9",
         "real_kmh": 270,
-        "sim_kmh": 260.9,
-        "diff_kmh": -9.1
+        "sim_kmh": 298.4,
+        "diff_kmh": 28.4
        },
        {
         "corner": "Becketts T12-13",
         "real_kmh": 196.1,
-        "sim_kmh": 177.8,
-        "diff_kmh": -18.3
+        "sim_kmh": 177.9,
+        "diff_kmh": -18.2
        },
        {
         "corner": "Stowe T15",
         "real_kmh": 205.4,
-        "sim_kmh": 182.4,
-        "diff_kmh": -23
+        "sim_kmh": 189.6,
+        "diff_kmh": -15.8
        },
        {
         "corner": "Vale T16",
         "real_kmh": 103,
-        "sim_kmh": 109.1,
-        "diff_kmh": 6.1
+        "sim_kmh": 105.3,
+        "diff_kmh": 2.3
        },
        {
         "corner": "Club T17",
         "real_kmh": 108.5,
-        "sim_kmh": 109.1,
-        "diff_kmh": 0.6
+        "sim_kmh": 105.3,
+        "diff_kmh": -3.2
        }
       ]
      }
@@ -1145,92 +1175,92 @@
      "pu": "Honda RA626H",
      "driver": "STR",
      "q_real_s": 92.863,
-     "q_sim_s": 92.853,
-     "residual_lap_s": -0.01,
+     "q_sim_s": 92.852,
+     "residual_lap_s": -0.011,
      "trap_real_kmh": 292.5,
-     "trap_sim_kmh": 294.7,
-     "residual_trap_kmh": 2.2,
-     "residual_trap_rel_kmh": 2.2,
-     "cla_scale": 0.772,
-     "cda_scale": 1.2075,
-     "pu_scale": 0.979,
+     "trap_sim_kmh": 293,
+     "residual_trap_kmh": 0.5,
+     "residual_trap_rel_kmh": 0.5,
+     "cla_scale": 0.8315,
+     "cda_scale": 1.239,
+     "pu_scale": 0.9767,
      "at_bound": [],
      "heldout": {
       "team": "astonmartin",
       "driver": "STR",
       "used_in_fit": "lap + trap only",
-      "trace_rms_kmh": 12.86,
+      "trace_rms_kmh": 10.93,
       "sectors_real_s": [
        29.38,
        37.793,
        25.69
       ],
       "sectors_sim_s": [
-       29.309,
-       38.165,
-       25.38
+       29.583,
+       37.706,
+       25.564
       ],
       "sector_residuals_s": [
-       -0.071,
-       0.372,
-       -0.31
+       0.203,
+       -0.087,
+       -0.126
       ],
       "vmax_real_kmh": 301,
-      "vmax_sim_kmh": 294.8,
+      "vmax_sim_kmh": 305.7,
       "corners": [
        {
         "corner": "Village T3",
         "real_kmh": 109.3,
-        "sim_kmh": 111.5,
-        "diff_kmh": 2.2
+        "sim_kmh": 112.1,
+        "diff_kmh": 2.8
        },
        {
         "corner": "Loop T4",
         "real_kmh": 85.2,
-        "sim_kmh": 75.8,
-        "diff_kmh": -9.4
+        "sim_kmh": 73.2,
+        "diff_kmh": -12
        },
        {
         "corner": "Brooklands T6",
         "real_kmh": 155,
-        "sim_kmh": 135.2,
-        "diff_kmh": -19.8
+        "sim_kmh": 135.9,
+        "diff_kmh": -19.1
        },
        {
         "corner": "Luffield T7",
         "real_kmh": 104.3,
-        "sim_kmh": 99.4,
-        "diff_kmh": -4.9
+        "sim_kmh": 99.5,
+        "diff_kmh": -4.8
        },
        {
         "corner": "Copse T9",
         "real_kmh": 264,
-        "sim_kmh": 256.5,
-        "diff_kmh": -7.5
+        "sim_kmh": 282.1,
+        "diff_kmh": 18.1
        },
        {
         "corner": "Becketts T12-13",
         "real_kmh": 190.1,
-        "sim_kmh": 175.9,
-        "diff_kmh": -14.2
+        "sim_kmh": 181.4,
+        "diff_kmh": -8.7
        },
        {
         "corner": "Stowe T15",
         "real_kmh": 198.2,
-        "sim_kmh": 180.5,
-        "diff_kmh": -17.7
+        "sim_kmh": 193.9,
+        "diff_kmh": -4.3
        },
        {
         "corner": "Vale T16",
         "real_kmh": 103.7,
-        "sim_kmh": 108.7,
-        "diff_kmh": 5
+        "sim_kmh": 106.1,
+        "diff_kmh": 2.4
        },
        {
         "corner": "Club T17",
         "real_kmh": 113.1,
-        "sim_kmh": 108.7,
-        "diff_kmh": -4.4
+        "sim_kmh": 106.1,
+        "diff_kmh": -7
        }
       ]
      }
@@ -1242,92 +1272,92 @@
      "pu": "Ferrari 067/6",
      "driver": "BOT",
      "q_real_s": 91.227,
-     "q_sim_s": 91.223,
-     "residual_lap_s": -0.004,
+     "q_sim_s": 91.21,
+     "residual_lap_s": -0.017,
      "trap_real_kmh": 304.7,
-     "trap_sim_kmh": 304.1,
-     "residual_trap_kmh": -0.6,
-     "residual_trap_rel_kmh": -0.6,
-     "cla_scale": 0.8009,
-     "cda_scale": 1.0478,
-     "pu_scale": 0.9847,
+     "trap_sim_kmh": 303.8,
+     "residual_trap_kmh": -0.9,
+     "residual_trap_rel_kmh": -0.9,
+     "cla_scale": 0.8085,
+     "cda_scale": 1.0727,
+     "pu_scale": 0.98,
      "at_bound": [],
      "heldout": {
       "team": "cadillac",
       "driver": "BOT",
       "used_in_fit": "lap + trap only",
-      "trace_rms_kmh": 13.04,
+      "trace_rms_kmh": 10.34,
       "sectors_real_s": [
        28.934,
        37.003,
        25.29
       ],
       "sectors_sim_s": [
-       28.79,
-       37.492,
-       24.94
+       28.981,
+       37.037,
+       25.192
       ],
       "sector_residuals_s": [
-       -0.144,
-       0.489,
-       -0.35
+       0.047,
+       0.034,
+       -0.098
       ],
       "vmax_real_kmh": 315,
-      "vmax_sim_kmh": 304.2,
+      "vmax_sim_kmh": 315.9,
       "corners": [
        {
         "corner": "Village T3",
         "real_kmh": 100.6,
-        "sim_kmh": 112.2,
-        "diff_kmh": 11.6
+        "sim_kmh": 111.8,
+        "diff_kmh": 11.2
        },
        {
         "corner": "Loop T4",
         "real_kmh": 86.1,
-        "sim_kmh": 75.6,
-        "diff_kmh": -10.5
+        "sim_kmh": 72.5,
+        "diff_kmh": -13.6
        },
        {
         "corner": "Brooklands T6",
         "real_kmh": 153.2,
-        "sim_kmh": 136.2,
-        "diff_kmh": -17
+        "sim_kmh": 135.3,
+        "diff_kmh": -17.9
        },
        {
         "corner": "Luffield T7",
         "real_kmh": 107.1,
-        "sim_kmh": 99.7,
-        "diff_kmh": -7.4
+        "sim_kmh": 99.1,
+        "diff_kmh": -8
        },
        {
         "corner": "Copse T9",
         "real_kmh": 261,
-        "sim_kmh": 261.2,
-        "diff_kmh": 0.2
+        "sim_kmh": 292.4,
+        "diff_kmh": 31.4
        },
        {
         "corner": "Becketts T12-13",
         "real_kmh": 186.4,
-        "sim_kmh": 177.9,
-        "diff_kmh": -8.5
+        "sim_kmh": 179.9,
+        "diff_kmh": -6.5
        },
        {
         "corner": "Stowe T15",
         "real_kmh": 200.3,
-        "sim_kmh": 182.6,
-        "diff_kmh": -17.7
+        "sim_kmh": 192,
+        "diff_kmh": -8.3
        },
        {
         "corner": "Vale T16",
         "real_kmh": 98,
-        "sim_kmh": 109.2,
-        "diff_kmh": 11.2
+        "sim_kmh": 105.8,
+        "diff_kmh": 7.8
        },
        {
         "corner": "Club T17",
         "real_kmh": 108.5,
-        "sim_kmh": 109.2,
-        "diff_kmh": 0.7
+        "sim_kmh": 105.8,
+        "diff_kmh": -2.7
        }
       ]
      }
