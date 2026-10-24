@@ -1,4 +1,6 @@
-// PURPLE - node server/scripts/fake-race.js [--id <experiment id>] [--seed 7] [--factor 1.2] [--noise 0.02] [--port 8787]
+// PURPLE - node server/scripts/fake-race.js [--id <experiment id>] [--seed 7] [--factor 1.2] [--noise 0.02] [--port 8787] [--synthetic]
+// Audit item 8: against a REAL server (GET /api/health mock:false) it refuses, because a fake row would sit in the judges' ledger as a
+// measurement; --synthetic lets it through and the server labels the row "synthetic (fake-race), seed N" with measured.synthetic: true.
 // Posts a plausible F-04 race result for the newest ledger row (or --id) to a RUNNING server, so the UI lane can test the RACE card,
 // the SSE `race` event and `agreement_pct` without the game. Measured Δ = predicted Δ × factor ± seeded noise. No Mubit call is made.
 // No data dir of its own: it writes wherever the RUNNING server points (MUBIT_MOCK=1 server -> data-mock/ unless PURPLE_DATA_DIR is set).
@@ -12,6 +14,8 @@ const jitter = amp => (rng() * 2 - 1) * amp;
 const r3 = v => +v.toFixed(3), r1 = v => +v.toFixed(1);
 async function api(path, init) { const res = await fetch(base + path, init); const body = await res.json(); if (!body.ok) throw new Error(path + " -> " + res.status + " " + body.error.code + ": " + body.error.message); return body.data; }
 (async () => {
+  const health = await api("/api/health"); const synthetic = args.includes("--synthetic");
+  if (!health.mock && !synthetic) { console.error(`fake-race: refusing. ${base} runs the REAL planner (mock:false); a fake result would land in the judges' ledger as a measurement. Use MUBIT_MOCK=1, or pass --synthetic to post a row labelled synthetic.`); process.exit(3); }
   const id = arg("id");
   const x = id ? await api("/api/experiments/" + id) : (await api("/api/ledger?limit=1"))[0];
   if (!x) { console.error("fake-race: the ledger is empty. Run one experiment first (MUBIT_MOCK=1 npm run dev; POST /api/plan)."); process.exit(2); }
@@ -21,7 +25,7 @@ async function api(path, init) { const res = await fetch(base + path, init); con
   const offset = jitter(0.15), dLap = ev.delta_lap * factor + jitter(noise);
   const baseline = { role: "baseline", lap: r3(be.lap + offset), sectors: be.sectors.map(s => r3(s + offset / 3)), vmax_kmh: r1(be.vmax_kmh + jitter(1)), vmin_becketts_kmh: r1(be.vmin_kmh + jitter(1)) };
   const candidate = { role: "candidate", lap: r3(baseline.lap + dLap), sectors: baseline.sectors.map((s, i) => r3(s + ev.delta_sectors[i] * factor + jitter(noise / 3))), vmax_kmh: r1(ev.vmax_kmh + jitter(1)), vmin_becketts_kmh: r1(ev.vmin_kmh + jitter(1)) };
-  const payload = { experiment_id: x.id, seed, cars: [baseline, candidate] };
+  const payload = Object.assign({ experiment_id: x.id, seed, cars: [baseline, candidate] }, synthetic ? { synthetic: true } : {});
   const row = await api("/api/race/result", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
   const m = row.measured;
   console.log(`fake-race ${row.id} seed ${seed}: predicted Δ ${m.predicted_delta} s, measured Δ ${m.measured_delta} s, agreement_pct ${m.agreement_pct}, status ${row.status}`);

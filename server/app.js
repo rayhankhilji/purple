@@ -132,14 +132,16 @@ function createApp(opts) {
     if (userContent.length > schema.LIMITS.scenario_chars) throw new ApiError("BAD_INPUT", "scenario is " + userContent.length + " chars, over the " + schema.LIMITS.scenario_chars + "-char cap (G-MUBIT-04): fewer or shorter active rules", { chars: userContent.length, rules: rules.length });
     const id = ulid(), session_id = "exp-" + id;
     let plan = null, parse = null, mubitErr = null, latency_ms = 0, mubit_request_id = null;
+    // attempt 0 trains; the parse-error retry (attempt 1) is sent UNTRAINED with the same session id (audit decision 3): at temperature 0
+    // the same input repeats the same slip, and 8 of the first 99 trained calls were such duplicate bad examples
     for (let attempt = 0; attempt < 2 && !plan; attempt++) {
-      let r;
-      try { r = await mubit.callMubit({ userContent, sessionId: session_id, trained: true, kind: "plan" }); }
-      catch (e) { mubitErr = e; db.appendCall({ id: ulid(), created_at: now(), kind: "plan", session_id, mubit_request_id: e.requestId || null, model: prompt.MODEL, latency_ms: 0, status: "error", mubit_code: e.code || null, http_status: e.status || null, trained: true, attempt }); log(`plan ${session_id} ${e.requestId || "-"} error ${e.code || e.message}`); break; }
+      let r; const trained = attempt === 0;
+      try { r = await mubit.callMubit({ userContent, sessionId: session_id, trained, kind: "plan" }); }
+      catch (e) { mubitErr = e; db.appendCall({ id: ulid(), created_at: now(), kind: "plan", session_id, mubit_request_id: e.requestId || null, model: prompt.MODEL, latency_ms: 0, status: "error", mubit_code: e.code || null, http_status: e.status || null, trained, attempt }); log(`plan ${session_id} ${e.requestId || "-"} error ${e.code || e.message}`); break; }
       const v = schema.validatePlanOutput(r.text);
       latency_ms += r.latency_ms; mubit_request_id = r.mubit_request_id;
-      db.appendCall({ id: ulid(), created_at: now(), kind: "plan", session_id, mubit_request_id: r.mubit_request_id, model: r.model, input_tokens: r.input_tokens, output_tokens: r.output_tokens, latency_ms: r.latency_ms, status: v.ok ? "ok" : "parse_error", trained: true, attempt, seed });
-      log(`plan ${session_id} ${r.mubit_request_id} ${r.latency_ms}ms ${v.ok ? v.value.verdict : "parse_error(" + v.field + ")"}`);
+      db.appendCall({ id: ulid(), created_at: now(), kind: "plan", session_id, mubit_request_id: r.mubit_request_id, model: r.model, input_tokens: r.input_tokens, output_tokens: r.output_tokens, latency_ms: r.latency_ms, status: v.ok ? "ok" : "parse_error", trained, attempt, seed });
+      log(`plan ${session_id} ${r.mubit_request_id} ${r.latency_ms}ms ${v.ok ? v.value.verdict : "parse_error(" + v.field + ")"}${trained ? "" : " untrained-retry"}`);
       if (v.ok) plan = v.value; else parse = v;
     }
     const experiment = {
@@ -281,6 +283,7 @@ function createApp(opts) {
     const bad = m => { throw new ApiError("BAD_INPUT", m); };
     if (typeof b.experiment_id !== "string" || !b.experiment_id) bad("experiment_id must be a non-empty string");
     if (!Number.isInteger(b.seed)) bad("seed must be an integer");
+    if (b.synthetic !== undefined && typeof b.synthetic !== "boolean") bad("synthetic must be a boolean when present");
     if (!Array.isArray(b.cars)) bad("cars must be an array of 2 cars (baseline, candidate)");
     if (b.cars.length !== 2) bad("cars must hold exactly 2 cars, got " + b.cars.length);
     const out = {};
@@ -309,7 +312,8 @@ function createApp(opts) {
       baseline: cars.baseline, candidate: cars.candidate,
       measured_delta: measuredDelta, predicted_delta: predicted, agreement_pct: agreementPct(measuredDelta, predicted),
       measured_sector_deltas: cars.candidate.sectors.map((s, i) => +(s - cars.baseline.sectors[i]).toFixed(3)),
-      seed: b.seed, at: now(), label: "measured in race, seed " + b.seed, supersedes: x.measured ? x.measured.at : null,
+      seed: b.seed, at: now(), supersedes: x.measured ? x.measured.at : null,
+      synthetic: b.synthetic === true, label: (b.synthetic === true ? "synthetic (fake-race), seed " : "measured in race, seed ") + b.seed,   // a fake-race row must never read as a measurement
     };
     const status = x.status === "overruled" || x.status === "promoted" ? x.status : "raced";   // the engineer's verdict outranks the race
     const row = Object.assign({}, x, { status, measured }); db.appendLedger(row); emit("race", row); return ok(c, row);
