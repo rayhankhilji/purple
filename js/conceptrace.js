@@ -104,6 +104,11 @@
   const q = typeof location !== 'undefined' && typeof document !== 'undefined' ? new URLSearchParams(location.search) : null;
   if (!q || q.get('concept') !== '1' || q.get('lab') === '1') return;
   api.active = true;
+  // the concept car's own geometry (EI.conceptView.buildCar, docs/concept/VIEW.md): the design layer and the viewer, loaded only here
+  const VIEW_SCRIPTS = ['concept/regs.js', 'concept/parts.js', 'concept/aeromap.js', 'concept/design.js', 'concept/view/view3d.js'];
+  api.viewReady = VIEW_SCRIPTS.reduce((p, src) => p.then(() => new Promise((res) => {
+    const e = document.createElement('script'); e.src = src; e.async = false; e.onload = () => res(true); e.onerror = () => { console.warn('concept race: ' + src + ' did not load: game car model instead'); res(false); }; document.head.appendChild(e);
+  })), Promise.resolve(true));
 
   const RUNUP = 2.0;          // s of the end of the previous (identical) lap before the clock reaches 0 at the control line
   const CAM = { chase: 0, cockpit: 1, tcam: 2, tv: 3 };   // js/main.js CAM_MODES
@@ -118,30 +123,30 @@
   const style = document.createElement('style');
   style.textContent = '#menu,#viewports,#banner,#touch,#lights,#pause,#results,#pitui,#toasts,#controls{display:none!important}' +
     '#cr{position:fixed;inset:0;pointer-events:none;z-index:40;font:500 13px/1.35 "JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;color:#e8e8ec;-webkit-font-smoothing:antialiased}' +
-    '#cr .p{background:rgba(10,10,12,.82);border:1px solid #26262c;border-radius:6px}' +
-    '#cr .lb{font:600 10px/1.2 Inter,system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#8a8a94}' +
-    '#cr .tw{position:absolute;left:14px;top:14px;width:330px;padding:8px 0 6px}' +
-    '#cr .tw .hd{padding:0 10px 6px;border-bottom:1px solid #26262c;display:flex;justify-content:space-between;gap:8px}' +
-    '#cr .row{display:grid;grid-template-columns:16px 4px 1fr 74px 70px;gap:0 7px;align-items:center;padding:3px 10px 2px 8px;font-size:12.5px}' +
-    '#cr .row .nm{font:600 12px/1.2 Inter,system-ui,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
-    '#cr .row .src{grid-column:3/6;font:400 10px/1.2 Inter,system-ui,sans-serif;color:#8a8a94;margin-top:-1px}' +
-    '#cr .row .r{text-align:right}#cr .bar{width:4px;height:14px;border-radius:2px}' +
-    '#cr .pu{color:#b26cff}#cr .gr{color:#4ade80}#cr .rd{color:#f0506e}#cr .mu{color:#8a8a94}#cr .am{color:#fbbf24}' +
-    '#cr .dash{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);display:flex;gap:14px;align-items:stretch;padding:10px 14px}' +
-    '#cr .spd{font:600 40px/1 "JetBrains Mono",ui-monospace,monospace;min-width:92px;text-align:right}' +
-    '#cr .col{display:flex;flex-direction:column;gap:4px;justify-content:center;min-width:64px}' +
-    '#cr .chip{display:inline-block;padding:2px 6px;border:1px solid #26262c;border-radius:6px;font:600 10.5px/1.2 Inter,system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;text-align:center}' +
-    '#cr .chip.on{border-color:#b26cff;color:#b26cff}#cr .chip.dep{border-color:#4ade80;color:#4ade80}#cr .chip.hv{border-color:#fbbf24;color:#fbbf24}#cr .chip.sc{border-color:#f0506e;color:#f0506e}' +
-    '#cr .clk{font:600 26px/1 "JetBrains Mono",ui-monospace,monospace}#cr .big2{font:600 18px/1.1 "JetBrains Mono",ui-monospace,monospace}' +
-    '#cr .secs{display:grid;grid-template-columns:repeat(3,64px);gap:4px}#cr .sec{border:1px solid #26262c;border-radius:6px;padding:2px 5px;text-align:center;font-size:12px}' +
-    '#cr .sec.pb{border-color:#b26cff;background:rgba(58,36,96,.6)}' +
-    '#cr .lbl{position:absolute;left:14px;bottom:16px;max-width:30vw;padding:7px 10px;font:400 10.5px/1.45 Inter,system-ui,sans-serif;color:#cfcfd6}' +
-    '#cr .lbl b{color:#e8e8ec;font-weight:600}' +
-    '#cr .cam{position:absolute;right:14px;top:14px;padding:6px 10px;font:500 11px/1.4 Inter,system-ui,sans-serif;color:#cfcfd6;text-align:right}' +
-    '#cr .tag{position:absolute;transform:translate(-50%,-100%);padding:1px 5px;border-radius:4px;font:700 10px/1.3 Inter,system-ui,sans-serif;letter-spacing:.05em;white-space:nowrap;background:rgba(10,10,12,.78);border:1px solid #26262c}' +
-    '#cr .fin{position:absolute;right:14px;top:110px;width:300px;padding:8px 10px}' +
-    '#cr .wait{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);padding:12px 16px;font:500 13px/1.5 Inter,system-ui,sans-serif;max-width:520px;text-align:center}' +
-    '@media (max-width:760px){#cr .tw{width:250px}#cr .lbl{display:none}#cr .fin{display:none}#cr .spd{font-size:30px}}';
+    '#cr .cr-p{background:rgba(10,10,12,.82);border:1px solid #26262c;border-radius:6px}' +
+    '#cr .cr-lb{font:600 10px/1.2 Inter,system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#8a8a94}' +
+    '#cr .cr-tw{position:absolute;left:14px;top:14px;width:330px;padding:8px 0 6px}' +
+    '#cr .cr-tw .cr-hd{padding:0 10px 6px;border-bottom:1px solid #26262c;display:flex;justify-content:space-between;gap:8px}' +
+    '#cr .cr-row{display:grid;grid-template-columns:16px 4px 1fr 74px 70px;gap:0 7px;align-items:center;padding:3px 10px 2px 8px;font-size:12.5px}' +
+    '#cr .cr-row .cr-nm{font:600 12px/1.2 Inter,system-ui,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+    '#cr .cr-row .cr-src{grid-column:3/6;font:400 10px/1.2 Inter,system-ui,sans-serif;color:#8a8a94;margin-top:-1px}' +
+    '#cr .cr-row .cr-r{text-align:right}#cr .cr-bar{width:4px;height:14px;border-radius:2px}' +
+    '#cr .cr-pu{color:#b26cff}#cr .cr-gr{color:#4ade80}#cr .cr-rd{color:#f0506e}#cr .cr-mu{color:#8a8a94}#cr .cr-am{color:#fbbf24}' +
+    '#cr .cr-dash{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);display:flex;gap:14px;align-items:stretch;padding:10px 14px}' +
+    '#cr .cr-spd{font:600 40px/1 "JetBrains Mono",ui-monospace,monospace;min-width:92px;text-align:right}' +
+    '#cr .cr-col{display:flex;flex-direction:column;gap:4px;justify-content:center;min-width:64px}' +
+    '#cr .cr-chip{display:inline-block;padding:2px 6px;border:1px solid #26262c;border-radius:6px;font:600 10.5px/1.2 Inter,system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;text-align:center}' +
+    '#cr .cr-chip.cr-on{border-color:#b26cff;color:#b26cff}#cr .cr-chip.cr-dep{border-color:#4ade80;color:#4ade80}#cr .cr-chip.cr-hv{border-color:#fbbf24;color:#fbbf24}#cr .cr-chip.cr-sc{border-color:#f0506e;color:#f0506e}' +
+    '#cr .cr-clk{font:600 26px/1 "JetBrains Mono",ui-monospace,monospace}#cr .cr-big2{font:600 18px/1.1 "JetBrains Mono",ui-monospace,monospace}' +
+    '#cr .cr-secs{display:grid;grid-template-columns:repeat(3,64px);gap:4px}#cr .cr-sec{border:1px solid #26262c;border-radius:6px;padding:2px 5px;text-align:center;font-size:12px}' +
+    '#cr .cr-sec.cr-pb{border-color:#b26cff;background:rgba(58,36,96,.6)}' +
+    '#cr .cr-lbl{position:absolute;left:14px;top:166px;width:330px;padding:7px 10px;font:400 10.5px/1.45 Inter,system-ui,sans-serif;color:#cfcfd6}' +
+    '#cr .cr-lbl b{color:#e8e8ec;font-weight:600}' +
+    '#cr .cr-cam{position:absolute;right:14px;top:14px;padding:6px 10px;font:500 11px/1.4 Inter,system-ui,sans-serif;color:#cfcfd6;text-align:right}' +
+    '#cr .cr-tag{position:absolute;transform:translate(-50%,-100%);padding:1px 5px;border-radius:4px;font:700 10px/1.3 Inter,system-ui,sans-serif;letter-spacing:.05em;white-space:nowrap;background:rgba(10,10,12,.78);border:1px solid #26262c}' +
+    '#cr .cr-fin{position:absolute;right:14px;top:110px;width:300px;padding:8px 10px}' +
+    '#cr .cr-wait{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);padding:12px 16px;font:500 13px/1.5 Inter,system-ui,sans-serif;max-width:520px;text-align:center}' +
+    '@media (max-width:760px){#cr .cr-tw{width:250px}#cr .cr-lbl{display:none}#cr .cr-fin{display:none}#cr .cr-spd{font-size:30px}}';
   document.head.appendChild(style);
 
   // keys: this page's own (the game's pause / restart / camera keys would start an AI race or a pause menu)
@@ -168,7 +173,7 @@
   };
   function load(P) { st.P = P; if (st.D) run(); }
   function waitNote() {
-    setTimeout(() => { if (st.P || !st.hud) return; const w = document.createElement('div'); w.className = 'p wait'; w.id = 'crWait';
+    setTimeout(() => { if (st.P || !st.hud) return; const w = document.createElement('div'); w.className = 'cr-p cr-wait'; w.id = 'crWait';
       w.innerHTML = 'Waiting for the concept race data. This view is driven by the concept race page: open <b>/concept/race/</b>.'; st.hud.appendChild(w); }, 2500);
   }
 
@@ -194,7 +199,8 @@
     race.started = true; race.phase = 'racing'; race.time = 0; race.lightsOn = 0;
     st.map = mapLine(track, P.line);
     st.cars = race.cars.map((car, i) => ({ car, spec: P.cars[i], tl: timeline(P.cars[i]), finish: null, secT: [null, null], prevD: null, prevH: null }));
-    st.cars.forEach((k) => { if (k.spec.ghost) ghostify(k.car); });
+    st.cars.forEach((k) => { if (k.spec.ghost && !k.spec.design) ghostify(k.car); });
+    api.viewReady.then(() => st.cars.forEach((k) => { if (k.spec.design) conceptBody(k, race); }));
     race.update = function (dt) { step(dt); };   // this race instance only: main.js calls it at 120 Hz like Race.update
     st.t = -RUNUP; pose(0, true); setCam(st.cam); st.dirI = 0; st.dirT = 0;
     buildRows(); post({ type: 'purple:concept-started', mapping: st.map.stats, cars: P.cars.map((c) => ({ id: c.id, lap_s: c.lap_s })) });
@@ -215,6 +221,29 @@
     car.shadowMeshes = []; car.isGhost = true;
   }
 
+  // the design's own car (EI.conceptView.buildCar: the game's car deformed and rebuilt from the design parameters) in place of the
+  // game's model; its frame is the game car's (+x forward, +y up, +z right, ground y = 0), so it rides in car.group as it is.
+  // A ghost gets cloned, translucent materials (parts of the car share materials with the game's GLB template).
+  function conceptBody(k, race) {
+    const V = EI.conceptView, car = k.car; if (!V || typeof V.buildCar !== 'function') { if (k.spec.ghost) ghostify(car); return; }
+    let g; try { g = V.buildCar(k.spec.design, { livery: k.spec.design.livery || (k.spec.team === 'redbull' ? 'redbull-rb22' : k.spec.team), lod: k.spec.ghost ? 'lo' : 'hi', straight: false }); }
+    catch (e) { console.warn('concept race: buildCar failed, game car model instead', e); if (k.spec.ghost) ghostify(car); return; }
+    g.ready.then(() => {
+      if (st.race !== race) { g.dispose(); return; }
+      car.setLOD = () => { }; for (const o of [car.lodNear, car.lodMid, car.lodFar]) if (o) o.visible = false;
+      if (k.spec.ghost) {
+        const done = new Map(), fadeM = (m) => { if (!m) return m; if (done.has(m)) return done.get(m); const c = m.clone(); c.onBeforeCompile = m.onBeforeCompile; c.customProgramCacheKey = m.customProgramCacheKey; c.transparent = true; c.opacity = 0.38; c.depthWrite = false; done.set(m, c); return c; };
+        g.traverse((o) => { if (!o.isMesh) return; o.castShadow = false; o.material = Array.isArray(o.material) ? o.material.map(fadeM) : fadeM(o.material); });
+        if (car.shadowProxy) { car.shadowProxy.castShadow = false; car.shadowProxy.visible = false; }
+      } else g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+      // the viewer's clear-coat paint is tuned for its dark studio (envMapIntensity 1); under the game's bright sky environment it reads
+      // pale, so it takes the game's own paint level (js/carglb.js paint: 0.62). These paint materials belong to this buildCar instance.
+      g.traverse((o) => { if (!o.isMesh) return; for (const m of Array.isArray(o.material) ? o.material : [o.material]) if (m && m.customProgramCacheKey && /^cv-paint/.test(String(m.customProgramCacheKey()))) m.envMapIntensity = 0.62; });
+      car.group.add(g); k.body3d = g; k.flap = 0;
+      api.bodies = (api.bodies || 0) + 1;
+    }, (e) => { console.warn('concept race: buildCar assets failed, game car model instead', e); if (k.spec.ghost) ghostify(car); });
+  }
+
   function pose(dt, snap) {
     const track = st.D.track;
     for (const k of st.cars) {
@@ -227,6 +256,7 @@
       car.rpm = ch.rpm ? Math.max(0.12, Math.min(1, ch.rpm / 12500)) : 0.6;
       const a = ch.a_ms2; car.brake = a < -3 ? Math.min(1, -a / 40) : 0; car.throttle = a < -3 ? 0 : a > 0.3 ? 1 : 0.45;
       car.drsOpen = ch.aero === 'straight'; car.ersActive = ch.ers === 'deploy';
+      if (k.body3d) { const want = car.drsOpen ? 1 : 0, f = snap || !(dt > 0) ? want : k.flap + Math.max(-1, Math.min(1, (want - k.flap) / 0.4 * dt)); if (Math.abs(f - k.flap) > 1e-3 || snap) { k.flap = f; k.body3d.setAero(f); } }
       track.project(car.x, car.z, car.trk.i >= 0 ? car.trk.i : null, car.trk); car._prevS = car.trk.s;
       car.lap = Math.max(1, Math.floor(d / k.tl.L) + 1); car.dist = d;
       if (snap) { car._px = null; car.vx = null; }
@@ -262,20 +292,20 @@
   function buildHud() {
     const H = el('div', null, null, document.body); H.id = 'cr'; st.hud = H;
     st.ui = {
-      tw: el('div', 'p tw', null, H), dash: el('div', 'p dash', null, H), lbl: el('div', 'p lbl', null, H), cam: el('div', 'p cam', null, H), fin: el('div', 'p fin', null, H), tags: el('div', null, null, H),
+      tw: el('div', 'cr-p cr-tw', null, H), dash: el('div', 'cr-p cr-dash', null, H), lbl: el('div', 'cr-p cr-lbl', null, H), cam: el('div', 'cr-p cr-cam', null, H), fin: el('div', 'cr-p cr-fin', null, H), tags: el('div', null, null, H),
     };
     st.ui.fin.style.display = 'none';
   }
   function buildRows() {
     const P = st.P, U = st.ui;
-    U.tw.innerHTML = '<div class="hd"><span class="lb">Physics replay · Silverstone</span><span class="lb" id="crLap">flying lap</span></div><div id="crRows"></div>';
-    U.dash.innerHTML = '<div class="col"><span class="lb">concept · sim</span><span class="spd" id="crSpd">0</span><span class="lb" style="text-align:right">km/h</span></div>' +
-      '<div class="col"><span class="lb">gear</span><span class="big2" id="crGear">–</span><span class="chip" id="crAero">corner</span><span class="chip" id="crErs">ers</span></div>' +
-      '<div class="col" style="min-width:150px"><span class="lb">lap · sim seconds</span><span class="clk" id="crClk">0.000</span><div class="secs" id="crSecs"><span class="sec">S1</span><span class="sec">S2</span><span class="sec">S3</span></div></div>' +
-      '<div class="col" style="min-width:150px" id="crDel"></div>';
-    U.lbl.innerHTML = '<b>' + esc(P.label) + '</b><br>' + esc(P.conditions_label) + '<br>' + P.cars.map((c) => '<span style="color:' + (COL[c.id] || '#fff') + '">■</span> ' + esc(c.name) + ' · ' + esc(c.source)).join('<br>') +
-      '<br><span class="mu">The car is where the sim puts it at each instant; the game\'s AI and lap model are not used. Mapping: ' + st.map.stats.position_rms_m + ' m RMS from the sim\'s line (max ' + st.map.stats.position_max_m + ' m).</span>' + (P.car_note ? '<br><span class="mu">' + esc(P.car_note) + '</span>' : '');
-    st.cars.forEach((k) => { k.tag = el('div', 'tag', esc(k.spec.short || k.spec.name), U.tags); k.tag.style.color = COL[k.spec.id] || '#fff'; });
+    U.tw.innerHTML = '<div class="cr-hd"><span class="cr-lb">Physics replay · Silverstone</span><span class="cr-lb" id="crLap">flying lap</span></div><div id="crRows"></div>';
+    U.dash.innerHTML = '<div class="cr-col"><span class="cr-lb">concept · sim</span><span class="cr-spd" id="crSpd">0</span><span class="cr-lb" style="text-align:right">km/h</span></div>' +
+      '<div class="cr-col"><span class="cr-lb">gear · sim</span><span class="cr-big2" id="crGear">–</span><span class="cr-chip" id="crAero">corner</span><span class="cr-chip" id="crErs">ers</span></div>' +
+      '<div class="cr-col" style="min-width:150px"><span class="cr-lb">lap · sim seconds</span><span class="cr-clk" id="crClk">0.000</span><div class="cr-secs" id="crSecs"><span class="cr-sec">S1</span><span class="cr-sec">S2</span><span class="cr-sec">S3</span></div></div>' +
+      '<div class="cr-col" style="min-width:150px" id="crDel"></div>';
+    const cond = String(P.conditions_label || '').split(' · ').slice(1).join(' · ');
+    U.lbl.innerHTML = '<b>' + esc(P.label) + '</b><br>' + esc(cond) + '<br><span class="cr-mu">the sim\'s own trace, replayed: no game AI, no game lap model · drawn ' + st.map.stats.position_rms_m + ' m RMS from the sim\'s line</span>';
+    st.cars.forEach((k) => { k.tag = el('div', 'cr-tag', esc(k.spec.short || k.spec.name), U.tags); k.tag.style.color = COL[k.spec.id] || '#fff'; });
   }
   let hudT = 0;
   function frame(now) {
@@ -289,8 +319,8 @@
     const cam = st.D.cameras && st.D.cameras[0]; if (!cam || !root.THREE) return;
     const v = tags.v || (tags.v = new THREE.Vector3()), W = window.innerWidth, Hh = window.innerHeight;
     for (const k of st.cars) {
-      const c = k.car; v.set(c.vx != null ? c.vx : c.x, (c.vy != null ? c.vy : c.y) + 1.55, c.vz != null ? c.vz : c.z); const dist = v.distanceTo(cam.position); v.project(cam);
-      const on = v.z < 1 && v.z > -1 && Math.abs(v.x) < 1.05 && Math.abs(v.y) < 1.05 && dist < 260 && !(k.spec.id === 'concept' && st.cam === 'tcam');
+      const c = k.car; v.set(c.vx != null ? c.vx : c.x, (c.vy != null ? c.vy : c.y) + 1.2, c.vz != null ? c.vz : c.z); const dist = v.distanceTo(cam.position); v.project(cam);
+      const on = v.z < 1 && v.z > -1 && Math.abs(v.x) < 1.05 && Math.abs(v.y) < 1.05 && dist < 260 && !(k.spec.id === 'concept' && st.cam !== 'tv');
       k.tag.style.display = on ? '' : 'none'; if (on) { k.tag.style.left = ((v.x + 1) / 2) * W + 'px'; k.tag.style.top = ((1 - v.y) / 2) * Hh + 'px'; }
     }
   }
@@ -302,35 +332,36 @@
     const lead = rows[0];
     $('crRows').innerHTML = rows.map((k, i) => {
       let right = '';
-      if (k.finish != null) right = '<span class="r">' + fmt(k.spec.lap_s) + '</span><span class="r ' + (i === 0 ? 'pu' : 'mu') + '">' + (i === 0 ? 'lap' : sgn(k.spec.lap_s - lead.spec.lap_s)) + '</span>';
-      else if (t < 0) right = '<span class="r mu">—</span><span class="r mu">run-up</span>';
-      else right = '<span class="r">' + fmt(t, 1) + '</span><span class="r ' + (i === 0 ? 'pu' : 'mu') + '">' + (i === 0 ? 'leader' : sgn(t - lead.tl.tAtS(dIn(k)), 2)) + '</span>';
-      return '<div class="row"><span class="mu">' + (i + 1) + '</span><span class="bar" style="background:' + (COL[k.spec.id] || '#888') + '"></span><span class="nm">' + esc(k.spec.name) + '</span>' + right + '<span class="src">' + esc(k.spec.source) + '</span></div>';
+      if (k.finish != null) right = '<span class="cr-r">' + fmt(k.spec.lap_s) + '</span><span class="cr-r ' + (i === 0 ? 'cr-pu' : 'cr-mu') + '">' + (i === 0 ? 'lap' : sgn(k.spec.lap_s - lead.spec.lap_s)) + '</span>';
+      else if (t < 0) right = '<span class="cr-r cr-mu">—</span><span class="cr-r cr-mu">run-up</span>';
+      else right = '<span class="cr-r">' + Math.round((k.ch && k.ch.v_kmh) || 0) + ' km/h</span><span class="cr-r ' + (i === 0 ? 'cr-pu' : 'cr-mu') + '">' + (i === 0 ? 'leader' : sgn(t - lead.tl.tAtS(dIn(k)), 2)) + '</span>';
+      return '<div class="cr-row"><span class="cr-mu">' + (i + 1) + '</span><span class="cr-bar" style="background:' + (COL[k.spec.id] || '#888') + '"></span><span class="cr-nm">' + esc(k.spec.name) + '</span>' + right + '<span class="cr-src">' + esc(k.spec.source) + '</span></div>';
     }).join('');
     $('crLap').textContent = t < 0 ? 'flying lap · run-up' : st.finished ? 'lap complete' : 'lap 1 · sim time';
     const ch = me.ch || {}; $('crSpd').textContent = Math.round(ch.v_kmh || 0); $('crGear').textContent = ch.gear || '–';
-    const aero = $('crAero'); aero.textContent = ch.aero === 'straight' ? 'straight mode' : 'corner mode'; aero.className = 'chip' + (ch.aero === 'straight' ? ' on' : '');
-    const ers = $('crErs'), E = { deploy: ['ers deploy', ' dep'], harvest: ['ers harvest', ' hv'], superclip: ['superclip', ' sc'] }[ch.ers] || ['ers —', ''];
-    ers.textContent = E[0]; ers.className = 'chip' + E[1]; ers.title = P.ers_note || '';
+    const aero = $('crAero'); aero.textContent = ch.aero === 'straight' ? 'straight mode' : 'corner mode'; aero.className = 'cr-chip' + (ch.aero === 'straight' ? ' cr-on' : '');
+    const ers = $('crErs'), E = { deploy: ['ers deploy', ' cr-dep'], harvest: ['ers harvest', ' cr-hv'], superclip: ['superclip', ' cr-sc'] }[ch.ers] || ['ers —', ''];
+    ers.textContent = E[0]; ers.className = 'cr-chip' + E[1]; ers.title = P.ers_note || '';
     const tt = me.finish != null ? me.finish : Math.max(0, t); $('crClk').textContent = fmt(Math.min(tt, me.spec.lap_s));
     // sectors: the sim's own split for each sector as the car crosses its line (purple = quickest of the three cars)
     const secs = [0, 1, 2].map((j) => {
-      const done = j < 2 ? me.secT[j] != null : me.finish != null; if (!done) return '<span class="sec mu">S' + (j + 1) + '</span>';
+      const done = j < 2 ? me.secT[j] != null : me.finish != null; if (!done) return '<span class="cr-sec cr-mu">S' + (j + 1) + '</span>';
       const mine = me.spec.sectors_s[j], best = Math.min.apply(null, st.cars.map((k) => k.spec.sectors_s[j]));
       return '<span class="sec' + (mine <= best + 1e-9 ? ' pb' : '') + '">' + fmt(mine) + '</span>';
     });
     $('crSecs').innerHTML = secs.join('');
     // live delta to each ghost at the concept car's distance (negative = the concept car is ahead)
     const dm = dIn(me), tm = me.tl.tAtS(dm);
-    $('crDel').innerHTML = '<span class="lb">delta at this point</span>' + st.cars.slice(1).map((k) => {
+    $('crDel').innerHTML = '<span class="cr-lb">delta at this point</span>' + st.cars.slice(1).map((k) => {
       const dd = t < 0 ? null : (me.finish != null ? me.spec.lap_s - k.spec.lap_s : tm - k.tl.tAtS(dm));
-      return '<div><span style="color:' + (COL[k.spec.id] || '#fff') + '">■</span> <span class="big2 ' + (dd == null ? 'mu' : dd < 0 ? 'pu' : 'rd') + '">' + sgn(dd) + '</span> <span class="lb">' + esc(k.spec.short) + '</span></div>';
+      return '<div><span style="color:' + (COL[k.spec.id] || '#fff') + '">■</span> <span class="cr-big2 ' + (dd == null ? 'cr-mu' : dd < 0 ? 'cr-pu' : 'cr-rd') + '">' + sgn(dd) + '</span> <span class="cr-lb">' + esc(k.spec.short) + '</span></div>';
     }).join('');
-    st.ui.cam.innerHTML = 'camera <b>' + st.cam + '</b>' + (st.auto ? ' · director' : '') + ' · ' + st.rate + '× · ' + (st.paused ? '<span class="am">paused</span>' : 'live') + '<br><span class="mu">C camera · A director · Space pause · R replay · 1 2 4 8 speed</span>';
-    if (st.finished) {
+    st.ui.cam.innerHTML = 'camera <b>' + st.cam + '</b>' + (st.auto ? ' · director' : '') + ' · ' + st.rate + '× · ' + (st.paused ? '<span class="cr-am">paused</span>' : 'live') + '<br><span class="cr-mu">C camera · A director · Space pause · R replay · 1 2 4 8 speed</span>';
+    if (!st.finished) st.ui.fin.style.display = 'none';
+    else {
       const r = api.result || result(); st.ui.fin.style.display = '';
-      st.ui.fin.innerHTML = '<div class="lb" style="margin-bottom:4px">Lap · physics-sim seconds</div>' + r.cars.map((c) => '<div style="display:flex;justify-content:space-between;gap:8px"><span>' + esc(c.name) + '</span><span>' + fmt(c.lap_s) + '</span></div>').join('') +
-        '<div class="lb" style="margin-top:6px">replay finish (clock) − lap</div>' + r.cars.map((c) => '<div style="display:flex;justify-content:space-between"><span class="mu">' + esc(c.id) + '</span><span class="mu">' + sgn(c.diff_s) + ' s</span></div>').join('');
+      st.ui.fin.innerHTML = '<div class="cr-lb" style="margin-bottom:4px">Lap · physics-sim seconds</div>' + r.cars.map((c) => '<div style="display:flex;justify-content:space-between;gap:8px"><span>' + esc(c.name) + '</span><span>' + fmt(c.lap_s) + '</span></div>').join('') +
+        '<div class="cr-lb" style="margin-top:6px">replay finish (clock) − lap</div>' + r.cars.map((c) => '<div style="display:flex;justify-content:space-between"><span class="cr-mu">' + esc(c.id) + '</span><span class="cr-mu">' + sgn(c.diff_s) + ' s</span></div>').join('');
     }
   }
 })();

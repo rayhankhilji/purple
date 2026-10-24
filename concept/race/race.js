@@ -24,7 +24,8 @@
     if (!RP) { banner(["concept/race/payload.js did not load"]); return; }
     S.q = RP.parseQuery(location.search); S.mode = S.q.mode;
     if (S.q.errors.length) banner(S.q.errors);
-    $("rate").value = String(S.q.rate);
+    const rs = $("rate"); if (![...rs.options].some((o) => +o.value === S.q.rate)) { const o = document.createElement("option"); o.value = String(S.q.rate); o.textContent = S.q.rate + "×"; rs.appendChild(o); }
+    rs.value = [...rs.options].find((o) => +o.value === S.q.rate).value;
     let tel = null;
     try { const r = await fetch("../data/telemetry/silverstone-2026-q-ant.json"); if (r.ok) tel = await r.json(); } catch (e) { /* offline file: no pole ghost */ }
     if (!tel) banner(["the real 2026 pole lap (concept/data/telemetry/silverstone-2026-q-ant.json) did not load: no pole ghost"]);
@@ -46,6 +47,7 @@
     for (const t of document.querySelectorAll(".tab")) t.setAttribute("aria-selected", String(t.dataset.mode === m));
     $("ctl").style.visibility = m === "replay" ? "" : "hidden";
     $("cinePanel").hidden = m === "replay";
+    $("checkPanel").hidden = $("mapPanel").hidden = m !== "replay";
     const C = S.built && S.built.cinematic;
     let src;
     if (m === "replay") {
@@ -77,7 +79,7 @@
         '<tr class="srcrow"><td colspan="6">' + esc(c.name) + " · " + esc(c.source) + (c.speed_trap_kmh ? " · trap " + Math.round(c.speed_trap_kmh) + " km/h" : "") + "</td></tr>";
     }
     $("lapTable").innerHTML = h;
-    $("lapSrc").textContent = "physics-sim s · " + S.payload.conditions_label.split(" · ").slice(1).join(" · ");
+    $("lapSrc").textContent = "physics-sim seconds"; $("lapSrc").title = S.payload.conditions_label;
   }
   function renderCar() {
     const b = S.built.bench, pc = b.physical, d = S.built.design, A = pc.aero, me = S.payload.cars[0], rf = S.payload.cars[1];
@@ -92,7 +94,7 @@
       ["energy deployed / harvested (MJ)", me.energy.deployed_mj + " / " + me.energy.harvested_mj],
       ["lap vs " + rf.short + " (sim)", sg(me.lap_s - rf.lap_s), me.lap_s - rf.lap_s < 0 ? "pu" : "rd"],
     ]);
-    $("carNote").textContent = S.payload.car_note + " Numbers: " + (pc.label || "PhysicalCar") + ".";
+    $("carNote").textContent = S.payload.car_note + " " + S.payload.ers_note + ". Numbers: " + (pc.label || "PhysicalCar") + ".";
   }
   function renderCheck() {
     const rows = [];
@@ -102,17 +104,17 @@
     }
     $("check").innerHTML = kv(rows);
     const me = S.payload.cars[0], pole = S.payload.cars.find((c) => c.id === "pole");
-    $("checkNote").textContent = "Replay clock = sim seconds × playback rate. Time per sample: " + me.time_method.kind + "; independent check, ∫ds/v over the trace = " + f3(me.time_method.integrated_lap_s) + " s (" + sg(me.time_method.integrated_lap_s - me.lap_s) + ")." +
-      (pole ? " Pole ghost: OpenF1 clock ends at " + f3(pole.t[pole.t.length - 1]) + " s, official lap " + f3(pole.lap_s) + " s." : "") + " " + S.payload.ers_note + ".";
+    $("checkNote").textContent = "Clock = sim seconds × playback rate. Sample times: " + me.time_method.kind + "; check ∫ds/v over the trace = " + f3(me.time_method.integrated_lap_s) + " s (" + sg(me.time_method.integrated_lap_s - me.lap_s) + ")." +
+      (pole ? " Pole: OpenF1 clock ends at " + f3(pole.t[pole.t.length - 1]) + " s, official " + f3(pole.lap_s) + " s." : "");
   }
   function renderMapping(m) {
     $("mapping").innerHTML = kv([
-      ["shown car vs sim line (RMS / max)", m.position_rms_m + " / " + m.position_max_m + " m"],
-      ["line samples pulled onto the asphalt", Math.round(m.clamped_share * 100) + " % (≤ " + m.clamp_limit_m + " m from the centre)"],
-      ["sim line off the game centreline (RMS / max)", m.lateral_offset_rms_m + " / " + m.lateral_offset_max_m + " m"],
-      ["distance frame vs linear scale (RMS / max)", m.distance_nonlinearity_rms_m + " / " + m.distance_nonlinearity_max_m + " m"],
-      ["lengths: sim line / game centreline", m.sim_line_length_m + " / " + m.game_centreline_length_m + " m (×" + m.scale + ")"],
-      ["sim control line → game start line", m.control_to_start_line_m + " m (game s " + m.control_line_game_s + " → " + m.game_start_line_s + ")"],
+      ["drawn car vs sim line, RMS / max", m.position_rms_m + " / " + m.position_max_m + " m"],
+      ["samples pulled onto asphalt", Math.round(m.clamped_share * 100) + " % (|lat| ≤ " + m.clamp_limit_m + " m)"],
+      ["sim line off centreline, RMS / max", m.lateral_offset_rms_m + " / " + m.lateral_offset_max_m + " m"],
+      ["s vs linear scale, RMS / max", m.distance_nonlinearity_rms_m + " / " + m.distance_nonlinearity_max_m + " m"],
+      ["sim line / game centreline", m.sim_line_length_m + " / " + m.game_centreline_length_m + " m (×" + m.scale + ")"],
+      ["control line → painted line", m.control_to_start_line_m + " m (game s " + m.control_line_game_s + " → " + m.game_start_line_s + ")"],
     ]);
     $("mapNote").textContent = "Each sample of the sim's racing line is projected onto the game's centreline (both in the OSM frame of js/data/silverstone.js); the sim's distance and time are kept, the game's s is only where the car is drawn. " + S.payload.line.source + ". Laps are timed at the sim's control line, not the game's painted start line.";
   }

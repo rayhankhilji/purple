@@ -44,11 +44,11 @@
       <div class="ph"><span class="label">Lap · Silverstone</span><span class="src" id="lapSrc">seconds</span></div>
       <div class="pb"><table class="lap" id="lapTable"></table><div class="progress" aria-hidden="true"><i id="prog"></i></div></div>
     </section>
-    <section class="panel" aria-label="replay check">
+    <section class="panel" id="checkPanel" aria-label="replay check">
       <div class="ph"><span class="label">Replay check</span><span class="src">clock vs the sim's lap</span></div>
       <div class="pb"><div class="kv" id="check"></div><div class="note" id="checkNote"></div></div>
     </section>
-    <section class="panel" aria-label="mapping">
+    <section class="panel" id="mapPanel" aria-label="mapping">
       <div class="ph"><span class="label">Sim line → game track</span><span class="src">mapping error</span></div>
       <div class="pb"><div class="kv" id="mapping"><span class="k">waiting for the game view</span><span class="v"></span></div><div class="note" id="mapNote"></div></div>
     </section>
@@ -56,7 +56,7 @@
       <div class="ph"><span class="label">The car</span><span class="src" id="carSrc"></span></div>
       <div class="pb"><div class="kv" id="carKv"></div><div class="note" id="carNote"></div></div>
     </section>
-    <section class="panel" id="cinePanel" aria-label="game race result" hidden>
+    <section class="panel" id="cinePanel" aria-label="game race result" style="order:-1" hidden>
       <div class="ph"><span class="label">Game race result</span><span class="src">game lap model</span></div>
       <div class="pb"><div class="kv" id="cine"></div><div class="note" id="cineNote"></div></div>
     </section>

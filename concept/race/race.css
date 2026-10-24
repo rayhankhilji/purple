@@ -39,7 +39,7 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 #banner b { color: var(--red); }
 
 /* frame */
-.main { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 12px; padding: 12px; }
+.main { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 372px; gap: 12px; padding: 12px; }
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); min-height: 0; min-width: 0; }
 .stage { position: relative; overflow: hidden; display: flex; flex-direction: column; }
 .stage .ph { flex: none; }

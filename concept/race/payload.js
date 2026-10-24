@@ -29,7 +29,7 @@
   function encodeParam(obj) { return toUrl(b64encode(JSON.stringify(obj))); }
   function decodeParam(v) { return JSON.parse(b64decode(fromUrl(v))); }
   // the slim Design for the URL (what bench / physical read): id, label, team, params, overrides
-  function slimDesign(d) { const o = { id: d.id, label: d.label, team: d.team, params: d.params }; if (d.overrides) o.overrides = d.overrides; return o; }
+  function slimDesign(d) { const o = { id: d.id, label: d.label, team: d.team, params: d.params }; if (d.overrides) o.overrides = d.overrides; if (d.livery) o.livery = d.livery; if (d.driver) o.driver = d.driver; return o; }
   // the link the concept lab puts on "Watch it on Silverstone" (base: the page's path, e.g. "../race/" from concept/lab/)
   function url(design, opts) {
     opts = opts || {};
@@ -131,11 +131,11 @@
     const track = (rc.debug && rc.debug.track) || S.buildTrack(TRACK);
     if (!track.reference || !track.timing) return { ok: false, errors: ["concept race: the sim's telemetry racing line (concept/sim/line-silverstone.js) is not loaded"] };
     const tc = simTable(rc, track), trf = simTable(rr, track);
-    const errors = [];
+    const errors = [], refDesign = design.baseline(ref === "generic" ? undefined : { team: ref });
     if (Math.abs(rc.lap_s - b.circuits[TRACK].lap_s) > 1e-9) errors.push("the traced lap " + rc.lap_s + " differs from the bench's " + b.circuits[TRACK].lap_s);
     const cars = [
-      Object.assign({ id: "concept", name: "Concept · " + (d.id || "design"), short: "CONCEPT", team: d.team === "redbull" || ref === "redbull" ? "redbull" : "lumi", num: 26, ghost: false, source: "physics lap sim", lap_s: rc.lap_s, sectors_s: rc.sectors_s, vmax_kmh: rc.vmax_kmh, speed_trap_kmh: rc.speed_trap_kmh, energy: rc.energy }, tc),
-      Object.assign({ id: "ref", name: R.name + " · sim", short: R.short, team: R.team, num: R.num, ghost: true, source: "physics lap sim · inferred car (baselineCar('" + ref + "'))", lap_s: rr.lap_s, sectors_s: rr.sectors_s, vmax_kmh: rr.vmax_kmh, speed_trap_kmh: rr.speed_trap_kmh, energy: rr.energy }, trf),
+      Object.assign({ id: "concept", name: "Concept · " + (d.id || "design"), short: "CONCEPT", team: d.team === "redbull" || ref === "redbull" ? "redbull" : "lumi", num: 26, ghost: false, source: "physics lap sim", lap_s: rc.lap_s, sectors_s: rc.sectors_s, vmax_kmh: rc.vmax_kmh, speed_trap_kmh: rc.speed_trap_kmh, energy: rc.energy, design: slimDesign(Object.assign({ livery: d.livery, driver: d.driver }, d)) }, tc),
+      Object.assign({ id: "ref", name: R.name + " · sim", short: R.short, team: R.team, num: R.num, ghost: true, source: "physics lap sim · inferred car (baselineCar('" + ref + "'))", lap_s: rr.lap_s, sectors_s: rr.sectors_s, vmax_kmh: rr.vmax_kmh, speed_trap_kmh: rr.speed_trap_kmh, energy: rr.energy, design: slimDesign(refDesign) }, trf),
     ];
     if (opts.telemetry) {
       const tt = telemetryTable(opts.telemetry), lap = opts.telemetry.lap || {};
@@ -147,10 +147,10 @@
     const payload = {
       version: 1, track: TRACK, label: "physics lap sim · Silverstone · " + conditions_label.split(" · ")[0] + (cond && cond.wind_ms ? " · wind " + (+cond.wind_ms).toFixed(1) + " m/s" : ""),
       sim_label: rc.label, conditions: cond, conditions_label,
-      line: { x: Array.from(track.x), z: Array.from(track.z), ds: track.ds, L: track.L, source: "the sim's racing line: mean of 11 team qualifying laps (OpenF1 X/Y), aligned to the OSM centreline (" + JSON.stringify(track.reference.alignment || {}) + ")" },
+      line: { x: Array.from(track.x), z: Array.from(track.z), ds: track.ds, L: track.L, source: "the sim's racing line: mean of 11 team qualifying laps (OpenF1 X/Y), aligned to the OSM centreline" + (track.reference.alignment ? " (similarity fit: " + (track.reference.alignment.reflect ? "reflection, " : "") + track.reference.alignment.rotation_deg + "° rotation, " + track.reference.alignment.rms_m + " m RMS)" : "") },
       timing: { sectors: track.timing.sectors.slice(), L: track.L, note: "sim timing frame: metres from the OpenF1 control line" },
       ers_note: ersNote(rc.energy),
-      car_note: "Car model: the game's GLB car in " + (cars[0].team === "redbull" ? "Red Bull" : "concept") + " livery (EI.conceptView only mounts its own renderer; it has no mesh export to put on track).",
+      car_note: "Car models: the concept car and the " + R.short + " ghost are built from their designs by EI.conceptView.buildCar (the game's car deformed and rebuilt from the design parameters; schematic, not a CAD model; static wheels); the pole ghost is the game's car in Mercedes livery.",
       cars,
     };
     return { ok: errors.length === 0, errors, payload, bench: b, design: d, cinematic: cinematic(b.physical, bench, ref) };
