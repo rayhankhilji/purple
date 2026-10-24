@@ -32,16 +32,16 @@ Screenshots for the deck (P3.T1): one per model with the Side by side view showi
 
 ## What to expect, item by item (the provider's actual answers)
 
-The provider (claude-haiku-4-5, untrained, temperature 0) scored **20/20 verdicts and 10/20 next-steps** on the full exam (`npm run exam`, 2026-10-24T02:13:37.626Z; per-item answers persisted in `status.exam.details`, copy in `docs/ledger-snapshot/2026-10-24_02-14-07Z-0350-exam-details/status.json`). On the 8 sheet items its verdict is right every time and its next step is right **only on `exam-rw8`**: it answers `rear_wing_deg decrease` almost everywhere, where the truth is a ride-height move. That is the baseline an adapter has to beat on next steps; on verdicts the bar is 8/8.
+The provider (claude-haiku-4-5, untrained, temperature 0) scored **20/20 verdicts and 10/20 next-steps** on the full exam (`npm run exam` re-run after the evaluator's wind-cap fix, 2026-10-24T02:37:26.427Z; identical to the first run; per-item answers in `status.exam.details`, copy in `docs/ledger-snapshot/2026-10-24_02-37-26Z-0530-windcap-exam/status.json`).
 
-Sheet composition after the evaluator's wind-cap fix (2026-10-24 04:40): the tailwind case `exam-03` moved from Δ +0.037 to +0.133 and left the hardest eight; `exam-12` (a promote at Δ −0.078) took its place. Answers marked † were given to the pre-fix scenario text (same truth; the numbers in the user message differed slightly), so re-run `npm run exam` before quoting them as exact.
+**Provider tally on the 8 sheet items: verdicts 8/8, next steps 2/8** (hits on `exam-rw8` and `exam-12`; the 6 misses all have a ride-height truth and the provider answered `rear_wing_deg decrease` on 5 of them, `brake_bias_pct increase` on the other). That is the baseline an adapter has to beat: 8/8 on verdicts is the bar, 3/8 on next steps already beats the provider.
 
 | # | id | Δ lap (s) | truth verdict | truth next step | provider verdict | provider next step | next step |
 |---|---|---|---|---|---|---|---|
 | 1 | `exam-rw8` | +0.436 | **reject** | rear_wing_deg decrease | reject ✓ | rear_wing_deg decrease | ✓ hit |
 | 2 | `exam-14` | +0.011 | **retest** | ride_height_mm decrease | retest ✓ | rear_wing_deg decrease | ✗ miss |
 | 3 | `exam-15` | +0.009 | **retest** | ride_height_mm decrease | retest ✓ | brake_bias_pct increase | ✗ miss |
-| 4 | `exam-02` | -0.008 | **retest** | ride_height_mm decrease | retest ✓ † | rear_wing_deg decrease † | ✗ miss |
+| 4 | `exam-02` | -0.008 | **retest** | ride_height_mm decrease | retest ✓ | rear_wing_deg decrease | ✗ miss |
 | 5 | `exam-16` | -0.001 | **retest** | ride_height_mm decrease | retest ✓ | rear_wing_deg decrease | ✗ miss |
 | 6 | `exam-20` | -0.001 | **retest** | ride_height_mm decrease | retest ✓ | rear_wing_deg decrease | ✗ miss |
 | 7 | `exam-05` | +0.071 | **reject** | ride_height_mm increase | reject ✓ | rear_wing_deg decrease | ✗ miss |
@@ -49,8 +49,8 @@ Sheet composition after the evaluator's wind-cap fix (2026-10-24 04:40): the tai
 
 How to read a Side-by-side live:
 
-- **Verdict**: the provider column equals the truth on all eight, so an adapter verdict that differs from the provider's is a miss. 5 items are `retest` with Δ inside ±0.03 s; an adapter trained only on rejects (v1 saw 40 reject / 3 retest / 0 promote) will tend to say `reject` on those and land near 2–3/8. That is the expected v1 picture. v2 saw 14 promote / 12 retest / 14 reject, so its retest verdicts, and the one promote item (`exam-12`, which v1 has never seen rewarded), are the things to watch.
-- **Next step**: 7 of eight truths are a `ride_height_mm` move (a lever no model saw rewarded before v2); the provider's reflex is `rear_wing_deg decrease`. An adapter that answers `ride_height_mm` on any of those has already learned something the provider has not. `front_wing_deg` answers are v1's habit from its front-wing-only data.
+- **Verdict**: the provider column equals the truth on all eight, so an adapter verdict that differs from the provider's is a miss. 5 items are `retest` with Δ inside ±0.03 s; an adapter trained only on rejects (v1 saw 40 reject / 3 retest / 0 promote) will tend to say `reject` on those, and `reject` on the promote item `exam-12` too, landing near 2/8. That is the expected v1 picture. v2 saw 14 promote / 12 retest / 14 reject, so its retest verdicts and `exam-12` are the things to watch.
+- **Next step**: 7 of eight truths are a `ride_height_mm` move; the provider's reflex is `rear_wing_deg decrease` and it only finds ride height when the candidate already moved it (`exam-12`). An adapter that answers `ride_height_mm` on any of items 2–7 has learned something the provider has not. `front_wing_deg` answers are v1's habit from its front-wing-only data.
 - Off the sheet the provider's next step was also wrong on `exam-03`, `exam-09`, `exam-10`, `exam-11` (its 10/20 overall).
 
-Regenerate this table after a provider re-run: the answers are in `status.exam.details` (`GET /api/status`); the sheet's truth column never changes unless `data/exam.json` is rebuilt.
+Sheet composition note: after the evaluator's wind-cap fix (2026-10-24) the tailwind case `exam-03` moved from Δ +0.037 to +0.133 and left the hardest eight; `exam-12` (a promote at Δ −0.078) took its place. Regenerate this table after a provider re-run from `status.exam.details` (`GET /api/status`); the sheet's truth column never changes unless `data/exam.json` is rebuilt.
