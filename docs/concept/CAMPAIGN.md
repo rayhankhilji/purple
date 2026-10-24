@@ -12,9 +12,10 @@ power unit (the Red Bull Ford DM01 for the RB22 baseline) lap faster on the phys
 
 ## Answer (physics lap sim v2 · Silverstone · 2026 British GP qualifying conditions)
 
-> **Current numbers (2026-10-24, re-run on physics lap sim v3 + the FIA geometry fixes, §4.0):** RB22 / DM01 best legal car
-> **87.235 ± 0.154 s** (95 % 86.933–87.537) vs pole 88.111 (−0.876) and HAD 88.746 (−1.511) → P1 across the band; generic
-> baseline **86.595 ± 0.189 s**. With the concept aero map's gains halved the RB22 car still laps 87.893 s (below pole). The v2
+> **Current numbers (2026-10-24, redesigns v1 + difficulty v1, §4.0):** RB22 / DM01 best legal car **87.646 ± 0.130 s** (95 %
+> 87.392–87.900) vs pole 88.111 (−0.465) and HAD 88.746 (−1.100) → P1 across the band; generic baseline **87.110 ± 0.117 s**.
+> Before the difficulty costs (§4.0b) the RB22 car was 87.235 ± 0.154 s (−0.876). With the concept aero map's gains halved the RB22
+> car now laps 88.140 s, **slower than pole**: the pole claim is conditional on the aero map's assumed sizes. The v2 and v3
 > numbers below are kept for comparison. The 129 mm throat of the v2 best is illegal under the enforced 75 mm roof; the v3 best uses 66.5 mm.
 
 
@@ -185,7 +186,239 @@ with no published direction, so the scored laps use still air (as the sim's fit 
 
 ## 4. Results
 
-### 4.0 Re-run on physics lap sim v3 + FIA geometry fixes (current numbers; 673.9 s wall time)
+### 4.0 Redesigns v1 + difficulty v1 (current numbers, 2026-10-24; 400.2 s wall time, 4 workers)
+
+Model: the more-factors v1 sim (RB22 mass 775 kg, measured ratios, gearing / roll split / heave / brake balance as parameters), the
+eight concept families of docs/concept/REDESIGNS.md (searched as integer coordinates by CMA-ES and, in the refinement, as whole-concept
+switches with their partner changes), and the difficulty v1 costs (REDESIGNS.md §4: half-rate gains past the wing-span / floor-width /
+endplate / flap references, parc fermé race cooling, the driver's aero-balance window). Surrogates retrained on this model (physics
+and v0). Command: `node concept/campaign/run.js --seeds 1,2,3,4 --evals 5000 --baselines redbull,generic --refine-evals 3000
+--combo-evals 240`. Convergence: `campaign-convergence-redesigns.svg`.
+
+![Convergence (redesigns v1 + difficulty v1): best legal lap so far vs physics laps run, per seed](campaign-convergence-redesigns.svg)
+
+**Before / after** (best legal car, physics lap sim, ± = 1σ transfer band; pole ANT 88.111 s, HAD 88.746 s):
+
+| Model | RB22 / DM01 best | Δ pole | 95 % band | Generic best | Δ pole |
+|---|---|---|---|---|---|
+| §4.0b: sim v3 + FIA fixes | 87.235 ± 0.154 s | −0.876 | 86.933–87.537 | 86.595 ± 0.189 s | −1.516 |
+| more-factors v1, same campaign settings (RB22 only) | 87.288 ± 0.167 s | −0.823 | 86.961–87.615 | — | — |
+| **redesigns v1 + difficulty v1 (this run)** | **87.646 ± 0.130 s** | **−0.465** | 87.392–87.900 | **87.110 ± 0.117 s** | **−1.001** |
+
+The RB22 car still beats the real pole on this model, and the whole 95 % band is below 88.111 s, but by 0.465 s instead of 0.876 s,
+and it now needs the hard parts: a 2-volume front wing at 32° on the front-wing Z envelope's edge, the rear flap at its 30° bound,
+a 25.5 mm ride height on a 6750 N/mm platform, the large-airbox cooling layout that lets the inlet shrink to 580 cm², and a re-trimmed
+roll split and brake balance. With the concept aero map's gains halved the same car laps 88.140 s, **slower than pole**: the pole
+claim depends on the aero map's assumed sizes, and §5 must be read with it. The concept families the search kept: RB22 airbox + gills
+cooling (worth its 70 cm² of inlet; reverting it alone leaves the car short of cooling, PKG-COOLING); generic low narrow cover and
+pullrod front (refinement stage, −0.038 s together). Every other single-family switch from the RB22 best was measured slower
+(+0.008 to +0.408 s: zeropod + compact 87.864, zeropod + gills 87.793, ramp 87.979, short high nose 87.788, closed endplate 87.806,
+low-drag rear 88.054, high-df rear 87.823, scrolled edge 87.718, low cover 87.690, pullrod 87.654 s).
+
+Source of every lap: **physics lap sim · quasi-steady-state point mass · Silverstone OSM centreline · calibrated to 2026 British GP qualifying** · Silverstone · 2026 British GP qualifying conditions · concept campaign v1 · CMA-ES + surrogate pre-screen · every number re-scored on the physics lap sim.
+
+#### Baseline: Red Bull Racing RB22 · Red Bull Ford DM01 (concept shape on the inferred RB22 car)
+
+| | Lap (s) | S1 / S2 / S3 (s) | Trap (km/h) | Δ pole 88.111 | Δ HAD 88.746 | Grid (real 2026 Q) |
+|---|---|---|---|---|---|---|
+| baseline | 88.745 | 28.560 / 35.926 / 24.260 | 306 | +0.634 | -0.001 | P5 |
+| **campaign best** | **87.646** ± 0.130 (1σ) | 28.464 / 35.357 / 23.824 | 304.5 | -0.465 | -1.100 | P1 (95 %: P1–P1) |
+
+95 % band 87.392–87.900 s. vs pole: faster than 88.111 s and the whole 95 % band (87.392–87.900 s) is below it: outside the model's uncertainty. vs HAD: faster than 88.746 s and the whole 95 % band (87.392–87.900 s) is below it: outside the model's uncertainty.
+
+Uncertainty components (s): transfer 0.129 (k = 0.179 × sector changes -0.096 / -0.569 / -0.436), fit residual RMS 0.008, sim noise 0.005 (measured on the final car), surrogate 0. Sim's held-out trace RMS 10 km/h. Known bias: anchor residual -0.001 s (HAD); anchor-relative lap 87.647 s; held-out sector bias +0.144 / +0.042 / -0.191 s, bias-corrected sectors 28.320 / 35.315 / 24.015 s.
+
+PU: Red Bull Ford DM01 — identical to the homologated PU (ice_kw 396.72, mguk_kw 350, es_deploy_mj_per_lap 12.5, es_harvest_mj_per_lap 8.5, es_soc_window_mj 4). Energy: deployed 7.582 MJ, recharged 3.651 MJ of 6.5 MJ (within C5.2.9 / C5.2.10).
+
+| Part · parameter | From → to | At a limit |
+|---|---|---|
+| Ballast · x_frac | Ballast position along the wheelbase 0.05 × WB → 0.71 × WB |  |
+| Rear wing assembly · sm_delta_deg | Straight-mode flap incidence reduction 15° → 30° | model domain edge |
+| Suspension and brake set-up · heave_n_mm | Whole-car heave stiffness at the tyre contact (RB22 sheet 3500) 3500 N/mm → 6750 N/mm |  |
+| Cooling · layout | Cooling layout standard (0) → airbox_gills (1) |  |
+| Gearbox, differential, driveshafts, oil · top_kmh | Final drive: 8th-gear speed at 12,000 rpm (RB22 336, all RB laps) 336 km/h → 380 km/h | model domain edge |
+| Floor · throat_mm | Venturi throat roof height above Z=0 (≤ 75: RV-FLOOR-BODY roof, C3.5.1(a)) 60 mm → 74 mm |  |
+| Front wing assembly · elements | Profile volumes 3 → 2 |  |
+| Gearbox, differential, driveshafts, oil · step | Gear pairs: mean ratio step 4th→8th (RB22 1.156, all RB laps) 1.16 × → 1.12 × |  |
+| Front wing assembly · aoa_deg | Wing setting (lab front_wing_deg units) 25° → 32° |  |
+| Floor · ride_height_mm | Static ride height at the plank 35 mm → 25.5 mm |  |
+| Diffuser · expansion_deg | Diffuser expansion angle 14° → 16.5° |  |
+| Survival cell · cockpit_len_mm | Cell front to cockpit rear (XA→XC) 1930 mm → 1990 mm |  |
+| Rear wing assembly · aoa_deg | Wing setting (lab rear_wing_deg units) 20° → 25° |  |
+| Floor · width_mm | Floor body width (2 × max |Y|) 1450 mm → 1530 mm |  |
+| Sidepods · undercut_mm | Undercut depth 100 mm → 135 mm |  |
+| Suspension and brake set-up · brake_bias | Brake balance (front share of brake force; RB22 sheet 57) 57 % front → 54.75 % front |  |
+| Rear wing assembly · chord_mm | Chord (X extent) 420 mm → 380 mm |  |
+| Suspension and brake set-up · roll_front | Front share of roll stiffness (anti-roll bars + springs; RB22 sheet 55) 55 % front → 48.5 % front |  |
+| Survival cell · front_axle_offset_mm | Front axle behind cell front (XA→XF) 75 mm → 105 mm |  |
+| Front wing assembly · span_mm | Span 1300 mm → 1350 mm | REG-C-FW-SPAN ≤ 1350 |
+| Rear wing assembly · endplate_top_mm | Endplate top (Z) 860 mm → 880 mm | REG-C-RW-ENDPLATE ≤ 880 |
+| Sidepods · inlet_cm2 | Cooling inlet area (both sides) 650 cm² → 580 cm² |  |
+| Rear wing assembly · span_mm | Span 1100 mm → 1130 mm |  |
+| Survival cell · bulkhead_gap_mm | Cockpit rear to ICE face (XC→XPU) 380 mm → 360 mm | REG-C-BULKHEAD ≥ 360 |
+| Front wing assembly · sm_delta_deg | Straight-mode flap incidence reduction 4° → 4.5° |  |
+| Front wing assembly · chord_mm | Mean chord (planform / span, X extent) 580 mm → 575 mm |  |
+
+Where the time comes from (physics lap sim contributions(best, baseline): per corner zone (marker ±100 m) and straight, best − baseline; sum = lap delta -1.099 s):
+
+| Segment | Δ time (s) |
+|---|---|
+| Abbey (T1) (corner, 340–523 m) | +0.023 (min 292.4 → 289.3 km/h) |
+| Farm (T2) (corner, 523–705 m) | +0.032 (min 275.1 → 271 km/h) |
+| T2 -> T3 (straight, 705–760 m) | +0.011 (min 267.2 → 263 km/h) |
+| Village (T3) (corner, 760–945 m) | -0.147 (min 116.5 → 120.7 km/h) |
+| The Loop (T4) (corner, 945–1125 m) | -0.112 (min 74.6 → 75.7 km/h) |
+| Aintree (T5) (corner, 1125–1320 m) | -0.004 (min 180.8 → 183.1 km/h) |
+| T5 -> T6 (straight, 1320–1850 m) | +0.066 (min 256.3 → 253.9 km/h) |
+| Brooklands (T6) (corner, 1850–2050 m) | -0.195 (min 142.8 → 150.8 km/h) |
+| T6 -> T7 (straight, 2050–2075 m) | -0.016 (min 160.7 → 169.9 km/h) |
+| Luffield (T7) (corner, 2075–2275 m) | -0.193 (min 102.7 → 105.7 km/h) |
+| T7 -> T8 (straight, 2275–2415 m) | -0.011 (min 193.6 → 196.4 km/h) |
+| Woodcote (T8) (corner, 2415–2615 m) | +0.010 (min 255.8 → 254.4 km/h) |
+| T8 -> T9 (straight, 2615–2940 m) | +0.028 (min 292.8 → 290.8 km/h) |
+| Copse (T9) (corner, 2940–3140 m) | +0.018 (min 295.1 → 293 km/h) |
+| T9 -> T10 (straight, 3140–3490 m) | +0.045 (min 295.1 → 293 km/h) |
+| Maggotts (T10) (corner, 3490–3635 m) | +0.018 (min 299.2 → 296.9 km/h) |
+| Maggotts (T11) (corner, 3635–3753 m) | +0.003 (min 283.6 → 285.5 km/h) |
+| Becketts (T12) (corner, 3753–3898 m) | -0.026 (min 262.2 → 266 km/h) |
+| Becketts (T13) (corner, 3898–4045 m) | -0.191 (min 196.7 → 217.5 km/h) |
+| Chapel (T14) (corner, 4045–4220 m) | -0.061 (min 223.7 → 235.2 km/h) |
+| T14 -> T15 (straight, 4220–4880 m) | +0.024 (min 268.7 → 271.5 km/h) |
+| Stowe (T15) (corner, 4880–5080 m) | -0.221 (min 212.7 → 239 km/h) |
+| T15 -> T16 (straight, 5080–5335 m) | -0.030 (min 229.8 → 245.9 km/h) |
+| Vale (T16) (corner, 5335–5478 m) | -0.085 (min 113.8 → 117.9 km/h) |
+| Club (T17) (corner, 5478–5595 m) | -0.105 (min 109.9 → 113.5 km/h) |
+| Club (T18) (corner, 5595–5770 m) | -0.026 (min 166.8 → 173.4 km/h) |
+| T18 -> T1 (straight, 5770–340 m) | +0.045 (min 246.9 → 246.6 km/h) |
+
+| Seed | Best lap (s) | Physics laps | Surrogate-screened | Restarts | Runtime (s) |
+|---|---|---|---|---|---|
+| 1 | 87.699 | 5024 | 20096 | 2 | 69.3 |
+| 2 | 88.095 | 5008 | 20032 | 4 | 44.6 |
+| 3 | 88.055 | 5008 | 20032 | 3 | 36.7 |
+| 4 | 87.646 | 5024 | 20096 | 2 | 32.9 |
+| refine | 87.646 (from 87.646) | 4164 | — | — | 18.1 |
+
+Sensitivity (physics sim): wind 2.6 m/s from 8 directions moves best − baseline between -1.341 and -1.070 s (still air -1.099). Strategy: threshold (calibrated) best 88.415 / baseline 89.682 (Δ -1.267); marginal best 87.634 / baseline 89.121 (Δ -1.487); optimal best 87.559 / baseline 88.495 (Δ -0.936). Aero-map gains halved: 88.140 s (Δ -0.605 vs baseline). Surrogate on the final car: 87.674 s (+0.028 vs physics, information only).
+
+| Revert one group to the baseline (rest kept) | Lap (s) | Time the group is worth (s) |
+|---|---|---|
+| Straight Mode flap angles | 87.819 | -0.173 |
+| front wing (span, chord, setting, volumes) | 88.680 | -1.034 |
+| rear wing (span, chord, setting, volumes, endplate) | 88.661 | -1.015 |
+| floor and diffuser (width, throat, ride height, expansion) | 88.002 | -0.356 |
+| floor throat only (REG-C-FLOOR-ROOF not yet checkable) | illegal (PKG-FLOOR-STALL) | — |
+| sidepods (inlet, undercut) | 88.014 | -0.368 |
+| packaging (wheelbase, survival cell) | 87.704 | -0.058 |
+| ballast (position, extra) | 87.645 | +0.001 |
+| set-up and gearing (roll split, heave, brake balance, ratios) | illegal (PKG-FLOOR-STALL) | — |
+| concept families (redesigns v1) | illegal (PKG-COOLING) | — |
+| materials (unchanged) | 87.646 | 0.000 |
+
+Legality: every check passes (52 checks pass, 16 info rules recorded). Runtime 205.9 s, 24229 physics laps.
+
+#### Baseline: Baseline 2026-style concept car
+
+| | Lap (s) | S1 / S2 / S3 (s) | Trap (km/h) | Δ pole 88.111 | Δ HAD 88.746 | Grid (real 2026 Q) |
+|---|---|---|---|---|---|---|
+| baseline | 88.100 | 28.361 / 35.654 / 24.086 | 308.9 | -0.011 | -0.646 | P1 |
+| **campaign best** | **87.110** ± 0.117 (1σ) | 28.273 / 35.154 / 23.683 | 306.9 | -1.001 | -1.636 | P1 (95 %: P1–P1) |
+
+95 % band 86.881–87.339 s. vs pole: faster than 88.111 s and the whole 95 % band (86.881–87.339 s) is below it: outside the model's uncertainty. vs HAD: faster than 88.746 s and the whole 95 % band (86.881–87.339 s) is below it: outside the model's uncertainty.
+
+Uncertainty components (s): transfer 0.116 (k = 0.18 × sector changes -0.088 / -0.500 / -0.403), fit residual RMS 0.008, sim noise 0.005 (measured on the final car), surrogate 0. Sim's held-out trace RMS 10 km/h. Known bias: anchor residual -0.011 s (ANT); anchor-relative lap 87.121 s; held-out sector bias +0.144 / +0.042 / -0.191 s, bias-corrected sectors 28.129 / 35.112 / 23.874 s.
+
+PU: generic 2026 PU (the physics sim's estimate) — identical to the homologated PU (ice_kw 400, mguk_kw 350, es_deploy_mj_per_lap 12.5, es_harvest_mj_per_lap 8.5, es_soc_window_mj 4). Energy: deployed 7.584 MJ, recharged 3.642 MJ of 6.5 MJ (within C5.2.9 / C5.2.10).
+
+| Part · parameter | From → to | At a limit |
+|---|---|---|
+| Engine cover, airbox and roll-hoop fairing · style | Engine cover style high_fin (0) → low_narrow (1) | model domain edge |
+| Suspension architecture · front | Front suspension actuation pushrod (0) → pullrod (1) | model domain edge |
+| Suspension and brake set-up · heave_n_mm | Whole-car heave stiffness at the tyre contact (RB22 sheet 3500) 3500 N/mm → 7200 N/mm |  |
+| Rear wing assembly · sm_delta_deg | Straight-mode flap incidence reduction 15° → 30° | model domain edge |
+| Gearbox, differential, driveshafts, oil · top_kmh | Final drive: 8th-gear speed at 12,000 rpm (RB22 336, all RB laps) 336 km/h → 378 km/h |  |
+| Floor · throat_mm | Venturi throat roof height above Z=0 (≤ 75: RV-FLOOR-BODY roof, C3.5.1(a)) 60 mm → 75 mm | model domain edge |
+| Front wing assembly · elements | Profile volumes 3 → 2 |  |
+| Survival cell · front_axle_offset_mm | Front axle behind cell front (XA→XF) 75 mm → 0 mm | REG-C-FRONT-AXLE ≤ 150 |
+| Survival cell · cockpit_len_mm | Cell front to cockpit rear (XA→XC) 1930 mm → 1835 mm |  |
+| Front wing assembly · aoa_deg | Wing setting (lab front_wing_deg units) 25° → 32° |  |
+| Floor · ride_height_mm | Static ride height at the plank 35 mm → 24.5 mm |  |
+| Floor · width_mm | Floor body width (2 × max |Y|) 1450 mm → 1540 mm | REG-C-FLOOR-WIDTH ≤ 1540 |
+| Diffuser · expansion_deg | Diffuser expansion angle 14° → 16.5° |  |
+| Rear wing assembly · chord_mm | Chord (X extent) 420 mm → 375 mm |  |
+| Rear wing assembly · aoa_deg | Wing setting (lab rear_wing_deg units) 20° → 24.5° |  |
+| Sidepods · undercut_mm | Undercut depth 100 mm → 125 mm |  |
+| Suspension and brake set-up · brake_bias | Brake balance (front share of brake force; RB22 sheet 57) 57 % front → 58.75 % front |  |
+| Front wing assembly · span_mm | Span 1300 mm → 1350 mm | REG-C-FW-SPAN ≤ 1350 |
+| Rear wing assembly · endplate_top_mm | Endplate top (Z) 860 mm → 880 mm | REG-C-RW-ENDPLATE ≤ 880 |
+| Suspension and brake set-up · roll_front | Front share of roll stiffness (anti-roll bars + springs; RB22 sheet 55) 55 % front → 59.5 % front |  |
+| Rear wing assembly · span_mm | Span 1100 mm → 1130 mm |  |
+| Survival cell · bulkhead_gap_mm | Cockpit rear to ICE face (XC→XPU) 380 mm → 360 mm | REG-C-BULKHEAD ≥ 360 |
+| Ballast · x_frac | Ballast position along the wheelbase 0.05 × WB → 0 × WB | model domain edge |
+| Sidepods · inlet_cm2 | Cooling inlet area (both sides) 650 cm² → 680 cm² |  |
+| Gearbox, differential, driveshafts, oil · step | Gear pairs: mean ratio step 4th→8th (RB22 1.156, all RB laps) 1.16 × → 1.16 × |  |
+| Overall layout · wheelbase_mm | Wheelbase 3400 mm → 3390 mm |  |
+| Front wing assembly · chord_mm | Mean chord (planform / span, X extent) 580 mm → 575 mm |  |
+
+Where the time comes from (physics lap sim contributions(best, baseline): per corner zone (marker ±100 m) and straight, best − baseline; sum = lap delta -0.99 s):
+
+| Segment | Δ time (s) |
+|---|---|
+| Abbey (T1) (corner, 340–523 m) | +0.024 (min 294.9 → 291.8 km/h) |
+| Farm (T2) (corner, 523–705 m) | +0.029 (min 277.9 → 274.1 km/h) |
+| T2 -> T3 (straight, 705–760 m) | +0.010 (min 270 → 266.1 km/h) |
+| Village (T3) (corner, 760–945 m) | -0.142 (min 116.8 → 120.7 km/h) |
+| The Loop (T4) (corner, 945–1125 m) | -0.100 (min 74.4 → 75.8 km/h) |
+| Aintree (T5) (corner, 1125–1320 m) | +0.002 (min 181.9 → 184.8 km/h) |
+| T5 -> T6 (straight, 1320–1850 m) | +0.058 (min 257.7 → 256.3 km/h) |
+| Brooklands (T6) (corner, 1850–2050 m) | -0.185 (min 143.4 → 150.7 km/h) |
+| T6 -> T7 (straight, 2050–2075 m) | -0.015 (min 161.8 → 170.4 km/h) |
+| Luffield (T7) (corner, 2075–2275 m) | -0.164 (min 102.9 → 105.7 km/h) |
+| T7 -> T8 (straight, 2275–2415 m) | -0.009 (min 192.7 → 196.7 km/h) |
+| Woodcote (T8) (corner, 2415–2615 m) | +0.008 (min 256.9 → 256.5 km/h) |
+| T8 -> T9 (straight, 2615–2940 m) | +0.030 (min 295.2 → 293.8 km/h) |
+| Copse (T9) (corner, 2940–3140 m) | +0.018 (min 297.7 → 295.7 km/h) |
+| T9 -> T10 (straight, 3140–3490 m) | +0.044 (min 297.7 → 295.7 km/h) |
+| Maggotts (T10) (corner, 3490–3635 m) | +0.018 (min 302.7 → 300 km/h) |
+| Maggotts (T11) (corner, 3635–3753 m) | +0.006 (min 287.9 → 288.6 km/h) |
+| Becketts (T12) (corner, 3753–3898 m) | -0.015 (min 266.7 → 269.1 km/h) |
+| Becketts (T13) (corner, 3898–4045 m) | -0.179 (min 197.9 → 217 km/h) |
+| Chapel (T14) (corner, 4045–4220 m) | -0.059 (min 224.2 → 234.9 km/h) |
+| T14 -> T15 (straight, 4220–4880 m) | +0.034 (min 271.7 → 274 km/h) |
+| Stowe (T15) (corner, 4880–5080 m) | -0.203 (min 214.1 → 238.4 km/h) |
+| T15 -> T16 (straight, 5080–5335 m) | -0.032 (min 232.5 → 246.7 km/h) |
+| Vale (T16) (corner, 5335–5478 m) | -0.085 (min 114.1 → 117.9 km/h) |
+| Club (T17) (corner, 5478–5595 m) | -0.092 (min 110.1 → 113.5 km/h) |
+| Club (T18) (corner, 5595–5770 m) | -0.027 (min 168.3 → 173.1 km/h) |
+| T18 -> T1 (straight, 5770–340 m) | +0.037 (min 247.7 → 247.6 km/h) |
+
+| Seed | Best lap (s) | Physics laps | Surrogate-screened | Restarts | Runtime (s) |
+|---|---|---|---|---|---|
+| 1 | 87.342 | 5024 | 20096 | 2 | 57.5 |
+| 2 | 87.405 | 5024 | 20096 | 2 | 44.7 |
+| 3 | 87.493 | 5024 | 20096 | 2 | 38.3 |
+| 4 | 87.148 | 5024 | 20096 | 2 | 31.6 |
+| refine | 87.110 (from 87.148) | 4164 | — | — | 20.2 |
+
+Sensitivity (physics sim): wind 2.6 m/s from 8 directions moves best − baseline between -1.127 and -0.875 s (still air -0.990). Strategy: threshold (calibrated) best 87.906 / baseline 88.998 (Δ -1.092); marginal best 87.447 / baseline 88.414 (Δ -0.967); optimal best 86.993 / baseline 87.863 (Δ -0.870). Aero-map gains halved: 87.652 s (Δ -0.448 vs baseline). Surrogate on the final car: 87.024 s (-0.086 vs physics, information only).
+
+| Revert one group to the baseline (rest kept) | Lap (s) | Time the group is worth (s) |
+|---|---|---|
+| Straight Mode flap angles | 87.258 | -0.148 |
+| front wing (span, chord, setting, volumes) | 88.171 | -1.061 |
+| rear wing (span, chord, setting, volumes, endplate) | 87.915 | -0.805 |
+| floor and diffuser (width, throat, ride height, expansion) | 87.527 | -0.417 |
+| floor throat only (REG-C-FLOOR-ROOF not yet checkable) | illegal (PKG-FLOOR-STALL) | — |
+| sidepods (inlet, undercut) | illegal (PKG-COOLING) | — |
+| packaging (wheelbase, survival cell) | 87.083 | +0.027 |
+| ballast (position, extra) | 87.109 | +0.001 |
+| set-up and gearing (roll split, heave, brake balance, ratios) | illegal (PKG-FLOOR-STALL) | — |
+| concept families (redesigns v1) | 87.193 | -0.083 |
+| materials (unchanged) | 87.110 | 0.000 |
+
+Legality: every check passes (52 checks pass, 16 info rules recorded). Runtime 194.1 s, 24261 physics laps.
+
+### 4.0b Previous: re-run on physics lap sim v3 + FIA geometry fixes (before more-factors and redesigns; 673.9 s wall time)
 
 Source of every lap: **physics lap sim · quasi-steady-state point mass · Silverstone OSM centreline · calibrated to 2026 British GP qualifying** · Silverstone · 2026 British GP qualifying conditions · concept campaign v1 · CMA-ES + surrogate pre-screen · every number re-scored on the physics lap sim.
 

@@ -154,7 +154,21 @@ changes and an inlet that covers the cooling) gets a short CMA-ES around it, kep
 **Before / after** (physics lap sim, Silverstone, 2026 British GP qualifying conditions; reduced-order lap model · calibrated to 2026
 pole laps · aero map v1; every lap a fresh physics sim lap; ± is the campaign's 1σ transfer band, CAMPAIGN.md §2):
 
-(pending the full campaign run; see §5)
+| Model | RB22 / DM01 best | Δ pole 88.111 | 95 % band | Generic best | Δ pole |
+|---|---|---|---|---|---|
+| CAMPAIGN.md §4.0b (sim v3, before) | 87.235 ± 0.154 s | −0.876 | 86.933–87.537 | 86.595 ± 0.189 s | −1.516 |
+| more-factors v1, same campaign settings (before, RB22 only) | 87.288 ± 0.167 s | −0.823 | 86.961–87.615 | — | — |
+| **redesigns v1 + difficulty v1 (after)** | **87.646 ± 0.130 s** | **−0.465** | 87.392–87.900 | **87.110 ± 0.117 s** | **−1.001** |
+
+Same campaign (`--seeds 1,2,3,4 --evals 5000 --baselines redbull,generic --refine-evals 3000 --combo-evals 240`, 400 s on 4
+workers, every number a fresh physics sim lap; CAMPAIGN.md §4.0 has the full report). The pole is still beaten on this model, with the
+whole 95 % band below it, but by roughly half as much, and only by combining a 2-volume front wing at 32° on its envelope edge, the
+rear flap at its 30° bound, a 25.5 mm ride height on a 6750 N/mm platform, re-trimmed roll split and brake balance, and the airbox +
+gills layout that pays for a 580 cm² inlet. The old (more-factors) best re-scored on the new model is illegal (PKG-COOLING: its
+590 cm² inlet with a 145 mm undercut cannot cool the race); with the inlet raised to the 660 cm² it needs it laps 87.801 s. **With the aero map's gains halved the new RB22 best laps 88.140 s, slower than pole** (it was
+87.893 s before): the pole claim now rests on the aero map's sizes, which is where a judge should push. Concept families kept by the
+search: RB22 airbox + gills; generic low narrow cover + pullrod (the concept-switch stage accepted both); every other switch from the
+RB22 best measured 0.008-0.408 s slower (CAMPAIGN.md §4.0).
 
 ## 5. Single switches, measured
 
