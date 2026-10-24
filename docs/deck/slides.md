@@ -112,21 +112,21 @@ Speaker notes: Two identical neutral bots, seed 42, three laps. The model predic
 # 5 · v1 vs v2
 <small>The story is the next experiment, not the verdict</small>
 
-- Held-out exam, 20 scenarios, truth from the evaluator. Provider: **verdicts 20/20 · next experiment 10/20**; on the 8 hard ones, **8/8 and 1/8**. On all 7 misses the truth is a **ride-height** change; the provider proposes rear wing (5), front wing (1) or brake bias (1) instead.
+- Held-out exam, 20 scenarios, truth from the evaluator. Provider: **verdicts 20/20 · next experiment 10/20**; on the 8 hard ones, **8/8 and 2/8**. On all 6 misses the truth is a **ride-height** change; the provider proposes rear wing (5) or brake bias (1) instead.
 - **v1 learned from our mistake:** a seeding bug made 94 % of Friday's candidates front-wing moves (39 of 43 answers: "front wing"). Fixed before v2.
 - **v2 learns the engineer's rule:** *"Weigh straight-line drag against corner gain; judge on full-lap delta."* in every input; 40 scenarios over all five parameters, verdicts agreeing with the evaluator 38 of 39, ride height proposed 13 times. **Rule-conditioned learning.**
 
 | 8 held-out scenarios (Try models) | provider | v1 | v2 |
 |---|---|---|---|
-| next experiment | **1/8** | [n/8] | [n/8] |
+| next experiment | **2/8** | [n/8] | [n/8] |
 | verdict | 8/8 | [n/8] | [n/8] |
 
-<span class="src">held-out exam data/exam.json · truth from the reduced-order lap model · provider scored by untrained calls (snapshot 0350-exam-details) · v1/v2 hand-entered from Try models · counts, never %</span>
+<span class="src">held-out exam data/exam.json · truth from the reduced-order lap model · provider scored by untrained calls (snapshot 0530-windcap-exam) · v1/v2 hand-entered from Try models · counts, never %</span>
 
 ![shot bg right:34% fit](shots/try-models-side-by-side.png)
 
 <!--
-Speaker notes: Same unseen scenario to provider, v1 and v2 in Try models. On these eight the provider gets every verdict and one next step; on all seven misses the truth is ride height and it proposes wings or brake bias. Counts, never percentages; if v2 loses, we show it. Figure: Try models on exam-rw8, version label visible.
+Speaker notes: Same unseen scenario to provider, v1 and v2 in Try models. On these eight the provider gets every verdict and two next steps; on all six misses the truth is ride height and it proposes rear wing or brake bias. Counts, never percentages; if v2 loses, we show it. Figure: Try models on exam-rw8, version label visible.
 -->
 
 ---
