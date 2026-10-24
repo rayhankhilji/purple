@@ -125,6 +125,17 @@ test("status widget: GET /api/status carries prompt_hash, last_console_read_at a
   // the SSE status event carries the same view
   const sse = await sseUntil(app, /event: status/, 2); const buf = await sse.read(); const ev = sseEvent(buf, "status")[0]; assert.equal(ev.budget.trained_today_utc, 3); assert.equal(ev.last_console_read_at, "2026-10-24T00:05:00Z"); assert.equal(ev.prompt_hash, s0.prompt_hash);
 });
+test("POST /api/status deep-merges one level: { exam: { v1: 4 } } keeps provider/total; a scalar replaces; nested objects are not merged deeper", async () => {
+  mock.reset(); const dir = tmp(); const { app } = createApp({ dataDir: tmp(), mubit: mock, log: () => {} });
+  let s = (await post(app, "/api/status", { exam: { provider: 20, total: 20, provider_param: 10 }, kept_examples: 43 })).body.data; assert.deepEqual(s.exam, { provider: 20, total: 20, provider_param: 10 });
+  s = (await post(app, "/api/status", { exam: { v1: 4 } })).body.data; assert.deepEqual(s.exam, { provider: 20, total: 20, provider_param: 10, v1: 4 }); assert.equal(s.kept_examples, 43);
+  s = (await post(app, "/api/status", { exam: { v2: 12, v1: null } })).body.data; assert.deepEqual(s.exam, { provider: 20, total: 20, provider_param: 10, v1: null, v2: 12 });   // explicit null clears one field
+  s = (await post(app, "/api/status", { exam: { total: 20, nested: { a: 1 } } })).body.data; assert.deepEqual(s.exam.nested, { a: 1 });
+  s = (await post(app, "/api/status", { exam: { nested: { b: 2 } } })).body.data; assert.deepEqual(s.exam.nested, { b: 2 });   // only one level deep
+  s = (await post(app, "/api/status", { exam: "n/a" })).body.data; assert.equal(s.exam, "n/a");   // a scalar replaces the object
+  s = (await post(app, "/api/status", { exam: { provider: 19 } })).body.data; assert.deepEqual(s.exam, { provider: 19 });   // and an object replaces a scalar
+  const sse = await sseUntil(app, /event: status/, 2); const ev = sseEvent(await sse.read(), "status")[0]; assert.deepEqual(ev.exam, { provider: 19 });
+});
 test("POST /api/evaluate: pure, illegal -> 422 ILLEGAL_SETUP, bad input -> 400", async () => {
   mock.reset(); const { app, EI } = createApp({ dataDir: tmp(), mubit: mock });
   const okr = await post(app, "/api/evaluate", { setup: Object.assign({}, EI.aero.BASELINE, { rear_wing_deg: 28 }), conditions: { circuit: "silverstone" } }); assert.equal(okr.status, 200); assert.ok(okr.body.data.delta_lap > 0);
