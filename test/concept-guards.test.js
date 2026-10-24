@@ -41,9 +41,12 @@ test("guard 2: C4.1 minimum and C4.2 axle split by session; the v0 reference car
   assert.ok(ids(fwd).includes("REG-C-MASS-FRONT")); assert.ok(ids(fwd, { session: "sprint_qualifying" }).includes("REG-C-MASS-FRONT"));
   assert.ok(!ids(fwd, { session: "race" }).includes("REG-C-MASS-FRONT"), "C4.2 applies in (Sprint) Qualifying only");
   assert.ok(!ids(withOverride("pu_ice", { x_mm: 500 }), { session: "sprint" }).includes("REG-C-MASS-REAR"));
-  assert.equal(bench.refCar(undefined, "race").mass_kg, 768); assert.equal(bench.refCar(undefined, "qualifying").mass_kg, 770);
-  const r = bench.bench(B, { session: "race" });
-  assert.equal(r.legal, true); assert.equal(r.physical.session, "race"); assert.equal(r.physical.mass_kg, 768);
+  // the mass sheet carries the session minimum; the PhysicalCar is the anchor car + the design's change from its own session baseline
+  assert.equal(design.facts(B, { session: "race" }).mass.min_kg, 768); assert.ok(design.facts(B, { session: "race" }).mass.total_kg >= 768); assert.equal(design.facts(B, { session: "qualifying" }).mass.total_kg, 770);
+  assert.equal(bench.refCar(undefined, "race").session, "race"); assert.equal(bench.refCar(undefined, "qualifying").session, "qualifying");
+  assert.equal(bench.refCar(undefined, "race").mass_kg, bench.refCar(undefined, "qualifying").mass_kg, "each session's baseline maps onto the anchor");
+  const r = bench.bench(B, { session: "race", sim: "v0" });
+  assert.equal(r.legal, true); assert.equal(r.physical.session, "race"); assert.equal(r.mass.min_kg, 768);
   assert.equal(r.circuits.silverstone.v0.mass_ratio, 1, "the race-session baseline is its own reference");
   assert.deepEqual(r.circuits.silverstone.v0.multipliers, { df: 1, cd: 1, a0: 1, b0: 1 });
   assert.equal(r.circuits.silverstone.lap_s, 88.111);
@@ -90,8 +93,12 @@ test("guard 5: one vertical frame - wheels at the loaded radius above the ground
   const lo = design.facts(withParam("floor", "ride_height_mm", 30)).mass, hi = design.facts(withParam("floor", "ride_height_mm", 40)).mass;
   const rise = hi.cog_height_mm - lo.cog_height_mm; assert.ok(rise > 6 && rise < 10, "only the sprung mass rises: " + rise);
   const z0 = design.facts(B).mass.parts.find(p => p.id === "wheels_front").z_mm; assert.ok(Math.abs(z0 - 300) <= 2, "baseline axle at Z ≈ 300, got " + z0);
-  const pc = physical.physical(B); assert.equal(pc.cog_height_m, design.facts(B).mass.cog_height_mm / 1000);
-  assert.ok(pc.cog_height_m > (design.facts(B).mass.cog_z_mm + B.params.floor.ride_height_mm) / 1000, "the 10 mm plank is counted");
+  // the PhysicalCar's CoG height is the anchor's plus the mass sheet's change from the baseline (same vertical frame)
+  const pc = physical.physical(B), anchor = physical.anchor(null);
+  if (anchor) assert.equal(pc.cog_height_m, anchor.cog_height_m);
+  const up = physical.physical(withParam("floor", "ride_height_mm", 40)), dz = design.facts(withParam("floor", "ride_height_mm", 40)).mass.cog_height_mm - design.facts(B).mass.cog_height_mm;
+  assert.ok(Math.abs((up.cog_height_m - pc.cog_height_m) * 1000 - dz) <= 0.1, "CoG change = mass-sheet change");
+  assert.ok(design.facts(B).mass.cog_height_mm > design.facts(B).mass.cog_z_mm + B.params.floor.ride_height_mm, "the 10 mm plank is counted");
 });
 
 test("guard 6: bench never mutates the caller's circuits; the CLI validates --score", () => {
@@ -143,7 +150,7 @@ test("guard 10: sim v0 charges straight-mode downforce on the zones; rear flap t
   assert.ok(Math.abs(aeromap.flapShare("rear_wing", { elements: 2, span_mm: 1150 }) - 0.5 * 535 / 575) < 1e-12);
   assert.equal(aeromap.flapShare("rear_wing", { elements: 2, span_mm: 1000 }), 0.5);
   assert.equal(aeromap.flapShare("front_wing", { elements: 3, span_mm: 1350 }), 2 / 3);
-  const d = withParam("rear_wing", "sm_delta_deg", 20), r = bench.bench(d), x = r.circuits.silverstone;
+  const d = withParam("rear_wing", "sm_delta_deg", 25), r = bench.bench(d, { sim: "v0" }), x = r.circuits.silverstone;
   assert.ok(x.v0.df_straight < x.v0.multipliers.df, "straight mode lowers zone downforce");
   // the same car without the zone downforce charge is faster: the charge is real
   const G = EI, track = G.evaluator.trackFor("silverstone"), cal = G.evaluator.calibrate(track, "silverstone"), zones = bench.activationZones(track, "silverstone");
@@ -156,7 +163,7 @@ test("guard 10: sim v0 charges straight-mode downforce on the zones; rear flap t
   assert.ok(lapAll(0.7) > lapAll(1) + 0.05, lapAll(0.7) + " vs " + lapAll(1));
   assert.ok(lapAll(0.85) > lapAll(1) && lapAll(0.85) < lapAll(0.7));
   // a zone df equal to the corner df changes nothing (the channel is inert without straight-mode load loss)
-  const noSm = bench.bench(B).circuits.silverstone; assert.equal(noSm.v0.df_straight, 1); assert.equal(noSm.lap_s, 88.111);
+  const noSm = bench.bench(B, { sim: "v0" }).circuits.silverstone; assert.equal(noSm.v0.df_straight, 1); assert.equal(noSm.lap_s, 88.111);
 });
 
 test("guard 11: wing profile drag depends on the setting, so a short steep wing pays for its load", () => {

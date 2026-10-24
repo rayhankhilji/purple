@@ -1,11 +1,15 @@
 // PURPLE CONCEPT - the virtual aero bench. bench(design, { circuit, sim }) = legality (concept/regs.js) + PhysicalCar
-// (concept/physical.js) + a pluggable lap simulator sim(physicalCar, trackId, conditions). The default sim is v0: the game's own
+// (concept/physical.js) + a lap simulator sim(physicalCar, trackId, conditions) + the objective.
+// Sims: "physics" (default when concept/sim/ is loaded): the physics lap sim (concept/sim/index.js simulateLap; Silverstone only,
+// other circuits fall back to v0), behind a result cache keyed by the PhysicalCar, the circuit and the conditions, with the energy
+// fields pinned to the regulation values (closes the es_harvest-lowering exploit, docs/concept/SIM.md). "v0": the game's own
 // reduced-order lap model (js/ai.js buildSpeedProfile through lab/evaluator.js, both called read-only), driven by the ratio of
-// this PhysicalCar to the baseline concept car. The physics lap simulator (concept/sim/, separate work) slots in as `sim`.
-// Score: the Silverstone "weekend score" = margin to the real 2026 pole (EI.RACEPACE.silverstone.pole, 88.111 s) and the
-// projected grid slot among the real 2026 qualifying laps. Deterministic. A reduced-order model: no flow is solved anywhere.
+// this PhysicalCar to its baseline concept car; it stays as the fallback and for fast tests. A function: any sim with that contract.
+// Objective: "weekend" (default at Silverstone when concept/weekend/weekend.js loads): the weekend score of the race-weekend model
+// (qualifying among the real 2026 laps + the 52-lap race). "quali": the margin to the real 2026 pole (s). Both carry the grid slot.
+// Deterministic. A reduced-order model: no flow is solved anywhere.
 // Dual browser / Node: window.EI.concept.bench and module.exports. In the browser the game scripts, lab/aero.js, lab/evaluator.js
-// and js/data/racepace2026.js must be loaded first; in Node the headless loader is used.
+// and js/data/racepace2026.js must be loaded first (and js/data/silverstone.js + concept/sim/*.js for the physics sim).
 (function () {
   const root = typeof window !== "undefined" ? window : globalThis;
   const EI = (root.EI = root.EI || {}); const C = (EI.concept = EI.concept || {});
@@ -13,7 +17,8 @@
   const regs = req("regs", "./regs.js"), design = req("design", "./design.js"), phys = req("physical", "./physical.js");
   const LABEL = "concept · reduced-order lap model · calibrated to 2026 pole laps · concept aero map v0";
   const V0_LABEL = LABEL + " · sim v0 (game lap model, relative to the baseline concept car)";
-  const SCORE_LABEL = "weekend score · Silverstone · margin to the real 2026 pole and projected grid slot vs the real 2026 qualifying laps (EI.RACEPACE) · baseline anchored at pole by construction (sim v0)";
+  const SCORE_LABEL = "qualifying score · Silverstone · margin to the real 2026 pole and projected grid slot vs the real 2026 qualifying laps (EI.RACEPACE)";
+  const SCORE_LABEL_V0 = SCORE_LABEL + " · baseline anchored at pole by construction (sim v0)";
 
   // ---- the game, read-only. Node: the headless loader (server/game-headless.js). Browser: whatever the page loaded.
   function game() {
@@ -118,19 +123,22 @@
     return { prof, iters: it };
   }
 
-  // the reference (baseline concept) car of the SAME session: C4.1 gives 726 kg + NTM in (Sprint) Qualifying, 724 kg + NTM otherwise
+  // the reference (baseline concept) car of the SAME session and team: C4.1 gives 726 kg + NTM in (Sprint) Qualifying, 724 kg + NTM
+  // otherwise; a team design is measured against its own team baseline (the same anchor in concept/physical.js)
   const refCache = {};
-  function refCar(cal, session) {
-    const s = regs.minMass(session).session, key = JSON.stringify(cal || {}) + "|" + s;
-    return refCache[key] || (refCache[key] = phys.physical(design.baseline(), { calibration: cal, session: s }));
+  function refCar(cal, session, team) {
+    const s = regs.minMass(session).session, key = JSON.stringify(cal || {}) + "|" + s + "|" + (team || "");
+    return refCache[key] || (refCache[key] = phys.physical(design.baseline(team ? { team } : undefined), { calibration: cal, session: s }));
   }
   const clampBand = v => { const c = game().aero.CLAMP; return v < c.min ? c.min : v > c.max ? c.max : v; };
 
-  // PhysicalCar -> the game model's per-car multipliers, relative to the baseline concept car (which maps to exactly 1.0)
+  // PhysicalCar -> the game model's per-car multipliers, relative to the baseline concept car (which maps to exactly 1.0). The game's
+  // limit car stands for the pole car, which ran Straight Mode on its real lap, so the zone multipliers are relative to the baseline's
+  // own Straight Mode (its reference flap setting): the baseline is 1.0 in both modes; a car without flaps is slower on the zones.
   function v0Multipliers(pc) {
-    const G = game(), ref = refCar(pc.calibration, pc.session), A = pc.aero, R = ref.aero;
+    const G = game(), ref = refCar(pc.calibration, pc.session, pc.team), A = pc.aero, R = ref.aero;
     const claC = A.corner.CLA_front_m2 + A.corner.CLA_rear_m2, refC = R.corner.CLA_front_m2 + R.corner.CLA_rear_m2;
-    const claS = A.straight.CLA_front_m2 + A.straight.CLA_rear_m2;
+    const claS = A.straight.CLA_front_m2 + A.straight.CLA_rear_m2, refS = R.straight.CLA_front_m2 + R.straight.CLA_rear_m2;
     const k = (pc.mass_kg + pc.fuel_kg) / (ref.mass_kg + ref.fuel_kg);
     const p = (pc.pu.ice_kw * pc.drivetrain_eff) / (ref.pu.ice_kw * ref.drivetrain_eff);
     const ab = A.corner.CLA_front_m2 / claC, abRef = R.corner.CLA_front_m2 / refC;
@@ -140,7 +148,7 @@
     let a0 = (pc.tyres.mu_y / ref.tyres.mu_y) * loadMu * (1 - V0.balance_a0_per_pp * Math.abs(pp)) * (1 - V0.agility_per_wb * (pc.wheelbase_m / ref.wheelbase_m - 1));
     const B = G.aero.BOTTOMING, rh = A.ride_height_mm;
     if (rh < B.below_mm) a0 *= 1 - B.a0_per_mm * (B.below_mm - rh);   // lab/aero.js bottoming, read-only
-    const raw = { df: claC / refC / k, df_sm: claS / refC / k, cd: A.corner.CDA_m2 / R.corner.CDA_m2, cd_sm: A.straight.CDA_m2 / R.corner.CDA_m2, a0, b0: (pc.tyres.mu_x / ref.tyres.mu_x) * loadMu };
+    const raw = { df: claC / refC / k, df_sm: claS / refS / k, cd: A.corner.CDA_m2 / R.corner.CDA_m2, cd_sm: A.straight.CDA_m2 / R.straight.CDA_m2, a0, b0: (pc.tyres.mu_x / ref.tyres.mu_x) * loadMu };
     const m = {}; let clamped = false;
     for (const key of Object.keys(raw)) { m[key] = +clampBand(raw[key]).toFixed(6); if (Math.abs(m[key] - raw[key]) > 1e-6) clamped = true; }
     if (Math.abs(raw.df - 1) < 1e-12) m.df = 1;   // keep the baseline's multipliers exactly 1 (float noise would leave the evaluator path)
@@ -156,8 +164,7 @@
     if (conditions && (conditions.wet || conditions.wind_ms)) throw new Error("concept sim v0: dry, still air only");
     const track = ev.trackFor(trackId), cal = ev.calibrate(track, trackId);
     const mm = v0Multipliers(pc), zones = activationZones(track, trackId);
-    const A = pc.aero, sm = A.straight.CDA_m2 !== A.corner.CDA_m2 || A.straight.CLA_front_m2 !== A.corner.CLA_front_m2 || A.straight.CLA_rear_m2 !== A.corner.CLA_rear_m2;
-    const { prof, iters } = profile(G, track, cal.grip, mm.mult, { k: mm.k, p: mm.p, cd_sm: mm.cd_sm, df_sm: mm.df_sm, zones: sm ? zones : null });
+    const { prof, iters } = profile(G, track, cal.grip, mm.mult, { k: mm.k, p: mm.p, cd_sm: mm.cd_sm, df_sm: mm.df_sm, zones });
     const t = ev.timing(track, prof, Infinity, trackId);
     const RP = racepace()[trackId], pole = RP && RP.pole && RP.pole.s, limit = G.LIMIT_LAP[trackId];
     if (!(pole > 0) || !(limit > 0)) throw new Error("concept sim v0: no real pole / limit lap for " + trackId);
@@ -172,42 +179,107 @@
     };
   }
 
-  // the weekend score at a circuit from a sim result: margin to the real 2026 pole (s, + = faster than pole) and the grid slot the
+  // ---- the physics lap sim (concept/sim/, docs/concept/SIM.md): simulateLap(car, "silverstone", conditions). Silverstone only
+  // (its racing line comes from the 2026 telemetry); other circuits use v0. ~6-22 ms a lap, so results are cached: the key is the
+  // PhysicalCar's numbers (not its labels) + circuit + conditions, so the same design (or two designs with the same physics) is
+  // simulated once. The energy fields are pinned to the regulation values (concept/physical.js ENERGY): energy is not a design
+  // choice, and a car declaring a lower recharge cap must not run a different energy strategy (SIM.md: es_harvest lowering).
+  const PHYSICS_CIRCUITS = ["silverstone"], CACHE_MAX = 6000;
+  const physCache = new Map(), physStats = { hits: 0, misses: 0, ms: 0 };
+  function physicsSim() { return phys.sim ? phys.sim() : null; }
+  function simKey(pc, trackId, conditions) {
+    const k = { m: pc.mass_kg, f: pc.fuel_kg, wb: pc.wheelbase_m, t: [pc.track_front_m, pc.track_rear_m], h: pc.cog_height_m, w: pc.weight_dist_front, a: [pc.aero.corner, pc.aero.straight, pc.aero.floor_stalled], pu: [pc.pu.ice_kw, pc.pu.mguk_kw], ty: pc.tyres, b: pc.brakes, e: pc.drivetrain_eff, g: pc.gearing || null };
+    return trackId + "|" + JSON.stringify(conditions || null) + "|" + JSON.stringify(k);
+  }
+  function guardEnergy(pc) {
+    const E = phys.ENERGY;
+    return Object.assign({}, pc, { pu: Object.assign({}, pc.pu, { es_harvest_mj_per_lap: E.recharge_max_mj, es_deploy_mj_per_lap: E.deploy_mj, mguk_kw: Math.min(pc.pu.mguk_kw, E.mguk_max_kw) }) });
+  }
+  function simPhysics(pc, trackId, conditions) {
+    if (!PHYSICS_CIRCUITS.includes(trackId)) return simV0(pc, trackId, conditions);
+    const S = physicsSim(); if (!S) throw new Error("concept bench: the physics lap sim (concept/sim/index.js) is not loaded");
+    const key = simKey(pc, trackId, conditions), hit = physCache.get(key);
+    if (hit) { physStats.hits++; physCache.delete(key); physCache.set(key, hit); return Object.assign({}, hit); }
+    const t0 = Date.now(), r = S.simulateLap(guardEnergy(pc), trackId, conditions || undefined);
+    physStats.misses++; physStats.ms += Date.now() - t0;
+    const out = { lap_s: r.lap_s, sectors_s: r.sectors_s, vmax_kmh: r.vmax_kmh, speed_trap_kmh: r.speed_trap_kmh, vmin_kmh: r.vmin_kmh, energy: r.energy, speeds_kmh: r.speeds_kmh, air_density_kgm3: r.air_density_kgm3, label: r.label, sim: "physics" };
+    physCache.set(key, out); if (physCache.size > CACHE_MAX) physCache.delete(physCache.keys().next().value);
+    return Object.assign({}, out);
+  }
+  simPhysics.kind = "physics"; simV0.kind = "v0";
+  // opts.sim -> a sim function: "physics" | "v0" | "auto" (default: physics when concept/sim/ is loaded, else v0) | a function
+  function resolveSim(s) {
+    if (typeof s === "function") return s;
+    if (s === "v0") return simV0;
+    if (s === "physics") { if (!physicsSim()) throw new Error("concept bench: sim 'physics' requested but concept/sim/index.js is not loaded"); return simPhysics; }
+    if (s == null || s === "auto") return physicsSim() ? simPhysics : simV0;
+    throw new Error("concept bench: opts.sim is 'physics', 'v0', 'auto' or a function");
+  }
+  const simKind = s => (s && s.kind) || "custom";
+  function cacheStats() { return { size: physCache.size, hits: physStats.hits, misses: physStats.misses, sim_ms: physStats.ms, bench_size: benchCache.size, bench_hits: physStats.bench_hits || 0 }; }
+  function clearCache() { physCache.clear(); benchCache.clear(); physStats.hits = physStats.misses = physStats.ms = physStats.bench_hits = 0; }
+
+  // the qualifying score at a circuit from a sim result: margin to the real 2026 pole (s, + = faster than pole) and the grid slot the
   // lap would have taken among the real 2026 qualifying laps (1 + number of real laps strictly faster)
-  function weekend(lap_s, circuit) {
+  function weekend(lap_s, circuit, kind) {
     const RP = racepace()[circuit]; if (!RP || !RP.pole) return null;
     const q = Object.values(RP.q || {}).filter(x => x > 0).sort((a, b) => a - b), pole = RP.pole.s;
     const pos = 1 + q.filter(x => x < lap_s - 1e-9).length;
-    return { circuit, lap_s, pole_s: pole, pole_code: RP.pole.code, gap_to_pole_s: +(lap_s - pole).toFixed(3), grid_position: pos, field_size: q.length, score: +(pole - lap_s).toFixed(3), label: SCORE_LABEL };
+    return { circuit, lap_s, pole_s: pole, pole_code: RP.pole.code, gap_to_pole_s: +(lap_s - pole).toFixed(3), grid_position: pos, field_size: q.length, score: +(pole - lap_s).toFixed(3), label: kind === "v0" ? SCORE_LABEL_V0 : SCORE_LABEL };
   }
+  // the race-weekend model (concept/weekend/weekend.js), optional
+  function weekendModule() { const w = C.weekend || (typeof require === "function" ? safeRequire("./weekend/weekend.js") : null); return w && typeof w.score === "function" ? w : null; }
+  function safeRequire(p) { try { return require(p); } catch (e) { return null; } }
 
-  // bench(design, opts) -> BenchResult. opts: { circuit = "silverstone" (scored), circuits = [circuit] (all run), sim = simV0,
-  // conditions, calibration, session = "qualifying", mass_weight = 0 (s of score per kg above the minimum; 0: the sim already charges mass) }
+  // bench(design, opts) -> BenchResult. opts: { circuit = "silverstone" (scored), circuits = [circuit] (all run), sim = "auto" |
+  // "physics" | "v0" | fn, objective = "weekend" (Silverstone, weekend module loaded) | "quali", conditions, calibration,
+  // session = "qualifying", mass_weight = 0 (s of score per kg above the minimum; 0: the sim already charges mass), cache = true }
+  // Results are cached by design + options (deterministic), so re-benching a kept design costs nothing.
+  const benchCache = new Map();
+  function benchKey(d, opts, simFn) {
+    if (opts.cache === false || (simFn !== simPhysics && simFn !== simV0)) return null;
+    const o = { c: opts.circuit, cs: opts.circuits, k: simKind(simFn), ob: opts.objective, cd: opts.conditions, cal: opts.calibration, s: opts.session, mw: opts.mass_weight, wo: opts.weekend };
+    return JSON.stringify([d.params, d.overrides || null, d.team || null, o]);
+  }
   function bench(d, opts) {
     opts = opts || {}; const t0 = Date.now();
-    const scored = opts.circuit || "silverstone", circuits = (opts.circuits || [scored]).slice(), sim = opts.sim || simV0;   // never mutate the caller's array
+    const scored = opts.circuit || "silverstone", circuits = (opts.circuits || [scored]).slice(), sim = resolveSim(opts.sim);   // never mutate the caller's array
     if (!circuits.includes(scored)) circuits.unshift(scored);
     const v = design.validate(d);
     if (!v.ok) return { id: d && d.id, legal: false, errors: v.errors, violations: [], score: null, label: LABEL };
+    const key = benchKey(d, opts, sim), hit = key && benchCache.get(key);
+    if (hit) { physStats.bench_hits = (physStats.bench_hits || 0) + 1; const r = JSON.parse(hit); r.id = d.id || null; r.physical.id = d.id || null; r.ms = Date.now() - t0; return r; }
     const f = design.facts(d, opts), violations = regs.checkFacts(f, opts);
     const pc = phys.physical(d, opts);
     const out = {
       id: d.id || null, label: LABEL, legal: violations.length === 0, violations,
-      physical: pc,
+      physical: pc, team: d.team || null,
       mass: { total_kg: f.mass.total_kg, parts_kg: f.mass.parts_kg, ballast_kg: f.mass.ballast_kg, min_kg: f.mass.min_kg, front_share: f.mass.front_share, cog_x_mm: f.mass.cog_x_mm, cog_z_mm: f.mass.cog_z_mm, izz_kgm2: f.mass.izz_kgm2, label: f.mass.label },
       aero: { df: +f.aero.df.toFixed(4), cd: +f.aero.cd.toFixed(4), df_sm: +f.aero.df_sm.toFixed(4), cd_sm: +f.aero.cd_sm.toFixed(4), balance: +f.aero.balance.toFixed(4), floor_stalled: f.aero.floor_stalled, stall_margin_mm: +f.aero.stall_margin_mm.toFixed(2), cooling_power_factor: +f.aero.cooling.power_factor.toFixed(4), cooling_capacity_over_need: +(f.aero.cooling.capacity / f.aero.cooling.need).toFixed(4), label: f.aero.version },
-      circuits: {}, weekend: null, score: null,
+      circuits: {}, weekend: null, weekend_model: null, score: null, sim: simKind(sim), objective: null,
     };
-    if (!out.legal) { out.ms = Date.now() - t0; return out; }   // like the lab: an illegal car gets no lap time
-    for (const c of circuits) out.circuits[c] = sim(pc, c, opts.conditions || null);
-    const w = weekend(out.circuits[scored].lap_s, scored);
-    if (w) { const extra = Math.max(0, f.mass.total_kg - f.mass.min_kg) * (opts.mass_weight || 0); w.score = +(w.score - extra).toFixed(3); }
-    out.weekend = w; out.score = w ? w.score : null; out.sim_label = out.circuits[scored].label;
+    if (out.legal) {   // like the lab: an illegal car gets no lap time
+      for (const c of circuits) out.circuits[c] = sim(pc, c, opts.conditions || null);
+      const lap = out.circuits[scored].lap_s, w = weekend(lap, scored, simKind(sim));
+      const extra = Math.max(0, f.mass.total_kg - f.mass.min_kg) * (opts.mass_weight || 0);
+      const W = scored === "silverstone" && opts.objective !== "quali" ? weekendModule() : null;
+      if (opts.objective === "weekend" && !W) throw new Error("concept bench: objective 'weekend' needs concept/weekend/weekend.js (Silverstone only)");
+      if (W) {
+        // the weekend model on this lap: the field in the sim's frame (physics) and our car in place of the team's own driver
+        const tm = d.team && design.TEAMS && design.TEAMS[d.team], wo = Object.assign({ replace: tm ? tm.driver : undefined }, opts.weekend || {});
+        const s = W.scoreLap(lap, Object.assign({ sim_kind: simKind(sim), sim_label: out.circuits[scored].label, team: d.team || null, conditions: opts.conditions || null }, wo));
+        out.weekend_model = { weekend_score: s.weekend_score, quali_pos: s.quali.pos, quali_field: s.quali.field_size, gap_to_pole_s: s.quali.gap_to_pole_s, race_pos: s.race.pos, race_field: s.race.field_size, gap_to_winner_s: s.race.gap_to_winner_s, strategy: s.race.strategy.name, fuel_s_per_kg: s.race.pace.fuel_s_per_kg, fuel_basis: s.race.pace.fuel_basis, field: s.field, components: s.components, label: s.label };
+        out.objective = "weekend"; out.score = +(s.weekend_score - extra).toFixed(3);
+      } else { out.objective = "quali"; out.score = w ? +(w.score - extra).toFixed(3) : null; }
+      if (w) w.score = out.objective === "quali" ? out.score : +(w.score - extra).toFixed(3);
+      out.weekend = w; out.sim_label = out.circuits[scored].label;
+    }
+    if (key) { benchCache.set(key, JSON.stringify(out)); if (benchCache.size > CACHE_MAX) benchCache.delete(benchCache.keys().next().value); }
     out.ms = Date.now() - t0;
     return out;
   }
 
-  const api = { LABEL, V0_LABEL, SCORE_LABEL, V0, game, racepace, activationZones, v0Multipliers, simV0, weekend, bench, profile, zoneDownforce, refCar };
+  const api = { LABEL, V0_LABEL, SCORE_LABEL, SCORE_LABEL_V0, V0, PHYSICS_CIRCUITS, game, racepace, activationZones, v0Multipliers, simV0, simPhysics, resolveSim, physicsSim, guardEnergy, cacheStats, clearCache, weekend, bench, profile, zoneDownforce, refCar };
   C.bench = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();

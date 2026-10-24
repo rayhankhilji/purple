@@ -1,8 +1,11 @@
 // PURPLE CONCEPT LAB - the page where the optimiser reshapes the car generation after generation to beat the real 2026 grid at
 // Silverstone. Runs concept/optimize.js in this browser: deterministic, seeded, no API, no Mubit, no LLM. Every generation is a
 // lineage row (concept/optimize.js); the verdict is the optimiser's number comparison (legal and faster), never an opinion.
-// Integrations, all optional with fallbacks: EI.conceptView (concept/view/view3d.js, 3D car), EI.concept.sim.simulateLap
-// (concept/sim/, physics lap sim; else the bench's sim v0), EI.concept.weekend.score (concept/weekend/; else the bench's weekend).
+// Lap sim: the physics lap sim (concept/sim/index.js -> EI.conceptSim, through concept/bench.js "physics") by default, sim v0 (the
+// game's lap model) on the toggle or when the sim is not loaded. Objective: the weekend score (concept/weekend/weekend.js, read
+// from the bench result). Baseline: the Red Bull RB22 / DM01 (design.baseline({ team: "redbull" })) by default, the generic 2026
+// car selectable. 3D car: EI.conceptView (concept/view/view3d.js), else a schematic plan view. The page yields to the browser
+// between candidate laps (optimizeAsync yield / slice_ms), so a 30 ms physics lap never blocks a frame for long.
 // Every number on screen carries its source label (EVAL_GUARDRAILS G-HON-01). Design tokens and roles: docs/DESIGN_SYSTEM.md.
 (function () {
   const EI = (window.EI = window.EI || {});
@@ -43,14 +46,13 @@
   const need = ["regs", "parts", "aeromap", "design", "physical", "bench", "optimize"];
   const missing = need.filter(k => !C[k]);
   const M = { regs: C.regs, parts: C.parts, design: C.design, physical: C.physical, bench: C.bench, optimize: C.optimize };
-  function simModule() { const s = EI.concept && EI.concept.sim; return s && typeof s.simulateLap === "function" ? s : null; }
-  function weekendModule() { const w = EI.concept && EI.concept.weekend; return w && typeof w.score === "function" ? w : null; }
-  function benchOpts() {
-    const o = { circuit: CIRCUIT };
-    const s = simModule();
-    if (s) { o.sim = (pc, track, cond) => s.simulateLap(pc, track, cond); if (s.calibration) o.calibration = s.calibration; }
-    return o;
-  }
+  function simModule() { const s = EI.conceptSim; return s && typeof s.simulateLap === "function" ? s : null; }
+  const physicsOn = () => S.sim === "physics" && !!simModule();
+  function benchOpts() { return { circuit: CIRCUIT, sim: physicsOn() ? "physics" : "v0" }; }
+  // yield to the browser between candidate laps: a MessageChannel task (no 4 ms timer clamp)
+  const chan = typeof MessageChannel === "function" ? new MessageChannel() : null, waiting = [];
+  if (chan) chan.port1.onmessage = () => { const f = waiting.shift(); if (f) f(); };
+  const yieldTask = () => new Promise(r => { if (chan) { waiting.push(r); chan.port2.postMessage(0); } else setTimeout(r, 0); });
 
   // short names for parts and parameters (the long ones live in concept/parts.js; titles carry them)
   const PART = { layout: "Layout", survival_cell: "Survival cell", front_wing: "Front wing", rear_wing: "Rear wing", floor: "Floor", diffuser: "Diffuser", sidepods: "Sidepods", ballast: "Ballast" };
@@ -103,7 +105,7 @@
     token: 0, gate: null, run: null,
     seed: 1, gens: 200, delay: 0,
     baseline: null, baseResult: null, best: null, bestResult: null, rows: [], lastKept: null,
-    view: null, viewError: null, mode: "solid", simLabel: "", weekendNote: null,
+    view: null, viewError: null, mode: "solid", simLabel: "", weekendNote: null, team: "redbull", sim: "physics", curLap: null, maxGap: 0,
     dirty: {}, raf: 0,
   };
 
@@ -130,6 +132,9 @@
     S.seed = Number.isFinite(seed) && seed >= 0 ? seed : 1; S.gens = Number.isFinite(gens) && gens >= 1 ? Math.min(gens, 5000) : 200;
     $("#seed").value = S.seed; $("#gens").value = S.gens;
     S.delay = +$("#speed").value || 0;
+    S.team = $("#team").value === "generic" ? null : $("#team").value;
+    S.sim = $("#simSel").value === "v0" ? "v0" : "physics";
+    if (S.sim === "physics" && !simModule()) { $("#simSel").value = "v0"; S.sim = "v0"; }
   }
 
   function reset() {
@@ -137,12 +142,12 @@
     if (S.gate) { const g = S.gate; S.gate = null; g.reject(STOP); }
     readInputs();
     S.status = "idle"; S.run = null; S.rows = []; S.lastKept = null;
-    S.baseline = M.design.baseline();
+    S.baseline = M.design.baseline(S.team ? { team: S.team } : undefined);
     S.baseResult = M.bench.bench(S.baseline, benchOpts());
-    S.best = M.design.clone(S.baseline); S.bestResult = S.baseResult;
+    S.best = M.design.clone(S.baseline); S.bestResult = S.baseResult; S.curLap = lapOf(S.baseResult);
     S.simLabel = S.baseResult.sim_label || (S.baseResult.circuits[CIRCUIT] && S.baseResult.circuits[CIRCUIT].label) || "";
     $("#feedLines").replaceChildren(el("div", { class: "empty", text: "Press Run (or Step) to start. Each generation the optimiser proposes " + LAMBDA + " reshaped cars from the current best; the bench checks each against the 2026 regulations and laps the legal ones; the fastest legal one is kept only if it beats its parent." }));
-    if (S.view) { try { S.view.setDesign(S.baseline, { baseline: S.baseline, animate: false }); S.view.setHighlight([]); } catch (e) { viewFailed(e); } }
+    if (S.view) { try { S.view.setDesign(S.baseline, { baseline: S.baseline, animate: false, livery: S.baseline.livery }); S.view.setHighlight([]); } catch (e) { viewFailed(e); } }
     markAll(); renderNow();
   }
 
@@ -150,7 +155,8 @@
     const token = S.token;
     S.status = paused ? "paused" : "running";
     S.run = M.optimize.optimizeAsync({
-      gens: S.gens, seed: S.seed, lambda: LAMBDA, proposer: makeProposer(token), bench: benchOpts(),
+      gens: S.gens, seed: S.seed, lambda: LAMBDA, proposer: makeProposer(token), bench: benchOpts(), start: S.baseline,
+      yield: () => (token === S.token ? yieldTask() : Promise.reject(STOP)), slice_ms: 12,
       onGeneration: row => { if (token === S.token) onRow(row); },
     }).then(res => {
       if (token !== S.token) return;
@@ -176,13 +182,15 @@
   }
 
   function onRow(row) {
+    row._lb = S.curLap; row._la = row.legal && row.result ? row.result.lap_s : null;   // laps before / after (the score is the weekend score, not a lap)
     S.rows.push(row);
     if (row.kept) {
+      S.curLap = row._la;
       S.best = M.design.applyChanges(S.best, row.changes.map(c => ({ part: c.part, param: c.param, to: c.to })), { id: row.id, parent: row.parent, label: "generation " + row.gen + " best" }).design;
-      S.bestResult = M.bench.bench(S.best, benchOpts());
+      S.bestResult = M.bench.bench(S.best, benchOpts());   // cached by the bench: the kept candidate was just measured
       S.lastKept = row;
       if (S.view) {
-        try { S.view.setDesign(S.best, { baseline: S.baseline, animate: !reduced() }); S.view.setHighlight(uniq(row.changes.map(c => c.part))); }
+        try { S.view.setDesign(S.best, { baseline: S.baseline, animate: !reduced(), livery: S.baseline.livery }); S.view.setHighlight(uniq(row.changes.map(c => c.part))); }
         catch (e) { viewFailed(e); }
       }
       S.dirty.kept = true;
@@ -208,7 +216,7 @@
     runBtn.textContent = st === "running" ? "Pause" : st === "paused" ? "Resume" : st === "done" ? "Run again" : "Run";
     runBtn.classList.toggle("primary", st !== "running");
     $("#btnStep").disabled = st === "error";
-    $("#seed").disabled = $("#gens").disabled = st === "running" || st === "paused";
+    $("#seed").disabled = $("#gens").disabled = $("#team").disabled = $("#simSel").disabled = st === "running" || st === "paused";
     const kept = S.rows.filter(r => r.kept).length;
     const g = $("#genBadge");
     g.textContent = "gen " + n + " / " + S.gens + " · kept " + kept + (st === "paused" ? " · paused" : st === "done" ? " · done" : "");
@@ -239,17 +247,17 @@
       tr.replaceChildren(el("div", { class: "label", text: "last kept change · gen " + lk.gen }),
         ...lk.changes.map(ch => el("div", { class: "chg one", title: changeText(ch) }, el("span", { class: "dotp" }), changeText(ch))),
         el("div", { class: "delta faster", text: fmtD(lapAfter(lk) - lapBefore(lk)) + " s" }));
-    } else tr.replaceChildren(el("div", { class: "label", text: "baseline 2026-style concept car" }), el("div", { class: "chg muted", text: "no change kept yet" }));
+    } else tr.replaceChildren(el("div", { class: "label", text: S.team ? "baseline · Red Bull RB22 · DM01" : "baseline 2026-style concept car" }), el("div", { class: "chg muted", text: "no change kept yet" }));
     const n = S.rows.length;
     $("#heroTL").replaceChildren(
       el("span", { class: "badge " + (S.status === "running" ? "purple" : ""), text: S.status === "idle" ? "baseline" : "generation " + n }),
       el("span", { class: "badge", title: "ghost = the baseline concept car", text: "ghost = baseline" }),
     );
   }
-  // per-row lap before / after from the lineage row (score = pole − lap)
+  // per-row lap before / after (recorded in onRow from the lineage row's bench summary)
   const poleS = () => (S.baseResult && S.baseResult.weekend ? S.baseResult.weekend.pole_s : RP && RP.pole && RP.pole.s);
-  const lapBefore = r => poleS() - r.score_before;
-  const lapAfter = r => (isNum(r.score_after) ? poleS() - r.score_after : null);
+  const lapBefore = r => r._lb;
+  const lapAfter = r => (isNum(r._la) ? r._la : null);
 
   // 3D module mount (EI.conceptView) or the fallback plan view
   function mountView() {
@@ -259,8 +267,8 @@
       host.hidden = true; $("#plan").hidden = false; renderModeButtons(); return;
     }
     try {
-      S.view = EI.conceptView.mount(host, { baseline: S.baseline, design: S.best, parts: M.parts, mode: S.mode, label: false, legend: false });   // the page prints labelText() in its own overlay
-      S.view.setDesign(S.best, { baseline: S.baseline, animate: false });
+      S.view = EI.conceptView.mount(host, { baseline: S.baseline, design: S.best, parts: M.parts, mode: S.mode, label: false, legend: false, livery: S.baseline.livery });   // the page prints labelText() in its own overlay
+      S.view.setDesign(S.best, { baseline: S.baseline, animate: false, livery: S.baseline.livery });
     } catch (e) { viewFailed(e); }
     renderModeButtons();
   }
@@ -341,8 +349,8 @@
       if (r.kind !== "base") pos++;
       const gap = r.s - pole;
       const color = r.kind === "real" ? (r.team && r.team.colors && r.team.colors.primary) || "#8a8a94" : r.kind === "concept" ? "var(--purple)" : "transparent";
-      const name = r.kind === "concept" ? (S.status === "idle" ? "concept · baseline" : "concept · gen " + (S.lastKept ? S.lastKept.gen : 0))
-        : r.kind === "base" ? "baseline (ghost)" : (r.team ? r.team.name : "—");
+      const name = r.kind === "concept" ? (S.status === "idle" ? (S.team ? "RB22 baseline (sim)" : "concept · baseline") : (S.team ? "RB22 concept · gen " : "concept · gen ") + (S.lastKept ? S.lastKept.gen : 0))
+        : r.kind === "base" ? (S.team ? "RB22 baseline (sim)" : "baseline (ghost)") : (r.team ? r.team.name : "—");
       out.push(el("div", { class: "brow " + r.kind, title: r.kind === "real" ? r.code + " · " + (r.team ? r.team.full + " " + r.team.chassis : "") + " · " + REAL_LABEL : S.simLabel },
         el("span", { class: "pos", text: r.kind === "base" ? "" : String(pos) }),
         el("span", { class: "sw", style: "background:" + color }),
@@ -360,19 +368,16 @@
     $("#boardSrc").replaceChildren(
       el("div", null, el("span", { class: "tag real", text: "real" }), " " + REAL_LABEL),
       el("div", { class: "one", title: S.simLabel }, el("span", { class: "tag concept", text: "concept" }), " " + S.simLabel.replace(/^concept · /, "")),
-      ...(simModule() ? [] : [el("div", { class: "warn" }, "sim v0: baseline = real pole by construction; it ranks changes, it does not place a 2026 car (CONCEPT.md §2)")]),
+      ...(physicsOn() ? [] : [el("div", { class: "warn" }, "sim v0: baseline = real pole by construction; it ranks changes, it does not place a 2026 car (CONCEPT.md §2)")]),
       ...(wk ? [el("div", { class: "one", title: wk }, wk)] : []),
     );
   }
-  // optional weekend module: shown next to the bench's score (the optimiser's objective stays the bench's weekend score)
+  // the weekend line: the optimiser's objective, straight from the bench result (concept/weekend/weekend.js, no second lap)
   function weekendNote() {
-    const W = weekendModule();
-    if (!W) return null;   // bench weekend(): grid slot = 1 + real laps strictly faster
-    try {
-      const r = W.score(S.best, {});   // weekend.score(car, opts): car may be a Design (physical() + the module's sim)
-      if (r && typeof r === "object") return "weekend: " + (isNum(r.weekend_score) ? "score " + fmtN(r.weekend_score, 3) + " s/lap · " : "") + (r.quali ? "Q P" + r.quali.pos + " · " : "") + (r.race ? "race P" + r.race.pos + " (" + (r.race.strategy && r.race.strategy.name || "") + ") · " : "") + (r.label || "concept/weekend");
-      return isNum(r) ? "weekend module: score " + fmtN(r, 3) : "weekend module present (no result)";
-    } catch (e) { return "weekend module error: " + String(e && e.message || e); }
+    const m = S.bestResult && S.bestResult.weekend_model;
+    if (!m) return S.bestResult && S.bestResult.objective === "quali" ? "objective: pole margin (weekend model not loaded)" : null;
+    const f = m.field || {};
+    return "weekend: score " + fmtN(m.weekend_score, 3) + " s/lap · Q P" + m.quali_pos + " · race P" + m.race_pos + " (" + m.strategy + ") · field " + (f.frame === "sim" ? "in the sim's frame" : "real") + (f.replaced && f.replaced.length ? ", our car replaces " + f.replaced.join(", ") : "") + " · fuel " + m.fuel_s_per_kg.toFixed(3) + " s/kg";
   }
 
   // ---- progress chart (inline SVG): best lap so far (step line), kept and rejected generations, the real pole
@@ -544,8 +549,8 @@
     $("#honest").replaceChildren(
       el("span", { class: "label", text: "Honest limits" }),
       el("span", { class: "txt", text: "Reduced-order: no flow solved, aero from a component-share map · " +
-        (simModule() ? "" : "v0 puts the baseline on the real pole by construction (ranks, does not place) · ") +
-        "straight-mode gains optimistic · part masses estimated · no ERS, tyre temperature or load transfer in v0 · best values sit on model-domain edges · schematic geometry" }),
+        (physicsOn() ? "physics sim: point mass, effective coefficients estimated on one lap, 13 km/h trace RMS on held-out laps; design deltas from the concept aero map · " : "v0 puts the baseline on the real pole by construction (ranks, does not place) · no ERS, tyre temperature or load transfer in v0 · ") +
+        "part masses estimated · team cars inferred from public laps, not team data · best values sit on model-domain edges · schematic geometry" }),
       el("span", { class: "txt sim", text: "· sim: " + S.simLabel }),
     );
   }
@@ -562,6 +567,11 @@
     if (qs.has("seed")) $("#seed").value = qs.get("seed");
     if (qs.has("gens")) $("#gens").value = qs.get("gens");
     if (qs.has("speed")) { const v = { "1": "300", "4": "60", max: "0" }[qs.get("speed")]; if (v) $("#speed").value = v; }
+    if (qs.has("team")) $("#team").value = qs.get("team") === "generic" ? "generic" : "redbull";
+    if (qs.has("sim")) $("#simSel").value = qs.get("sim") === "v0" ? "v0" : "physics";
+    if (!simModule()) { $("#simSel").value = "v0"; $("#simSel").querySelector("option[value=physics]").disabled = true; }
+    // baseline or sim changes restart from the new baseline (an idle / done run only; a running one is reset)
+    for (const id of ["#team", "#simSel"]) $(id).addEventListener("change", () => { try { reset(); } catch (e) { banner("bench", String(e && e.message || e)); } });
     $("#btnRun").addEventListener("click", () => (S.status === "running" ? pause() : run()));
     $("#btnStep").addEventListener("click", step);
     $("#btnReset").addEventListener("click", reset);
@@ -576,7 +586,7 @@
   // test / demo hook (read-only state and the same actions as the buttons)
   EI.conceptLab = {
     run, pause, step, reset,
-    state: () => ({ status: S.status, gens: S.gens, seed: S.seed, generations: S.rows.length, kept: S.rows.filter(r => r.kept).length, best_lap_s: lapOf(S.bestResult), baseline_lap_s: lapOf(S.baseResult), grid_position: S.bestResult && S.bestResult.weekend && S.bestResult.weekend.grid_position, view: !!S.view, sim_label: S.simLabel }),
+    state: () => ({ status: S.status, gens: S.gens, seed: S.seed, generations: S.rows.length, kept: S.rows.filter(r => r.kept).length, best_lap_s: lapOf(S.bestResult), baseline_lap_s: lapOf(S.baseResult), grid_position: S.bestResult && S.bestResult.weekend && S.bestResult.weekend.grid_position, view: !!S.view, sim_label: S.simLabel, sim: S.bestResult && S.bestResult.sim, team: S.team, baseline_id: S.baseline && S.baseline.id, livery: S.baseline && S.baseline.livery || null, weekend: S.bestResult && S.bestResult.weekend_model ? { score: S.bestResult.weekend_model.weekend_score, quali_pos: S.bestResult.weekend_model.quali_pos, race_pos: S.bestResult.weekend_model.race_pos } : null, max_gap_ms: S.maxGap }),
     lineage: () => JSON.parse(JSON.stringify(S.rows)),
     best: () => M.design.clone(S.best),
   };
