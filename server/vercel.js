@@ -283,11 +283,14 @@ function create() {
   app.post("/api/concept/engine/run", async c => {
     const { b } = await jsonBody(c); if (!b) return forward(c);
     b.workers = isInt(b.workers) ? Math.max(0, Math.min(LIMITS.engine_workers, b.workers)) : LIMITS.engine_workers;   // one vCPU per function
-    const live = b.mode === "auto" && b.llm === "live";
+    const live = (b.mode === "auto" || b.mode === "engineer") && b.llm === "live";
     if (live) { const no = liveRefusal(c); if (no) return no; }
-    if (b.mode === "speed" || b.mode === "auto") { const no = reserve(c, "cpu", 1); if (no) return no; }
+    // engine v2 resume: the state is too large for a stream ticket, so a resumed run is only served by the instance that took the POST
+    if (b.mode === "engineer" && (b.resume_state != null || b.resume_from != null) && live) return envelope(c, 400, "BAD_INPUT", "resuming a LIVE engineer run is not available on Vercel (a live run starts where its stream is opened, and the saved state does not fit in the stream ticket): resume it locally with npm run dev, or start a new live run");
+    if (b.mode === "speed" || b.mode === "auto" || b.mode === "engineer") { const no = reserve(c, "cpu", 1); if (no) return no; }
     if (live) { const no = reserve(c, "live", isInt(b.max_calls) ? b.max_calls : b.trained === true ? 10 : 20); if (no) return no; }
-    const res = await forward(c, { body: JSON.stringify(b), edit: withTicket("engine", b, live), live, note: b.mode === "speed" ? "speed run on one vCPU, time-boxed to " + LIMITS.time_box_s + " s on Vercel (stops cleanly and re-scores the best car so far)" : undefined });
+    const tb = b.mode === "engineer" && (b.resume_state != null || b.resume_from != null) ? Object.assign({}, b, { resume_state: undefined, resume_from: undefined, resumed_elsewhere: true }) : b;
+    const res = await forward(c, { body: JSON.stringify(b), edit: withTicket("engine", tb, live), live, note: b.mode === "speed" ? "speed run on one vCPU, time-boxed to " + LIMITS.time_box_s + " s on Vercel (stops cleanly and re-scores the best car so far)" : b.mode === "engineer" ? "engine v2 on one vCPU, time-boxed to " + LIMITS.time_box_s + " s on Vercel: it stops cleanly between decisions; the final event carries a resumable state" : undefined });
     const j = await res.clone().json().catch(() => null);
     if (j && j.ok) { const r = api.engine.runs.get(j.data.run_id); if (r) { if (live) defer("engine", r); else host("engine", r, false); } }
     return res;
@@ -309,7 +312,7 @@ function create() {
     let r;
     try {
       if (kind === "loop") r = api.concept.start(t.b);
-      else { if (api.engine.active()) return fail("an engine run is already running on this instance: " + api.engine.active().id); r = t.b.mode === "speed" ? api.engine.startSpeed(t.b) : api.engine.startAuto(t.b); }
+      else { if (api.engine.active()) return fail("an engine run is already running on this instance: " + api.engine.active().id); if (t.b.resumed_elsewhere) return fail("a resumed engineer run streams only from the instance that took its POST; start it again"); r = t.b.mode === "speed" ? api.engine.startSpeed(t.b) : t.b.mode === "engineer" ? api.engine.startEngineer(t.b) : api.engine.startAuto(t.b); }
     } catch (e) { return fail("could not replay the run here: " + (e && e.message || e)); }
     if (t.live) allowedLive.add(r.id);   // synchronous after start(): its first call comes after the next macrotask
     replayed.add(asked); alias.set(asked, r.id); host(kind, r, !!t.live);
