@@ -42,11 +42,11 @@ test("route record_good (stub Mubit): approved decision -> exactly one extra tra
   assert.match((await post(base)).j.error.message, /confirm must be "trained"/);
   assert.match((await post(Object.assign({}, base, { confirm: "trained", confirm_text: "TRAIN 3" }))).j.error.message, /TRAIN 2/);
   assert.match((await post(Object.assign({}, base, { confirm: "trained", confirm_text: "TRAIN 2", trained: true }))).j.error.message, /exclude/);
-  assert.match((await post(Object.assign({}, base, { record_good: "yes" }))).j.error.message, /record_good must be a boolean/);
+  assert.match((await post(Object.assign({}, base, { record_good: "yes" }))).j.error.message, /record_good must be true, false, "kept" or "exact"/);
   assert.equal(seen.length, 0, "no call before a run is accepted");
 
-  const r = await post(Object.assign({}, base, { confirm: "trained", confirm_text: "TRAIN 2" }));
-  assert.equal(r.status, 200, JSON.stringify(r.j)); assert.equal(r.j.data.record_good, true); assert.equal(r.j.data.trained, false);
+  const r = await post(Object.assign({}, base, { confirm: "trained", confirm_text: "TRAIN 2", record_good: "exact" }));
+  assert.equal(r.status, 200, JSON.stringify(r.j)); assert.equal(r.j.data.record_good, true); assert.equal(r.j.data.trained, false); assert.equal(r.j.data.record_rule, "exact", "this test pins the exact rule (the idea as written); test/engineer-rounds.test.js covers \"kept\"");
   const t = await (await a.app.request(r.j.data.stream, { headers: H })).text();
   const evs = t.split("\n\n").filter(Boolean).map(b => ({ event: (/^event: (.*)$/m.exec(b) || [])[1], data: (/^data: (.*)$/m.exec(b) || [])[1] })).filter(x => x.event && x.data && x.event !== "ping").map(x => ({ event: x.event, data: JSON.parse(x.data) }));
   const decisions = evs.filter(e => e.event === "decision").map(e => e.data);

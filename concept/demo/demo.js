@@ -178,7 +178,7 @@
     es.onerror = () => { if (es.readyState === 2 && S.status === "running") { S.status = "done"; S.error = S.error || "the stream closed"; renderAll(); } };
   }
   function setProgress(n, text) { S.progress = { n, text }; renderProgress(); }
-  async function stopRun() { if (S.run && S.status === "running") { try { await getJson(API + "/api/concept/engine/run/" + S.run.run_id + "/stop", { method: "POST" }); } catch (e) { /* the stream ends anyway */ } } }
+  async function stopRun() { if (S.run && S.status === "running") { try { await getJson(API + "/api/concept/engine/run/" + S.run.run_id + "/stop", { method: "POST", headers: { "content-type": "application/json" }, body: "{}" }); } catch (e) { /* the stream ends anyway */ } } }
   function stopAll() { S.playing = false; clearTimeout(S.timer); if (S.es) { try { S.es.close(); } catch (e) { /* closed */ } S.es = null; } S.progress = null; }
   async function probeLive() {
     try {
