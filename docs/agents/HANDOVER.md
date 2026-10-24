@@ -45,8 +45,8 @@ npm test                                   # 36 tests, < 2 s, no network
 MUBIT_MOCK=1 npm run dev                   # API 127.0.0.1:8787 + static 127.0.0.1:8788 with the canned planner
 npm run dev                                # same, real Mubit
 npm run smoke                              # one UNTRAINED call, prints the mreq_ id
-npm run collect -- --n 30 --seed 2         # TRAINED calls: only when the plan says so (budget + task integrity)
-# v2 (Saturday budget, after the demo correction): npm run collect -- --n 40 --with-rules --promote-bias 0.3
+npm run collect -- --n 30 --seed 2 --confirm-trained         # TRAINED calls: only when the plan says so (budget + task integrity)
+# v2 (Saturday budget, after the demo correction): npm run collect -- --n 40 --with-rules --promote-bias 0.3 --confirm-trained
 curl -s localhost:8787/api/status | jq .   # widget data; /api/ledger, /api/rules, /api/state, /api/stream (SSE)
 ```
 `data/` is gitignored and holds the ledger judges will see. Do not delete it. Tests use temp dirs.
