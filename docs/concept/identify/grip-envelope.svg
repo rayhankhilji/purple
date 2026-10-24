@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 406" width="720" height="406" font-family="system-ui, sans-serif" font-size="12">
+<style>.bg{fill:#fcfcfb}.t1{fill:#0b0b0b}.t2{fill:#52514e}.grid{stroke:#e4e3df}.zero{stroke:#8a8984}.s0{fill:#2a78d6;stroke:#2a78d6}.s1{fill:#eb6834;stroke:#eb6834}.ring{stroke:#fcfcfb}
+@media (prefers-color-scheme: dark){.bg{fill:#1a1a19}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.grid{stroke:#383835}.zero{stroke:#8a8984}.s0{fill:#3987e5;stroke:#3987e5}.s1{fill:#d95926;stroke:#d95926}.ring{stroke:#1a1a19}}</style>
+<rect class="bg" width="720" height="406"/>
+<text class="t1" x="16" y="24" font-size="15" font-weight="600">Lateral grip envelope by car (estimate)</text>
+<text class="t2" x="16" y="42">a_y at 100 and 200 km/h, mean circuit, mean trim · bars: bootstrap 5-95 % · OpenF1 timing telemetry</text>
+<circle class="s0 ring" cx="156" cy="58" r="5" stroke-width="2"/><text class="t2" x="166" y="62">100 km/h</text>
+<circle class="s1 ring" cx="356" cy="58" r="5" stroke-width="2"/><text class="t2" x="366" y="62">200 km/h</text>
+<line class="grid" x1="240.61110468333766" x2="240.61110468333766" y1="66" y2="356"/><text class="t2" x="240.61110468333766" y="372" text-anchor="middle">3</text>
+<line class="grid" x1="334.7044145793053" x2="334.7044145793053" y1="66" y2="356"/><text class="t2" x="334.7044145793053" y="372" text-anchor="middle">3.5</text>
+<line class="grid" x1="428.79772447527296" x2="428.79772447527296" y1="66" y2="356"/><text class="t2" x="428.79772447527296" y="372" text-anchor="middle">4</text>
+<line class="grid" x1="522.8910343712405" x2="522.8910343712405" y1="66" y2="356"/><text class="t2" x="522.8910343712405" y="372" text-anchor="middle">4.5</text>
+<line class="grid" x1="616.9843442672083" x2="616.9843442672083" y1="66" y2="356"/><text class="t2" x="616.9843442672083" y="372" text-anchor="middle">5</text>
+<text class="t1" x="140" y="87" text-anchor="end">Mercedes</text>
+<line class="s0" x1="232.4626240463469" x2="274.5599708938028" y1="79.5" y2="79.5" stroke-width="2"/>
+<circle class="s0 ring" cx="253.8218053927315" cy="79.5" r="4.5" stroke-width="2"><title>Mercedes · 100 km/h: 3.07 (2.957 to 3.18)</title></circle>
+<line class="s1" x1="564.1039041056745" x2="626.7135925104513" y1="86.5" y2="86.5" stroke-width="2"/>
+<circle class="s1 ring" cx="596.2838160900953" cy="86.5" r="4.5" stroke-width="2"><title>Mercedes · 200 km/h: 4.89 (4.719 to 5.052)</title></circle>
+<text class="t1" x="140" y="113" text-anchor="end">Ferrari</text>
+<line class="s0" x1="243.1516240505288" x2="276.78057300734764" y1="105.5" y2="105.5" stroke-width="2"/>
+<circle class="s0 ring" cx="260.2954251135741" cy="105.5" r="4.5" stroke-width="2"><title>Ferrari · 100 km/h: 3.105 (3.014 to 3.192)</title></circle>
+<line class="s1" x1="595.3240643291565" x2="652.7586206896551" y1="112.5" y2="112.5" stroke-width="2"/>
+<circle class="s1 ring" cx="624.0601611713851" cy="112.5" r="4.5" stroke-width="2"><title>Ferrari · 200 km/h: 5.038 (4.885 to 5.19)</title></circle>
+<text class="t1" x="140" y="139" text-anchor="end">McLaren</text>
+<line class="s0" x1="224.97279657862782" x2="253.44543215314764" y1="131.5" y2="131.5" stroke-width="2"/>
+<circle class="s0 ring" cx="238.95506242916863" cy="131.5" r="4.5" stroke-width="2"><title>McLaren · 100 km/h: 2.991 (2.917 to 3.068)</title></circle>
+<line class="s1" x1="548.4655960009646" x2="609.8897087010523" y1="138.5" y2="138.5" stroke-width="2"/>
+<circle class="s1 ring" cx="581.2665238306989" cy="138.5" r="4.5" stroke-width="2"><title>McLaren · 200 km/h: 4.81 (4.636 to 4.962)</title></circle>
+<text class="t1" x="140" y="165" text-anchor="end">Red Bull</text>
+<line class="s0" x1="239.95245151406593" x2="275.16216807713704" y1="157.5" y2="157.5" stroke-width="2"/>
+<circle class="s0 ring" cx="257.37853250679916" cy="157.5" r="4.5" stroke-width="2"><title>Red Bull · 100 km/h: 3.089 (2.997 to 3.184)</title></circle>
+<line class="s1" x1="575.432738617149" x2="643.5186576578711" y1="164.5" y2="164.5" stroke-width="2"/>
+<circle class="s1 ring" cx="607.4432826437571" cy="164.5" r="4.5" stroke-width="2"><title>Red Bull · 200 km/h: 4.949 (4.779 to 5.141)</title></circle>
+<text class="t1" x="140" y="191" text-anchor="end">Racing Bulls</text>
+<line class="s0" x1="216.91840925153298" x2="252.86205363179266" y1="183.5" y2="183.5" stroke-width="2"/>
+<circle class="s0 ring" cx="234.60795151197496" cy="183.5" r="4.5" stroke-width="2"><title>Racing Bulls · 100 km/h: 2.968 (2.874 to 3.065)</title></circle>
+<line class="s1" x1="526.1654815556203" x2="582.0004516478875" y1="190.5" y2="190.5" stroke-width="2"/>
+<circle class="s1 ring" cx="556.3317967082675" cy="190.5" r="4.5" stroke-width="2"><title>Racing Bulls · 200 km/h: 4.678 (4.517 to 4.814)</title></circle>
+<text class="t1" x="140" y="217" text-anchor="end">Alpine</text>
+<line class="s0" x1="207.71608354370738" x2="241.326213838547" y1="209.5" y2="209.5" stroke-width="2"/>
+<circle class="s0 ring" cx="224.97279657862782" cy="209.5" r="4.5" stroke-width="2"><title>Alpine · 100 km/h: 2.917 (2.825 to 3.004)</title></circle>
+<line class="s1" x1="515.9657667628973" x2="580.589051999448" y1="216.5" y2="216.5" stroke-width="2"/>
+<circle class="s1 ring" cx="552.2105097348242" cy="216.5" r="4.5" stroke-width="2"><title>Alpine · 200 km/h: 4.656 (4.463 to 4.807)</title></circle>
+<text class="t1" x="140" y="243" text-anchor="end">Haas</text>
+<line class="s0" x1="187.5424779020119" x2="234.15630362447428" y1="235.5" y2="235.5" stroke-width="2"/>
+<circle class="s0 ring" cx="211.63036523537966" cy="235.5" r="4.5" stroke-width="2"><title>Haas · 100 km/h: 2.846 (2.718 to 2.966)</title></circle>
+<line class="s1" x1="476.5218512545077" x2="571.4808196015183" y1="242.5" y2="242.5" stroke-width="2"/>
+<circle class="s1 ring" cx="525.4315537384316" cy="242.5" r="4.5" stroke-width="2"><title>Haas · 200 km/h: 4.514 (4.254 to 4.758)</title></circle>
+<text class="t1" x="140" y="269" text-anchor="end">Audi</text>
+<line class="s0" x1="216.71140396976193" x2="248.27030010886946" y1="261.5" y2="261.5" stroke-width="2"/>
+<circle class="s0 ring" cx="232.95190925780588" cy="261.5" r="4.5" stroke-width="2"><title>Audi · 100 km/h: 2.959 (2.873 to 3.041)</title></circle>
+<line class="s1" x1="512.2584903529963" x2="582.7531981270553" y1="268.5" y2="268.5" stroke-width="2"/>
+<circle class="s1 ring" cx="550.9684780441974" cy="268.5" r="4.5" stroke-width="2"><title>Audi · 200 km/h: 4.649 (4.444 to 4.818)</title></circle>
+<text class="t1" x="140" y="295" text-anchor="end">Williams</text>
+<line class="s0" x1="201.39301311869832" x2="230.71248848228186" y1="287.5" y2="287.5" stroke-width="2"/>
+<circle class="s0 ring" cx="216.39148671611562" cy="287.5" r="4.5" stroke-width="2"><title>Williams · 100 km/h: 2.871 (2.792 to 2.947)</title></circle>
+<line class="s1" x1="493.8162016133867" x2="555.6731435389956" y1="294.5" y2="294.5" stroke-width="2"/>
+<circle class="s1 ring" cx="522.4958424696774" cy="294.5" r="4.5" stroke-width="2"><title>Williams · 200 km/h: 4.498 (4.346 to 4.674)</title></circle>
+<text class="t1" x="140" y="321" text-anchor="end">Aston Martin</text>
+<line class="s0" x1="187.24137931034483" x2="223.18502369060445" y1="313.5" y2="313.5" stroke-width="2"/>
+<circle class="s0 ring" cx="205.08147086662026" cy="313.5" r="4.5" stroke-width="2"><title>Aston Martin · 100 km/h: 2.811 (2.716 to 2.907)</title></circle>
+<line class="s1" x1="479.4199251993036" x2="551.1754833259683" y1="320.5" y2="320.5" stroke-width="2"/>
+<circle class="s1 ring" cx="516.9066998618571" cy="320.5" r="4.5" stroke-width="2"><title>Aston Martin · 200 km/h: 4.468 (4.269 to 4.65)</title></circle>
+<text class="t1" x="140" y="347" text-anchor="end">Cadillac</text>
+<line class="s0" x1="188.76569093065947" x2="224.44587404321038" y1="339.5" y2="339.5" stroke-width="2"/>
+<circle class="s0 ring" cx="206.07885995151753" cy="339.5" r="4.5" stroke-width="2"><title>Cadillac · 100 km/h: 2.817 (2.725 to 2.914)</title></circle>
+<line class="s1" x1="474.3765237888797" x2="540.3735713499113" y1="346.5" y2="346.5" stroke-width="2"/>
+<circle class="s1 ring" cx="506.2365185196544" cy="346.5" r="4.5" stroke-width="2"><title>Cadillac · 200 km/h: 4.412 (4.242 to 4.593)</title></circle>
+<text class="t2" x="420" y="394" text-anchor="middle">lateral acceleration (g)</text>
+</svg>
