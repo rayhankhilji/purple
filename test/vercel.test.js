@@ -44,7 +44,8 @@ test("adapter: any host, mock by default, live refused without key / passcode, m
     r = await post("/api/concept/loop", { mode: "live", iterations: 1 }); j = await r.json();
     assert.equal(r.status, 403); assert.equal(j.error.code, "PASSCODE_REQUIRED");
     r = await post("/api/concept/loop", { mode: "live", iterations: 1 }, { "x-purple-passcode": "wrong" }); assert.equal(r.status, 403);
-    r = await post("/api/concept/engine/run", { mode: "auto", llm: "live", max_calls: 1 }); assert.equal(r.status, 403);
+    process.env.PURPLE_OPEN_LIVE = "0";   // the engine is open by default (owner decision); with the switch off it needs the passcode again
+    try { r = await post("/api/concept/engine/run", { mode: "auto", llm: "live", max_calls: 1 }); assert.equal(r.status, 403); } finally { delete process.env.PURPLE_OPEN_LIVE; }
     r = await post("/api/concept/loop", { mode: "live", iterations: 31 }, { "x-purple-passcode": "pass-for-test" }); assert.equal(r.status, 429);   // over the per-IP hourly cap of 30
     r = await req("/api/unlock", { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: "passcode=pass-for-test" });
     assert.equal(r.status, 303); assert.match(r.headers.get("set-cookie"), /^purple_live=live\.\d+\.[A-Za-z0-9_-]+; Path=\/api; HttpOnly; Secure; SameSite=Strict/);

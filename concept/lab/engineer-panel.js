@@ -67,7 +67,7 @@
       const j = await getJson(API + "/api/concept/engine/info");
       S.info = j && j.data; S.deploy = j && j.deploy || null;
       if (!S.info) { S.liveOk = false; S.liveWhy = "the engine API did not answer"; }
-      else if (S.deploy) { S.liveOk = !!(S.deploy.live && S.deploy.live.available && S.deploy.live.unlocked); S.liveWhy = !S.deploy.live.available ? "live calls are off on this deployment: " + (S.deploy.live.off_reason || "") : !S.deploy.live.unlocked ? "unlock first (passcode)" : ""; }
+      else if (S.deploy) { S.liveOk = !!(S.deploy.live && S.deploy.live.available && (S.deploy.live.unlocked || S.deploy.live.engine_open)); S.liveWhy = !S.deploy.live.available ? "live calls are off on this deployment: " + (S.deploy.live.off_reason || "") : !(S.deploy.live.unlocked || S.deploy.live.engine_open) ? "unlock first (passcode)" : ""; }
       else { S.liveOk = !!S.info.live_available; S.liveWhy = S.info.mock ? "this server runs with MUBIT_MOCK=1" : !S.info.live_available ? "no MUBIT_API_KEY on this server" : ""; }
       S.apiOk = true;
     } catch (e) { S.apiOk = false; S.liveOk = false; S.liveWhy = "no engine API reachable (" + API + ")"; }
@@ -353,27 +353,29 @@
     try { S.view = EI.conceptView.mount($("#e2View"), { baseline: b, design: b, parts: EI.concept && EI.concept.parts, mode: "solid", label: false, legend: false, livery: b.livery }); } catch (e) { S.view = null; $("#e2View").replaceChildren(el("div", { class: "empty" }, "3D view error: " + (e.message || e))); }
   }
 
-  // ---------------------------------------------------------------- view switch (engineer | compare: no AI)
+  // ---------------------------------------------------------------- view switch: this panel is the "Design tree" view (?view=tree); the
+  // default view is the Mubit-first layout (concept/lab/mubit-first.js), which also sets the header buttons' pressed state
   function setView(v) {
-    const eng = v !== "noai";
+    const eng = v === "eng";
+    const was = document.body.classList.contains("eng2-on");
     document.body.classList.toggle("eng2-on", eng);
-    const a = $("#btnViewEng"), b = $("#btnViewNoAI");
-    if (a) { a.classList.toggle("on", eng); a.setAttribute("aria-pressed", eng ? "true" : "false"); }
-    if (b) { b.classList.toggle("on", !eng); b.setAttribute("aria-pressed", eng ? "false" : "true"); }
-    if (eng) { mountView(); requestAnimationFrame(renderAll); } else { pause(); window.dispatchEvent(new Event("resize")); }
+    if (eng) { mountView(); requestAnimationFrame(renderAll); if (!was && S.mode === "replay" && S.replay && !S.shown && qs.get("autoplay") !== "0") play(); }
+    else { pause(); window.dispatchEvent(new Event("resize")); }
   }
   async function boot() {
     const main = $("#clab"); if (!main) return;
     main.parentNode.insertBefore(root, main);
-    const a = $("#btnViewEng"), b = $("#btnViewNoAI");
-    if (a) a.addEventListener("click", () => setView("eng")); if (b) b.addEventListener("click", () => setView("noai"));
+    const a = $("#btnViewEng");
+    if (a) a.addEventListener("click", () => setView("eng"));
+    for (const id of ["#btnViewNoAI", "#btnViewMubit", "#btnViewExam"]) { const b = $(id); if (b) b.addEventListener("click", () => setView("off")); }
     S.baseDesign = baseOf("redbull");
-    setView(qs.get("view") === "noai" ? "noai" : "eng");
+    const tree = qs.get("view") === "tree";
+    if (tree) setView("eng");
     if (window.ResizeObserver) { const ro = new ResizeObserver(() => { if (document.body.classList.contains("eng2-on")) { renderTree(); renderChart(); } }); ro.observe($("#e2TreeSvg")); ro.observe($("#e2ChartSvg")); }
     await loadIndex();
     await loadReplay(qs.get("replay") || ((S.index.runs || [])[0] || {}).name);
     probeLive();
-    if (qs.get("view") !== "noai" && qs.get("view") !== "exam" && qs.get("autoplay") !== "0" && document.body.classList.contains("eng2-on")) { if (qs.get("autoplay") === "end") skipToEnd(); else play(); }
+    if (tree && qs.get("autoplay") !== "0" && document.body.classList.contains("eng2-on")) { if (qs.get("autoplay") === "end") skipToEnd(); else play(); }
   }
   // test / demo hook
   EI.engineerPanel = { state: () => ({ mode: S.mode, status: S.status, run: S.runName, shown: S.shown, decisions: S.decisions.length, nodes: S.nodes.length, peak: S.peak, stats: liveStats(), liveOk: S.liveOk, liveWhy: S.liveWhy }), play, pause, skipToEnd, loadReplay, startRun, setView };

@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="race.css">
-<!-- URL contract (docs/concept/RACE.md): ?design=<base64url JSON Design>&ref=redbull[&conditions=<base64url JSON>][&wind_ms=..&wind_from_deg=..][&mode=replay|race|grid][&rate=1] -->
+<!-- URL contract (docs/concept/RACE.md): ?design=<base64url JSON Design>&ref=redbull[&conditions=<base64url JSON>][&wind_ms=..&wind_from_deg=..][&mode=replay|quali|race|grid][&lap=87.700][&rate=1] -->
 </head>
 <body>
 <header class="top">
@@ -18,6 +18,7 @@
   <span class="sub" id="sub">concept race · the concept car on the game's 3D Silverstone</span>
   <span class="spacer"></span>
   <div class="tabs" role="tablist" aria-label="what drives the cars">
+    <button class="tab" role="tab" id="tabQuali" data-mode="quali" aria-selected="false" title="every car's best 2026 qualifying lap (OpenF1) and our best car's physics-sim lap on one clock, from the same line: ghost laps">Qualifying lap</button>
     <button class="tab" role="tab" id="tabReplay" data-mode="replay" aria-selected="true" title="the physics lap sim's own trace, replayed on the game's track">Physics replay</button>
     <button class="tab" role="tab" id="tabRace" data-mode="race" aria-selected="false" title="the game's AI and lap model with the bench's v0 multipliers: cinematic">Game race</button>
     <button class="tab" role="tab" id="tabGrid" data-mode="grid" aria-selected="false" title="the concept aero on HAD's car in the real 2026 field, game AI: cinematic">2026 grid</button>
@@ -40,7 +41,16 @@
   </section>
 
   <aside class="side">
-    <section class="panel" aria-label="lap times">
+    <section class="panel" id="towerPanel" aria-label="timing tower" hidden>
+      <div class="ph"><span class="label">Timing · qualifying lap</span><span class="src" id="towerSrc">one clock · from the same line</span></div>
+      <div class="pb">
+        <div class="tw-legend src"><span><i class="tg real">OpenF1</i> real 2026 qualifying · OpenF1</span><span><i class="tg sim">sim</i> physics lap sim · model prediction</span></div>
+        <div class="tower" id="tower" role="table" aria-label="positions by distance covered, then lap times"></div>
+        <div class="progress" aria-hidden="true"><i id="qprog"></i></div>
+        <div class="note" id="towerNote"></div>
+      </div>
+    </section>
+    <section class="panel" id="lapPanel" aria-label="lap times">
       <div class="ph"><span class="label">Lap · Silverstone</span><span class="src" id="lapSrc">seconds</span></div>
       <div class="pb"><table class="lap" id="lapTable"></table><div class="progress" aria-hidden="true"><i id="prog"></i></div></div>
     </section>
@@ -62,7 +72,7 @@
     </section>
   </aside>
 </main>
-<footer class="honest" id="honest">Physics replay: physics lap sim (quasi-steady-state point mass) on the sim's racing line; ghosts on the same clock. Game race: cinematic — game lap model, mixes car and driver. Real 2026 qualifying telemetry: OpenF1 (openf1.org), an independent community project, not associated with Formula 1, the FIA or FOM. Reduced-order models; no flow is solved anywhere.</footer>
+<footer class="honest" id="honest" data-quali="">Physics replay: physics lap sim (quasi-steady-state point mass) on the sim's racing line; ghosts on the same clock. Game race: cinematic — game lap model, mixes car and driver. Real 2026 qualifying telemetry: OpenF1 (openf1.org), an independent community project, not associated with Formula 1, the FIA or FOM. Reduced-order models; no flow is solved anywhere.</footer>
 
 <!-- the physics lap sim (concept/sim, docs/concept/SIM.md) and the design layer, as the concept lab loads them -->
 <script src="../../vendor/three.min.js"></script>
@@ -80,6 +90,7 @@
 <script src="../sim/line-silverstone.js"></script>
 <script src="../sim/lapsim.js"></script>
 <script src="../sim/fitted.js"></script>
+<script src="../sim/team-overrides.js"></script>   <!-- the RB22 anchor the engine (Node) uses: concept/sim/build-team-overrides.js -->
 <script src="../sim/fit.js"></script>
 <script src="../sim/index.js"></script>
 <script src="../regs.js"></script>

@@ -1,0 +1,13 @@
+{
+  "run_id": "fixture-record-good",
+  "mode": "engineer",
+  "llm": "live",
+  "trained": true,
+  "status": "done",
+  "stop_reason": "decision cap 4",
+  "opts": {
+    "team": "redbull",
+    "seed": 12
+  },
+  "note": "TEST FIXTURE: synthetic, not a recorded run; request ids are placeholders"
+}

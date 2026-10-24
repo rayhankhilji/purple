@@ -400,7 +400,8 @@
   // Also reads the team dossier concept/data/<team>-2026.json (e.g. redbull-2026.json): its measured rpm-per-km/h by gear and
   // peak rpm become the car's gearing (gears it does not list are extrapolated with the mean ratio step).
   function derivedOverrides(teamId) {
-    if (typeof require !== "function") return null;
+    // browser: the same overrides, precomputed by concept/sim/build-team-overrides.js (concept/sim/team-overrides.js, when loaded)
+    if (typeof require !== "function") { const B = EI.CONCEPT_SIM_TEAM_OVERRIDES; return B && B[teamId] ? JSON.parse(JSON.stringify(B[teamId])) : null; }
     try {
       const fs = require("fs"), path = require("path"), dir = path.join(__dirname, "..", "data");
       let out = null;

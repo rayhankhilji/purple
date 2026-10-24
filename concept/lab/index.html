@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PURPLE · concept lab</title>
+<title>PURPLE · Mubit lab</title>
 <meta name="color-scheme" content="dark">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,14 +15,16 @@
 <link rel="stylesheet" href="engine-panel.css">
 <link rel="stylesheet" href="engineer-panel.css">
 <link rel="stylesheet" href="exam-panel.css">
+<link rel="stylesheet" href="mubit-first.css">
 </head>
-<body class="clab-page">
+<body class="clab-page mubit-on">
 <header class="top">
   <span class="brand">PURPLE</span>
-  <span class="sub" id="sub">concept lab · an autonomous engineer, directed by Mubit, reshapes the car to beat the real 2026 grid at Silverstone</span>
+  <span class="sub" id="sub">Mubit proposes, physics decides: the RB22 against the real 2026 grid at Silverstone</span>
   <div class="viewsw" role="group" aria-label="view">
-    <button type="button" class="btn small on" id="btnViewEng" aria-pressed="true" title="the autonomous engineer: Mubit decides what to explore, the engine screens thousands of variants and keeps by the numbers">Autonomous engineer</button>
+    <button type="button" class="btn small on" id="btnViewMubit" aria-pressed="true" title="the autonomous engineer driven by Mubit: each decision is one Mubit call; thousands of versions of the idea are tested and the physics lap sim keeps only what is faster">Mubit engineer</button>
     <button type="button" class="btn small" id="btnViewNoAI" aria-pressed="false" title="the plain in-browser optimiser (no AI at all), for comparison">Compare: no AI</button>
+    <button type="button" class="btn small" id="btnViewEng" aria-pressed="false" title="the same engineer as a tree of every car it tested (recorded runs, branches, reverts)">Design tree</button>
     <button type="button" class="btn small" id="btnViewExam" aria-pressed="false" title="the designer exam: 30 held-out car situations, no AI vs regular Claude vs the Mubit-trained adapter, graded on the physics lap sim">Exam</button>
   </div>
   <div id="banner" role="alert" hidden></div>
@@ -38,9 +40,12 @@
     <label class="f" for="simSel" title="lap simulator: the physics lap sim (concept/sim) or sim v0 (the game's lap model, relative)">sim <select id="simSel"><option value="physics" selected>physics</option><option value="v0">v0</option></select></label>
   </form>
   <span class="badge noai-only" id="genBadge">gen 0 / 200</span>
-  <a class="src back" id="raceLink" href="../race/" title="replay the current best car's physics-sim lap on the game's 3D Silverstone, with the RB22 and the real 2026 pole lap as ghosts">watch on Silverstone →</a>
+  <div class="mctl mubit-only" id="muCtl" aria-label="Mubit run controls"></div>
+  <a class="src back" id="raceLink" href="../race/?mode=quali" title="Qualifying lap: the current best car's physics-sim lap against every real 2026 qualifying lap (OpenF1), on one clock on the game's 3D Silverstone">watch on Silverstone →</a>
   <a class="src back" href="../../lab/" title="the setup research lab">research lab →</a>
 </header>
+
+<section class="mustrip mubit-only" id="muStrip" aria-label="Mubit counters"></section>
 
 <main class="clab" id="clab">
   <section class="col c-left">
@@ -65,14 +70,14 @@
       <div class="hero-bl" id="heroBL"></div>
     </section>
     <section class="panel chart" id="chart" aria-label="lap time per generation">
-      <div class="ph"><span class="label">Progress · Silverstone lap per generation</span><span class="legend" id="chartLegend"></span></div>
+      <div class="ph"><span class="label" id="chartLabel">Progress · Silverstone lap per generation</span><span class="legend" id="chartLegend"></span></div>
       <div class="svgwrap" id="chartWrap"></div>
     </section>
   </section>
 
   <section class="col c-right">
-    <section class="panel feed" id="feed" aria-label="lineage">
-      <div class="ph"><span class="label">Lineage</span><span class="src" id="feedMeta">verdict = numbers (legal and faster), not a model's opinion</span></div>
+    <section class="panel feed" id="feed" aria-label="Mubit feed and lineage">
+      <div class="ph"><span class="label" id="feedLabel">Lineage</span><span class="src" id="feedMeta">verdict = numbers (legal and faster), not a model's opinion</span></div>
       <div class="lines" id="feedLines" aria-live="polite" aria-relevant="additions"></div>
     </section>
     <section class="panel sheet" id="sheet" aria-label="car sheet">
@@ -102,6 +107,7 @@
 <script src="../sim/line-silverstone.js"></script>
 <script src="../sim/lapsim.js"></script>
 <script src="../sim/fitted.js"></script>
+<script src="../sim/team-overrides.js"></script>   <!-- the RB22 anchor the engine (Node) uses, so this page's laps equal the engine's: concept/sim/build-team-overrides.js -->
 <script src="../sim/fit.js"></script>
 <script src="../sim/index.js"></script>
 <!-- the concept engine (docs/concept/CONCEPT.md §3 load order) -->
@@ -125,6 +131,9 @@
 <script src="engine-panel.js"></script>
 <!-- the autonomous engineer (engine v2, docs/concept/ENGINE_V2.md): the primary view; replays recorded live runs, live after unlock, mock only as a labelled offline demo -->
 <script src="engineer-panel.js"></script>
+<!-- the Mubit-first view (the default): the layout above driven by the autonomous engineer; replays a recorded live Mubit run, Go live = engine v2
+     with record_good through this site's API (physics-approved ideas re-sent as trained calls by the server); never calls Mubit itself -->
+<script src="mubit-first.js"></script>
 <!-- the designer exam (concept/exam/): paste the Mubit-trained adapter's Try-models replies, graded on the physics sim by POST /api/concept/exam/grade (no Mubit call) -->
 <script src="exam-panel.js"></script>
 </body>
