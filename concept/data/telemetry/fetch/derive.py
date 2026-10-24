@@ -29,6 +29,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dir", default=os.path.dirname(here))
     ap.add_argument("--racepace", default=os.path.join(here, "..", "..", "..", "..", "js", "data", "racepace2026.js"))
+    ap.add_argument("--gears", default="HAD,VER", help="quali laps for the per-gear tables")
     a = ap.parse_args()
     idx = json.load(open(os.path.join(a.dir, "silverstone-2026-q-index.json")))
     circ = json.load(open(os.path.join(a.dir, "silverstone-circuit.json")))
@@ -118,7 +119,7 @@ def main():
             err += (c["speed_kmh"][k] - lp["lap"]["speed_trap_kmh"]) ** 2
         fits.append(((err / len(laps)) ** 0.5, D[j]))
     rms, dfit = min(fits)
-    print("Best-fit trap position over the %d team laps: %.0f m on the pole trace (RMS %.1f km/h); pole trace there: %.0f km/h.\n" % (
+    print("Best-fit trap position over the %d qualifying laps: %.0f m on the pole trace (RMS %.1f km/h); pole trace there: %.0f km/h.\n" % (
         len(laps), dfit, rms, V[at(dfit)]))
 
     # full throttle share
@@ -148,7 +149,87 @@ def main():
             c, r["lap_time_s"], q if q is not None else "-",
             "%+.3f" % (r["lap_time_s"] - q) if q is not None else "-", sto, stj,
             "%+.1f" % (sto - stj) if (sto and stj) else "-"))
-    print("\nPole in racepace2026.js: %s %.3f s." % (rp["pole"]["code"], rp["pole"]["s"]))
+    print("\nPole in racepace2026.js: %s %.3f s.\n" % (rp["pole"]["code"], rp["pole"]["s"]))
+    if os.path.exists(os.path.join(a.dir, "silverstone-2026-r-index.json")):
+        race_report(a.dir)
+    for code in a.gears.split(","):
+        f = os.path.join(a.dir, "silverstone-2026-q-%s.json" % code.strip().lower())
+        if code.strip() and os.path.exists(f):
+            gear_report(f)
+
+
+
+def pct(xs, q):
+    xs = sorted(xs)
+    if not xs:
+        return float("nan")
+    k = (len(xs) - 1) * q
+    i = int(k)
+    return xs[i] if i + 1 >= len(xs) else xs[i] + (xs[i + 1] - xs[i]) * (k - i)
+
+
+def gear_report(path):
+    doc = json.load(open(path))
+    r = doc["raw_car_data"]
+    V, R, G, T, B, X = r["speed_kmh"], r["rpm"], r["gear"], r["throttle_pct"], r["brake"], r["distance_m"]
+    n = len(V)
+    print("#### %s (%s), qualifying lap %d, %.3f s: %d raw samples\n" % (
+        doc["driver"]["code"], doc["driver"]["team"], doc["lap"]["lap_number"], doc["lap"]["lap_time_s"], n))
+    print("| Gear | Samples | rpm min to max | km/h per 1000 rpm, median (IQR, n) | km/h range | Upshift to next: rpm / km/h (median, n) |")
+    print("|---|---|---|---|---|---|")
+    for g in sorted(set(G)):
+        if g == 0:
+            continue
+        idx = [i for i in range(n) if G[i] == g]
+        steady = [V[i] / (R[i] / 1000.0) for i in idx
+                  if 0 < i < n - 1 and G[i - 1] == g and G[i + 1] == g and not B[i] and R[i] > 5000]
+        ups = [i for i in idx if i + 1 < n and G[i + 1] == g + 1 and not B[i]]
+        up = ("%.0f / %.0f (%d)" % (pct([R[i] for i in ups], .5), pct([V[i] for i in ups], .5), len(ups))) if ups else "-"
+        ratio = ("%.2f (%.2f to %.2f, %d)" % (pct(steady, .5), pct(steady, .25), pct(steady, .75), len(steady))) if steady else "-"
+        print("| %d | %d | %d to %d | %s | %d to %d | %s |" % (
+            g, len(idx), min(R[i] for i in idx), max(R[i] for i in idx), ratio,
+            min(V[i] for i in idx), max(V[i] for i in idx), up))
+    print("\nObserved max rpm: %d (gear %d, %d km/h, at %.0f m)." % (
+        max(R), G[R.index(max(R))], V[R.index(max(R))], X[R.index(max(R))]))
+    ch = doc["channels"]
+    D, CV, CT, CG = ch["distance_m"], ch["speed_kmh"], ch["throttle_pct"], ch["gear"]
+    print("\nFull-throttle segments (throttle >= 99% on the 5 m grid, at least 50 m long):\n")
+    print("| Start m | End m | Length m | Entry km/h | Exit km/h | Peak km/h | Gears |")
+    print("|---|---|---|---|---|---|---|")
+    i = 0
+    while i < len(D):
+        if CT[i] >= 99:
+            j = i
+            while j + 1 < len(D) and CT[j + 1] >= 99:
+                j += 1
+            if D[j] - D[i] >= 50:
+                seq = []
+                for g in CG[i:j + 1]:
+                    if not seq or seq[-1] != g:
+                        seq.append(g)
+                print("| %.0f | %.0f | %.0f | %.0f | %.0f | %.0f | %s |" % (
+                    D[i], D[j], D[j] - D[i], CV[i], CV[j], max(CV[i:j + 1]), "-".join(map(str, seq))))
+            i = j + 1
+        else:
+            i += 1
+    print()
+
+
+def race_report(d):
+    ri = json.load(open(os.path.join(d, "silverstone-2026-r-index.json")))
+    print("Race: %d laps; neutralised (UTC): %s\n" % (ri["race_laps"], "; ".join(
+        "%s to %s" % (a[11:19], b[11:19]) for a, b in ri["neutralised_utc"])))
+    print("| File | Driver | Role | Lap | Lap time s | Compound | Tyre age (laps) | Laps remaining | Full throttle (raw share) | Passes in lap | Min gap ahead s |")
+    print("|---|---|---|---|---|---|---|---|---|---|---|")
+    for code, dd in ri["drivers"].items():
+        rows = {r["lap_number"]: r for r in dd["laps"]}
+        for f in dd["telemetry_laps"]:
+            r = rows[f["lap_number"]]
+            print("| `%s` | %s | %s | %d | %.3f | %s | %s | %d | %.1f%% | %s | %s |" % (
+                f["file"], code, f["role"], r["lap_number"], r["lap_time_s"], r["compound"], r["tyre_age_laps"],
+                ri["race_laps"] - r["lap_number"], 100 * r["full_throttle_share"], ", ".join(r["passes"]) or "-",
+                r["min_gap_ahead_s"]))
+    print()
 
 
 if __name__ == "__main__":
