@@ -12,8 +12,9 @@
 //     passcode AND x-purple-confirm: trained). Live calls are rate limited per IP and globally per hour (in memory, per instance).
 //   - runs (concept loop, engine speed / auto runs) live in one instance's memory: the POST keeps its instance alive (waitUntil)
 //     and the run is time-boxed to one function invocation (TIME_BOX_S). The stream URL carries a signed ticket: if Vercel sends
-//     the stream to another instance, a mock / speed run is replayed there from the ticket (deterministic per seed); a live run is
-//     never replayed (no double Mubit calls) and the stream says so.
+//     the stream to another instance, a mock / speed run is replayed there from the ticket (deterministic per seed). A LIVE run
+//     always starts where its stream is opened: the POST only validates it (the run the inner route starts is stopped before any
+//     Mubit call, and its calls are gated by session id) and the stream starts the real run from the ticket, once per instance.
 // G-SEC-02: the Mubit key is only read by server/mubit.js and feeds the ticket/cookie HMAC key through a hash; it is never sent,
 // logged or returned. The passcode is never logged or returned.
 "use strict";
@@ -150,7 +151,12 @@ function create() {
       return Object.assign({}, r, { mubit_request_id: "mock-" + String(r.mubit_request_id).replace(/^mreq_test/, ""), model: "mock (public site without the passcode)" });
     },
   };
-  const api = createApp({ dataDir, mubit: switching, hostOk: /^[a-z0-9.-]+(:\d+)?$/i, engineWorkers: LIMITS.engine_workers, engineTmpDir: path.join(TMP(), "engine"), log: (...a) => console.log(...a) });
+  // the designer's Mubit (concept loop, engine auto): only runs started from their stream (session id = run id) may call it; the
+  // run a live POST starts only validates the request and can never reach Mubit (defer(), below)
+  const deferred = new Map();   // run id -> promise that settles when that validation-only run has stopped
+  const allowedLive = new Set();
+  const gated = { callMubit(args) { if (!allowedLive.has(args.sessionId)) { const e = new Error("deferred: a live run calls Mubit only from the instance that streams it"); e.code = "deferred"; return Promise.reject(e); } return realMubit.callMubit(args); } };
+  const api = createApp({ dataDir, mubit: switching, conceptMubit: gated, hostOk: /^[a-z0-9.-]+(:\d+)?$/i, engineWorkers: LIMITS.engine_workers, engineTmpDir: path.join(TMP(), "engine"), log: (...a) => console.log(...a) });
   const inner = api.app;
 
   const limiter = Limiter();
@@ -180,6 +186,13 @@ function create() {
     const mine = kind === "engine" ? 1 : 0;
     const t2 = live ? null : setTimeout(() => { if (r.listeners.size <= mine) stop("nobody followed this run's stream on this instance (it was replayed where the stream landed)"); }, LIMITS.orphan_s * 1000);
     done.finally(() => { clearTimeout(t1); if (t2) clearTimeout(t2); });
+  }
+  // a live POST: the run the inner route started only validated the request; stop it before its first Mubit call
+  function defer(kind, r) {
+    const done = kind === "loop" ? Promise.resolve(r.promise) : new Promise(res => { if (r.status !== "running") return res(); r.listeners.add(ev => { if (ev === null) res(); }); });
+    deferred.set(r.id, done.catch(() => {}));
+    r.stopRequested = true; r.stop_reason = "deferred: a live run starts where its stream is opened";
+    done.finally(() => { const t = setTimeout(() => deferred.delete(r.id), 10 * 60e3); if (t.unref) t.unref(); });
   }
   const sseOnly = (events) => new Response(events.map(([e, d]) => "event: " + e + "\ndata: " + JSON.stringify(d) + "\n\n").join(""), { status: 200, headers: { "content-type": "text/event-stream", "cache-control": "no-store", "x-purple-storage": "ephemeral" } });
   // a stream that ends cleanly before the function's max duration, so EventSource reconnects instead of seeing a timeout
@@ -264,7 +277,7 @@ function create() {
     if (live) { const no = liveRefusal(c) || reserve(c, "live", isInt(b.iterations) ? b.iterations : 10); if (no) return no; }
     const res = await forward(c, { body: text, edit: withTicket("loop", b, live), live });
     const j = await res.clone().json().catch(() => null);
-    if (j && j.ok) { const r = api.concept.runs.get(j.data.run_id); if (r) host("loop", r, live); }
+    if (j && j.ok) { const r = api.concept.runs.get(j.data.run_id); if (r) { if (live) defer("loop", r); else host("loop", r, false); } }
     return res;
   });
   app.post("/api/concept/engine/run", async c => {
@@ -276,7 +289,7 @@ function create() {
     if (live) { const no = reserve(c, "live", isInt(b.max_calls) ? b.max_calls : b.trained === true ? 10 : 20); if (no) return no; }
     const res = await forward(c, { body: JSON.stringify(b), edit: withTicket("engine", b, live), live, note: b.mode === "speed" ? "speed run on one vCPU, time-boxed to " + LIMITS.time_box_s + " s on Vercel (stops cleanly and re-scores the best car so far)" : undefined });
     const j = await res.clone().json().catch(() => null);
-    if (j && j.ok) { const r = api.engine.runs.get(j.data.run_id); if (r) host("engine", r, live); }
+    if (j && j.ok) { const r = api.engine.runs.get(j.data.run_id); if (r) { if (live) defer("engine", r); else host("engine", r, false); } }
     return res;
   });
   // the stream: local run -> stream it; else replay a mock / speed run from its ticket; a live run is never replayed
@@ -286,19 +299,21 @@ function create() {
     if (!m) return next();
     const kind = m[1] === "loop" ? "loop" : "engine", asked = m[2], id = alias.get(asked) || asked;
     const pathFor = x => (kind === "loop" ? "/api/concept/loop/" : "/api/concept/engine/run/") + x + "/stream";
-    if (runsOf(kind).has(id)) return forward(c, { path: pathFor(id) });
+    if (runsOf(kind).has(id) && !deferred.has(id)) return forward(c, { path: pathFor(id) });
     const t = readTicket(c.req.query("t"));
     if (!t || t.id !== asked || t.kind !== kind) return forward(c, { path: pathFor(id) });   // the inner 404
     const fail = msg => sseOnly([["error", { error: msg }], ["end", { run_id: asked, status: "error" }]]);
-    if (t.live) return fail("this live run is running on another Vercel instance (runs live in one instance's memory) and the stream was routed here. Its Mubit calls are not repeated here: start the run again.");
-    if (replayed.has(asked)) return fail("this run was already replayed on this instance");
+    if (replayed.has(asked)) return fail("this run was already started from its stream on this instance");
+    if (t.live && liveOff()) return fail("live Mubit calls are off on this deployment: " + liveOff());
+    if (deferred.has(asked)) await Promise.race([deferred.get(asked), new Promise(res => setTimeout(res, 15000))]);   // the validation run frees the one-run slot
     let r;
     try {
       if (kind === "loop") r = api.concept.start(t.b);
       else { if (api.engine.active()) return fail("an engine run is already running on this instance: " + api.engine.active().id); r = t.b.mode === "speed" ? api.engine.startSpeed(t.b) : api.engine.startAuto(t.b); }
     } catch (e) { return fail("could not replay the run here: " + (e && e.message || e)); }
-    replayed.add(asked); alias.set(asked, r.id); host(kind, r, false);
-    console.log("PURPLE vercel: replayed " + asked + " as " + r.id + " (stream landed on another instance)");
+    if (t.live) allowedLive.add(r.id);   // synchronous after start(): its first call comes after the next macrotask
+    replayed.add(asked); alias.set(asked, r.id); host(kind, r, !!t.live);
+    console.log("PURPLE vercel: " + (t.live ? "live run " + asked + " started from its stream as " : "replayed " + asked + " as ") + r.id);
     return forward(c, { path: pathFor(r.id) });
   });
   // run ids handed out before a replay keep working for stop / state

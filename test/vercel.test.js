@@ -57,3 +57,26 @@ test("adapter: any host, mock by default, live refused without key / passcode, m
   r = await post("/api/plan", {}); j = await r.json();   // the research plan without the passcode: the mock planner, never a real request id
   assert.equal(r.status, 200); assert.match(j.data.mubit_request_id, /^mock-/); assert.equal(j.deploy.mubit, "mock");
 });
+
+test("a live loop calls Mubit only from the run its stream starts (loopback stub, never the network)", async () => {
+  const http = require("http"); const seen = [];
+  const stub = http.createServer((q, s) => { let b = ""; q.on("data", d => (b += d)); q.on("end", () => {
+    seen.push({ record: q.headers["x-middleware-record"], user: JSON.parse(b).metadata.user_id });
+    s.writeHead(200, { "content-type": "application/json", "x-middleware-request-id": "mreq_stub" + seen.length });
+    s.end(JSON.stringify({ id: "m", type: "message", role: "assistant", model: "claude-haiku-4-5", content: [{ type: "text", text: JSON.stringify({ changes: [{ part: "rear_wing", param: "aoa_deg", to: 19 }], hypothesis: "stub", expected: { lap_delta_s: -1, sector: 1 } }) }], stop_reason: "end_turn", usage: { input_tokens: 1, output_tokens: 1 } }));
+  }); });
+  await new Promise(res => stub.listen(0, "127.0.0.1", res));
+  Object.assign(process.env, { MUBIT_API_KEY: "test-key-never-sent", PURPLE_PASSCODE: "pass-for-test", MUBIT_BASE_URL: "http://127.0.0.1:" + stub.address().port });
+  try {
+    const A = V.create();
+    const r = await A.fetch(new Request("https://purple-x.vercel.app/api/concept/loop", { method: "POST", headers: { "content-type": "application/json", "x-purple-passcode": "pass-for-test" }, body: JSON.stringify({ mode: "live", iterations: 2, seed: 5 }) }));
+    const j = await r.json(); assert.equal(r.status, 200, JSON.stringify(j));
+    await new Promise(res => setTimeout(res, 300));
+    assert.equal(seen.length, 0, "the POST's validation run must not call Mubit");
+    const text = await (await A.fetch(new Request("https://purple-x.vercel.app" + j.data.stream))).text();
+    assert.match(text, /event: done/);
+    assert.equal(seen.length, 2); assert.ok(seen.every(x => x.record === "metadata" && x.user !== j.data.run_id && x.user === seen[0].user));
+    const again = await (await A.fetch(new Request("https://purple-x.vercel.app" + j.data.stream))).text();   // reopening replays the same run, no new call
+    assert.match(again, /event: done/); assert.equal(seen.length, 2);
+  } finally { delete process.env.MUBIT_API_KEY; delete process.env.PURPLE_PASSCODE; delete process.env.MUBIT_BASE_URL; stub.close(); }
+});

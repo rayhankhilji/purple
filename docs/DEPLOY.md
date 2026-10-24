@@ -67,7 +67,9 @@ stdin (`printf %s "$VALUE" | npx vercel@65.2.0 env add NAME production --sensiti
   `x-purple-confirm: trained`; the research lab's Run button (cookie only) stays on the mock planner. `/api/exam/run` (20
   untrained calls) and `/api/collect` (needs `confirm: "trained"` as before) go live with the passcode.
 - Verified on 2026-10-24: one live untrained designer call through `/api/concept/loop` (`mode: "live"`, 1 iteration) returned
-  `mreq_01a16d59e6e57aa3b8498ca1a014580e` with `x-middleware-record: metadata`.
+  `mreq_01a16d59e6e57aa3b8498ca1a014580e` with `x-middleware-record: metadata` (first deploy, where the run started on the
+  POST's instance). The start-at-stream path of the current deploy is covered by `test/vercel.test.js` against a loopback Mubit
+  stub (exactly one call per iteration, all from the stream's run); it has not spent a second real call.
 
 ## 5. Limits
 
@@ -94,11 +96,14 @@ console**; prefer trained runs locally.
   and engine run folders written on the site live only in that instance's `/tmp`, are not shared with other instances and vanish
   when Vercel recycles it. Every JSON answer says so in `deploy.storage` (and the header `x-purple-storage: ephemeral`). The real
   `data/` is never read or written.
-- Runs live in one instance's memory. The POST that starts a run keeps its instance alive (`waitUntil`); the stream URL carries a
-  signed ticket (2 min). If Vercel routes the stream to another instance, a mock or speed run is replayed there from the ticket
-  (deterministic per seed; the original stops when nobody follows it for 20 s); a **live run is never replayed** (no double Mubit
-  calls): the stream ends with an error event and the user starts it again. Stop / state (`/api/concept/engine/run/:id[/stop]`,
-  `/api/concept/loop/:id`) work only on the instance that holds the run.
+- Runs live in one instance's memory, and Vercel does route a run's stream to another instance than its POST (seen in testing).
+  The stream URL carries a signed ticket (2 min). A mock or speed run starts on the POST's instance (kept alive with `waitUntil`)
+  and, if the stream lands elsewhere, is replayed there from the ticket (deterministic per seed; the original stops when nobody
+  follows it for 20 s). A **live run always starts where its stream is opened**: the POST only validates it (and reserves the
+  rate limit); the run it creates is stopped before any call and cannot reach Mubit (calls are allowed only for runs started from
+  a stream), so a live run never makes double Mubit calls. Its Mubit session id is the id of the run the stream started (shown on
+  every iteration card), not the `run_id` the POST returned; both ids work for state / stop on the instance that holds the run.
+  Stop / state (`/api/concept/engine/run/:id[/stop]`, `/api/concept/loop/:id`) on another instance answer 404.
 - The research lab's `/api/stream` ends cleanly after 280 s; EventSource reconnects by itself ("reconnecting" for a moment).
 
 ## 7. What works / what does not on Vercel
