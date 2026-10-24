@@ -48,20 +48,54 @@
   };
   function hypothesize(changes) {
     if (!changes.length) return "No change.";
-    const parts_ = changes.map(c => { const e = EFFECT[c.part + "." + c.param], up = c.to > c.from; return (e ? e[up ? 0 : 1] : (up ? "increase" : "decrease")); });
-    const what = changes.map(c => { const s = design.spec(c.part, c.param); return c.part.replace("_", " ") + " " + s.label.split(" (")[0].toLowerCase() + " " + (c.to > c.from ? "+" : "") + +(c.to - c.from).toFixed(2) + (s.unit === "°" ? "°" : s.unit ? " " + s.unit : ""); });
+    const parts_ = changes.map(c => { if (c.param === "material") return "different mass and stiffness"; const e = EFFECT[c.part + "." + c.param], up = c.to > c.from; return (e ? e[up ? 0 : 1] : (up ? "increase" : "decrease")); });
+    const what = changes.map(c => { if (c.param === "material") return c.part.replace("_", " ") + " material " + c.from + " → " + c.to; const s = design.spec(c.part, c.param); return c.part.replace("_", " ") + " " + s.label.split(" (")[0].toLowerCase() + " " + (c.to > c.from ? "+" : "") + +(c.to - c.from).toFixed(2) + (s.unit === "°" ? "°" : s.unit ? " " + s.unit : ""); });
     const text = "Try " + what.join(", ") + ". Expect " + parts_.join("; ") + ".";
     return text.length > 200 ? text.slice(0, 197) + "..." : text;
   }
 
   // the default proposer: (1+λ) evolution strategy. λ children of the parent, each 1-3 parameters moved by a gaussian step of
   // σ × the parameter's domain width (σ adapts in the loop: ×1.25 on a kept generation, ×0.9 otherwise, within [0.01, 0.3]).
-  function esProposer(lambda) {
+  // opts.materials (off by default, so seeded lineages are unchanged): material swaps too, only to materials the bench's material
+  // guard allows for that part (concept/bench.js materialAllowed: FIA C15.2 "permitted" in the materials data; homologated safety
+  // structures keep their laminate). A drawn swap to any other material is redrawn (≤ 20 tries), never proposed.
+  // proposer limits (FIA checklist): the catalogue domain narrowed by the single-number and combination rules a proposer can honour
+  // directly: front-wing chord ≤ min(domain, the X+Z envelope for this span / setting / volumes, regs.fwProfilesChordLimit),
+  // rear wing ≥ 2 volumes (REG-C-ELEMENTS-MIN), straight-mode change ≥ 0 (REG-C-SM-DIRECTION), sidepod inlet ≤ 1600 cm²
+  // (REG-C-SIDEPOD-INLET). Returns { "<part>.<param>": { min, max, rule? } } for the given params. Legality stays the bench's call.
+  function proposerLimits(params) {
+    const out = {};
+    for (const s of parts.PARAMS) out[s.part + "." + s.param] = { min: s.min, max: s.max };
+    const tighten = (k, side, v, rule) => { const o = out[k]; if (!o || !(typeof v === "number" && isFinite(v))) return; if (side === "max" ? v < o.max : v > o.min) { o[side] = v; o.rule = (o.rule ? o.rule + "; " : "") + rule; } };
+    if (regs.fwProfilesChordLimit && params && params.front_wing) tighten("front_wing.chord_mm", "max", regs.fwProfilesChordLimit(params.front_wing), "REG-C-FW-PROFILES-Z");
+    if (regs.BY_ID["REG-C-ELEMENTS-MIN"]) tighten("rear_wing.elements", "min", 2, "REG-C-ELEMENTS-MIN");
+    if (regs.BY_ID["REG-C-SM-DIRECTION"]) { tighten("front_wing.sm_delta_deg", "min", 0, "REG-C-SM-DIRECTION"); tighten("rear_wing.sm_delta_deg", "min", 0, "REG-C-SM-DIRECTION"); }
+    const inlet = regs.BY_ID["REG-C-SIDEPOD-INLET"]; if (inlet) tighten("sidepods.inlet_cm2", "max", inlet.value, "REG-C-SIDEPOD-INLET");
+    return out;
+  }
+  // clamp a proposal's numeric changes into proposerLimits (evaluated on the design the changes produce, so a chord is checked
+  // against the span / setting / volumes it will sit with); quantised by design.applyChanges afterwards
+  function honourLimits(d, changes) {
+    const applied = design.applyChanges(d, changes).design, lim = proposerLimits(applied.params);
+    return changes.map(c => {
+      const l = lim[c.part + "." + c.param]; if (!l || typeof c.to !== "number") return c;
+      const s = design.spec(c.part, c.param), lo = s ? Math.ceil((l.min - s.min) / s.step - 1e-9) * s.step + s.min : l.min, hi = s ? Math.floor((l.max - s.min) / s.step + 1e-9) * s.step + s.min : l.max;
+      return Object.assign({}, c, { to: Math.min(hi, Math.max(lo, c.to)) });
+    });
+  }
+  function esProposer(lambda, opts) {
+    const mat = !!(opts && opts.materials);
+    const allowed = m => m.changes.every(c => c.param !== "material" || benchMod.materialAllowed(c.part, c.to));
     return {
-      name: "es(1+" + (lambda || 8) + ")",
+      name: "es(1+" + (lambda || 8) + ")" + (mat ? "+materials" : ""),
       propose(history, d, ctx) {
         const out = [];
-        for (let i = 0; i < ctx.lambda; i++) { const m = design.mutate(d, ctx.rng, ctx.sigma); out.push({ changes: m.changes.map(c => ({ part: c.part, param: c.param, to: c.to })) }); }
+        for (let i = 0; i < ctx.lambda; i++) {
+          let m = design.mutate(d, ctx.rng, ctx.sigma, mat ? { materials: true } : undefined);
+          for (let k = 0; mat && k < 20 && !allowed(m); k++) m = design.mutate(d, ctx.rng, ctx.sigma, { materials: true });
+          if (mat && !allowed(m)) m = design.mutate(d, ctx.rng, ctx.sigma);
+          out.push({ changes: honourLimits(d, m.changes.map(c => ({ part: c.part, param: c.param, to: c.to }))) });
+        }
         return out;
       },
     };
@@ -83,18 +117,21 @@
   function init(opts) {
     opts = Object.assign({ gens: 200, seed: 1, lambda: 8, sigma: 0.08, patience: 60, until: "gens", history_limit: 50 }, opts || {});
     const benchOpts = Object.assign({ circuit: "silverstone" }, opts.bench || {});
+    // same engine, permitted materials: the optimiser never runs with the bench's guards off (docs/concept/CAMPAIGN.md §1)
+    if (benchOpts.pu_guard === false || benchOpts.material_guard === false) throw new Error("concept optimize: the PU (same-engine) and material guards cannot be turned off in the optimiser");
     const start = opts.start ? design.clone(opts.start) : design.baseline(opts.team ? { team: opts.team } : undefined);
     const startResult = benchMod.bench(start, benchOpts);
     if (!startResult.legal) throw new Error("concept optimize: the starting design is illegal (" + summary(startResult).violations.join(", ") + ")");
     return {
-      opts, benchOpts, proposer: opts.proposer || esProposer(opts.lambda), rng: design.seededRng(opts.seed),
+      opts, benchOpts, proposer: opts.proposer || esProposer(opts.lambda, { materials: opts.materials }), rng: design.seededRng(opts.seed),
       baseline: start, baselineResult: startResult, parent: start, parentResult: startResult, sigma: opts.sigma, stale: 0, lineage: [], gen: 0, stopped: null,
     };
   }
   function ctxOf(st) {
     return {
       gen: st.gen, rng: st.rng, sigma: st.sigma, lambda: st.opts.lambda, objective: OBJECTIVE,
-      params: parts.PARAMS.map(s => Object.assign({}, s)), rules: regs.RULES.filter(r => r.kind !== "info").map(r => ({ id: r.id, article: r.article, text: r.text })),
+      params: (lim => parts.PARAMS.map(s => { const l = lim[s.part + "." + s.param], o = Object.assign({}, s); if (l && l.rule) { o.min = Math.max(o.min, l.min); o.max = Math.min(o.max, l.max); o.rule = l.rule; } return o; }))(proposerLimits(st.parent.params)),
+      rules: regs.RULES.concat(regs.COMBO_RULES || []).filter(r => r.kind !== "info").map(r => ({ id: r.id, article: r.article, text: r.text })),
       parent: { id: st.parent.id, score: st.parentResult.score, summary: summary(st.parentResult) }, baseline: { score: st.baselineResult.score, summary: summary(st.baselineResult) },
     };
   }
@@ -131,11 +168,18 @@
       candidates: cands.map(c => ({ id: c.id, score: c.result ? c.result.score : null, legal: c.result ? c.result.legal : false, violations: c.result && !c.result.legal ? summary(c.result).violations : undefined, error: c.error })),
       label: benchMod.LABEL,
     };
+    if (kept) assertSameEngine(best.design, best.result);
     if (kept) { st.parent = best.design; st.parentResult = best.result; st.sigma = Math.min(0.3, st.sigma * 1.25); st.stale = 0; }
     else { st.sigma = Math.max(0.01, st.sigma * 0.9); st.stale++; }
     st.lineage.push(row);
     if (st.opts.onGeneration) st.opts.onGeneration(row);
     return row;
+  }
+  // belt and braces: a kept car carries exactly its team's homologated PU and only allowed materials (the bench already refused
+  // anything else as illegal; this throws if that ever stops being true)
+  function assertSameEngine(d, r) {
+    const pv = benchMod.checkPU(r.physical, d, null).concat(benchMod.checkMaterials(d));
+    if (pv.length) throw new Error("concept optimize: a kept candidate failed the same-engine / material guard: " + pv.map(v => v.message).join("; "));
   }
   function settle(st, raw) { const { props, cands } = candidates(st, raw); for (const c of cands) measure(st, c); return decide(st, props, cands); }
   // async: opts.yield (async fn) is awaited before each measured candidate once opts.slice_ms (default 12) of work has passed since
@@ -164,6 +208,7 @@
   }
   // optimize(opts) -> { best, best_result, baseline, baseline_result, lineage, generations, kept, stopped, diff, ... }
   // opts: { gens = 200, seed = 1, lambda = 8, sigma = 0.08, until: "gens" | "converged", patience = 60, start?: Design, team?: id,
+  //         materials?: bool (default ES proposer also swaps materials, permitted ones only),
   //         proposer?: Proposer, bench?: { circuit, circuits, sim: "auto" | "physics" | "v0" | fn, objective: "weekend" | "quali",
   //         calibration, mass_weight }, onGeneration?(row), yield?: async fn, slice_ms? (optimizeAsync) }
   function optimize(opts) {
@@ -182,7 +227,7 @@
     return finish(st);
   }
 
-  const api = { OBJECTIVE, EFFECT, hypothesize, esProposer, summary, optimize, optimizeAsync };
+  const api = { OBJECTIVE, EFFECT, hypothesize, esProposer, proposerLimits, honourLimits, summary, optimize, optimizeAsync, assertSameEngine };
   C.optimize = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();
