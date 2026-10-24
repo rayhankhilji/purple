@@ -5,7 +5,7 @@
 
 **What it is:** an AI race engineer that redesigns the 2026 Red Bull RB22 to beat the real 2026 Silverstone qualifying lap. The car must stay legal under the FIA 2026 Technical Regulations (Section C, Issue 19) and keep Red Bull's own power unit (Red Bull Ford DM01, locked). Every candidate is scored by a physics lap simulator of Silverstone, checked against real 2026 qualifying telemetry (OpenF1).
 
-**Headline number (model prediction):** best legal RB22-based car **87.235 s ± 0.154 s** (95 % band 86.93–87.54 s) vs the real pole 88.111 s (Antonelli) and Hadjar's RB22 88.746 s, i.e. −0.88 s to pole, P1 across the band. Biggest gains: Brooklands −0.22 s, Luffield −0.20 s, Village −0.16 s. Same engine, all 46 legality checks pass.
+**Headline number (model prediction):** best legal RB22-based car **87.235 s ± 0.154 s** (95 % band 86.93–87.54 s) vs the real pole 88.111 s (Antonelli) and Hadjar's RB22 88.746 s, i.e. −0.88 s to pole, P1 across the band. Biggest gains: Brooklands −0.22 s, Luffield −0.20 s, Village −0.16 s. Same engine; passes every FIA legality check.
 
 **How it uses Mubit (live now):**
 1. *Concept designer task* (claude-haiku-4-5 via Mubit, frozen prompt v1): a closed loop. Each call carries the last changes tried and their measured simulator results (lap, sector and per-corner deltas, FIA verdict); Mubit proposes the next change; the simulator measures it; the result goes into the next call. One Mubit session per run, every result tied to its request id. **272 trained designer calls so far** (300-call run in progress) plus untrained test calls; 191 of the model's proposals were legal and measured, 35 of them kept on the numbers.
