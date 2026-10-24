@@ -24,6 +24,10 @@ const fs = require("fs"), path = require("path");
 const ROOT = path.join(__dirname, "..", "data");
 const CIRCUITS = process.argv.slice(2).filter(a => !a.startsWith("-"));
 const LIST = CIRCUITS.length ? CIRCUITS : ["monza", "monaco", "spa", "hungaroring"];
+// the event name for the source line: the telemetry indexes name it differently (Hungaroring: grand_prix; Monza, Monaco, Spa: only
+// event = the venue), so the Grand Prix name comes from this table first (as build-driver-gaps.js)
+const EVENT = { monza: "Italian Grand Prix", monaco: "Monaco Grand Prix", spa: "Belgian Grand Prix", hungaroring: "Hungarian Grand Prix" };
+const eventName = (circuit, idx) => EVENT[circuit] || idx.grand_prix || (idx.event ? idx.event + " Grand Prix" : circuit);
 
 function readJSON(f) { return JSON.parse(fs.readFileSync(f, "utf8")); }
 function auditFails(circuit) {
@@ -108,7 +112,7 @@ function build(circuit) {
   for (let g = 0; g < 8; g++) if (!k8[g]) { const near = known.reduce((p, q) => (Math.abs(q[0] - g) < Math.abs(p[0] - g) ? q : p)); k8[g] = near[1] * Math.pow(step, g - near[0]); }
   const LINE = {
     circuit, frame: "f1",
-    source: "OpenF1 car_data + location, 2026 " + idx.grand_prix + " qualifying, session_key " + idx.session_key + ", path = median of " + lineLaps.length + " valid laps, distance axis = " + poleE.code + " lap " + poleE.lap_number + " (" + poleE.lap_time_s + " s, pole); corner markers: MultiViewer circuit API; timing and zones: concept/data/tracks/" + circuit + ".json. Via concept/data/telemetry/" + circuit + " (accessed " + idx.accessed + ").",
+    source: "OpenF1 car_data + location, 2026 " + eventName(circuit, idx) + " qualifying, session_key " + idx.session_key + ", path = median of " + lineLaps.length + " valid laps, distance axis = " + poleE.code + " lap " + poleE.lap_number + " (" + poleE.lap_time_s + " s, pole); corner markers: MultiViewer circuit API; timing and zones: concept/data/tracks/" + circuit + ".json. Via concept/data/telemetry/" + circuit + " (accessed " + idx.accessed + ").",
     attribution: "Telemetry from OpenF1 (openf1.org), an independent community project not associated with Formula 1, the FIA or FOM; timing data belongs to Formula 1. Non-commercial research use.",
     lap_length_m: Lt, official_length_m: model.official.centreline_length_m,
     path_from_laps: lineLaps.map(l => l.code), excluded_audit_fail: allLaps.filter(l => l.fail).map(l => l.code),
