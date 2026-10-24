@@ -237,3 +237,6 @@ Exit criteria: **all true at 23:58 London** (six verifies, task named from the p
 - **Open for a human (UI D-U7):** the real 3-lap iframe race needs one run on the demo laptop's GPU; headless SwiftShader reached lap 1/3 in 5:38 and hit the 6-minute NO_RESULT state.
 
 ### 2026-10-24 05:20 — integrator — merged DEMO PR #30 (audit wording: counts not "half", kept-examples line, src lines on slides 2/5/8, snapshot-restore rule), GAME PR #31 (postMessage targetOrigin = location.origin), EVAL PR #32 (schema.selectRules: newest 3 active rules, oldest first; worst-case scenario 1,216 chars ≈ 304 tokens, pinned by a test). Decision logged: a fourth active rule drops the oldest from the task input (stays in rules.json and the UI). 80 tests.
+
+### 2026-10-24 05:30 — integrator — merged EVAL wind-cap fix (PR branch eval-p3-windcap) + DEMO script/deck polish
+- lab/evaluator.js: timing() no longer capped at the still-air terminal speed (per-sample cap in the profile is the truth); still-air results byte-identical to the fixtures; tailwind test added. 82 tests. data/exam.json rebuilt: 3 item(s) changed (list above in the integrator's console; EVAL lane file has the detail). Provider exam re-run (untrained, 20 calls): see status.exam.details; snapshot 0530-windcap-exam.
