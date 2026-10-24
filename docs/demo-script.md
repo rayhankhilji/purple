@@ -21,7 +21,7 @@ Fixed facts the script is built on (all measured 2026-10-23/24, London):
 | Agreement | 19 % (target ≤ 25 %) | ledger `agreement_pct` |
 | Agent on the demo experiment | verdict reject; next experiment rear_wing_deg decrease 4 | ledger row |
 | v1 collection (Friday) | 50 scenarios, 43 valid plans, 57 trained calls. Verdicts 40 reject / 3 retest / 0 promote; next parameter front_wing 39, rear_wing 4. **94 % of the candidates were themselves front-wing moves** (a PRNG seeding defect, fixed 01:45), so v1 learned from skewed data | TASK_LOG 23:35, 01:45 |
-| Exam, provider, untrained | verdicts 20/20; next experiment (parameter + direction) 10/20. On the 8 Try-models items: verdicts 8/8, next experiment **1/8** (only exam-rw8). On all 7 misses the evaluator's truth is a ride-height change; the provider proposed rear wing (5), front wing (1) or brake bias (1) instead | TASK_LOG 00:55, snapshot 0350-exam-details |
+| Exam, provider, untrained | verdicts 20/20; next experiment (parameter + direction) 10/20. On the 8 Try-models items (sheet recomposed 04:40 after the wind-cap fix: exam-rw8, -14, -15, -02, -16, -20, -05, -12): verdicts 8/8, next experiment **2/8** (exam-rw8 and exam-12). On all 6 misses the evaluator's truth is a ride-height change; the provider proposed rear wing (5) or brake bias (1) instead | TASK_LOG 00:55, snapshot 0530-windcap-exam |
 | The rule | "Weigh straight-line drag against corner gain; judge on full-lap delta." | P2.T4 |
 | v2 collection (Saturday, 01:50) | 40 scenarios across all five parameters, rule R-01 in every input, promote-biased (0.3): 39 valid, 1 parse error. Evaluator truth promote 14 / retest 12 / reject 14; the agent's verdicts agreed on 38 of 39; its next parameter: ride_height 13, rear_wing 11, front_wing 7, brake_bias 6, ers 2 | TASK_LOG 01:50 |
 | Try-models set (P3.T1) | 8 of the 20 exam items: exam-rw8, -03, -02, -14, -15, -16, -20, -05 (`docs/try-models/sheet.md`); scored verdict n/8 and next-step n/8 by `npm run exam:score` | EVAL |
@@ -84,7 +84,7 @@ Fixed facts the script is built on (all measured 2026-10-23/24, London):
 
 **Say:** "The verdict was right. The next experiment is where the agent is weak: on twenty held-out scenarios it gets twenty of twenty verdicts and ten of twenty next steps. Version one also learned from our mistake: a seeding bug made ninety-four percent of Friday's candidates front-wing moves. We fixed the generator. The engineer kept the verdict and wrote the rule: weigh straight-line drag against corner gain, judge on the full-lap delta. The rule enters every later task input. Forty new scenarios across all five parameters, verdicts agreeing with the evaluator on thirty-eight of thirty-nine. Those kept examples train version two. That is rule-conditioned learning."
 
-**Trigger:** `POST /api/overrule { experiment_id, verdict: "reject", reason }` → rule active → next `POST /api/plan` input includes it. v2 was collected at 01:50 with `npm run collect -- --n 40 --with-rules --promote-bias 0.3 --seed 2` (not live in the video; show the ledger rows and the Adapters page).
+**Trigger:** `POST /api/overrule { experiment_id, verdict: "reject", reason }` → rule active → next `POST /api/plan` input includes it. v2 was collected at 01:50 with `npm run collect -- --n 40 --with-rules --promote-bias 0.3 --confirm-trained --seed 2` (not live in the video; show the ledger rows and the Adapters page).
 
 **Numbers owed:** v1 result from the Adapters tab; v2 status and result; kept-examples count after v2 (expected about 80).
 
@@ -92,11 +92,11 @@ Fixed facts the script is built on (all measured 2026-10-23/24, London):
 
 ### 2:10–2:35 — Try models (G-HON-06)
 
-**On screen:** Console → Try models, **Side by side**: provider on the left, the adapter version on the right, the same held-out scenario pasted as the user message only (the task adds its own instructions). Scenario to show: `exam-rw8`, the demo premise itself (truth: reject, next step rear wing decrease), then one of the five retest items (`exam-14`, rear wing −4°, truth retest / ride height decrease). Then the widget score line: next step provider 1/8 · v1 [n/8] · v2 [n/8]; verdict provider 8/8 · v1 [n/8] · v2 [n/8]. Always n/8, never a percentage.
+**On screen:** Console → Try models, **Side by side**: provider on the left, the adapter version on the right, the same held-out scenario pasted as the user message only (the task adds its own instructions). Scenario to show: `exam-rw8`, the demo premise itself (truth: reject, next step rear wing decrease), then one of the five retest items (`exam-14`, rear wing −4°, truth retest / ride height decrease). Then the widget score line: next step provider 2/8 · v1 [n/8] · v2 [n/8]; verdict provider 8/8 · v1 [n/8] · v2 [n/8]. Always n/8, never a percentage.
 
-**Say:** "Same unseen scenario to provider, version one and version two. Verdicts tie by design, the prompt states the thresholds; the score that matters is the next experiment. On eight hard held-out scenarios the provider gets one next step in eight: every miss wanted ride height and it reached for a wing. Version one: [n of eight]. Version two: [n of eight]."
+**Say:** "Same unseen scenario to provider, version one and version two. Verdicts tie by design, the prompt states the thresholds; the score that matters is the next experiment. On eight hard held-out scenarios the provider gets two next steps in eight: every miss wanted ride height and it reached for the rear wing. Version one: [n of eight]. Version two: [n of eight]."
 
-**Trigger:** none in the lab; P3.T1 by hand per `docs/try-models/README.md` (sheet `docs/try-models/sheet.md`: exam-rw8, -03, -02, -14, -15, -16, -20, -05; five of the eight are retests on purpose), scored with `npm run exam:score`, which prints the `POST /api/status` body. Only a version marked `Passed` can be tried.
+**Trigger:** none in the lab; P3.T1 by hand per `docs/try-models/README.md` (sheet `docs/try-models/sheet.md`: exam-rw8, -14, -15, -02, -16, -20, -05, -12; five retests, two rejects, one promote), scored with `npm run exam:score`, which prints the `POST /api/status` body. Only a version marked `Passed` can be tried.
 
 **If v2 does not beat v1:** say so. "Version two did not beat version one on this exam; here is the number." The loop is the product; the honesty is the pitch.
 
