@@ -449,3 +449,7 @@ Exit criteria: **all true at 23:58 London** (six verifies, task named from the p
 ### 2026-10-24 09:46Z — integrator — key check; big trained designer run started
 - Key check (one untrained call per key on the research task's exact key, header `x-middleware-record: metadata`): old and new Mubit keys return the same `anthropic-organization-id` and `anthropic-workspace-id` (same upstream provider account); Mubit does not expose its app id in responses. Owner confirms the new key is the same Mubit app.
 - Owner: run the big training run. Started 12 runs × 25 trained designer calls (seeds 21–32, 2 in parallel, G-MUBIT-05 concurrency ≤ 2) = 300 trained calls → `docs/concept/loop-runs/trained-seed21..32`. Budget after: 159 + 300 = 459 / 2,500.
+
+### 2026-10-24 09:52Z — integrator — big trained designer run done
+- Seeds 21–32 × 25 iterations (`docs/concept/loop-runs/trained-seed21..32`): 271 trained calls recorded (some iterations skip the call when a refused proposal's fallback is reused), 199 LLM proposals used, 101 fallbacks, 66 kept (39 from the LLM). Every run improved the RB22 baseline (88.763 s) by 0.19–0.45 s on the physics lap sim. **Trained totals: research 99 + designer 60 + 271 = 430 / 2,500.** Next: owner checks the designer task in the Mubit console (kept examples, adapter, Try models).
+- Owner sent a new Vercel token (verified; stored outside the repo, replaces the first).
