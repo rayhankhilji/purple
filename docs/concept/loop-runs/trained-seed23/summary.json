@@ -1,0 +1,57 @@
+{
+  "mode": "live",
+  "run_id": "loop-01m5pmwnbac7xyh78rbc2jb32m",
+  "session_id": "loop-01m5pmwnbac7xyh78rbc2jb32m",
+  "iterations": 25,
+  "kept": 5,
+  "stopped": "generation limit",
+  "kept_by_proposer": {
+    "fallback": 4,
+    "llm": 1
+  },
+  "designer": {
+    "generations": 25,
+    "llm_calls": 25,
+    "llm_accepted": 16,
+    "fallback": 9,
+    "reasons": {
+      "illegal": 6,
+      "duplicate": 3
+    },
+    "designs_seen": 26
+  },
+  "trained": true,
+  "lap_baseline_s": 88.763,
+  "lap_best_s": 88.474,
+  "d_lap_s": -0.289,
+  "gap_to_pole_s": 0.363,
+  "request_ids": [
+    "mreq_01a16d4e5cb67a308fe8a218e763b08b",
+    "mreq_01a16d4e67c273b2aa6cb240318a2501",
+    "mreq_01a16d4e715f75138c385eae6d4056c4",
+    "mreq_01a16d4e78e278208352c9a662db1027",
+    "mreq_01a16d4e828d72a395e78db0abf2d853",
+    "mreq_01a16d4e8c4b72a294a221eaa1a768f5",
+    "mreq_01a16d4e95d17660b9047305cf3c248c",
+    "mreq_01a16d4e9e57729194f6d5b4e9563900",
+    "mreq_01a16d4ea77070e1a668ff753726b590",
+    "mreq_01a16d4eb13870818e8bbd68c8da4c25",
+    "mreq_01a16d4ebcee749198a1d7427ab0a3bd",
+    "mreq_01a16d4ec5c5715284eb2be6911bc9e8",
+    "mreq_01a16d4ecf0f76f2894a06f833c6e901",
+    "mreq_01a16d4ed7dc71c1868c03617f60fe85",
+    "mreq_01a16d4edfdf79a191c024a161ea8773",
+    "mreq_01a16d4ee92d7a90a8eb9f5312d9908f",
+    "mreq_01a16d4ef40e77d3afb868e3a43de731",
+    "mreq_01a16d4efd1675728ed19eb9cb181d51",
+    "mreq_01a16d4f051773c284c305bff411ce5d",
+    "mreq_01a16d4f0d867303913396390389bd58",
+    "mreq_01a16d4f17167393a6abd57d0f430915",
+    "mreq_01a16d4f1efd76b395ed40388c8602fe",
+    "mreq_01a16d4f274d7d73987b5d1dfcc852ab",
+    "mreq_01a16d4f30be774294a3dc578e643b0f",
+    "mreq_01a16d4f3aac7e11925c1bd2036a1305"
+  ],
+  "label": "physics lap sim · quasi-steady-state point mass · Silverstone OSM centreline · calibrated to 2026 British GP qualifying",
+  "kept_rule": "kept = legal && score_after > score_before (concept/optimize.js; weekend score, monotonic in the simulated lap); the model's output has no verdict field"
+}
