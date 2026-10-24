@@ -4,7 +4,7 @@ Living document. Owned by the **integrator** (whoever merges lane branches). Lan
 
 ## 1. Where we are (live state; last refreshed 2026-10-24 06:05 London by integrator session 1)
 
-**Integrator: session 1 (`session_01U2tgEhT5Kgr4kE9kJ4Psw4`) continues** (usage reset 03:00; may run out again). Check-in trigger `trig_01P3Ep2jBqL6QHKPN1wGRmQp` (45 min). If it runs out: start the next integrator from `docs/agents/INTEGRATOR_PROMPT.md`. PR #1 to main (description current as of 04:30): https://github.com/rayhankhilji/purple/pull/1.
+**Integrator: session 1 (`session_01U2tgEhT5Kgr4kE9kJ4Psw4`) continues** (usage reset 03:00; may run out again). Check-in trigger `trig_01P3Ep2jBqL6QHKPN1wGRmQp` (45 min). If it runs out: start the next integrator from `docs/agents/INTEGRATOR_PROMPT.md` (same account) or `docs/agents/INTEGRATOR_PROMPT_EXTERNAL.md` (another account: it cannot message lane sessions and answers them via PR comments). **06:15: Tanuj is starting an external integrator now; session 1 may resume later. Two integrators must not merge concurrently: whoever pushes second must fetch first and re-run the sweep on the new head.** PR #1 to main (description current as of 04:30): https://github.com/rayhankhilji/purple/pull/1.
 
 **All three audits done and routed (TASK_LOG 04:45 guardrails, 04:55 correctness, 05:50 QA; QA report in docs/agents/lanes/QA.md + qa-screens/).** Fixes owed: UI round 2 (3 demo blockers B1–B3 + should-fix list), SERVER audit batch, CAR3D ghost/angle (S5), EVAL README refresh, DEMO 2/8. Merge them as they land; re-run the QA driver scripts in session 1's scratchpad (pw/qa-run.js) or re-brief a QA subagent after UI round 2.
 
