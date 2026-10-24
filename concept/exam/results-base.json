@@ -1,0 +1,1610 @@
+{
+ "v": 1,
+ "kind": "purple-designer-exam-results",
+ "column": "base",
+ "label": "base",
+ "what": "B. Claude Haiku 4.5 + frozen designer prompt via server/mubit.js, untrained (x-middleware-record: metadata)",
+ "questions_sha256": "9434d81c78777e1983b649b973286ed6d962b877417526b073677ec29d73ae79",
+ "n": 30,
+ "exam_seed": 2026,
+ "graded_by": "concept/engineer/engine.js one decision from the question's head car (physics lap sim · quasi-steady-state point mass · Silverstone · calibrated to 2026 British GP qualifying); kept = legal && lap < head − 0.1 ms",
+ "meta": {
+  "session_id": "exam-dsg-01m5q6yj6adq9y603xnje8s1g3",
+  "mock": false,
+  "trained": false,
+  "model": "claude-haiku-4-5",
+  "max_tokens": 250,
+  "temperature": 0,
+  "prompt_version": "1"
+ },
+ "summary": {
+  "N": 30,
+  "parsed": 30,
+  "legal": 17,
+  "direct_kept": 9,
+  "engine_kept": 29,
+  "direct_mean_gain_s": 0.0193,
+  "engine_mean_gain_s": 0.1004,
+  "direct_total_gain_s": 0.579,
+  "engine_total_gain_s": 3.012,
+  "line": "kept 9/30 (direct), 29/30 (engine), mean gain 0.0193 s (direct), 0.1004 s (engine); parsed 30/30, legal as proposed 17/30"
+ },
+ "grade_ms": 21661,
+ "grade_ms_per_question": 722,
+ "total_ms": 57405,
+ "rows": [
+  {
+   "phase": "early",
+   "id": "q01",
+   "parsed": true,
+   "legal": false,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.029,
+    "d_lap_s": -0.029,
+    "lap_s": 88.463,
+    "from": "projected"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.034,
+    "d_lap_s": -0.034,
+    "lap_s": 88.458,
+    "from": "candidate",
+    "best_change": "front_wing.sm_delta_deg 4->4.5; setup.brake_bias 57->57.25; rear_wing.span_mm 1100->1080; rear_wing.chord_mm 420->410",
+    "screened": 2996,
+    "physics_laps": 33
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 17.5,
+     "to": 16.5
+    },
+    {
+     "part": "front_wing",
+     "param": "sm_delta_deg",
+     "from": 4,
+     "to": 6
+    },
+    {
+     "part": "setup",
+     "param": "brake_bias",
+     "from": 57,
+     "to": 56
+    }
+   ],
+   "head_lap_s": 88.492,
+   "articles": [
+    "C3.10.10(s)(i)"
+   ],
+   "ms": 4080,
+   "answer": "```json\n{\n  \"changes\": [\n    {\n      \"part\": \"rear_wing\",\n      \"param\": \"aoa_deg\",\n      \"to\": 16.5\n    },\n    {\n      \"part\": \"front_wing\",\n      \"param\": \"sm_delta_deg\",\n      \"to\": 6\n    },\n    {\n      \"part\": \"setup\",\n      \"param\": \"brake_bias\",\n      \"to\": 56\n    }\n  ],\n  \"hypothesis\": \"Reduce rear wing AoA for drag reduction on straights; increase front wing SM for mid-corner grip; lower brake bias to improve braking stability at high-speed corners.\",\n  \"expected\": {\n    \"lap_delta_s\": -1,\n    \"sector\": 2\n  }\n}\n```",
+   "mubit_request_id": "mreq_01a16e6f4b5f7d92bf26b61bbe7542cd",
+   "model": "claude-haiku-4-5-20251001",
+   "input_tokens": 1056,
+   "output_tokens": 194,
+   "latency_ms": 3190
+  },
+  {
+   "phase": "mid",
+   "id": "q02",
+   "parsed": true,
+   "legal": false,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.056,
+    "lap_s": 88.29,
+    "from": "projected"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.093,
+    "d_lap_s": -0.093,
+    "lap_s": 88.141,
+    "from": "candidate",
+    "best_change": "rear_wing.aoa_deg 18.5->19.5; floor.ride_height_mm 29->28.5; setup.roll_front 54.5->49; diffuser.expansion_deg 17->16.5; rear_wing.chord_mm 385->375",
+    "screened": 2994,
+    "physics_laps": 34
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 18.5,
+     "to": 17.5
+    },
+    {
+     "part": "floor",
+     "param": "ride_height_mm",
+     "from": 29,
+     "to": 28
+    },
+    {
+     "part": "setup",
+     "param": "roll_front",
+     "from": 54.5,
+     "to": 52
+    }
+   ],
+   "head_lap_s": 88.234,
+   "articles": [
+    "PKG-FLOOR-STALL"
+   ],
+   "ms": 1174,
+   "answer": "```json\n{\n  \"changes\": [\n    {\n      \"part\": \"rear_wing\",\n      \"param\": \"aoa_deg\",\n      \"to\": 17.5\n    },\n    {\n      \"part\": \"floor\",\n      \"param\": \"ride_height_mm\",\n      \"to\": 28\n    },\n    {\n      \"part\": \"setup\",\n      \"param\": \"roll_front\",\n      \"to\": 52.0\n    }\n  ],\n  \"hypothesis\": \"Reduce rear wing AoA for lower drag on straights; lower ride height for increased floor downforce; reduce front roll stiffness for better mid-corner balance and traction.\",\n  \"expected\": {\n    \"lap_delta_s\": -1,\n    \"sector\": 2\n  }\n}\n```",
+   "mubit_request_id": "mreq_01a16e6f4a8770e3835b180f4d30c1b2",
+   "model": "claude-haiku-4-5-20251001",
+   "input_tokens": 1059,
+   "output_tokens": 195,
+   "latency_ms": 2796
+  },
+  {
+   "phase": "late",
+   "id": "q03",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.055,
+    "lap_s": 87.656,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.003,
+    "d_lap_s": -0.003,
+    "lap_s": 87.598,
+    "from": "alone",
+    "best_change": "front_wing.sm_delta_deg 19.5->20",
+    "screened": 2987,
+    "physics_laps": 28
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 22,
+     "to": 21.5
+    },
+    {
+     "part": "front_wing",
+     "param": "sm_delta_deg",
+     "from": 19.5,
+     "to": 20
+    },
+    {
+     "part": "setup",
+     "param": "brake_bias",
+     "from": 57,
+     "to": 56
+    }
+   ],
+   "clamped": [
+    "front_wing.sm_delta_deg"
+   ],
+   "head_lap_s": 87.601,
+   "ms": 672,
+   "answer": "```json\n{\n  \"changes\": [\n    {\n      \"part\": \"rear_wing\",\n      \"param\": \"aoa_deg\",\n      \"to\": 21.5\n    },\n    {\n      \"part\": \"front_wing\",\n      \"param\": \"sm_delta_deg\",\n      \"to\": 20.5\n    },\n    {\n      \"part\": \"setup\",\n      \"param\": \"brake_bias\",\n      \"to\": 56\n    }\n  ],\n  \"hypothesis\": \"Reduce rear wing AoA for lower drag on straights; increase front flap angle for mid-corner grip; shift brake bias forward for better braking stability at Silverstone's heavy braking zones.\",\n  \"expected\": {\n    \"lap_delta_s\": -1,\n    \"sector\": 2\n  }\n}\n```",
+   "mubit_request_id": "mreq_01a16e6f545c7833acd23cff495a4841",
+   "model": "claude-haiku-4-5-20251001",
+   "input_tokens": 1031,
+   "output_tokens": 202,
+   "latency_ms": 2509
+  },
+  {
+   "phase": "early",
+   "id": "q04",
+   "parsed": true,
+   "legal": false,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.042,
+    "d_lap_s": -0.042,
+    "lap_s": 88.5,
+    "from": "projected"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.042,
+    "d_lap_s": -0.042,
+    "lap_s": 88.5,
+    "from": "projected",
+    "best_change": "rear_wing.aoa_deg 18.5->18; diffuser.expansion_deg 15.5->16; floor.ride_height_mm 35->34.5",
+    "screened": 2980,
+    "physics_laps": 33
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 18.5,
+     "to": 17.5
+    },
+    {
+     "part": "diffuser",
+     "param": "expansion_deg",
+     "from": 15.5,
+     "to": 16.5
+    },
+    {
+     "part": "floor",
+     "param": "ride_height_mm",
+     "from": 35,
+     "to": 34.5
+    }
+   ],
+   "head_lap_s": 88.542,
+   "articles": [
+    "PKG-FLOOR-STALL"
+   ],
+   "ms": 761,
+   "answer": "```json\n{\n  \"changes\": [\n    {\n      \"part\": \"rear_wing\",\n      \"param\": \"aoa_deg\",\n      \"to\": 17.5\n    },\n    {\n      \"part\": \"diffuser\",\n      \"param\": \"expansion_deg\",\n      \"to\": 16.5\n    },\n    {\n      \"part\": \"floor\",\n      \"param\": \"ride_height_mm\",\n      \"to\": 34.5\n    }\n  ],\n  \"hypothesis\": \"Reduce rear wing AoA for lower drag at high-speed corners; increase diffuser expansion for better low-speed downforce; lower ride height to minimum legal limit for increased floor stall effect.\",\n  \"expected\": {\n    \"lap_delta_s\": -1,\n    \"sector\": 2\n  }\n}\n```",
+   "mubit_request_id": "mreq_01a16e6f559474a1ac1f89e3cf5dd8b8",
+   "model": "claude-haiku-4-5-20251001",
+   "input_tokens": 1049,
+   "output_tokens": 201,
+   "latency_ms": 2331
+  },
+  {
+   "phase": "mid",
+   "id": "q05",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.047,
+    "d_lap_s": -0.047,
+    "lap_s": 88.15,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.174,
+    "d_lap_s": -0.174,
+    "lap_s": 88.023,
+    "from": "candidate",
+    "best_change": "front_wing.aoa_deg 27->29; rear_wing.aoa_deg 21->22.5; front_wing.chord_mm 575->580",
+    "screened": 2994,
+    "physics_laps": 28
+   },
+   "proposal": [
+    {
+     "part": "front_wing",
+     "param": "aoa_deg",
+     "from": 27,
+     "to": 28
+    },
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 21,
+     "to": 22
+    },
+    {
+     "part": "setup",
+     "param": "brake_bias",
+     "from": 57,
+     "to": 56
+    }
+   ],
+   "head_lap_s": 88.197,
+   "ms": 850,
+   "answer": "```json\n{\n  \"changes\": [\n    {\n      \"part\": \"front_wing\",\n      \"param\": \"aoa_deg\",\n      \"to\": 28\n    },\n    {\n      \"part\": \"rear_wing\",\n      \"param\": \"aoa_deg\",\n      \"to\": 22\n    },\n    {\n      \"part\": \"setup\",\n      \"param\": \"brake_bias\",\n      \"to\": 56\n    }\n  ],\n  \"hypothesis\": \"Increase front wing AoA for more downforce in high-speed corners; raise rear wing AoA for balance; reduce brake bias to improve braking stability into Copse.\",\n  \"expected\": {\n    \"lap_delta_s\": -1,\n    \"sector\": 1\n  }\n}\n```",
+   "mubit_request_id": "mreq_01a16e6f5deb7e03945ee11a9964cc34",
+   "model": "claude-haiku-4-5-20251001",
+   "input_tokens": 1041,
+   "output_tokens": 192,
+   "latency_ms": 2299
+  },
+  {
+   "phase": "late",
+   "id": "q06",
+   "parsed": true,
+   "legal": false,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.001,
+    "lap_s": 87.742,
+    "from": "projected"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.008,
+    "d_lap_s": -0.008,
+    "lap_s": 87.733,
+    "from": "candidate",
+    "best_change": "rear_wing.endplate_top_mm 875->880; rear_wing.chord_mm 365->370",
+    "screened": 2972,
+    "physics_laps": 26
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "endplate_top_mm",
+     "from": 875,
+     "to": 900
+    },
+    {
+     "part": "sidepods",
+     "param": "inlet_cm2",
+     "from": 650,
+     "to": 620
+    },
+    {
+     "part": "setup",
+     "param": "brake_bias",
+     "from": 57.25,
+     "to": 56.5
+    }
+   ],
+   "head_lap_s": 87.741,
+   "articles": [
+    "C3.11.2(a)",
+    "PKG-COOLING"
+   ],
+   "ms": 704,
+   "answer": "```json\n{\n  \"changes\": [\n    {\n      \"part\": \"rear_wing\",\n      \"param\": \"endplate_top_mm\",\n      \"to\": 900\n    },\n    {\n      \"part\": \"sidepods\",\n      \"param\": \"inlet_cm2\",\n      \"to\": 620\n    },\n    {\n      \"part\": \"setup\",\n      \"param\": \"brake_bias\",\n      \"to\": 56.5\n    }\n  ],\n  \"hypothesis\": \"Increase rear wing endplate height for better vortex control and downforce efficiency; reduce sidepod inlet for lower drag; adjust brake bias for improved mid-corner stability.\",\n  \"expected\": {\n    \"lap_delta_s\": -1,\n    \"sector\": 2\n  }\n}\n```",
+   "mubit_request_id": "mreq_01a16e6f5ea97b03aafc16a4db683061",
+   "model": "claude-haiku-4-5-20251001",
+   "input_tokens": 1078,
+   "output_tokens": 194,
+   "latency_ms": 2207
+  },
+  {
+   "phase": "early",
+   "id": "q07",
+   "parsed": true,
+   "legal": false,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.035,
+    "lap_s": 88.562,
+    "from": "projected"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.025,
+    "d_lap_s": -0.025,
+    "lap_s": 88.502,
+    "from": "candidate",
+    "best_change": "rear_wing.span_mm 1100->1090; front_wing.sm_delta_deg 4->4.5; setup.brake_bias 57->56.75",
+    "screened": 3000,
+    "physics_laps": 33
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "span_mm",
+     "from": 1100,
+     "to": 1150
+    },
+    {
+     "part": "front_wing",
+     "param": "sm_delta_deg",
+     "from": 4,
+     "to": 6
+    },
+    {
+     "part": "setup",
+     "param": "brake_bias",
+     "from": 57,
+     "to": 54
+    }
+   ],
+   "head_lap_s": 88.527,
+   "articles": [
+    "C3.10.10(s)(i)"
+   ],
+   "ms": 809,
+   "answer": "```json\n{\n  \"changes\": [\n    {\n      \"part\": \"rear_wing\",\n      \"param\": \"span_mm\",\n      \"to\": 1150\n    },\n    {\n      \"part\": \"front_wing\",\n      \"param\": \"sm_delta_deg\",\n      \"to\": 6\n    },\n    {\n      \"part\": \"setup\",\n      \"param\": \"brake_bias\",\n      \"to\": 54\n    }\n  ],\n  \"hypothesis\": \"Increase rear wing span for high-speed stability and downforce at Stowe; raise front wing flap angle for mid-corner grip; reduce brake bias to improve braking efficiency into heavy corners.\",\n  \"expected\": {\n    \"lap_delta_s\": -1,\n    \"sector\": 3\n  }\n}\n```",
+   "mubit_request_id": "mreq_01a16e6f66e77b12810af820abdc0aa6",
+   "model": "claude-haiku-4-5-20251001",
+   "input_tokens": 1055,
+   "output_tokens": 196,
+   "latency_ms": 2316
+  },
+  {
+   "phase": "mid",
+   "id": "q08",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.184,
+    "lap_s": 88.451,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.257,
+    "d_lap_s": -0.257,
+    "lap_s": 88.01,
+    "from": "candidate",
+    "best_change": "rear_wing.aoa_deg 20->21; front_wing.aoa_deg 27.5->30; setup.roll_front 55->52.5; rear_wing.span_mm 1100->1110; rear_wing.chord_mm 375->385",
+    "screened": 2992,
+    "physics_laps": 32
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 20,
+     "to": 19
+    },
+    {
+     "part": "front_wing",
+     "param": "aoa_deg",
+     "from": 27.5,
+     "to": 28.5
+    },
+    {
+     "part": "setup",
+     "param": "roll_front",
+     "from": 55,
+     "to": 52
+    }
+   ],
+   "head_lap_s": 88.267,
+   "ms": 618,
+   "answer": "```json\n{\n  \"changes\": [\n    {\n      \"part\": \"rear_wing\",\n      \"param\": \"aoa_deg\",\n      \"to\": 19.2\n    },\n    {\n      \"part\": \"front_wing\",\n      \"param\": \"aoa_deg\",\n      \"to\": 28.5\n    },\n    {\n      \"part\": \"setup\",\n      \"param\": \"roll_front\",\n      \"to\": 52\n    }\n  ],\n  \"hypothesis\": \"Increase front wing AoA for Copse-Maggotts grip, reduce rear wing AoA to recover high-speed efficiency, soften roll stiffness for mid-corner balance.\",\n  \"expected\": {\n    \"lap_delta_s\": -1,\n    \"sector\": 1\n  }\n}\n```",
+   "mubit_request_id": "mreq_01a16e6f674875a2b7d63978900baabc",
+   "model": "claude-haiku-4-5-20251001",
+   "input_tokens": 1086,
+   "output_tokens": 201,
+   "latency_ms": 2287
+  },
+  {
+   "phase": "late",
+   "id": "q09",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.286,
+    "lap_s": 88.105,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.017,
+    "d_lap_s": -0.017,
+    "lap_s": 87.802,
+    "from": "candidate",
+    "best_change": "front_wing.aoa_deg 31.5->31; setup.roll_front 52->50; rear_wing.span_mm 1100->1110",
+    "screened": 2997,
+    "physics_laps": 32
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 22.5,
+     "to": 21
+    },
+    {
+     "part": "front_wing",
+     "param": "aoa_deg",
+     "from": 31.5,
+     "to": 30.5
+    },
+    {
+     "part": "setup",
+     "param": "roll_front",
+     "from": 52,
+     "to": 48
+    }
+   ],
+   "head_lap_s": 87.819,
+   "ms": 629,
+   "answer": "```json\n{\n  \"changes\": [\n    {\n      \"part\": \"rear_wing\",\n      \"param\": \"aoa_deg\",\n      \"to\": 21.0\n    },\n    {\n      \"part\": \"front_wing\",\n      \"param\": \"aoa_deg\",\n      \"to\": 30.5\n    },\n    {\n      \"part\": \"setup\",\n      \"param\": \"roll_front\",\n      \"to\": 48\n    }\n  ],\n  \"hypothesis\": \"Reduce rear wing AoA to cut high-speed drag (Maggotts-Becketts loss), lower front wing AoA for balance, soften roll stiffness to improve mid-corner grip and Luffield/Vale-Club entry.\",\n  \"expected\": {\n    \"lap_delta_s\": -1,\n    \"sector\": 2\n  }\n}\n```",
+   "mubit_request_id": "mreq_01a16e6f6ff072a2ab02cbef74a74ca7",
+   "model": "claude-haiku-4-5-20251001",
+   "input_tokens": 1059,
+   "output_tokens": 213,
+   "latency_ms": 2566
+  },
+  {
+   "phase": "early",
+   "id": "q10",
+   "parsed": true,
+   "legal": false,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.093,
+    "lap_s": 88.628,
+    "from": "projected"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.064,
+    "d_lap_s": -0.064,
+    "lap_s": 88.471,
+    "from": "candidate",
+    "best_change": "rear_wing.aoa_deg 19->18.5; diffuser.expansion_deg 15->16; floor.throat_mm 60->59; rear_wing.chord_mm 405->415",
+    "screened": 2996,
+    "physics_laps": 33
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 19,
+     "to": 20.5
+    },
+    {
+     "part": "diffuser",
+     "param": "expansion_deg",
+     "from": 15,
+     "to": 16
+    },
+    {
+     "part": "floor",
+     "param": "throat_mm",
+     "from": 60,
+     "to": 55
+    }
+   ],
+   "head_lap_s": 88.535,
+   "articles": [
+    "PKG-FLOOR-STALL"
+   ],
+   "ms": 588,
+   "answer": "```json\n{\n  \"changes\": [\n    {\n      \"part\": \"rear_wing\",\n      \"param\": \"aoa_deg\",\n      \"to\": 20.5\n    },\n    {\n      \"part\": \"diffuser\",\n      \"param\": \"expansion_deg\",\n      \"to\": 16\n    },\n    {\n      \"part\": \"floor\",\n      \"param\": \"throat_mm\",\n      \"to\": 55\n    }\n  ],\n  \"hypothesis\": \"Increase rear wing AoA for high-speed stability, expand diffuser further for low-speed downforce, reduce floor throat for ground effect efficiency in slow corners.\",\n  \"expected\": {\n    \"lap_delta_s\": -1,\n    \"sector\": 2\n  }\n}\n```",
+   "mubit_request_id": "mreq_01a16e6f70387fe1a04023c9ae70dd1d",
+   "model": "claude-haiku-4-5-20251001",
+   "input_tokens": 1049,
+   "output_tokens": 188,
+   "latency_ms": 2362
+  },
+  {
+   "phase": "mid",
+   "id": "q11",
+   "parsed": true,
+   "legal": false,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.041,
+    "lap_s": 88.266,
+    "from": "projected"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.191,
+    "d_lap_s": -0.191,
+    "lap_s": 88.034,
+    "from": "candidate",
+    "best_change": "rear_wing.aoa_deg 20.5->23; floor.throat_mm 60->59; setup.brake_bias 57.75->59; diffuser.expansion_deg 17->16.5; front_wing.aoa_deg 28.5->31; rear_wing.span_mm 1100->1090",
+    "screened": 2994,
+    "physics_laps": 34
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 20.5,
+     "to": 21.5
+    },
+    {
+     "part": "floor",
+     "param": "throat_mm",
+     "from": 60,
+     "to": 55
+    },
+    {
+     "part": "setup",
+     "param": "brake_bias",
+     "from": 57.75,
+     "to": 58.5
+    }
+   ],
+   "head_lap_s": 88.225,
+   "articles": [
+    "PKG-FLOOR-STALL"
+   ],
+   "ms": 590,
+   "answer": "```json\n{\n  \"changes\": [\n    {\n      \"part\": \"rear_wing\",\n      \"param\": \"aoa_deg\",\n      \"to\": 21.5\n    },\n    {\n      \"part\": \"floor\",\n      \"param\": \"throat_mm\",\n      \"to\": 55\n    },\n    {\n      \"part\": \"setup\",\n      \"param\": \"brake_bias\",\n      \"to\": 58.5\n    }\n  ],\n  \"hypothesis\": \"Increase rear wing AoA for mid-speed grip, reduce floor throat for diffuser efficiency, adjust brake bias for braking stability at Silverstone's high-speed corners.\",\n  \"expected\": {\n    \"lap_delta_s\": -1,\n    \"sector\": 2\n  }\n}\n```",
+   "mubit_request_id": "mreq_01a16e6f79717ed2bfb30673760acf5e",
+   "model": "claude-haiku-4-5-20251001",
+   "input_tokens": 1050,
+   "output_tokens": 192,
+   "latency_ms": 2200
+  },
+  {
+   "phase": "late",
+   "id": "q12",
+   "parsed": true,
+   "legal": false,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.005,
+    "lap_s": 87.751,
+    "from": "projected"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.006,
+    "d_lap_s": -0.006,
+    "lap_s": 87.74,
+    "from": "alone",
+    "best_change": "setup.brake_bias 57.5->58",
+    "screened": 2979,
+    "physics_laps": 27
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "endplate_top_mm",
+     "from": 880,
+     "to": 875
+    },
+    {
+     "part": "setup",
+     "param": "brake_bias",
+     "from": 57.5,
+     "to": 56.5
+    },
+    {
+     "part": "sidepods",
+     "param": "inlet_cm2",
+     "from": 650,
+     "to": 640
+    }
+   ],
+   "head_lap_s": 87.746,
+   "articles": [
+    "PKG-COOLING"
+   ],
+   "ms": 478,
+   "answer": "```json\n{\n  \"changes\": [\n    {\n      \"part\": \"rear_wing\",\n      \"param\": \"endplate_top_mm\",\n      \"to\": 875\n    },\n    {\n      \"part\": \"setup\",\n      \"param\": \"brake_bias\",\n      \"to\": 56.5\n    },\n    {\n      \"part\": \"sidepods\",\n      \"param\": \"inlet_cm2\",\n      \"to\": 640\n    }\n  ],\n  \"hypothesis\": \"Reduce rear endplate height for lower drag, shift brake bias forward for better turn-in at Silverstone's high-speed corners, decrease sidepod inlet for aerodynamic efficiency.\",\n  \"expected\": {\n    \"lap_delta_s\": -1,\n    \"sector\": 2\n  }\n}\n```",
+   "mubit_request_id": "mreq_01a16e6f79f87f22bda5b9b6616bd0f0",
+   "model": "claude-haiku-4-5-20251001",
+   "input_tokens": 1083,
+   "output_tokens": 197,
+   "latency_ms": 2331
+  },
+  {
+   "phase": "early",
+   "id": "q13",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.089,
+    "lap_s": 88.746,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.171,
+    "d_lap_s": -0.171,
+    "lap_s": 88.486,
+    "from": "candidate",
+    "best_change": "floor.ride_height_mm 35->34; rear_wing.aoa_deg 20->18.5; suspension.front 0->1",
+    "screened": 2978,
+    "physics_laps": 32
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "ride_height_mm",
+     "from": 35,
+     "to": 34.5
+    },
+    {
+     "part": "diffuser",
+     "param": "expansion_deg",
+     "from": 15.5,
+     "to": 16
+    },
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 20,
+     "to": 21
+    }
+   ],
+   "head_lap_s": 88.657,
+   "ms": 467,
+   "answer": "```json\n{\n  \"changes\": [\n    {\n      \"part\": \"floor\",\n      \"param\": \"ride_height_mm\",\n      \"to\": 34.5\n    },\n    {\n      \"part\": \"diffuser\",\n      \"param\": \"expansion_deg\",\n      \"to\": 16.0\n    },\n    {\n      \"part\": \"rear_wing\",\n      \"param\": \"aoa_deg\",\n      \"to\": 21\n    }\n  ],\n  \"hypothesis\": \"Lower ride height increases floor stall efficiency; steeper diffuser expansion enhances rear downforce; rear wing AoA increase compensates drag while maintaining balance.\",\n  \"expected\": {\n    \"lap_delta_s\": -1,\n    \"sector\": 3\n  }\n}\n```",
+   "mubit_request_id": "mreq_01a16e6f820b7882a6dd087673b0038a",
+   "model": "claude-haiku-4-5-20251001",
+   "input_tokens": 1063,
+   "output_tokens": 190,
+   "latency_ms": 2270
+  },
+  {
+   "phase": "mid",
+   "id": "q14",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.005,
+    "lap_s": 88.29,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.304,
+    "d_lap_s": -0.304,
+    "lap_s": 87.981,
+    "from": "candidate",
+    "best_change": "rear_wing.span_mm 1110->1140; floor.throat_mm 62.5->61; front_wing.aoa_deg 27->30; diffuser.expansion_deg 16->16.5; rear_wing.aoa_deg 20->21.5; rear_wing.elements 2->3",
+    "screened": 2980,
+    "physics_laps": 33
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "span_mm",
+     "from": 1110,
+     "to": 1130
+    },
+    {
+     "part": "floor",
+     "param": "throat_mm",
+     "from": 62.5,
+     "to": 61.5
+    },
+    {
+     "part": "front_wing",
+     "param": "aoa_deg",
+     "from": 27,
+     "to": 28
+    }
+   ],
+   "head_lap_s": 88.285,
+   "ms": 463,
+   "answer": "```json\n{\n  \"changes\": [\n    {\n      \"part\": \"rear_wing\",\n      \"param\": \"span_mm\",\n      \"to\": 1130\n    },\n    {\n      \"part\": \"floor\",\n      \"param\": \"throat_mm\",\n      \"to\": 61.5\n    },\n    {\n      \"part\": \"front_wing\",\n      \"param\": \"aoa_deg\",\n      \"to\": 28\n    }\n  ],\n  \"hypothesis\": \"Increase rear wing span for high-speed stability, open floor throat for diffuser efficiency, raise front wing AoA for corner grip without exceeding limits.\",\n  \"expected\": {\n    \"lap_delta_s\": -1,\n    \"sector\": 2\n  }\n}\n```",
+   "mubit_request_id": "mreq_01a16e6f831174f39774ec5a46d1c21f",
+   "model": "claude-haiku-4-5-20251001",
+   "input_tokens": 1084,
+   "output_tokens": 188,
+   "latency_ms": 2255
+  },
+  {
+   "phase": "late",
+   "id": "q15",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.112,
+    "lap_s": 87.759,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.033,
+    "d_lap_s": -0.033,
+    "lap_s": 87.614,
+    "from": "candidate",
+    "best_change": "setup.brake_bias 57.75->58; gearbox.top_kmh 336->341; rear_wing.chord_mm 390->385",
+    "screened": 2981,
+    "physics_laps": 32
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 22.5,
+     "to": 23.5
+    },
+    {
+     "part": "setup",
+     "param": "brake_bias",
+     "from": 57.75,
+     "to": 58.25
+    },
+    {
+     "part": "gearbox",
+     "param": "top_kmh",
+     "from": 336,
+     "to": 338
+    }
+   ],
+   "head_lap_s": 87.647,
+   "ms": 869,
+   "answer": "```json\n{\n  \"changes\": [\n    {\n      \"part\": \"rear_wing\",\n      \"param\": \"aoa_deg\",\n      \"to\": 23.5\n    },\n    {\n      \"part\": \"setup\",\n      \"param\": \"brake_bias\",\n      \"to\": 58.25\n    },\n    {\n      \"part\": \"gearbox\",\n      \"param\": \"top_kmh\",\n      \"to\": 338\n    }\n  ],\n  \"hypothesis\": \"Increase rear wing AoA for mid-speed corner grip, raise brake bias for stability, raise top speed for straights. Avoid floor/diffuser/front wing limits.\",\n  \"expected\": {\n    \"lap_delta_s\": -1,\n    \"sector\": 2\n  }\n}\n```",
+   "mubit_request_id": "mreq_01a16e6f8aeb73f292b70cfc0bc16903",
+   "model": "claude-haiku-4-5-20251001",
+   "input_tokens": 1048,
+   "output_tokens": 195,
+   "latency_ms": 2344
+  },
+  {
+   "phase": "early",
+   "id": "q16",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.025,
+    "d_lap_s": -0.025,
+    "lap_s": 88.487,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.214,
+    "d_lap_s": -0.214,
+    "lap_s": 88.298,
+    "from": "candidate",
+    "best_change": "rear_wing.aoa_deg 19->20; diffuser.expansion_deg 14->16.5; setup.brake_bias 57->55.75; front_wing.aoa_deg 27.5->29.5; rear_wing.chord_mm 420->425",
+    "screened": 2985,
+    "physics_laps": 33
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 19,
+     "to": 18.5
+    },
+    {
+     "part": "diffuser",
+     "param": "expansion_deg",
+     "from": 14,
+     "to": 15
+    },
+    {
+     "part": "setup",
+     "param": "brake_bias",
+     "from": 57,
+     "to": 56
+    }
+   ],
+   "head_lap_s": 88.512,
+   "ms": 655,
+   "answer": "```json\n{\n  \"changes\": [\n    {\n      \"part\": \"rear_wing\",\n      \"param\": \"aoa_deg\",\n      \"to\": 18.5\n    },\n    {\n      \"part\": \"diffuser\",\n      \"param\": \"expansion_deg\",\n      \"to\": 15\n    },\n    {\n      \"part\": \"setup\",\n      \"param\": \"brake_bias\",\n      \"to\": 56\n    }\n  ],\n  \"hypothesis\": \"Reduce rear wing AoA for lower drag on straights; increase diffuser expansion for better low-speed downforce; shift brake bias forward to improve braking stability into high-speed corners.\",\n  \"expected\": {\n    \"lap_delta_s\": -1,\n    \"sector\": 2\n  }\n}\n```",
+   "mubit_request_id": "mreq_01a16e6f8be175b2847b40d893e7ead2",
+   "model": "claude-haiku-4-5-20251001",
+   "input_tokens": 1044,
+   "output_tokens": 194,
+   "latency_ms": 2304
+  },
+  {
+   "phase": "mid",
+   "id": "q17",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.121,
+    "d_lap_s": -0.121,
+    "lap_s": 88.07,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.17,
+    "d_lap_s": -0.17,
+    "lap_s": 88.021,
+    "from": "candidate",
+    "best_change": "rear_wing.aoa_deg 19.5->20.5; front_wing.aoa_deg 30->32; floor.throat_mm 57->56.5; rear_wing.chord_mm 420->435",
+    "screened": 2994,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 19.5,
+     "to": 20.5
+    },
+    {
+     "part": "front_wing",
+     "param": "aoa_deg",
+     "from": 30,
+     "to": 31
+    },
+    {
+     "part": "floor",
+     "param": "throat_mm",
+     "from": 57,
+     "to": 56.5
+    }
+   ],
+   "head_lap_s": 88.191,
+   "ms": 544,
+   "answer": "```json\n{\n  \"changes\": [\n    {\n      \"part\": \"rear_wing\",\n      \"param\": \"aoa_deg\",\n      \"to\": 20.5\n    },\n    {\n      \"part\": \"front_wing\",\n      \"param\": \"aoa_deg\",\n      \"to\": 31\n    },\n    {\n      \"part\": \"floor\",\n      \"param\": \"throat_mm\",\n      \"to\": 56.5\n    }\n  ],\n  \"hypothesis\": \"Increase rear wing angle for high-speed stability and front wing for corner entry grip; reduce throat for floor stall margin recovery and downforce gain.\",\n  \"expected\": {\n    \"lap_delta_s\": -1,\n    \"sector\": 2\n  }\n}\n```",
+   "mubit_request_id": "mreq_01a16e6f940e7792877360ece743f549",
+   "model": "claude-haiku-4-5-20251001",
+   "input_tokens": 1061,
+   "output_tokens": 188,
+   "latency_ms": 2278
+  },
+  {
+   "phase": "late",
+   "id": "q18",
+   "parsed": true,
+   "legal": false,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.133,
+    "lap_s": 87.928,
+    "from": "projected"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.001,
+    "d_lap_s": -0.001,
+    "lap_s": 87.794,
+    "from": "alone",
+    "best_change": "floor.width_mm 1510->1520",
+    "screened": 2996,
+    "physics_laps": 29
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 21,
+     "to": 22
+    },
+    {
+     "part": "setup",
+     "param": "brake_bias",
+     "from": 58.75,
+     "to": 57.5
+    },
+    {
+     "part": "sidepods",
+     "param": "inlet_cm2",
+     "from": 650,
+     "to": 630
+    }
+   ],
+   "head_lap_s": 87.795,
+   "articles": [
+    "PKG-COOLING"
+   ],
+   "ms": 467,
+   "answer": "```json\n{\n  \"changes\": [\n    {\n      \"part\": \"rear_wing\",\n      \"param\": \"aoa_deg\",\n      \"to\": 22\n    },\n    {\n      \"part\": \"setup\",\n      \"param\": \"brake_bias\",\n      \"to\": 57.5\n    },\n    {\n      \"part\": \"sidepods\",\n      \"param\": \"inlet_cm2\",\n      \"to\": 630\n    }\n  ],\n  \"hypothesis\": \"Reduce rear wing AoA for lower drag on straights; decrease brake bias for better mid-corner speed; tighten sidepod inlet to improve floor efficiency.\",\n  \"expected\": {\n    \"lap_delta_s\": -1,\n    \"sector\": 2\n  }\n}\n```",
+   "mubit_request_id": "mreq_01a16e6f94e072e3b02e490e9ad4b27a",
+   "model": "claude-haiku-4-5-20251001",
+   "input_tokens": 1045,
+   "output_tokens": 191,
+   "latency_ms": 2241
+  },
+  {
+   "phase": "early",
+   "id": "q19",
+   "parsed": true,
+   "legal": false,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.035,
+    "lap_s": 88.626,
+    "from": "projected"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.12,
+    "d_lap_s": -0.12,
+    "lap_s": 88.471,
+    "from": "candidate",
+    "best_change": "rear_wing.aoa_deg 20->19.5; setup.roll_front 48->50; diffuser.expansion_deg 14->15.5; rear_wing.chord_mm 420->405",
+    "screened": 2994,
+    "physics_laps": 33
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 20,
+     "to": 21
+    },
+    {
+     "part": "floor",
+     "param": "ride_height_mm",
+     "from": 35,
+     "to": 33
+    },
+    {
+     "part": "setup",
+     "param": "roll_front",
+     "from": 48,
+     "to": 50
+    }
+   ],
+   "head_lap_s": 88.591,
+   "articles": [
+    "PKG-FLOOR-STALL"
+   ],
+   "ms": 444,
+   "answer": "```json\n{\n  \"changes\": [\n    {\n      \"part\": \"rear_wing\",\n      \"param\": \"aoa_deg\",\n      \"to\": 21\n    },\n    {\n      \"part\": \"floor\",\n      \"param\": \"ride_height_mm\",\n      \"to\": 33\n    },\n    {\n      \"part\": \"setup\",\n      \"param\": \"roll_front\",\n      \"to\": 50\n    }\n  ],\n  \"hypothesis\": \"Increase rear wing angle for high-speed stability and lower floor for ground effect, compensate with front roll stiffness to maintain balance through Maggotts-Becketts.\",\n  \"expected\": {\n    \"lap_delta_s\": -1,\n    \"sector\": 2\n  }\n}\n```",
+   "mubit_request_id": "mreq_01a16e6f9cf573a2b2097ff804cc8982",
+   "model": "claude-haiku-4-5-20251001",
+   "input_tokens": 1069,
+   "output_tokens": 191,
+   "latency_ms": 2359
+  },
+  {
+   "phase": "mid",
+   "id": "q20",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.053,
+    "d_lap_s": -0.053,
+    "lap_s": 88.171,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.184,
+    "d_lap_s": -0.184,
+    "lap_s": 88.04,
+    "from": "candidate",
+    "best_change": "front_wing.aoa_deg 28->30.5; rear_wing.aoa_deg 20->21.5; setup.brake_bias 56.75->57.5",
+    "screened": 2988,
+    "physics_laps": 30
+   },
+   "proposal": [
+    {
+     "part": "front_wing",
+     "param": "aoa_deg",
+     "from": 28,
+     "to": 29
+    },
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 20,
+     "to": 21
+    },
+    {
+     "part": "setup",
+     "param": "brake_bias",
+     "from": 56.75,
+     "to": 57.5
+    }
+   ],
+   "head_lap_s": 88.224,
+   "ms": 480,
+   "answer": "```json\n{\n  \"changes\": [\n    {\n      \"part\": \"front_wing\",\n      \"param\": \"aoa_deg\",\n      \"to\": 29\n    },\n    {\n      \"part\": \"rear_wing\",\n      \"param\": \"aoa_deg\",\n      \"to\": 21\n    },\n    {\n      \"part\": \"setup\",\n      \"param\": \"brake_bias\",\n      \"to\": 57.5\n    }\n  ],\n  \"hypothesis\": \"Increase front wing AoA for high-speed corners (Stowe/Vale), rear wing AoA for exit traction, adjust brake bias for Turn 1 stability.\",\n  \"expected\": {\n    \"lap_delta_s\": -1,\n    \"sector\": 2\n  }\n}\n```",
+   "mubit_request_id": "mreq_01a16e6f9d9e7732ae2ea7bc3dac066b",
+   "model": "claude-haiku-4-5-20251001",
+   "input_tokens": 1078,
+   "output_tokens": 194,
+   "latency_ms": 2174
+  },
+  {
+   "phase": "late",
+   "id": "q21",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.092,
+    "lap_s": 87.743,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.002,
+    "lap_s": 87.653,
+    "from": "candidate",
+    "best_change": "gearbox.top_kmh 336->335",
+    "screened": 2986,
+    "physics_laps": 29
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 22,
+     "to": 23
+    },
+    {
+     "part": "setup",
+     "param": "roll_front",
+     "from": 48,
+     "to": 46
+    },
+    {
+     "part": "gearbox",
+     "param": "top_kmh",
+     "from": 336,
+     "to": 338
+    }
+   ],
+   "head_lap_s": 87.651,
+   "ms": 542,
+   "answer": "```json\n{\n  \"changes\": [\n    {\n      \"part\": \"rear_wing\",\n      \"param\": \"aoa_deg\",\n      \"to\": 23\n    },\n    {\n      \"part\": \"setup\",\n      \"param\": \"roll_front\",\n      \"to\": 46\n    },\n    {\n      \"part\": \"gearbox\",\n      \"param\": \"top_kmh\",\n      \"to\": 338\n    }\n  ],\n  \"hypothesis\": \"Increase rear wing angle for better high-speed stability and reduce front roll stiffness for improved mid-corner grip; adjust top speed for optimal acceleration balance.\",\n  \"expected\": {\n    \"lap_delta_s\": -1,\n    \"sector\": 2\n  }\n}\n```",
+   "mubit_request_id": "mreq_01a16e6fa74b7ee2b70eceee7292cdff",
+   "model": "claude-haiku-4-5-20251001",
+   "input_tokens": 1091,
+   "output_tokens": 186,
+   "latency_ms": 2190
+  },
+  {
+   "phase": "early",
+   "id": "q22",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.109,
+    "lap_s": 88.6,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.034,
+    "d_lap_s": -0.034,
+    "lap_s": 88.457,
+    "from": "candidate",
+    "best_change": "front_wing.sm_delta_deg 4->5; setup.brake_bias 57->58; rear_wing.chord_mm 420->415",
+    "screened": 2994,
+    "physics_laps": 32
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 17.5,
+     "to": 16.5
+    },
+    {
+     "part": "front_wing",
+     "param": "sm_delta_deg",
+     "from": 4,
+     "to": 5
+    },
+    {
+     "part": "setup",
+     "param": "brake_bias",
+     "from": 57,
+     "to": 56
+    }
+   ],
+   "head_lap_s": 88.491,
+   "ms": 562,
+   "answer": "```json\n{\n  \"changes\": [\n    {\n      \"part\": \"rear_wing\",\n      \"param\": \"aoa_deg\",\n      \"to\": 16.5\n    },\n    {\n      \"part\": \"front_wing\",\n      \"param\": \"sm_delta_deg\",\n      \"to\": 5\n    },\n    {\n      \"part\": \"setup\",\n      \"param\": \"brake_bias\",\n      \"to\": 56\n    }\n  ],\n  \"hypothesis\": \"Reduce rear wing AoA for lower drag on straights; increase front wing SM for better turn-in; lower brake bias to improve braking stability at high-speed corners.\",\n  \"expected\": {\n    \"lap_delta_s\": -1,\n    \"sector\": 2\n  }\n}\n```",
+   "mubit_request_id": "mreq_01a16e6fa62a7a51b54bca0e4c5efdc0",
+   "model": "claude-haiku-4-5-20251001",
+   "input_tokens": 1069,
+   "output_tokens": 194,
+   "latency_ms": 2170
+  },
+  {
+   "phase": "mid",
+   "id": "q23",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.139,
+    "d_lap_s": -0.139,
+    "lap_s": 88.008,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.316,
+    "d_lap_s": -0.316,
+    "lap_s": 87.831,
+    "from": "candidate",
+    "best_change": "rear_wing.aoa_deg 18.5->21; front_wing.aoa_deg 27->30; setup.roll_front 55->46; rear_wing.span_mm 1100->1110; rear_wing.chord_mm 405->410",
+    "screened": 2995,
+    "physics_laps": 32
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 18.5,
+     "to": 19.5
+    },
+    {
+     "part": "front_wing",
+     "param": "aoa_deg",
+     "from": 27,
+     "to": 28
+    },
+    {
+     "part": "setup",
+     "param": "roll_front",
+     "from": 55,
+     "to": 50
+    }
+   ],
+   "head_lap_s": 88.147,
+   "ms": 523,
+   "answer": "```json\n{\n  \"changes\": [\n    {\n      \"part\": \"rear_wing\",\n      \"param\": \"aoa_deg\",\n      \"to\": 19.5\n    },\n    {\n      \"part\": \"front_wing\",\n      \"param\": \"aoa_deg\",\n      \"to\": 28\n    },\n    {\n      \"part\": \"setup\",\n      \"param\": \"roll_front\",\n      \"to\": 50\n    }\n  ],\n  \"hypothesis\": \"Increase rear wing and front wing AoA for more downforce in high-speed corners; reduce front roll stiffness to improve mid-corner balance and reduce understeer.\",\n  \"expected\": {\n    \"lap_delta_s\": -1,\n    \"sector\": 2\n  }\n}\n```",
+   "mubit_request_id": "mreq_01a16e6fafd974b3b5c92664c6dab56d",
+   "model": "claude-haiku-4-5-20251001",
+   "input_tokens": 1064,
+   "output_tokens": 192,
+   "latency_ms": 2515
+  },
+  {
+   "phase": "late",
+   "id": "q24",
+   "parsed": true,
+   "legal": false,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.051,
+    "lap_s": 87.684,
+    "from": "projected"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.009,
+    "d_lap_s": -0.009,
+    "lap_s": 87.624,
+    "from": "candidate",
+    "best_change": "rear_wing.aoa_deg 20.5->21; setup.roll_front 50.5->48; floor.width_mm 1540->1530; rear_wing.chord_mm 400->390",
+    "screened": 2995,
+    "physics_laps": 33
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 20.5,
+     "to": 21
+    },
+    {
+     "part": "setup",
+     "param": "roll_front",
+     "from": 50.5,
+     "to": 48.5
+    },
+    {
+     "part": "sidepods",
+     "param": "inlet_cm2",
+     "from": 680,
+     "to": 670
+    }
+   ],
+   "head_lap_s": 87.633,
+   "articles": [
+    "PKG-COOLING"
+   ],
+   "ms": 671,
+   "answer": "```json\n{\n  \"changes\": [\n    {\n      \"part\": \"rear_wing\",\n      \"param\": \"aoa_deg\",\n      \"to\": 21.2\n    },\n    {\n      \"part\": \"setup\",\n      \"param\": \"roll_front\",\n      \"to\": 48.5\n    },\n    {\n      \"part\": \"sidepods\",\n      \"param\": \"inlet_cm2\",\n      \"to\": 665\n    }\n  ],\n  \"hypothesis\": \"Increase rear wing angle for high-speed corners (Maggotts-Becketts), reduce front roll stiffness for mid-corner grip, optimize sidepod cooling inlet for aero efficiency.\",\n  \"expected\": {\n    \"lap_delta_s\": -1,\n    \"sector\": 2\n  }\n}\n```",
+   "mubit_request_id": "mreq_01a16e6faeab7770a0e4efc7e15de33b",
+   "model": "claude-haiku-4-5-20251001",
+   "input_tokens": 1064,
+   "output_tokens": 201,
+   "latency_ms": 2431
+  },
+  {
+   "phase": "early",
+   "id": "q25",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.164,
+    "lap_s": 88.668,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.038,
+    "d_lap_s": -0.038,
+    "lap_s": 88.466,
+    "from": "candidate",
+    "best_change": "front_wing.sm_delta_deg 4->5; setup.brake_bias 57->58; rear_wing.chord_mm 420->415",
+    "screened": 2994,
+    "physics_laps": 32
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 17.5,
+     "to": 16.5
+    },
+    {
+     "part": "front_wing",
+     "param": "sm_delta_deg",
+     "from": 4,
+     "to": 5
+    },
+    {
+     "part": "setup",
+     "param": "brake_bias",
+     "from": 57,
+     "to": 56
+    }
+   ],
+   "head_lap_s": 88.504,
+   "ms": 503,
+   "answer": "```json\n{\n  \"changes\": [\n    {\n      \"part\": \"rear_wing\",\n      \"param\": \"aoa_deg\",\n      \"to\": 16.5\n    },\n    {\n      \"part\": \"front_wing\",\n      \"param\": \"sm_delta_deg\",\n      \"to\": 5\n    },\n    {\n      \"part\": \"setup\",\n      \"param\": \"brake_bias\",\n      \"to\": 56\n    }\n  ],\n  \"hypothesis\": \"Reduce rear wing AoA for lower drag on straights; increase front wing SM for better turn-in stability; lower brake bias to improve braking efficiency at high-speed corners.\",\n  \"expected\": {\n    \"lap_delta_s\": -1,\n    \"sector\": 2\n  }\n}\n```",
+   "mubit_request_id": "mreq_01a16e6fb83d7451ad853a0acd9a69e4",
+   "model": "claude-haiku-4-5-20251001",
+   "input_tokens": 1052,
+   "output_tokens": 195,
+   "latency_ms": 2258
+  },
+  {
+   "phase": "mid",
+   "id": "q26",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.046,
+    "d_lap_s": -0.046,
+    "lap_s": 88.281,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.24,
+    "d_lap_s": -0.24,
+    "lap_s": 88.087,
+    "from": "candidate",
+    "best_change": "diffuser.expansion_deg 14.5->15.5; setup.roll_front 52->50.5; front_wing.aoa_deg 27.5->29.5; rear_wing.span_mm 1100->1120; rear_wing.chord_mm 420->430",
+    "screened": 2997,
+    "physics_laps": 33
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 19.5,
+     "to": 18.5
+    },
+    {
+     "part": "diffuser",
+     "param": "expansion_deg",
+     "from": 14.5,
+     "to": 15.5
+    },
+    {
+     "part": "setup",
+     "param": "roll_front",
+     "from": 52,
+     "to": 48
+    }
+   ],
+   "head_lap_s": 88.327,
+   "ms": 501,
+   "answer": "```json\n{\n  \"changes\": [\n    {\n      \"part\": \"rear_wing\",\n      \"param\": \"aoa_deg\",\n      \"to\": 18.5\n    },\n    {\n      \"part\": \"diffuser\",\n      \"param\": \"expansion_deg\",\n      \"to\": 15.5\n    },\n    {\n      \"part\": \"setup\",\n      \"param\": \"roll_front\",\n      \"to\": 48\n    }\n  ],\n  \"hypothesis\": \"Reduce rear wing AoA for lower drag on straights; increase diffuser expansion for better low-speed downforce; soften front roll for improved mid-corner balance.\",\n  \"expected\": {\n    \"lap_delta_s\": -1,\n    \"sector\": 2\n  }\n}\n```",
+   "mubit_request_id": "mreq_01a16e6fb87c7eb2b63f4f0dc19f6670",
+   "model": "claude-haiku-4-5-20251001",
+   "input_tokens": 1084,
+   "output_tokens": 192,
+   "latency_ms": 2334
+  },
+  {
+   "phase": "late",
+   "id": "q27",
+   "parsed": true,
+   "legal": false,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0,
+    "lap_s": 87.756,
+    "from": "projected"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.002,
+    "d_lap_s": -0.002,
+    "lap_s": 87.754,
+    "from": "candidate",
+    "best_change": "floor.width_mm 1510->1500",
+    "screened": 2992,
+    "physics_laps": 30
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 22,
+     "to": 21.5
+    },
+    {
+     "part": "setup",
+     "param": "brake_bias",
+     "from": 58.25,
+     "to": 57.75
+    },
+    {
+     "part": "sidepods",
+     "param": "inlet_cm2",
+     "from": 650,
+     "to": 640
+    }
+   ],
+   "head_lap_s": 87.756,
+   "articles": [
+    "PKG-COOLING"
+   ],
+   "ms": 491,
+   "answer": "```json\n{\n  \"changes\": [\n    {\n      \"part\": \"rear_wing\",\n      \"param\": \"aoa_deg\",\n      \"to\": 21.5\n    },\n    {\n      \"part\": \"setup\",\n      \"param\": \"brake_bias\",\n      \"to\": 57.75\n    },\n    {\n      \"part\": \"sidepods\",\n      \"param\": \"inlet_cm2\",\n      \"to\": 640\n    }\n  ],\n  \"hypothesis\": \"Reduce rear wing AoA for lower drag on straights, adjust brake bias for better mid-corner stability, reduce sidepod inlet for aerodynamic efficiency.\",\n  \"expected\": {\n    \"lap_delta_s\": -1,\n    \"sector\": 2\n  }\n}\n```",
+   "mubit_request_id": "mreq_01a16e6fc0fe7e318ea7932e2481b381",
+   "model": "claude-haiku-4-5-20251001",
+   "input_tokens": 1067,
+   "output_tokens": 192,
+   "latency_ms": 2254
+  },
+  {
+   "phase": "early",
+   "id": "q28",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.127,
+    "lap_s": 88.662,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.031,
+    "d_lap_s": -0.031,
+    "lap_s": 88.504,
+    "from": "candidate",
+    "best_change": "diffuser.expansion_deg 15.5->16.5; rear_wing.span_mm 1120->1100; rear_wing.endplate_top_mm 855->870",
+    "screened": 2967,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "chord_mm",
+     "from": 415,
+     "to": 420
+    },
+    {
+     "part": "diffuser",
+     "param": "expansion_deg",
+     "from": 15.5,
+     "to": 14
+    },
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 18.5,
+     "to": 19
+    }
+   ],
+   "head_lap_s": 88.535,
+   "ms": 563,
+   "answer": "```json\n{\n  \"changes\": [\n    {\n      \"part\": \"rear_wing\",\n      \"param\": \"chord_mm\",\n      \"to\": 420\n    },\n    {\n      \"part\": \"diffuser\",\n      \"param\": \"expansion_deg\",\n      \"to\": 14.0\n    },\n    {\n      \"part\": \"rear_wing\",\n      \"param\": \"aoa_deg\",\n      \"to\": 19.0\n    }\n  ],\n  \"hypothesis\": \"Increase rear wing chord and reduce diffuser expansion to balance downforce distribution; raise rear wing AoA for high-speed stability at Silverstone's fast corners.\",\n  \"expected\": {\n    \"lap_delta_s\": -1,\n    \"sector\": 2\n  }\n}\n```",
+   "mubit_request_id": "mreq_01a16e6fc19c7311a7da0ca60cf12a33",
+   "model": "claude-haiku-4-5-20251001",
+   "input_tokens": 1046,
+   "output_tokens": 192,
+   "latency_ms": 2252
+  },
+  {
+   "phase": "mid",
+   "id": "q29",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.077,
+    "d_lap_s": -0.077,
+    "lap_s": 88.147,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.218,
+    "d_lap_s": -0.218,
+    "lap_s": 88.006,
+    "from": "candidate",
+    "best_change": "rear_wing.aoa_deg 19.5->21.5; front_wing.aoa_deg 27.5->30; setup.brake_bias 57->59; rear_wing.span_mm 1110->1120",
+    "screened": 2994,
+    "physics_laps": 32
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 19.5,
+     "to": 20.5
+    },
+    {
+     "part": "front_wing",
+     "param": "aoa_deg",
+     "from": 27.5,
+     "to": 28.5
+    },
+    {
+     "part": "setup",
+     "param": "brake_bias",
+     "from": 57,
+     "to": 58
+    }
+   ],
+   "head_lap_s": 88.224,
+   "ms": 457,
+   "answer": "```json\n{\n  \"changes\": [\n    {\n      \"part\": \"rear_wing\",\n      \"param\": \"aoa_deg\",\n      \"to\": 20.5\n    },\n    {\n      \"part\": \"front_wing\",\n      \"param\": \"aoa_deg\",\n      \"to\": 28.5\n    },\n    {\n      \"part\": \"setup\",\n      \"param\": \"brake_bias\",\n      \"to\": 58\n    }\n  ],\n  \"hypothesis\": \"Increase rear wing AoA for high-speed stability and front wing AoA within legal margin; adjust brake bias for better corner entry at Silverstone's fast sections.\",\n  \"expected\": {\n    \"lap_delta_s\": -1,\n    \"sector\": 2\n  }\n}\n```",
+   "mubit_request_id": "mreq_01a16e6fcaf97a33b6cc9b9565153132",
+   "model": "claude-haiku-4-5-20251001",
+   "input_tokens": 1089,
+   "output_tokens": 194,
+   "latency_ms": 2696
+  },
+  {
+   "phase": "late",
+   "id": "q30",
+   "parsed": true,
+   "legal": false,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.049,
+    "lap_s": 87.71,
+    "from": "projected"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.013,
+    "d_lap_s": -0.013,
+    "lap_s": 87.648,
+    "from": "candidate",
+    "best_change": "rear_wing.aoa_deg 22.5->23; setup.roll_front 52.5->47.5; rear_wing.chord_mm 390->385",
+    "screened": 2996,
+    "physics_laps": 27
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 22.5,
+     "to": 23.5
+    },
+    {
+     "part": "setup",
+     "param": "roll_front",
+     "from": 52.5,
+     "to": 50
+    },
+    {
+     "part": "sidepods",
+     "param": "inlet_cm2",
+     "from": 650,
+     "to": 640
+    }
+   ],
+   "head_lap_s": 87.661,
+   "articles": [
+    "PKG-COOLING"
+   ],
+   "ms": 386,
+   "answer": "```json\n{\n  \"changes\": [\n    {\n      \"part\": \"rear_wing\",\n      \"param\": \"aoa_deg\",\n      \"to\": 23.5\n    },\n    {\n      \"part\": \"setup\",\n      \"param\": \"roll_front\",\n      \"to\": 50.0\n    },\n    {\n      \"part\": \"sidepods\",\n      \"param\": \"inlet_cm2\",\n      \"to\": 640\n    }\n  ],\n  \"hypothesis\": \"Increase rear wing AoA for high-speed corners, reduce front roll stiffness for mid-corner grip, lower sidepod inlet for drag reduction on straights.\",\n  \"expected\": {\n    \"lap_delta_s\": -1,\n    \"sector\": 2\n  }\n}\n```",
+   "mubit_request_id": "mreq_01a16e6fca6771e3a38ab00d63c7983a",
+   "model": "claude-haiku-4-5-20251001",
+   "input_tokens": 1083,
+   "output_tokens": 194,
+   "latency_ms": 2286
+  }
+ ]
+}
