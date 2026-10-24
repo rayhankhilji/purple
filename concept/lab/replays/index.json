@@ -1,0 +1,58 @@
+{
+ "format": "purple-replay/1",
+ "built_at": "2026-10-24T12:49:55.201Z",
+ "note": "recorded LIVE Mubit runs (real x-middleware-request-id values); replayed in the browser, not re-run; mock runs are never listed",
+ "runs": [
+  {
+   "name": "trained-hybrid-seed41",
+   "kind": "hybrid-v1",
+   "engine": "engine v1 · hybrid: Mubit proposes → local search of physics laps → kept by the numbers",
+   "recorded_at": "2026-10-24T10:23:04.370Z",
+   "calls": 35,
+   "trained": true,
+   "model": "claude-haiku-4-5-20251001",
+   "decisions": 45,
+   "baseline_lap_s": 88.763,
+   "peak_lap_s": 87.282,
+   "gap_to_pole_s": -0.829,
+   "directed_gain_share": 0.128,
+   "first_request_id": "mreq_01a16d6f799078c19eb11c6317caaec2",
+   "last_request_id": "mreq_01a16d74d1ae74308535f5838feb7cac",
+   "file": "trained-hybrid-seed41.json"
+  },
+  {
+   "name": "trained-hybrid-seed42",
+   "kind": "hybrid-v1",
+   "engine": "engine v1 · hybrid: Mubit proposes → local search of physics laps → kept by the numbers",
+   "recorded_at": "2026-10-24T12:37:44.990Z",
+   "calls": 18,
+   "trained": true,
+   "model": "claude-haiku-4-5-20251001",
+   "decisions": 18,
+   "baseline_lap_s": 88.763,
+   "peak_lap_s": 87.683,
+   "gap_to_pole_s": -0.428,
+   "directed_gain_share": 0.068,
+   "first_request_id": "mreq_01a16deac8447291a29a0de773dfc708",
+   "last_request_id": "mreq_01a16decc7d37392aa3ca9efc0533cfa",
+   "file": "trained-hybrid-seed42.json"
+  },
+  {
+   "name": "trained-seed29",
+   "kind": "loop-v1",
+   "engine": "designer loop v1: Mubit proposes → one physics lap → kept by the numbers",
+   "recorded_at": null,
+   "calls": 25,
+   "trained": true,
+   "model": "claude-haiku-4-5-20251001",
+   "decisions": 25,
+   "baseline_lap_s": 88.763,
+   "peak_lap_s": 88.292,
+   "gap_to_pole_s": 0.181,
+   "directed_gain_share": 0.766,
+   "first_request_id": "mreq_01a16d50b09677d3b1d3860b346b8aa5",
+   "last_request_id": "mreq_01a16d5189317db193e45d6aad4c6a8f",
+   "file": "trained-seed29.json"
+  }
+ ]
+}

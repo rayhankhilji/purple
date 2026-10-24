@@ -8,7 +8,10 @@
 //   GET  /garage/init?team=     the baseline design, the parameter catalogue, the permitted materials, the baseline lap and ranges
 //   POST /garage/lap            { team, params } -> FIA verdict (articles), physics lap, sectors and per-corner deltas vs the
 //                               baseline (sim contributions), legal range of every parameter (designer scenario ranges()), timings
-//   POST /run                   { mode: "speed" | "auto", ... } -> { run_id, stream } (one engine run at a time)
+//   POST /run                   { mode: "speed" | "auto" | "engineer", ... } -> { run_id, stream } (one engine run at a time);
+//                               "engineer" = engine v2 (concept/engineer/engine.js, docs/concept/ENGINE_V2.md): llm, trained, confirm,
+//                               confirm_text, max_calls, max_decisions, seed, team, variants, confirm_k (K), explore, patience, stop_after,
+//                               workers, resume_from (a finished engineer run of this process) | resume_state (its final state)
 //   POST /run/:id/stop          cooperative stop: the run ends after its current batch; the best car so far is re-scored
 //   GET  /run/:id               the run's state;  GET /run/:id/stream: SSE (snapshot first, then live events, then "end")
 //   GET  /runs                  the runs of this process
@@ -30,11 +33,12 @@ const run = require("../concept/campaign/run.js"), space = require("../concept/c
 const { Pool } = require("../concept/campaign/pool.js"), { localSearch } = require("../concept/campaign/local.js");
 const loop = require("../concept/designer/loop.js"), scenario = require("../concept/designer/scenario.js"), designerPrompt = require("../concept/designer/prompt.js");
 const conceptRoutes = require("./concept.js");
+const engineer = require("../concept/engineer/engine.js"), { ScreenPool } = require("../concept/engineer/screen.js"), { Tree } = require("../concept/engineer/tree.js");
 
 const CIRCUIT = "silverstone";
 const BUDGET_TOTAL = 100000;         // EVAL_GUARDRAILS §4: trained calls, the whole project (research agent + designer); owner raised 250 → 2,500 → 100,000 on 2026-10-24 (own Anthropic key inside Mubit)
 const TRAINED_RUN_CAP = 2000;        // hard cap of trained calls in ONE engine run (= LIMITS.calls max)
-const LIMITS = { evals: [20, 200000], seeds: 8, refine_evals: [0, 20000], combo_evals: [0, 2000], lambda: [4, 64], prescreen: [1, 8], iterations: [1, 500], patience: [1, 200], search_budget: [0, 3000], calls: [1, 2000], pace_ms: [0, 3000] };
+const LIMITS = { evals: [20, 200000], seeds: 8, refine_evals: [0, 20000], combo_evals: [0, 2000], lambda: [4, 64], prescreen: [1, 8], iterations: [1, 500], patience: [1, 200], search_budget: [0, 3000], calls: [1, 2000], pace_ms: [0, 3000], variants: [100, 50000], confirm: [4, 128] };
 const SIM_LABEL = sim.LABEL + " · Silverstone · 2026 British GP qualifying conditions";
 const REAL_LABEL = "real 2026 British GP qualifying · OpenF1 / formula1.com (js/data/racepace2026.js)";
 const r3 = v => (typeof v === "number" && isFinite(v) ? Math.round(v * 1000) / 1000 : null);
@@ -426,6 +430,103 @@ function mount(app, o) {
     return r;
   }
 
+  // ---------- engine v2: the autonomous engineer (concept/engineer/engine.js, docs/concept/ENGINE_V2.md)
+  // Mubit decides what to explore (one designer call per decision), the engine screens thousands of variants of that subspace with
+  // the surrogate, confirms the best on the physics sim, measures interactions, keeps by the numbers and reverts / forks by itself.
+  // Same Mubit rules as "auto": mock by default, live untrained (x-middleware-record: metadata), trained only with the confirmations.
+  function startEngineer(b) {
+    const mode = b.llm == null ? "mock" : b.llm;
+    if (!["mock", "live"].includes(mode)) throw bad("llm must be \"mock\" or \"live\"");
+    if (b.trained !== undefined && typeof b.trained !== "boolean") throw bad("trained must be a boolean");
+    const trained = b.trained === true, team = checkTeam(b.team);
+    const max_calls = int(b, "max_calls", trained ? 10 : mode === "live" ? 20 : 40, LIMITS.calls);
+    const opts = {
+      llm: mode, trained, team: team || "generic", seed: int(b, "seed", 1, [0, 999999]), max_calls, max_decisions: int(b, "max_decisions", max_calls, LIMITS.iterations),
+      patience: int(b, "patience", 3, [1, 10]), stop_after: int(b, "stop_after", 15, LIMITS.patience), variants: int(b, "variants", 3000, LIMITS.variants), confirm: int(b, "confirm_k", 24, LIMITS.confirm),
+      explore: int(b, "explore", 4, [0, 16]), target_lap_s: b.target_lap_s == null ? null : +b.target_lap_s, pace_ms: int(b, "pace_ms", 0, LIMITS.pace_ms),
+      workers: int(b, "workers", o.workers == null ? Math.min(4, os.cpus().length) : o.workers, [0, 16]), resume_from: b.resume_from || null,
+    };
+    if (opts.target_lap_s != null && !(isFinite(opts.target_lap_s) && opts.target_lap_s > 60 && opts.target_lap_s < 120)) throw bad("target_lap_s must be a lap time in s (60-120) or null");
+    if (mode === "live" && o.mock) throw bad("live mode is off: this server runs with MUBIT_MOCK=1 (no Mubit calls). Use llm \"mock\".");
+    if (mode === "live" && !o.mubit && !process.env.MUBIT_API_KEY) throw bad("live mode needs MUBIT_API_KEY in server/.env");
+    let bud = null;
+    if (trained) {
+      if (mode !== "live") throw bad("trained calls are live calls: set llm \"live\"");
+      if (b.confirm !== "trained") throw bad("confirm must be \"trained\": trained designer calls are recorded by Mubit as examples of the designer task");
+      if (max_calls > TRAINED_RUN_CAP) throw bad("max_calls for a trained run is capped at " + TRAINED_RUN_CAP + " (hard per-run cap)", { cap: TRAINED_RUN_CAP });
+      if (b.confirm_text !== "TRAIN " + max_calls) throw bad("type the confirmation exactly: TRAIN " + max_calls);
+      if (designerPrompt.DRAFT) throw bad("trained calls are refused while the designer prompt is a DRAFT");
+      bud = budget();
+      if (bud.remaining < max_calls) throw bad("not enough trained-call budget left: " + bud.remaining + " of " + bud.total + " remain, this run asks for " + max_calls, { budget: bud });
+    }
+    // resume: the state another engineer run of this process saved (state.json), or the state the client kept from a final event
+    let resume = null;
+    if (b.resume_from) {
+      const prev = runs.get(String(b.resume_from));
+      if (!prev || prev.mode !== "engineer" || !prev.engState) throw bad("resume_from: no finished engineer run " + b.resume_from + " in this server process");
+      if (prev.status === "running") throw bad("resume_from: that run is still running");
+      resume = prev.engState;
+    } else if (b.resume_state != null) {
+      try { resume = checkResumeState(b.resume_state); } catch (e) { throw bad("resume_state: " + (e.message || e)); }
+    }
+    if (resume && resume.tree && resume.tree.nodes && resume.tree.nodes[0] && resume.tree.nodes[0].team !== (team || null)) throw bad("resume: the saved run is for another baseline (team)");
+    const dir = mode === "live" ? path.join(o.dataDir, "concept-engine") : tmpBase;
+    const r = newRun("engineer", opts, dir); r.llm = mode; r.trained = trained;
+    const calls = { n: 0 };
+    const write = (f, row) => { try { fs.appendFileSync(path.join(r.dir, f), JSON.stringify(row) + "\n"); } catch (e) { /* fine */ } };
+    fs.writeFileSync(path.join(r.dir, "calls.jsonl"), "");
+    const caller = mode === "mock" ? loop.mockCaller(opts.seed + (resume ? resume.decisions.length : 0)) : conceptRoutes.designerLlm(o.mubit, designerPrompt);   // Mubit only through server/mubit.js
+    const llm = async (text, meta) => {
+      if (calls.n >= max_calls) { const e = new Error("call budget of this run spent"); e.code = "run_cap"; throw e; }
+      calls.n++;
+      const row = { created_at: now(), kind: "design", engine: "engineer-v2", session_id: meta.sessionId, iteration: meta.gen, trained: !!meta.trained, mock: mode === "mock" };
+      const t0 = hr();
+      try { const res = await caller(text, meta); const ms = hr() - t0; timings.add("mubit_call", mode === "mock" ? ms : (res.latency_ms == null ? ms : res.latency_ms), { mode }); write("calls.jsonl", Object.assign(row, { mubit_request_id: res.mubit_request_id, model: res.model, input_tokens: res.input_tokens, output_tokens: res.output_tokens, latency_ms: res.latency_ms == null ? Math.round(ms) : res.latency_ms, status: "ok" })); return res; }
+      catch (e) { write("calls.jsonl", Object.assign(row, { mubit_request_id: e.requestId || null, status: "error", mubit_code: e.code || null, http_status: e.status || null })); throw e; }
+    };
+    const st = r.state;
+    log("concept engine " + r.id + " engineer " + JSON.stringify(opts));
+    const p = new Promise(res => setImmediate(res)).then(async () => {
+      const pool = new Pool(opts.workers), sp = new ScreenPool(opts.workers);
+      try {
+        const res = await engineer.runEngineer({
+          llm, mock: mode === "mock", trained, team, seed: opts.seed, runId: r.id, maxCalls: (resume ? resume.calls || 0 : 0) + max_calls, maxDecisions: (resume ? resume.decisions.length : 0) + opts.max_decisions, patience: opts.patience, stopAfter: opts.stop_after,
+          variants: opts.variants, confirm: opts.confirm, explore: opts.explore, target_lap_s: opts.target_lap_s, pace_ms: opts.pace_ms, pool, screenPool: sp, resume,
+          preview: conceptRoutes.previewer(designerPrompt),
+          shouldStop: () => (r.stopRequested ? (r.stop_reason = r.stop_reason || "stopped by user") : null),
+          onEvent: (type, data) => {
+            if (type === "start") { st.baseline.engineer = data.baseline; st.best.engineer = { lap_s: data.baseline.lap_s }; budgetNote(data); }
+            if (type === "decision") {
+              st.best.engineer = { lap_s: data.peak.lap_s, node: data.peak.node }; st.laps = data.stats.physics_laps; st.rate = data.stats.laps_per_s;
+              write("decisions.jsonl", data.row);
+              Object.assign(data, { calls: calls.n, grid_position: gridOf(data.peak.lap_s) });
+            }
+            if (type === "progress") return r.push("progress", data, false);
+            r.push(type, data);
+          },
+        });
+        r.engState = res.state;
+        try { fs.writeFileSync(path.join(r.dir, "state.json"), JSON.stringify(res.state) + "\n"); fs.writeFileSync(path.join(r.dir, "tree.json"), JSON.stringify(res.tree.compact(["root", "result", "proposal", "projected", "repaired", "candidate", "explore", "alone"])) + "\n"); } catch (e) { /* fine */ }
+        if (!r.stop_reason) r.stop_reason = res.stopped || "decision cap";
+        const base0 = design.baseline(team ? { team } : undefined);
+        let rs = null; try { rs = rescore(Object.assign(design.clone(base0), { params: res.peak.params }), base0, team); } catch (e) { rs = { error: String(e.message || e) }; }
+        r.final = { summary: engineer.summaryOf(res), calls: calls.n, stop_reason: r.stop_reason, rescore: rs, best_params: res.peak.params, tree: res.tree.compact(), resumable: { resume_from: r.id, decisions: res.decisions.length } };
+        r.push("final", Object.assign({ timings: timings.view(), budget: budget() }, r.final));
+      } finally { await pool.close(); await sp.close(); }
+    });
+    function budgetNote(data) { data.budget = bud || budget(); data.machine = { cpus: os.cpus().length, workers: opts.workers }; data.mode = "engineer"; data.llm = mode; }
+    finish(r, p);
+    return r;
+  }
+  // a resume state sent by a client: shape, size and every saved car's parameters are checked (design.validate)
+  function checkResumeState(s) {
+    if (!s || typeof s !== "object" || s.v !== 1 || !s.tree || !Array.isArray(s.decisions)) throw new Error("not an engine v2 state (v 1)");
+    if (JSON.stringify(s).length > 4e6) throw new Error("too large");
+    const t = Tree.fromJSON(s.tree);
+    for (const n of t.nodes) if (n.params) { const v = design.validate({ params: n.params }); if (!v.ok) throw new Error("node " + n.id + ": " + v.errors[0]); }
+    return { v: 1, tree: s.tree, decisions: s.decisions.slice(0, 5000), calls: 0, stats: s.stats && typeof s.stats === "object" ? s.stats : undefined };
+  }
+
   // ---------- routes
   app.get("/api/concept/engine/info", c => ok(c, {
     mock: !!o.mock, live_available: !o.mock && !!(o.mubit || process.env.MUBIT_API_KEY), cpus: os.cpus().length, workers_default: o.workers == null ? Math.min(4, os.cpus().length) : o.workers,
@@ -454,7 +555,7 @@ function mount(app, o) {
     const b = await body(c);
     if (active) throw new ApiError("BAD_INPUT", "an engine run is already running: " + active.id + " (stop it first)", { run_id: active.id });
     const mode = b.mode;
-    const r = mode === "speed" ? startSpeed(b) : mode === "auto" ? startAuto(b) : (() => { throw bad("mode must be \"speed\" or \"auto\""); })();
+    const r = mode === "speed" ? startSpeed(b) : mode === "auto" ? startAuto(b) : mode === "engineer" ? startEngineer(b) : (() => { throw bad("mode must be \"speed\", \"auto\" or \"engineer\""); })();
     return ok(c, view(r));
   });
   app.post("/api/concept/engine/run/:id/stop", c => {
@@ -485,7 +586,7 @@ function mount(app, o) {
       } finally { r.listeners.delete(listener); }
     });
   });
-  return { runs, timings, active: () => active, budget, startSpeed, startAuto, garageLap: (team, params) => garageLap(team, params, timings), carSheet, couplingTable };
+  return { runs, timings, active: () => active, budget, startSpeed, startAuto, startEngineer, garageLap: (team, params) => garageLap(team, params, timings), carSheet, couplingTable };
 }
 
 module.exports = { mount, trainedBudget, Timings, carSheet, couplingTable, rescore, BUDGET_TOTAL, TRAINED_RUN_CAP, LIMITS, STAGES };
