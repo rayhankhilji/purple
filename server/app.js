@@ -44,7 +44,7 @@ function createApp(opts) {
   if (resolved.redirected) console.error("PURPLE: MUBIT_MOCK=1 with the real data/ -> using data-mock/ instead (PURPLE_ALLOW_MOCK_IN_DATA=1 overrides)");
   const db = store.open(resolved.dir);
   // G-MUBIT-02 invariant: only real plan calls may train. Any other calls.jsonl row must say trained: false; a bug here would cost task integrity, so it throws.
-  const rawAppendCall = db.appendCall; db.appendCall = row => { if (row.kind !== "plan" && row.trained !== false) throw new Error("G-MUBIT-02: calls.jsonl row kind " + row.kind + " must have trained: false"); return rawAppendCall(row); };
+  const rawAppendCall = db.appendCall; db.appendCall = row => { if (row.kind !== "plan" && row.trained !== false) throw new Error("G-MUBIT-02: calls.jsonl row kind " + row.kind + " must have trained: false"); const r = rawAppendCall(row); emit("status", statusView()); return r; };   // QA S2: the widget's counters and budget follow every call
   const mubit = opts.mubit || (mock ? require("../test/mocks/mubit.js") : require("./mubit.js"));
   const heartbeatMs = opts.heartbeatMs || 15000;
   const log = opts.log || ((...a) => console.log(...a));
@@ -113,16 +113,30 @@ function createApp(opts) {
     const circuit = ov.circuit || (ov.conditions && ov.conditions.circuit) || st.conditions.circuit || "silverstone";
     if (!EI.TRACKS[circuit] || !["silverstone", "monza"].includes(circuit)) throw new ApiError("BAD_INPUT", "circuit must be silverstone or monza");
     const conditions = Object.assign({}, st.conditions, ov.conditions || {}, { circuit });
-    const baseline = ov.baseline ? (() => { const v = schema.validateSetup(ov.baseline); if (!v.ok) throw new ApiError("BAD_INPUT", "baseline " + v.error); return v.value; })() : st.baseline;
     const td01 = !!st.td01;
-    let candidate, candidate_source;
-    if (ov.candidate) { const v = schema.validateSetup(ov.candidate); if (!v.ok) throw new ApiError("BAD_INPUT", "candidate " + v.error); candidate = v.value; candidate_source = input.candidate_source || "supplied"; }
-    else if (st.last_plan && !input.random) { candidate = schema.applyPlan(baseline, st.last_plan); candidate_source = "agent"; }
-    else { candidate = scenarios.perturb(baseline, rng, { td01 }); candidate_source = "random"; }
+    const baseline = ov.baseline ? (() => { const v = schema.validateSetup(ov.baseline); if (!v.ok) throw new ApiError("BAD_INPUT", "baseline " + v.error); return v.value; })() : st.baseline;
+    const bm = aero.toMultipliers(baseline, conditions, { td01 }); if (!bm.legal) throw new ApiError("ILLEGAL_SETUP", "baseline violates " + bm.violations.join(", "), { violations: bm.violations, baseline });   // correctness g: never let the evaluator throw a 500
+    // a no-op candidate (equal to the baseline after clamping, or one the lap model cannot tell apart: predicted delta_lap exactly 0, e.g. ERS-only)
+    // teaches nothing and would plan on a 0 delta forever (correctness e, QA N6)
+    const isNoop = cand => schema.describeChange(baseline, cand) === "no change" || evaluator.evaluate(circuit, cand, conditions, { baseline, td01 }).delta_lap === 0;
+    let candidate, candidate_source, fallback_from = null;
+    if (ov.candidate) {
+      const v = schema.validateSetup(ov.candidate); if (!v.ok) throw new ApiError("BAD_INPUT", "candidate " + v.error); candidate = v.value; candidate_source = input.candidate_source || "supplied";
+      if (aero.toMultipliers(candidate, conditions, { td01 }).legal && isNoop(candidate)) throw new ApiError("BAD_INPUT", "candidate is a no-op: " + (schema.describeChange(baseline, candidate) === "no change" ? "it equals the baseline" : "the lap model predicts delta_lap 0 for " + schema.describeChange(baseline, candidate)), { noop: true, candidate });
+    } else if (st.last_plan && !input.random) {
+      candidate = schema.applyPlan(baseline, st.last_plan); candidate_source = "agent";
+      if (aero.toMultipliers(candidate, conditions, { td01 }).legal && isNoop(candidate)) { setState({ last_plan: null }); fallback_from = "agent-noop"; candidate = null; }   // the plan clamped to nothing: drop it, draw a fresh candidate
+    }
+    if (!candidate) {
+      for (let tries = 0; tries < 10 && !candidate; tries++) { const c = scenarios.perturb(baseline, rng, { td01 }); if (!isNoop(c)) candidate = c; }
+      if (!candidate) throw new ApiError("INTERNAL", "no candidate with a non-zero predicted delta in 10 draws");
+      candidate_source = "random";
+    }
     const mult = aero.toMultipliers(candidate, conditions, { td01 });
     if (!mult.legal) {
-      db.appendCall({ id: ulid(), created_at: now(), kind: "illegal", session_id: null, mubit_request_id: null, model: null, latency_ms: 0, status: "illegal", trained: false, violations: mult.violations, seed });
-      throw new ApiError("ILLEGAL_SETUP", "candidate violates " + mult.violations.join(", "), { violations: mult.violations, candidate });
+      db.appendCall({ id: ulid(), created_at: now(), kind: "illegal", session_id: null, mubit_request_id: null, model: null, latency_ms: 0, status: "illegal", trained: false, violations: mult.violations, seed, candidate_source });
+      if (candidate_source === "agent") setState({ last_plan: null });   // correctness a: the agent's step became illegal (TD-01 toggled): show the 422 once, then draw fresh
+      throw new ApiError("ILLEGAL_SETUP", "candidate violates " + mult.violations.join(", "), { violations: mult.violations, candidate, candidate_source, last_plan_cleared: candidate_source === "agent" });
     }
     const evaluation = evaluator.evaluate(circuit, candidate, conditions, { baseline, td01 });
     const rules = input.with_rules === false ? [] : db.readRules().filter(r => r.active);
@@ -145,7 +159,7 @@ function createApp(opts) {
       if (v.ok) plan = v.value; else parse = v;
     }
     const experiment = {
-      id, created_at: now(), seed, circuit, conditions, baseline, candidate, candidate_source, change: schema.describeChange(baseline, candidate),
+      id, created_at: now(), seed, circuit, conditions, baseline, candidate, candidate_source, fallback_from: fallback_from || undefined, change: schema.describeChange(baseline, candidate),
       scenario, evaluation, plan, mubit_request_id, session_id, latency_ms, prompt_version: prompt.PROMPT_VERSION,
       status: plan ? "planned" : "parse_error",
       error: plan ? undefined : (mubitErr ? { code: "MUBIT_ERROR", message: mubitErr.message, mubit_code: mubitErr.code, http_status: mubitErr.status } : { code: "PARSE_ERROR", message: parse.error }),
@@ -176,6 +190,7 @@ function createApp(opts) {
           try { res.sent++; await runPlan({ random: true, with_rules: !!o.with_rules, candidate_source: biased ? "random-biased" : "random", scenario_overrides: { seed, circuit: g.conditions.circuit, conditions: g.conditions, candidate: g.candidate } }); res.ok++; if (biased) res.biased++; res.seeds.push(seed); break; }
           catch (e) {
             if (e.code === "ILLEGAL_SETUP") { res.sent--; res.illegal_retries++; seed += 7919; continue; }
+            if (e.code === "BAD_INPUT" && e.extra && e.extra.noop) { res.sent--; res.noop_retries = (res.noop_retries || 0) + 1; seed += 7919; continue; }
             if (e.code === "PARSE_ERROR") res.parse_error++; else res.mubit_error++;
             break;
           }
@@ -199,6 +214,7 @@ function createApp(opts) {
       let seed = seed0 * 1000 + i, g, mult;
       for (let tries = 0; tries < 5; tries++) {
         g = scenarios.generate(seededRng(U, seed), { circuit, baseline, td01, promote_bias: bias }); mult = aero.toMultipliers(g.candidate, g.conditions, { td01 });
+        if (mult.legal && (schema.describeChange(baseline, g.candidate) === "no change" || evaluator.evaluate(circuit, g.candidate, g.conditions, { baseline, td01 }).delta_lap === 0)) { res.noop_retries = (res.noop_retries || 0) + 1; seed += 7919; g = null; continue; }   // same skip as collect()/runPlan
         if (mult.legal) break; res.illegal_retries++; seed += 7919; g = null;
       }
       if (!g) continue;
@@ -227,13 +243,20 @@ function createApp(opts) {
           if (hit) score++; if (phit) paramScore++;
           details.push({ id: item.id, truth: item.truth, answer: v.ok ? { verdict: v.value.verdict, next_parameter: v.value.next_parameter, direction: v.value.direction } : null, verdict_ok: hit, param_ok: phit, mubit_request_id: r.mubit_request_id });
           log(`exam ${session_id} ${r.mubit_request_id} ${r.latency_ms}ms ${v.ok ? v.value.verdict : "parse_error"} untrained`);
-        } catch (e) { details.push({ id: item.id, error: e.code || e.message }); }
+        } catch (e) {   // correctness c: a failed exam call is still a (untrained) call row and an explicit error in the details
+          db.appendCall({ id: ulid(), created_at: now(), kind: "exam", session_id, mubit_request_id: e.requestId || null, model: prompt.MODEL, latency_ms: 0, status: "error", mubit_code: e.code || null, http_status: e.status || null, trained: false });
+          details.push({ id: item.id, truth: item.truth, error: e.code || e.message, mubit_code: e.code || null, http_status: e.status || null });
+        }
       }
     }
     await Promise.all([worker(), worker()]);
     // the totals the widget shows plus every item's actual answer (EVAL request): the next `npm run exam` records what the provider said
-    const st = db.readStatus(); st.exam = Object.assign({}, st.exam, { provider: score, total: exam.length, provider_param: paramScore, ran_at: now(), details }); st.updated_at = now(); db.writeStatus(st); emit("status", statusView());
-    return { provider: score, total: exam.length, provider_param: paramScore, details };
+    const errors = details.filter(d => d.error).length, answered = exam.length - errors;
+    // the widget's provider score is written only from a complete run; a partial run keeps the previous score and reports provider_partial over the answered items
+    const patch = { total: exam.length, errors, answered, ran_at: now(), details };
+    if (errors === 0) Object.assign(patch, { provider: score, provider_param: paramScore }); else Object.assign(patch, { provider_partial: score, provider_param_partial: paramScore });
+    const st = db.readStatus(); st.exam = Object.assign({}, st.exam, patch); st.updated_at = now(); db.writeStatus(st); emit("status", statusView());
+    return { provider: score, total: exam.length, provider_param: paramScore, errors, answered, partial: errors > 0, details };
   }
 
   // ---- routes
@@ -242,7 +265,8 @@ function createApp(opts) {
     const b = await body(c); const v = schema.validateSetup(b.setup); if (!v.ok) throw new ApiError("BAD_INPUT", v.error);
     const st = state(); const conditions = Object.assign({}, st.conditions, b.conditions || {}); const circuit = conditions.circuit || "silverstone";
     if (!["silverstone", "monza"].includes(circuit)) throw new ApiError("BAD_INPUT", "circuit must be silverstone or monza");
-    const ev = evaluator.evaluate(circuit, v.value, conditions, { baseline: b.baseline || st.baseline, td01: !!st.td01 });
+    let baseline = st.baseline; if (b.baseline !== undefined) { const vb = schema.validateSetup(b.baseline); if (!vb.ok) throw new ApiError("BAD_INPUT", "baseline " + vb.error); baseline = vb.value; const bm = aero.toMultipliers(baseline, conditions, { td01: !!st.td01 }); if (!bm.legal) throw new ApiError("ILLEGAL_SETUP", "baseline violates " + bm.violations.join(", "), { violations: bm.violations }); }
+    const ev = evaluator.evaluate(circuit, v.value, conditions, { baseline, td01: !!st.td01 });
     if (!ev.legal) throw new ApiError("ILLEGAL_SETUP", "setup violates " + ev.violations.join(", "), { violations: ev.violations });
     return ok(c, ev);
   });
@@ -255,7 +279,7 @@ function createApp(opts) {
   });
   app.post("/api/promote", async c => {
     const b = await body(c); const x = db.findExperiment(b.experiment_id); if (!x) throw new ApiError("NOT_FOUND", "no experiment " + b.experiment_id);
-    setState({ baseline: x.candidate, last_plan: null }); db.appendLedger(Object.assign({}, x, { status: "promoted", promoted_at: now() }));
+    setState({ baseline: x.candidate, last_plan: x.plan || null }); db.appendLedger(Object.assign({}, x, { status: "promoted", promoted_at: now() }));   // decision b: the agent's next step applies to the new baseline; only overrule clears it
     emit("plan", Object.assign({}, x, { status: "promoted" })); return ok(c, { baseline: x.candidate });
   });
   // ---- F-05 correction loop, server side (ARCHITECTURE §4.8, §5). Rule text = the reason, whitespace-collapsed, ≤ 160 chars.

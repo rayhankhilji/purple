@@ -114,7 +114,8 @@ test("P2.T3 SSE: /api/plan emits plan; overrule emits rule then plan (status ove
   assert.equal(plans[1].overrule.rule_id, "R-01"); assert.equal(plans[1].overrule.reason, "judge on the full lap");
   assert.equal(rules.length, 2); assert.deepEqual(rules.map(r => [r.id, r.active, r.text]), [["R-01", true, "judge on the full lap"], ["R-01", false, "judge on the full lap"]]); assert.equal(rules[0].from_experiment, x.id);
   const order = buf.split("\n\n").map(ch => (/event: (\w+)/.exec(ch) || [])[1]).filter(e => e && e !== "ping");
-  assert.deepEqual(order, ["status", "plan", "rule", "plan", "rule", "plan"]);
+  assert.equal(order[0], "status"); assert.deepEqual(order.filter(e => e !== "status"), ["plan", "rule", "plan", "rule", "plan"]);   // QA S2: a status event also follows every calls.jsonl append
+  assert.ok(order.filter(e => e === "status").length >= 2, "status after the plan call");
 });
 test("status widget: GET /api/status carries prompt_hash, last_console_read_at and budget counted per UTC day (00:00 UTC = 01:00 London)", async () => {
   mock.reset(); const dir = tmp(); const { app, db } = createApp({ dataDir: dir, mubit: mock, log: () => {} });
@@ -156,14 +157,18 @@ test("runExam persists status.exam.details (id, truth, answer, verdict_ok, param
   db.writeExam([{ id: "ex-1", scenario: x.scenario, truth: { verdict: "reject", next_parameter: "rear_wing_deg", direction: "decrease" } }, { id: "ex-2", scenario: x.scenario, truth: { verdict: "promote", next_parameter: "ride_height_mm", direction: "decrease" } }, { id: "ex-3", scenario: x.scenario, truth: { verdict: "reject", next_parameter: "front_wing_deg", direction: "increase" } }]);
   const e = new Error("busy"); e.code = "starter_credit_busy"; e.status = 429; mock.queue(JSON.stringify(mock.CANNED), "not json at all", e);   // hit, parse error, Mubit error
   const r = await runExam(); assert.equal(r.total, 3); assert.equal(r.provider, 1); assert.equal(r.provider_param, 1);
-  const s = (await json(app, "/api/status")).body.data; assert.equal(s.exam.provider, 1); assert.equal(s.exam.total, 3); assert.equal(s.exam.provider_param, 1); assert.ok(Date.parse(s.exam.ran_at));
+  const s = (await json(app, "/api/status")).body.data; assert.equal(s.exam.provider ?? null, null); assert.equal(s.exam.provider_partial, 1); assert.equal(s.exam.errors, 1); assert.equal(s.exam.answered, 2); assert.equal(s.exam.total, 3); assert.equal(s.exam.provider_param_partial, 1); assert.ok(Date.parse(s.exam.ran_at)); assert.equal(r.partial, true);
   const d = s.exam.details; assert.equal(d.length, 3); assert.deepEqual(d.map(i => i.id).sort(), ["ex-1", "ex-2", "ex-3"]);
   const byId = Object.fromEntries(d.map(i => [i.id, i])); const hit = byId["ex-1"], miss = byId["ex-2"], err = byId["ex-3"];
   assert.deepEqual(hit.truth, { verdict: "reject", next_parameter: "rear_wing_deg", direction: "decrease" }); assert.deepEqual(hit.answer, { verdict: "reject", next_parameter: "rear_wing_deg", direction: "decrease" }); assert.equal(hit.verdict_ok, true); assert.equal(hit.param_ok, true); assert.match(hit.mubit_request_id, /^mreq_/);
   assert.equal(miss.answer, null); assert.equal(miss.verdict_ok, false); assert.equal(miss.param_ok, false); assert.match(miss.mubit_request_id, /^mreq_/);
-  assert.equal(err.error, "starter_credit_busy"); assert.equal("answer" in err, false);
+  assert.equal(err.error, "starter_credit_busy"); assert.equal(err.mubit_code, "starter_credit_busy"); assert.equal(err.http_status, 429); assert.deepEqual(err.truth, { verdict: "reject", next_parameter: "front_wing_deg", direction: "increase" }); assert.equal("answer" in err, false);
+  const examCalls = fs.readFileSync(path.join(dir, "calls.jsonl"), "utf8").trim().split("\n").map(JSON.parse).filter(c => c.kind === "exam"); assert.equal(examCalls.length, 3); const errRow = examCalls.find(c => c.status === "error"); assert.equal(errRow.mubit_code, "starter_credit_busy"); assert.equal(errRow.http_status, 429); assert.equal(errRow.trained, false);   // correctness c
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(dir, "status.json"), "utf8")).exam.details, d);   // persisted, not just in the view
-  const s2 = (await post(app, "/api/status", { exam: { v1: 4 } })).body.data; assert.deepEqual(s2.exam.details, d); assert.equal(s2.exam.provider, 1); assert.equal(s2.exam.v1, 4);   // the deep merge keeps them
+  const s2 = (await post(app, "/api/status", { exam: { v1: 4 } })).body.data; assert.deepEqual(s2.exam.details, d); assert.equal(s2.exam.provider_partial, 1); assert.equal(s2.exam.v1, 4);   // the deep merge keeps them
+  // a clean run writes provider / provider_param
+  mock.reset(); db.writeExam([{ id: "ex-1", scenario: x.scenario, truth: { verdict: "reject", next_parameter: "rear_wing_deg", direction: "decrease" } }]); const r2 = await runExam(); assert.equal(r2.partial, false);
+  const s3 = (await json(app, "/api/status")).body.data; assert.equal(s3.exam.provider, 1); assert.equal(s3.exam.errors, 0); assert.equal(s3.exam.answered, 1); assert.equal(s3.exam.details.length, 1);
   const calls = fs.readFileSync(path.join(dir, "calls.jsonl"), "utf8").trim().split("\n").map(JSON.parse); assert.ok(calls.filter(c => c.kind === "exam").every(c => c.trained === false));
 });
 test("audit 1/6: non-JSON content-type or a non-loopback Host -> 400 before any work; malformed JSON body -> 400 (no trained call)", async () => {
@@ -265,6 +270,67 @@ test("audit 8: fake-race refuses against a real planner (health mock:false) unle
   const { app: app2 } = createApp({ dataDir: tmp(), mubit: mock, log: () => {} }); const y = (await post(app2, "/api/plan", { scenario_overrides: { seed: 9 } })).body.data;
   const bad = await post(app2, "/api/race/result", { experiment_id: y.id, seed: 1, synthetic: "yes", cars: raceCars(y) }); assert.equal(bad.status, 400); assert.match(bad.body.error.message, /synthetic must be a boolean/);
   const okr = (await post(app2, "/api/race/result", { experiment_id: y.id, seed: 1, cars: raceCars(y) })).body.data; assert.equal(okr.measured.synthetic, false); assert.equal(okr.measured.label, "measured in race, seed 1");
+});
+test("correctness a: the agent's next step turned illegal (TD-01 toggled) -> one 422 that clears last_plan; the next Run draws a fresh candidate", async () => {
+  mock.reset(); mock.queue(JSON.stringify(Object.assign({}, mock.CANNED, { next_parameter: "rear_wing_deg", direction: "increase", magnitude: 5 }))); const { app, state } = createApp({ dataDir: tmp(), mubit: mock, log: () => {} });
+  const x = (await post(app, "/api/plan", { scenario_overrides: { seed: 9 } })).body.data; assert.equal(state().last_plan.direction, "increase");   // next step: rear wing 20 -> 25
+  await post(app, "/api/state", { td01: true });
+  const r = await post(app, "/api/plan", {}); assert.equal(r.status, 422); assert.deepEqual(r.body.error.violations, ["TD-01"]); assert.equal(r.body.error.candidate_source, "agent"); assert.equal(r.body.error.last_plan_cleared, true); assert.equal(state().last_plan, null);
+  const next = await post(app, "/api/plan", {}); assert.equal(next.status, 200, JSON.stringify(next.body)); assert.equal(next.body.data.candidate_source, "random"); assert.ok(next.body.data.candidate.rear_wing_deg <= 20);
+  assert.equal(mock.count(), 2);   // the 422 cost no call
+});
+test("correctness b: promote keeps the agent's plan as the next step on the new baseline; overrule clears it", async () => {
+  mock.reset(); const { app, state } = createApp({ dataDir: tmp(), mubit: mock, log: () => {} });
+  const x = (await post(app, "/api/plan", { scenario_overrides: { seed: 9 } })).body.data; assert.deepEqual(state().last_plan, x.plan);
+  await post(app, "/api/promote", { experiment_id: x.id }); assert.deepEqual(state().baseline, x.candidate); assert.deepEqual(state().last_plan, x.plan);
+  const y = (await post(app, "/api/plan", {})).body.data; assert.equal(y.candidate_source, "agent"); assert.deepEqual(y.baseline, x.candidate); assert.equal(y.candidate.rear_wing_deg, x.candidate.rear_wing_deg - 4);   // the canned plan: rear wing -4 applied to the promoted baseline
+  await post(app, "/api/overrule", { experiment_id: y.id, verdict: "reject", reason: "no" }); assert.equal(state().last_plan, null);
+});
+test("correctness e + QA N6: no-op candidates (equal to the baseline, or predicted delta_lap 0) are refused when supplied, replaced when random or from the agent", async () => {
+  mock.reset(); const { app, state, EI, collect, dryCollect } = createApp({ dataDir: tmp(), mubit: mock, log: () => {} });
+  const B = EI.aero.BASELINE;
+  let r = await post(app, "/api/plan", { scenario_overrides: { candidate: Object.assign({}, B) } }); assert.equal(r.status, 400); assert.match(r.body.error.message, /equals the baseline/); assert.equal(r.body.error.noop, true);
+  const ersOnly = Object.assign({}, B, { ers_deploy: 0.8 }); const ev = EI.evaluator.evaluate("silverstone", ersOnly, { circuit: "silverstone", wet: false, wind_ms: 0, wind_from_deg: 0 }, { baseline: B });
+  if (ev.delta_lap === 0) { r = await post(app, "/api/plan", { scenario_overrides: { candidate: ersOnly } }); assert.equal(r.status, 400); assert.match(r.body.error.message, /delta_lap 0 for ers_deploy/); }
+  assert.equal(mock.count(), 0);
+  // the agent's plan clamps to nothing (front wing already at its max -> "increase" is a no-op): dropped, fresh random candidate, fallback noted
+  await post(app, "/api/state", { baseline: Object.assign({}, B, { front_wing_deg: 40 }) });
+  mock.queue(JSON.stringify(Object.assign({}, mock.CANNED, { next_parameter: "front_wing_deg", direction: "increase", magnitude: 4 })));
+  const x = (await post(app, "/api/plan", { scenario_overrides: { seed: 9 } })).body.data; assert.equal(state().last_plan.next_parameter, "front_wing_deg");
+  const y = (await post(app, "/api/plan", { scenario_overrides: { seed: 10 } })).body.data; assert.equal(y.candidate_source, "random"); assert.equal(y.fallback_from, "agent-noop"); assert.notEqual(y.evaluation.delta_lap, 0); assert.notEqual(y.change, "no change");
+  // random draws never yield a 0-delta candidate; collect() and the dry run skip the same seeds
+  for (let i = 0; i < 12; i++) { const z = (await post(app, "/api/plan", { random: true, scenario_overrides: { seed: 100 + i } })).body.data; assert.notEqual(z.evaluation.delta_lap, 0, "seed " + (100 + i)); }
+  const dry = dryCollect(30, { seed: 5 }); assert.ok(dry.items.every(it => it.delta_lap !== 0)); mock.reset(); const real = await collect(30, { seed: 5 }); const rows = (await json(app, "/api/ledger?limit=100")).body.data.filter(q => q.candidate_source === "random").slice(0, 30).reverse();
+  const bySeed = a => a.slice().sort((p, q) => p.seed - q.seed);   // collect runs 2 at a time, so ledger order is not item order
+  assert.deepEqual(bySeed(rows).map(q => q.seed + ":" + q.change), bySeed(dry.items).map(it => it.seed + ":" + it.change)); assert.equal(real.noop_retries || 0, dry.noop_retries || 0); assert.ok(dry.noop_retries >= 1, "the seed-5 run should hit at least one no-op"); assert.ok(rows.every(q => q.evaluation.delta_lap !== 0));
+});
+test("correctness f: a torn last line in a JSONL file does not swallow the next row", () => {
+  const store = require("../server/store.js"); const dir = tmp(); const db = store.open(dir);
+  db.appendLedger({ id: "01A", v: 1 }); fs.appendFileSync(path.join(dir, "ledger.jsonl"), '{"id":"01B","torn":tr');   // a crash mid-write, no trailing newline
+  db.appendLedger({ id: "01C", v: 3 }); const rows = db.readLedger(); assert.deepEqual(rows.map(r => r.id), ["01C", "01A"]);
+  const raw = fs.readFileSync(path.join(dir, "ledger.jsonl"), "utf8"); assert.equal(raw.split("\n").length, 4); assert.match(raw, /tr\n\{"id":"01C"/);
+  db.appendCall({ id: "c1", kind: "smoke", trained: false }); db.appendCall({ id: "c2", kind: "smoke", trained: false }); assert.equal(db.readCalls().length, 2);   // the normal path adds no blank lines
+  assert.equal(fs.readFileSync(path.join(dir, "calls.jsonl"), "utf8").split("\n").length, 3);
+});
+test("correctness g: a bad or illegal baseline is a 400/422, never a 500 (runPlan and /api/evaluate)", async () => {
+  mock.reset(); const { app, EI } = createApp({ dataDir: tmp(), mubit: mock, log: () => {} }); const B = EI.aero.BASELINE;
+  let r = await post(app, "/api/plan", { scenario_overrides: { baseline: { rear_wing_deg: 20 } } }); assert.equal(r.status, 400); assert.match(r.body.error.message, /^baseline /);
+  r = await post(app, "/api/plan", { scenario_overrides: { baseline: Object.assign({}, B, { rear_wing_deg: 36 }) } }); assert.equal(r.status, 422); assert.match(r.body.error.message, /baseline violates REG-RW-MAX/); assert.deepEqual(r.body.error.violations, ["REG-RW-MAX"]);
+  r = await post(app, "/api/evaluate", { setup: Object.assign({}, B, { rear_wing_deg: 24 }), baseline: "nope" }); assert.equal(r.status, 400); assert.match(r.body.error.message, /^baseline /);
+  r = await post(app, "/api/evaluate", { setup: Object.assign({}, B, { rear_wing_deg: 24 }), baseline: Object.assign({}, B, { ride_height_mm: 10 }) }); assert.equal(r.status, 422); assert.deepEqual(r.body.error.violations, ["REG-RH-MIN"]);
+  r = await post(app, "/api/evaluate", { setup: Object.assign({}, B, { rear_wing_deg: 24 }), baseline: Object.assign({}, B, { rear_wing_deg: 22 }) }); assert.equal(r.status, 200); assert.ok(r.body.data.delta_lap > 0);
+  assert.equal(mock.count(), 0);
+});
+test("QA S2: a status SSE event follows every calls.jsonl append (plan, illegal, exam, smoke paths) with fresh counters", async () => {
+  mock.reset(); const dir = tmp(); const { app, db, runExam } = createApp({ dataDir: dir, mubit: mock, log: () => {}, heartbeatMs: 50 });
+  const sse = await sseUntil(app, /"calls_total":4/, 40);
+  const x = (await post(app, "/api/plan", { scenario_overrides: { seed: 9 } })).body.data;
+  await post(app, "/api/state", { td01: true }); await post(app, "/api/plan", { scenario_overrides: { candidate: Object.assign({}, x.candidate, { rear_wing_deg: 25 }) } });
+  db.writeExam([{ id: "ex-1", scenario: x.scenario, truth: { verdict: "reject", next_parameter: "rear_wing_deg", direction: "decrease" } }]); await runExam();
+  db.appendCall({ id: "s1", created_at: new Date().toISOString(), kind: "smoke", trained: false });
+  const evs = sseEvent(await sse.read(), "status"); const totals = evs.map(e => e.calls_total);
+  assert.ok(totals.includes(1) && totals.includes(2) && totals.includes(3) && totals.includes(4), JSON.stringify(totals)); assert.equal(Math.max(...totals), 4);
+  assert.equal(evs[evs.length - 1].budget.trained_today_utc, 1); assert.equal(evs[evs.length - 1].budget.untrained_today_utc, 2);   // exam + smoke; the illegal row is not a call
 });
 test("POST /api/evaluate: pure, illegal -> 422 ILLEGAL_SETUP, bad input -> 400", async () => {
   mock.reset(); const { app, EI } = createApp({ dataDir: tmp(), mubit: mock });
@@ -427,8 +493,9 @@ test("dryCollect / collect-dry.js: same seeds as collect, verdict mix from the t
   assert.equal(mock.count(), 0); assert.equal(fs.existsSync(path.join(dir, "ledger.jsonl")), false); assert.equal(fs.existsSync(path.join(dir, "calls.jsonl")), false);
   // the real collect() with the same seed/bias produces the same candidates in the same order (the dry run is a faithful preview)
   const real = await a.collect(10, { seed: 42, promote_bias: 0.3 }); const rows = a.db.readLedger().slice().reverse();
-  assert.deepEqual(rows.map(r => r.seed), dry.items.map(it => it.seed)); assert.deepEqual(rows.map(r => r.change), dry.items.map(it => it.change)); assert.deepEqual(rows.map(r => r.candidate_source), dry.items.map(it => it.candidate_source)); assert.equal(real.biased, dry.biased);
-  assert.deepEqual(rows.map(r => require("../server/scenarios.js").verdictOf(r.evaluation.delta_lap)), dry.items.map(it => it.verdict));
+  const bySeed = a => a.slice().sort((p, q) => p.seed - q.seed);   // collect runs 2 at a time: compare by seed, not by ledger order
+  assert.deepEqual(bySeed(rows).map(r => [r.seed, r.change, r.candidate_source]), bySeed(dry.items).map(it => [it.seed, it.change, it.candidate_source])); assert.equal(real.biased, dry.biased);
+  assert.deepEqual(bySeed(rows).map(r => require("../server/scenarios.js").verdictOf(r.evaluation.delta_lap)), bySeed(dry.items).map(it => it.verdict));
   assert.equal(a.dryCollect(6, { seed: 42, promote_bias: 1 }).biased, 6); assert.throws(() => a.dryCollect(1, { promote_bias: 2 }), /promote_bias/); assert.throws(() => a.dryCollect(1, { circuit: "spa" }), /circuit/);
   const dir2 = tmp(), env = Object.assign({}, process.env, { PURPLE_DATA_DIR: dir2, PURPLE_ENV_FILE: "/nonexistent/.env" }); delete env.MUBIT_API_KEY; delete env.MUBIT_MOCK;   // no key, no mock: the script must still run (no planner needed)
   const cli = spawnSync(process.execPath, [path.join(__dirname, "..", "server", "scripts", "collect-dry.js"), "--n", "10", "--seed", "42", "--promote-bias", "0.3", "--list"], { env, encoding: "utf8", timeout: 30000 });
