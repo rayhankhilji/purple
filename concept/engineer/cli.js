@@ -7,7 +7,7 @@
 //   node concept/engineer/cli.js --live --seed 11 --out DIR                     real UNTRAINED calls (x-middleware-record: metadata)
 //   node concept/engineer/cli.js --live --confirm-trained "TRAIN 150" --seed 11 --out DIR
 //                                                                               TRAINED calls: the typed text must be "TRAIN <--max-decisions>"
-// Options: --corrections on|off (on) · --budget LAPS (3500) · --max-decisions N (150; one designer call per decision) · --workers W (4)
+// Options: --screen full|direct (full = 3,000 variants / confirm 24 + 4; direct = one physics test per idea) · --corrections on|off (on) · --budget LAPS (3500) · --max-decisions N (150; one designer call per decision) · --workers W (4)
 // · --run-id ID (the Mubit session id, metadata.user_id; default eng-corr-s<seed>-<ulid>) · --team redbull|generic (redbull)
 // Writes DIR/steered_corrections-seed<N>.json (the benchmark curve: node concept/benchmark/report.js --corrections DIR) and
 // DIR/run-seed<N>/ (run.json, events.jsonl, decisions.jsonl, calls.jsonl, tree.json, state.json: the recorded-run format of
@@ -22,13 +22,14 @@ const prompt = require("../designer/prompt.js"), loop = require("../designer/loo
 const B = require("../benchmark/baselines.js"), F = require("../benchmark/fixation.js"), conceptCli = require("../cli.js");
 
 function parseArgs(argv) {
-  const a = { mode: null, mock: null, trained: false, confirm: null, seed: null, corrections: true, budget: 3500, maxDecisions: 150, workers: 4, out: null, runId: null, team: "redbull" };
+  const a = { mode: null, mock: null, trained: false, confirm: null, seed: null, corrections: true, budget: 3500, maxDecisions: 150, workers: 4, out: null, runId: null, team: "redbull", screen: "full" };
   const setMode = m => { if (a.mode && a.mode !== m) throw new Error("choose one of --mock, --live"); a.mode = m; };
   for (let i = 0; i < argv.length; i++) {
     const k = argv[i], v = argv[i + 1];
     if (k === "--mock") { setMode("mock"); a.mock = v; i++; } else if (k === "--live") setMode("live");
     else if (k === "--confirm-trained") { a.trained = true; a.confirm = v; i++; }
     else if (k === "--seed") { a.seed = +v; i++; } else if (k === "--corrections") { if (!["on", "off"].includes(v)) throw new Error("--corrections on|off"); a.corrections = v === "on"; i++; }
+    else if (k === "--screen") { if (!["full", "direct"].includes(v)) throw new Error("--screen full|direct"); a.screen = v; i++; }
     else if (k === "--budget") { a.budget = +v; i++; } else if (k === "--max-decisions") { a.maxDecisions = +v; i++; } else if (k === "--workers") { a.workers = +v; i++; }
     else if (k === "--out") { a.out = v; i++; } else if (k === "--run-id") { a.runId = v; i++; } else if (k === "--team") { a.team = v; i++; }
     else if (k === "--help" || k === "-h") a.help = true;
@@ -87,7 +88,7 @@ async function main(argv, io) {
     try {
       const r = await caller(text, meta);
       const o = typeof r === "string" ? { text: r } : r;
-      append("calls.jsonl", Object.assign(row, { mubit_request_id: o.mubit_request_id || null, model: o.model || null, input_tokens: o.input_tokens == null ? null : o.input_tokens, output_tokens: o.output_tokens == null ? null : o.output_tokens, latency_ms: o.latency_ms == null ? null : o.latency_ms, status: "ok" }));
+      append("calls.jsonl", Object.assign(row, { mubit_request_id: o.mubit_request_id || null, served_by: o.served_by || null, model: o.model || null, input_tokens: o.input_tokens == null ? null : o.input_tokens, output_tokens: o.output_tokens == null ? null : o.output_tokens, latency_ms: o.latency_ms == null ? null : o.latency_ms, status: "ok" }));
       errRun = 0; return o;
     } catch (e) {
       append("calls.jsonl", Object.assign(row, { mubit_request_id: e.requestId || null, status: "error", mubit_code: e.code || null, http_status: e.status || null }));
@@ -106,9 +107,9 @@ async function main(argv, io) {
     }
   };
   const started = new Date().toISOString();
-  const opts = { llm: llmName, mock: a.mock, trained: a.trained, team: a.team, seed: a.seed, corrections: a.corrections, budget: a.budget, max_calls: a.maxDecisions, max_decisions: a.maxDecisions, patience: 3, stop_after: null, variants: 3000, confirm: 24, explore: 4, segments: true, workers: a.workers };
+  const opts = { llm: llmName, mock: a.mock, trained: a.trained, team: a.team, seed: a.seed, corrections: a.corrections, budget: a.budget, max_calls: a.maxDecisions, max_decisions: a.maxDecisions, patience: 3, stop_after: null, ...require("../benchmark/baselines.js").SCREENS[a.screen], segments: true, workers: a.workers };
   io.out("PURPLE engine v2 · " + (live ? "LIVE through Mubit · " + (a.trained ? "TRAINED" : "untrained (x-middleware-record: metadata)") : "MOCK (" + a.mock + ", not a model; no network)") + " · corrections " + (a.corrections ? "on" : "off") + " · seed " + a.seed + " · budget " + a.budget + " physics laps · ≤ " + a.maxDecisions + " decisions · session " + runId + (live && live.budget ? " · trained budget " + live.budget.remaining + " of " + live.budget.total + " left" : "") + "\n");
-  const r = await B.runEngine({ seed: a.seed, team: a.team === "generic" ? null : a.team, budget: a.budget, workers: a.workers, llm, mock: !live, corrections: a.corrections, segments: true, trained: a.trained, runId, onEvent, maxDecisions: a.maxDecisions, maxCalls: a.maxDecisions });
+  const r = await B.runEngine({ seed: a.seed, team: a.team === "generic" ? null : a.team, budget: a.budget, workers: a.workers, llm, mock: !live, corrections: a.corrections, segments: true, trained: a.trained, runId, onEvent, maxDecisions: a.maxDecisions, maxCalls: a.maxDecisions, screen: a.screen });
   const res = r.result; delete r.result;
   const ids = res.decisions.map(d => (d.call ? d.call.mubit_request_id : null));
   const stop = abort || res.stopped;

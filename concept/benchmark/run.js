@@ -8,6 +8,7 @@
 // Physics corrections (TESTS_TO_POLE.md §8), local and mock only:
 //   --methods mock_fixation_corrections,mock_fixation_plain   the fixation STAND-IN (concept/benchmark/fixation.js, not a model) with
 //       and without the corrections block, on this checkout's physics, same 3,500-lap cap, segments on (as the steered runs)
+//   --screen direct   the expensive-test regime: one physics test per idea (variants 1, confirm 1, explore 0), engine_noai only
 //   --methods engine_noai --label current   the no-AI engine on this checkout's physics for seed 7 too (file engine_noai_current-seed7.json)
 //   --methods replay_text,replay_text_corrections   the replay check, scenario text included: the recorded proposals fed back with the
 //       per-segment report on (as recorded); every decision's scenario text is compared with the text the run sent (events.jsonl),
@@ -19,7 +20,7 @@ const fs = require("fs"), path = require("path");
 const B = require("./baselines.js"), S = require("./steered.js"), F = require("./fixation.js");
 
 function parseArgs(argv) {
-  const a = { seeds: [7, 11, 12], budget: 3500, workers: 4, out: null, roots: {}, methods: ["engine_noai", "cmaes", "replay"], label: null };
+  const a = { seeds: [7, 11, 12], budget: 3500, workers: 4, out: null, roots: {}, methods: ["engine_noai", "cmaes", "replay"], label: null, screen: "full" };
   for (let i = 0; i < argv.length; i++) {
     const k = argv[i], v = argv[i + 1];
     if (k === "--seeds") { a.seeds = v.split(",").map(Number); i++; }
@@ -28,6 +29,7 @@ function parseArgs(argv) {
     else if (k === "--out") { a.out = v; i++; }
     else if (k === "--methods") { a.methods = v.split(","); i++; }
     else if (k === "--root") { const [s, p] = v.split("="); a.roots[+s] = path.resolve(p); i++; }
+    else if (k === "--screen") { if (!["full", "direct"].includes(v)) throw new Error("--screen full|direct"); a.screen = v; i++; }
     else if (k === "--label") { if (!/^[a-z0-9_]{1,30}$/.test(v)) throw new Error("--label: a-z 0-9 _"); a.label = v; i++; }
     else throw new Error("unknown option " + k);
   }
@@ -52,7 +54,7 @@ async function main(argv) {
       if (fs.existsSync(file)) { process.stderr.write("skip " + file + " (exists)\n"); continue; }
       process.stderr.write(m + " seed " + seed + (root ? " (root " + root + ")" : "") + " ...\n");
       let r;
-      if (m === "engine_noai") r = await B.runEngine({ root, seed, budget: a.budget, workers: a.workers, llm: B.noAiLlm() });
+      if (m === "engine_noai") r = await B.runEngine({ root, seed, budget: a.budget, workers: a.workers, llm: B.noAiLlm(), screen: a.screen });
       else if (m === "cmaes") r = await B.runCma({ root, seed, budget: a.budget, workers: a.workers });
       else if (m === "replay") r = await B.runEngine({ root, seed, budget: null, workers: a.workers, llm: B.replayLlm(rec.proposals), maxDecisions: rec.proposals.length, mock: true });
       else if (m === "replay_text" || m === "replay_text_corrections") {
