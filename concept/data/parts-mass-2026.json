@@ -1,0 +1,1670 @@
+{
+  "meta": {
+    "title": "PURPLE concept car: researched part masses, 2026 F1",
+    "version": "1",
+    "date": "2026-10-24",
+    "accessed": "2026-10-24",
+    "author": "integrator helper (mass research)",
+    "label": "concept part masses v1 · researched · regulation floors where they exist, otherwise reported or engineering estimates reconciled to reported 2026 car weights · not measured",
+    "kinds": {
+      "regulation": "FIA 2026 Section C text (floors and definitions, article cited)",
+      "official": "team / supplier / Pirelli / F1 statements",
+      "reported": "technical or general journalism; quality noted per source",
+      "engineering estimate": "reasoning from materials, size and regulation geometry; stated per component"
+    },
+    "frame": "FIA Car Coordinate System (C2.1.1): x rearward from the front axle plane XF=0, z up from Z=0 (the plank's upper surface, C3.6.1(a)), mm",
+    "ids": "row ids match concept/parts.js CATALOGUE ids so the integrator can map rows one to one",
+    "caution": "Per-part masses of 2026 F1 cars are not published. Only the PU mass groups, the driver + ballast floor and the Minimum Mass are fixed by regulation. Never quote a best value as measured."
+  },
+  "regulation": {
+    "minimum_mass": {
+      "article": "C4.1",
+      "qualifying_kg": "726 + Nominal Tyre Mass",
+      "other_sessions_kg": "724 + Nominal Tyre Mass",
+      "car_mass_definition": "car incl. tyres + Mass of the Driver + Driver Ballast, without fuel",
+      "heat_hazard": "C4.6: +5 kg in a Heat Hazard TTCS (driver cooling ≥ 5 kg); +2 kg otherwise at such a competition",
+      "source": "FIA-C-ISS20"
+    },
+    "nominal_tyre_mass": {
+      "article": "C4.7",
+      "value_kg": 44,
+      "kind": "engineering estimate",
+      "alt_kg": 46,
+      "basis": "Published by Pirelli (mean of 50 tyres per axle after the last pre-season test); the published figure was not found in any public source. 44 kg = the FIA/F1/Pirelli 768 kg headline minus the 724 kg base in Issue 8 (2024), the same assumption RaceFans footnotes. 46 kg would make the minima 770 / 772 kg, which matches team spec sheets quoting 770 kg (Haas 'minimum', Ferrari) and McLaren's 772 kg, but those may be quali or actual figures.",
+      "sources": [
+        "FIA-C-ISS8",
+        "PIRELLI-2026",
+        "RACEFANS-HORNER",
+        "RACETECH-SPECS",
+        "MCLAREN-SPEC",
+        "GP-ALPINE"
+      ]
+    },
+    "driver": {
+      "article": "C4.5.2 + definitions",
+      "floor_kg": 82,
+      "note": "the seat and driving equipment are INSIDE the Mass of the Driver; the harness is not",
+      "source": "FIA-C-ISS20"
+    },
+    "power_unit": {
+      "article": "C5.5.2, C5.5.1, C5.3.4, C5.18.7, C5.17.9, App. C3 Drawing 9",
+      "total_floor_kg": 185,
+      "options": [
+        {
+          "option": "a: MGU-K speed ratio in RV-PU-ERS",
+          "ice_group_incl_tc_kg": 130,
+          "mguk_kg": 20
+        },
+        {
+          "option": "b: in RV-PU-ICE",
+          "ice_group_incl_tc_kg": 134,
+          "mguk_kg": 16
+        },
+        {
+          "option": "c: split",
+          "ice_group_incl_tc_kg": 132,
+          "mguk_kg": 18
+        }
+      ],
+      "tc_kg": 12,
+      "esme_kg": 35,
+      "note": "Drawing 9 (for reference): 'Min ICE+TC+Powerbox 130kg', ESME 35, MGU-K 16 + assumed 4 kg transmission, total 185 kg. The TC is inside the ICE group, and ICE + MGU-K = 150 kg in every option.",
+      "source": "FIA-C-ISS20"
+    },
+    "driveline": {
+      "article": "C9.5.2",
+      "floor_kg": 22
+    },
+    "ice_ballast": {
+      "article": "C5.5.8",
+      "max_kg": 2
+    }
+  },
+  "sources": {
+    "FIA-C-ISS20": {
+      "accessed": "2026-10-24",
+      "title": "2026 Formula 1 Regulations - Section C [Technical], Issue 20",
+      "publisher": "FIA",
+      "published": "2026-08-05",
+      "url": "https://api.fia.com/system/files/documents/fia_2026_f1_regulations_-_section_c_technical_-_iss_20_-_2026-08-05.pdf",
+      "kind": "regulation",
+      "note": "PDF sha256 cf0b919e...4ff652; mass articles C4.1-C4.7, C5.3.4, C5.5.1-C5.5.3, C5.5.8, C5.17.9, C5.18.7, C9.5.2 and the definitions read; text identical to Issue 17 for every mass article cited here"
+    },
+    "FIA-C-ISS17": {
+      "accessed": "2026-10-24",
+      "title": "2026 Formula 1 Regulations - Section C [Technical], Issue 17",
+      "publisher": "FIA",
+      "published": "2026-04-28",
+      "url": "https://api.fia.com/system/files/documents/fia_2026_f1_regulations_-_section_c_technical_-_iss_17_-_2026-04-28.pdf",
+      "kind": "regulation",
+      "note": "the issue concept/regs.js cites (sha256 5168bd01...c391c3)"
+    },
+    "FIA-C-ISS8": {
+      "accessed": "2026-10-24",
+      "title": "2026 Formula 1 Technical Regulations, Issue 8",
+      "publisher": "FIA",
+      "published": "2024-06-24",
+      "url": "https://www.fia.com/sites/default/files/fia_2026_formula_1_technical_regulations_issue_8_-_2024-06-24.pdf",
+      "kind": "regulation",
+      "note": "first published 2026 rules: Art. 4.2 'The Minimum Mass is 724kg plus the Nominal Tyre Mass', issued with the 768 kg headline"
+    },
+    "PIRELLI-2026": {
+      "accessed": "2026-10-24",
+      "title": "F1 2026 Here we go! What's changing on track",
+      "publisher": "Pirelli",
+      "published": "2026",
+      "url": "https://www.pirelli.com/global/en-ww/race/racingspot/formula-1/new-2026-f1-rules-187730/",
+      "kind": "official",
+      "note": "'the 4 tyres on every car are 1.6 kilos lighter than last season'; fronts 2.5 cm narrower and 1.5 cm smaller in diameter, rears 3 cm and 1 cm; minimum weight 768 kg"
+    },
+    "MERCEDES-TYRES": {
+      "accessed": "2026-10-24",
+      "title": "What Are the Tyre Options for the 2026 Bahrain GP in Malaysia?",
+      "publisher": "Mercedes-AMG Petronas F1 Team",
+      "published": "2026-09-30",
+      "url": "https://www.mercedesamgf1.com/news/what-are-the-tyre-options-for-the-2026-bahrain-gp-in-malaysia",
+      "kind": "official",
+      "note": "front tyre 705 mm x 280 mm, rear 710 mm x 375 mm"
+    },
+    "MCLAREN-SPEC": {
+      "accessed": "2026-10-24",
+      "title": "What is the technical specification of our 2026 Formula 1 car?",
+      "publisher": "McLaren Racing",
+      "published": "2026-02-11",
+      "url": "https://www.mclaren.com/racing/formula-1/2026/what-is-the-technical-specification-of-our-2026-formula-1/",
+      "kind": "official",
+      "note": "'Overall vehicle weight 772kg (including driver, excluding fuel)'; front axle 44-46 %; PU minimum weight 185 kg; energy store minimum 35 kg; Enkei 18-inch magnesium wheels; AP Racing calipers; carbon gearbox casing"
+    },
+    "RACETECH-SPECS": {
+      "accessed": "2026-10-24",
+      "title": "F1's 2026 liveries and tech spec round-up",
+      "publisher": "Race Tech",
+      "published": "2026-02-10",
+      "url": "https://www.racetechmag.com/2026/02/f1s-2026-liveries-and-tech-spec-round-up/",
+      "kind": "reported",
+      "note": "quotes team spec sheets: Ferrari 'minimum battery pack mass including control electronics of 35 kg' and 'Weight including coolant, oil and driver: 770 kg'; Haas '770 kg (minimum, including driver, excluding fuel)'; most others 768 kg"
+    },
+    "PLANETF1-WILLIAMS": {
+      "accessed": "2026-10-24",
+      "title": "Williams confirms car weight for 2026 after alarming rumours eased",
+      "publisher": "PlanetF1",
+      "published": "2026-02-04",
+      "url": "https://www.planetf1.com/news/williams-fw48-f1-2026-car-weight",
+      "kind": "reported",
+      "note": "Williams FW48 772.4 kg, '4.4 kg over' the 768 kg limit; Mercedes W17 772 kg"
+    },
+    "RN365-WEIGHTS": {
+      "accessed": "2026-10-24",
+      "title": "The weights of every F1 car in 2026",
+      "publisher": "RacingNews365",
+      "published": "2026-04-02",
+      "url": "https://racingnews365.com/the-weights-of-every-f1-car-in-2026",
+      "kind": "reported",
+      "note": "approximate, 'consulting multiple sources': Mercedes, Ferrari, Audi under the limit; McLaren on it; Haas +1, Alpine +2, Racing Bulls +4/5, Cadillac +6/7, Red Bull and Aston Martin +9/10, Williams +26 kg"
+    },
+    "GP-ALPINE": {
+      "accessed": "2026-10-24",
+      "title": "Alpine hits 2026 weight limit as rivals struggle",
+      "publisher": "GrandPrix.com",
+      "published": "2026-01-28",
+      "url": "https://www.grandprix.com/news/alpine-hits-2026-weight-limit-as-rivals-struggle.html",
+      "kind": "reported",
+      "note": "'the FIA-mandated minimum of 770 kilograms' (session not stated)"
+    },
+    "RACEFANS-HORNER": {
+      "accessed": "2026-10-24",
+      "title": "FIA's 2026 F1 weight limit was 'plucked from the air' and very hard to hit - Horner",
+      "publisher": "RaceFans",
+      "published": "2025-05-03",
+      "url": "https://www.racefans.net/2025/05/03/fias-2026-f1-weight-limit-was-plucked-from-the-air-and-very-hard-to-hit-horner/",
+      "kind": "reported",
+      "note": "768 kg headline footnoted 'Assuming a Nominal Tyre Mass of 44kg. The 2026 limit is 2kg higher in qualifying sessions'; steel skids 'adding five kilos'"
+    },
+    "THERACE-BRAKES": {
+      "accessed": "2026-10-24",
+      "title": "The first hint of how 'extreme' F1 2026 designs will get",
+      "publisher": "The Race (Jon Noble)",
+      "published": "2025-08-24",
+      "url": "https://www.the-race.com/formula-1/f1-2026-extreme-brake-designs-brembo/",
+      "kind": "reported",
+      "note": "'each corner of a brake system (caliper, pads and discs) weighing around 4.5kg at the moment'; C11.3 disc limits"
+    },
+    "THEDRIVE-BREMBO": {
+      "accessed": "2026-10-24",
+      "title": "How Brembo Redesigned F1 Brakes for the 2026 Power Unit Revolution",
+      "publisher": "The Drive (Jerry Perez)",
+      "published": "2026-03-06",
+      "url": "https://www.thedrive.com/news/how-brembo-redesigned-f1-brakes-for-the-2026-power-unit-revolution",
+      "kind": "reported",
+      "note": "front disc 330 mm (to 345), 34 mm; 'Disc weight also increased from 1.75 kilos to 2'; caliper 0.5 kg lighter than 2025"
+    },
+    "GASGOO-BREMBO": {
+      "accessed": "2026-10-24",
+      "title": "Breaking through F1's new regulations: Brembo upgrades core braking technology",
+      "publisher": "Gasgoo AutoNews",
+      "published": "2026-03-13",
+      "url": "https://autonews.gasgoo.com/articles/market-industry/breaking-through-f1s-new-regulations-brembo-upgrades-core-braking-technology-deepens-presence-in-china-to-start-a-new-journey-2032413309431603200",
+      "kind": "reported",
+      "note": "2026 Brembo caliper 'around 2.0 kg', about 0.5 kg lighter than 2025"
+    },
+    "AUTOSPORT-HALO": {
+      "accessed": "2026-10-24",
+      "title": "How to build a halo",
+      "publisher": "Autosport",
+      "published": "2018-06-02",
+      "url": "https://www.autosport.com/f1/news/how-to-build-a-halo-5110815/5110815/",
+      "kind": "reported",
+      "note": "'Each one weighs 7kg'; titanium; FIA-appointed suppliers CP Autosport, SSTT, V System"
+    },
+    "IMECHE-HALO": {
+      "accessed": "2026-10-24",
+      "title": "Formula One's lifesaving halo presents unique manufacturing challenges",
+      "publisher": "IMechE",
+      "published": "2022-03-03",
+      "url": "https://imeche.org/news/news-article/formula-one's-lifesaving-halo-presents-unique-manufacturing-challenges",
+      "kind": "reported",
+      "note": "'overall weight ... 13.5kg ±0.1kg' (scope not stated: conflicts with the 7 kg figure)"
+    },
+    "GPFANS-WEIGHT": {
+      "accessed": "2026-10-24",
+      "title": "F1 Explained: How much does a Formula 1 car weigh?",
+      "publisher": "GPFans",
+      "published": "2024-08-26 (updated 2026-03-26)",
+      "url": "https://www.gpfans.com/en/f1-news/1028252/f1-car-weight-explained/",
+      "kind": "reported",
+      "note": "general journalism, no primary source named: front wing 'around 10kg', halo 7 kg, gearbox 'about 40kg', steering wheel 1.3 kg"
+    },
+    "MOTORSPORT-ES-WEIGHT": {
+      "accessed": "2026-10-24",
+      "title": "¿Cuánto pesa un coche de F1? El peso mínimo de un F1 en 2026 y su evolución",
+      "publisher": "Motorsport.com (Spanish edition)",
+      "published": "2026-09-22 (edited)",
+      "url": "https://es.motorsport.com/f1/news/cuanto-pesa-formula1-evolucion-peso-minimo/10857719/",
+      "kind": "reported",
+      "note": "gearbox about 40 kg, halo about 7 kg, front wing about 10 kg, steering wheel about 1.3 kg; no primary source named"
+    },
+    "F1-KIT-2014": {
+      "accessed": "2026-10-24",
+      "title": "Pre-Sakhir analysis - driver weight a hot topic",
+      "publisher": "Formula1.com",
+      "published": "2014-04-04",
+      "url": "https://www.formula1.com/en/latest/article/pre-sakhir-analysis-driver-weight-a-hot-topic.2xDeFJwraCk1lG8k1KRofn",
+      "kind": "official",
+      "note": "'racing kit - flameproof underwear, socks, gloves, balaclava, boots, helmet and HANS device - adds around 4-5 kg'"
+    },
+    "RN365-PAINT": {
+      "accessed": "2026-10-24",
+      "title": "Why F1 teams are using black carbon car liveries",
+      "publisher": "RacingNews365",
+      "published": "2024-02-13",
+      "url": "https://racingnews365.com/why-f1-teams-are-using-black-carbon-car-liveries",
+      "kind": "reported",
+      "note": "Beat Zehnder: 'a fully coloured livery weighs roughly 6 kilograms of paint'"
+    },
+    "F1DICT-TUB": {
+      "accessed": "2026-10-24",
+      "title": "Monocoque - Survival Cell",
+      "publisher": "formula1-dictionary.net",
+      "published": "undated",
+      "url": "https://www.formula1-dictionary.net/f1-monocoque/",
+      "kind": "reported",
+      "note": "'A monocoque can weigh as little as 35 kg' (reference site, scope not stated; weakest source used)"
+    },
+    "LOOM-LENGTH": {
+      "accessed": "2026-10-24",
+      "title": "GM Says Cadillac's F1 Car May Carry More Than 10 Miles Of Wiring",
+      "publisher": "Carscoops",
+      "published": "2026",
+      "url": "https://www.carscoops.com/2287761/gm-cadillac-f1-10-miles-wiring/",
+      "kind": "reported",
+      "note": "≈16 km of wiring (GM estimate); length only, no mass"
+    }
+  },
+  "parts": [
+    {
+      "id": "survival_cell",
+      "name": "Survival cell (monocoque, SIS, anti-intrusion panels, fuel-cell bay, roll structure mounts)",
+      "mass_kg": {
+        "best": 71.7,
+        "min": 42.5,
+        "max": 82.5,
+        "bottom_up": 50
+      },
+      "kind": "engineering estimate",
+      "kinds_in_row": [
+        "engineering estimate"
+      ],
+      "components": [
+        {
+          "item": "composite tub shell (carbon/aluminium honeycomb)",
+          "kg": 38,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": [
+            "F1DICT-TUB"
+          ]
+        },
+        {
+          "item": "side impact structures and anti-intrusion panels",
+          "kg": 6,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": []
+        },
+        {
+          "item": "inserts, bulkheads, fixings, principal roll structure",
+          "kg": 6,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": []
+        }
+      ],
+      "basis": "No public 2026 figure. The often-quoted 'as little as 35 kg' is a bare-shell figure of unstated scope and era; 2026 adds higher homologation loads (C13). Bottom-up 50 kg; reconciled upward with the other estimates (see consistency).",
+      "sources": [
+        "F1DICT-TUB"
+      ],
+      "parts_js_kg": 70,
+      "delta_vs_parts_js_kg": 1.7,
+      "position": {
+        "frame": "FIA Car Coordinate System, baseline concept geometry (WB 3400, XC 1855, XPU 2235)",
+        "x_mm": null,
+        "z_mm": null,
+        "basis": "no regulation or public figure fixes it; keep the parts.js position"
+      }
+    },
+    {
+      "id": "nose",
+      "name": "Nose and front impact structure",
+      "mass_kg": {
+        "best": 7.2,
+        "min": 4.5,
+        "max": 8.5,
+        "bottom_up": 5
+      },
+      "kind": "engineering estimate",
+      "kinds_in_row": [
+        "engineering estimate"
+      ],
+      "components": [
+        {
+          "item": "nose box (FIS), nose fairing, front-wing mounting",
+          "kg": 5,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": []
+        }
+      ],
+      "basis": "No public figure found; carbon/honeycomb crash box about 1.0-1.3 m long plus fairing.",
+      "sources": [],
+      "parts_js_kg": 8,
+      "delta_vs_parts_js_kg": -0.8,
+      "position": {
+        "frame": "FIA Car Coordinate System, baseline concept geometry (WB 3400, XC 1855, XPU 2235)",
+        "x_mm": null,
+        "z_mm": null,
+        "basis": "no regulation or public figure fixes it; keep the parts.js position"
+      }
+    },
+    {
+      "id": "halo",
+      "name": "Halo (Secondary Roll Structure)",
+      "mass_kg": {
+        "best": 9.9,
+        "min": 7,
+        "max": 13.5,
+        "bottom_up": 9
+      },
+      "kind": "reported",
+      "kinds_in_row": [
+        "reported",
+        "engineering estimate"
+      ],
+      "components": [
+        {
+          "item": "titanium halo to FIA 8869-2018 (C12.4.2), FIA-appointed suppliers",
+          "kg": 7,
+          "kind": "reported",
+          "scaled_by_reconciliation": false,
+          "sources": [
+            "AUTOSPORT-HALO",
+            "GPFANS-WEIGHT",
+            "MOTORSPORT-ES-WEIGHT"
+          ]
+        },
+        {
+          "item": "halo fairing (C3.13.3, laminate PL-HALO) and fixings",
+          "kg": 2,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": []
+        }
+      ],
+      "basis": "Section C specifies the halo by standard (FIA 8869-2018), not by a mass figure. 7 kg is the widely reported titanium-structure mass; IMechE quotes 13.5 kg ±0.1 kg 'overall' with unstated scope (range upper bound).",
+      "sources": [
+        "AUTOSPORT-HALO",
+        "GPFANS-WEIGHT",
+        "MOTORSPORT-ES-WEIGHT"
+      ],
+      "parts_js_kg": 7.5,
+      "delta_vs_parts_js_kg": 2.4,
+      "position": {
+        "frame": "FIA Car Coordinate System, baseline concept geometry (WB 3400, XC 1855, XPU 2235)",
+        "x_mm": null,
+        "z_mm": null,
+        "basis": "no regulation or public figure fixes it; keep the parts.js position"
+      }
+    },
+    {
+      "id": "rear_impact",
+      "name": "Rear impact structure and rear crash structures",
+      "mass_kg": {
+        "best": 5.7,
+        "min": 3.5,
+        "max": 6.5,
+        "bottom_up": 4
+      },
+      "kind": "engineering estimate",
+      "kinds_in_row": [
+        "engineering estimate"
+      ],
+      "components": [
+        {
+          "item": "rear impact structure, rain light, jacking points",
+          "kg": 4,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": []
+        }
+      ],
+      "basis": "No public figure found.",
+      "sources": [],
+      "parts_js_kg": 6,
+      "delta_vs_parts_js_kg": -0.3,
+      "position": {
+        "frame": "FIA Car Coordinate System, baseline concept geometry (WB 3400, XC 1855, XPU 2235)",
+        "x_mm": null,
+        "z_mm": null,
+        "basis": "no regulation or public figure fixes it; keep the parts.js position"
+      }
+    },
+    {
+      "id": "front_wing",
+      "name": "Front wing assembly",
+      "mass_kg": {
+        "best": 10,
+        "min": 8,
+        "max": 12,
+        "bottom_up": 10
+      },
+      "kind": "reported",
+      "kinds_in_row": [
+        "reported"
+      ],
+      "components": [
+        {
+          "item": "profiles (≤ 3 volumes, C3.10.1), endplates, footplates, diveplanes",
+          "kg": 10,
+          "kind": "reported",
+          "scaled_by_reconciliation": false,
+          "sources": [
+            "GPFANS-WEIGHT",
+            "MOTORSPORT-ES-WEIGHT"
+          ]
+        }
+      ],
+      "basis": "'Around 10 kg' is a general-press figure for the pre-2026 wing (no primary source named). Straight-mode actuator not included: add ≈0.8 kg (0.5-1.5, engineering estimate) when sm_delta_deg > 0 (every real 2026 car uses it, C3.10.10).",
+      "sources": [
+        "GPFANS-WEIGHT",
+        "MOTORSPORT-ES-WEIGHT"
+      ],
+      "actuator_kg_if_straight_mode": 0.8,
+      "parts_js_kg": 11.5,
+      "delta_vs_parts_js_kg": -1.5,
+      "position": {
+        "frame": "FIA Car Coordinate System, baseline concept geometry (WB 3400, XC 1855, XPU 2235)",
+        "x_mm": -862,
+        "z_mm": null,
+        "basis": "centre of RV-FW-PROFILES, XF -1250…-475 (App. C2 §22)"
+      }
+    },
+    {
+      "id": "rear_wing",
+      "name": "Rear wing assembly (profiles, endplates, pylon, brace)",
+      "mass_kg": {
+        "best": 11.5,
+        "min": 7,
+        "max": 13,
+        "bottom_up": 8
+      },
+      "kind": "engineering estimate",
+      "kinds_in_row": [
+        "engineering estimate"
+      ],
+      "components": [
+        {
+          "item": "profiles and endplate bodies (C3.11.1-2)",
+          "kg": 6.5,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": []
+        },
+        {
+          "item": "pylon and brace (C3.11.3-4)",
+          "kg": 1.5,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": []
+        }
+      ],
+      "basis": "No public figure found. Straight-mode actuator not included: add ≈1.0 kg (0.5-1.5, engineering estimate) when sm_delta_deg > 0.",
+      "sources": [],
+      "actuator_kg_if_straight_mode": 1,
+      "parts_js_kg": 10.4,
+      "delta_vs_parts_js_kg": 1.1,
+      "position": {
+        "frame": "FIA Car Coordinate System, baseline concept geometry (WB 3400, XC 1855, XPU 2235)",
+        "x_mm": 3798,
+        "z_mm": null,
+        "basis": "centre of RV-RW-PROFILES, XR 165…630 (App. C2 §30)"
+      }
+    },
+    {
+      "id": "beam_wing",
+      "name": "Beam wing",
+      "mass_kg": {
+        "best": 0,
+        "min": 0,
+        "max": 0,
+        "bottom_up": 0
+      },
+      "kind": "regulation",
+      "kinds_in_row": [
+        "regulation"
+      ],
+      "components": [
+        {
+          "item": "no beam wing in the 2026 rules",
+          "kg": 0,
+          "kind": "regulation",
+          "scaled_by_reconciliation": false,
+          "sources": [
+            "FIA-C-ISS20"
+          ]
+        }
+      ],
+      "basis": "Section C Issue 20 C3.11 defines Rear Wing Profiles, Endplate Body, Brace, Pylon, Assembly, Adjuster System and Auxiliary Components; there is no beam wing element in the 2026 rules (the Rear Wing Brace is the nearest part, counted in rear_wing).",
+      "sources": [
+        "FIA-C-ISS20"
+      ],
+      "parts_js_kg": 2.2,
+      "delta_vs_parts_js_kg": -2.2,
+      "position": {
+        "frame": "FIA Car Coordinate System, baseline concept geometry (WB 3400, XC 1855, XPU 2235)",
+        "x_mm": null,
+        "z_mm": null,
+        "basis": "no regulation or public figure fixes it; keep the parts.js position"
+      }
+    },
+    {
+      "id": "floor",
+      "name": "Floor (body, edges, fences, stays, plank assembly)",
+      "mass_kg": {
+        "best": 31.4,
+        "min": 20.5,
+        "max": 36,
+        "bottom_up": 24
+      },
+      "kind": "engineering estimate",
+      "kinds_in_row": [
+        "engineering estimate"
+      ],
+      "components": [
+        {
+          "item": "floor body, edges, fences, stays (C3.5)",
+          "kg": 17,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": []
+        },
+        {
+          "item": "plank assembly: plank + skids + mountings (C3.6)",
+          "kg": 7,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": false,
+          "sources": [
+            "FIA-C-ISS20"
+          ]
+        }
+      ],
+      "basis": "Plank from regulation geometry: RV-PLANK (App. C2 §11) is 570,750 mm² × 10 mm (C3.6.1(d)) = 5.71 L; at specific gravity 1.30-1.45 (C3.6.2(a)) a solid plank is 7.4-8.3 kg, pocketing (C3.6.2(c), Z -7…-0.5) can take it to ≈4.8-6.4 kg; plus Ti-6Al-4V or 17-4PH skids (C3.6.3) ≈0.5-1.5 kg. Floor body has no public figure.",
+      "sources": [
+        "FIA-C-ISS20"
+      ],
+      "parts_js_kg": 30,
+      "delta_vs_parts_js_kg": 1.4,
+      "position": {
+        "frame": "FIA Car Coordinate System, baseline concept geometry (WB 3400, XC 1855, XPU 2235)",
+        "x_mm": null,
+        "z_mm": null,
+        "basis": "plank assembly alone: centroid of RV-PLANK ≈ XF 1600, Z -5 (App. C2 §11, C3.6.1(a): upper surface at Z=0, 10 mm thick)"
+      }
+    },
+    {
+      "id": "diffuser",
+      "name": "Diffuser",
+      "mass_kg": {
+        "best": 5,
+        "min": 3,
+        "max": 6,
+        "bottom_up": 3.5
+      },
+      "kind": "engineering estimate",
+      "kinds_in_row": [
+        "engineering estimate"
+      ],
+      "components": [
+        {
+          "item": "diffuser surfaces and strakes",
+          "kg": 3.5,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": []
+        }
+      ],
+      "basis": "No public figure found.",
+      "sources": [],
+      "parts_js_kg": 4,
+      "delta_vs_parts_js_kg": 1,
+      "position": {
+        "frame": "FIA Car Coordinate System, baseline concept geometry (WB 3400, XC 1855, XPU 2235)",
+        "x_mm": null,
+        "z_mm": null,
+        "basis": "no regulation or public figure fixes it; keep the parts.js position"
+      }
+    },
+    {
+      "id": "sidepods",
+      "name": "Sidepods (bodywork, inlets)",
+      "mass_kg": {
+        "best": 8.6,
+        "min": 5,
+        "max": 10,
+        "bottom_up": 6
+      },
+      "kind": "engineering estimate",
+      "kinds_in_row": [
+        "engineering estimate"
+      ],
+      "components": [
+        {
+          "item": "sidepod bodywork and inlets",
+          "kg": 6,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": []
+        }
+      ],
+      "basis": "No public figure found; ≈3-4 m² of thin carbon bodywork plus inlet structure.",
+      "sources": [],
+      "parts_js_kg": 7,
+      "delta_vs_parts_js_kg": 1.6,
+      "position": {
+        "frame": "FIA Car Coordinate System, baseline concept geometry (WB 3400, XC 1855, XPU 2235)",
+        "x_mm": null,
+        "z_mm": null,
+        "basis": "no regulation or public figure fixes it; keep the parts.js position"
+      }
+    },
+    {
+      "id": "engine_cover",
+      "name": "Engine cover, airbox and roll-hoop fairing",
+      "mass_kg": {
+        "best": 8.6,
+        "min": 5,
+        "max": 10,
+        "bottom_up": 6
+      },
+      "kind": "engineering estimate",
+      "kinds_in_row": [
+        "engineering estimate"
+      ],
+      "components": [
+        {
+          "item": "engine cover, airbox, roll-hoop fairing",
+          "kg": 6,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": []
+        }
+      ],
+      "basis": "No public figure found.",
+      "sources": [],
+      "parts_js_kg": 6,
+      "delta_vs_parts_js_kg": 2.6,
+      "position": {
+        "frame": "FIA Car Coordinate System, baseline concept geometry (WB 3400, XC 1855, XPU 2235)",
+        "x_mm": null,
+        "z_mm": null,
+        "basis": "no regulation or public figure fixes it; keep the parts.js position"
+      }
+    },
+    {
+      "id": "pu_ice",
+      "name": "PU · ICE mass group less the turbocharger (ICE, Powerbox, exhaust to turbine)",
+      "mass_kg": {
+        "best": 118.5,
+        "min": 118,
+        "max": 120.5,
+        "bottom_up": 118.5
+      },
+      "kind": "regulation",
+      "kinds_in_row": [
+        "regulation"
+      ],
+      "components": [
+        {
+          "item": "ICE mass group 130.5 kg (C5.5.1(a) floor 130 + 0.5 kg) minus TC 12 kg",
+          "kg": 118.5,
+          "kind": "regulation",
+          "scaled_by_reconciliation": false,
+          "sources": [
+            "FIA-C-ISS20"
+          ]
+        }
+      ],
+      "basis": "C5.5.1: the ICE 'PU Mass group' ≥ 130.0 / 132.0 / 134.0 kg depending on where the MGU-K transmission sits; Appendix C3 Drawing 9 shows this group is ICE + TC + Powerbox ('Min ICE+TC+Powerbox 130kg'), so the 12 kg TC (C5.3.4) sits INSIDE the 130 kg. Option (a) pairs ICE 130 with MGU-K 20. Manufacturers can trim to the floor with ≤ 2 kg of ICE ballast (C5.5.8); +0.5 kg margin assumed.",
+      "sources": [
+        "FIA-C-ISS20"
+      ],
+      "parts_js_kg": 131,
+      "delta_vs_parts_js_kg": -12.5,
+      "position": {
+        "frame": "FIA Car Coordinate System, baseline concept geometry (WB 3400, XC 1855, XPU 2235)",
+        "x_mm": null,
+        "z_mm": 230,
+        "basis": "crankshaft centre line at Z=90 (C5.4.5); a 90° V6 sits ≈ 140 mm of CoG above it (estimate); ICE+TC CoG must be above Z=200 (C5.5.3)"
+      }
+    },
+    {
+      "id": "pu_turbo",
+      "name": "PU · turbocharger",
+      "mass_kg": {
+        "best": 12,
+        "min": 12,
+        "max": 13,
+        "bottom_up": 12
+      },
+      "kind": "regulation",
+      "kinds_in_row": [
+        "regulation"
+      ],
+      "components": [
+        {
+          "item": "turbocharger (C5.3.4 floor)",
+          "kg": 12,
+          "kind": "regulation",
+          "scaled_by_reconciliation": false,
+          "sources": [
+            "FIA-C-ISS20"
+          ]
+        }
+      ],
+      "basis": "C5.3.4 ≥ 12 kg; part of the ICE mass group (Drawing 9).",
+      "sources": [
+        "FIA-C-ISS20"
+      ],
+      "parts_js_kg": 12,
+      "delta_vs_parts_js_kg": 0,
+      "position": {
+        "frame": "FIA Car Coordinate System, baseline concept geometry (WB 3400, XC 1855, XPU 2235)",
+        "x_mm": null,
+        "z_mm": null,
+        "basis": "no regulation or public figure fixes it; keep the parts.js position"
+      }
+    },
+    {
+      "id": "pu_mguk",
+      "name": "PU · MGU-K (incl. mechanical transmission and phase conductors)",
+      "mass_kg": {
+        "best": 20,
+        "min": 20,
+        "max": 21,
+        "bottom_up": 20
+      },
+      "kind": "regulation",
+      "kinds_in_row": [
+        "regulation"
+      ],
+      "components": [
+        {
+          "item": "MGU-K mass group, option (a)",
+          "kg": 20,
+          "kind": "regulation",
+          "scaled_by_reconciliation": false,
+          "sources": [
+            "FIA-C-ISS20"
+          ]
+        }
+      ],
+      "basis": "C5.18.7(a) ≥ 20.0 kg when the whole MGU-K speed ratio is in RV-PU-ERS (pairs with ICE ≥ 130); Drawing 9 shows MGU-K 16 kg + an assumed 4 kg transmission. ICE + MGU-K = 150 kg in all three options.",
+      "sources": [
+        "FIA-C-ISS20"
+      ],
+      "parts_js_kg": 18,
+      "delta_vs_parts_js_kg": 2,
+      "position": {
+        "frame": "FIA Car Coordinate System, baseline concept geometry (WB 3400, XC 1855, XPU 2235)",
+        "x_mm": null,
+        "z_mm": null,
+        "basis": "no regulation or public figure fixes it; keep the parts.js position"
+      }
+    },
+    {
+      "id": "pu_es",
+      "name": "PU · energy store main enclosure (incl. CU-K and DC-DC)",
+      "mass_kg": {
+        "best": 35,
+        "min": 35,
+        "max": 36,
+        "bottom_up": 35
+      },
+      "kind": "regulation",
+      "kinds_in_row": [
+        "regulation"
+      ],
+      "components": [
+        {
+          "item": "ESME mass group",
+          "kg": 35,
+          "kind": "regulation",
+          "scaled_by_reconciliation": false,
+          "sources": [
+            "FIA-C-ISS20",
+            "MCLAREN-SPEC",
+            "RACETECH-SPECS"
+          ]
+        }
+      ],
+      "basis": "C5.17.9 ≥ 35.0 kg; Appendix C4 items 39 (CU-K) and 40 (DC-DC) are in the ESME group. Ferrari's spec sheet: 'minimum battery pack mass including control electronics of 35 kg'.",
+      "sources": [
+        "FIA-C-ISS20",
+        "MCLAREN-SPEC",
+        "RACETECH-SPECS"
+      ],
+      "parts_js_kg": 36,
+      "delta_vs_parts_js_kg": -1,
+      "position": {
+        "frame": "FIA Car Coordinate System, baseline concept geometry (WB 3400, XC 1855, XPU 2235)",
+        "x_mm": null,
+        "z_mm": null,
+        "basis": "no regulation or public figure fixes it; keep the parts.js position"
+      }
+    },
+    {
+      "id": "pu_electronics",
+      "name": "PU items outside the mass groups (tailpipe, intake to compressor, breather, mounting studs)",
+      "mass_kg": {
+        "best": 5.7,
+        "min": 3.5,
+        "max": 6.5,
+        "bottom_up": 4
+      },
+      "kind": "engineering estimate",
+      "kinds_in_row": [
+        "engineering estimate"
+      ],
+      "components": [
+        {
+          "item": "App. C4 items 72-76 (EXC from every PU mass group)",
+          "kg": 4,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": [
+            "FIA-C-ISS20"
+          ]
+        }
+      ],
+      "basis": "The PU control electronics are already inside the ESME (CU-K, DC-DC) and ICE (Powerbox) groups, so parts.js's 6 kg 'control electronics' double-counts them. What remains outside the groups: exhaust beyond the turbine and wastegate (item 73, tailpipe C3.9.2), intake upstream of the compressor and air filter (72), breather ducting (74), PU mounting studs (76); car looms (75) are in electronics.",
+      "sources": [
+        "FIA-C-ISS20"
+      ],
+      "parts_js_kg": 6,
+      "delta_vs_parts_js_kg": -0.3,
+      "position": {
+        "frame": "FIA Car Coordinate System, baseline concept geometry (WB 3400, XC 1855, XPU 2235)",
+        "x_mm": null,
+        "z_mm": null,
+        "basis": "no regulation or public figure fixes it; keep the parts.js position"
+      }
+    },
+    {
+      "id": "gearbox",
+      "name": "Gearbox, differential, driveshafts, oil",
+      "mass_kg": {
+        "best": 48.6,
+        "min": 39,
+        "max": 56,
+        "bottom_up": 46
+      },
+      "kind": "reported",
+      "kinds_in_row": [
+        "reported",
+        "engineering estimate"
+      ],
+      "components": [
+        {
+          "item": "gearbox: carbon casing + internals (8 forward ratios, C9.6.1)",
+          "kg": 40,
+          "kind": "reported",
+          "scaled_by_reconciliation": false,
+          "sources": [
+            "GPFANS-WEIGHT",
+            "MOTORSPORT-ES-WEIGHT"
+          ]
+        },
+        {
+          "item": "driveshafts and joints",
+          "kg": 4,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": []
+        },
+        {
+          "item": "gearbox oil",
+          "kg": 2,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": []
+        }
+      ],
+      "basis": "'About 40 kg' is a general-press figure (no primary source named). C9.5.2 sets a 22 kg floor for driveline and gear-change components.",
+      "sources": [
+        "GPFANS-WEIGHT",
+        "MOTORSPORT-ES-WEIGHT"
+      ],
+      "parts_js_kg": 52.3,
+      "delta_vs_parts_js_kg": -3.7,
+      "position": {
+        "frame": "FIA Car Coordinate System, baseline concept geometry (WB 3400, XC 1855, XPU 2235)",
+        "x_mm": null,
+        "z_mm": null,
+        "basis": "no regulation or public figure fixes it; keep the parts.js position"
+      }
+    },
+    {
+      "id": "front_suspension",
+      "name": "Front suspension and steering (incl. steering wheel)",
+      "mass_kg": {
+        "best": 30.7,
+        "min": 18.5,
+        "max": 35.5,
+        "bottom_up": 21.8
+      },
+      "kind": "engineering estimate",
+      "kinds_in_row": [
+        "engineering estimate",
+        "reported"
+      ],
+      "components": [
+        {
+          "item": "wishbones, push/pull rods, uprights, hubs, rockers, dampers, heave element",
+          "kg": 17,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": []
+        },
+        {
+          "item": "steering rack, column, power steering",
+          "kg": 3.5,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": []
+        },
+        {
+          "item": "steering wheel",
+          "kg": 1.3,
+          "kind": "reported",
+          "scaled_by_reconciliation": false,
+          "sources": [
+            "GPFANS-WEIGHT",
+            "MOTORSPORT-ES-WEIGHT"
+          ]
+        }
+      ],
+      "basis": "No public figure for the suspension; per corner ≈ 3 kg of composite wishbones/rods, 3 kg upright, 1.5 kg hub plus ≈ 3 kg of inboard parts (engineering estimate).",
+      "sources": [
+        "GPFANS-WEIGHT",
+        "MOTORSPORT-ES-WEIGHT"
+      ],
+      "parts_js_kg": 26,
+      "delta_vs_parts_js_kg": 4.7,
+      "position": {
+        "frame": "FIA Car Coordinate System, baseline concept geometry (WB 3400, XC 1855, XPU 2235)",
+        "x_mm": null,
+        "z_mm": null,
+        "basis": "no regulation or public figure fixes it; keep the parts.js position"
+      }
+    },
+    {
+      "id": "rear_suspension",
+      "name": "Rear suspension",
+      "mass_kg": {
+        "best": 27.2,
+        "min": 16,
+        "max": 31.5,
+        "bottom_up": 19
+      },
+      "kind": "engineering estimate",
+      "kinds_in_row": [
+        "engineering estimate"
+      ],
+      "components": [
+        {
+          "item": "wishbones, rods, uprights, hubs, inboard parts",
+          "kg": 19,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": []
+        }
+      ],
+      "basis": "No public figure found.",
+      "sources": [],
+      "parts_js_kg": 24,
+      "delta_vs_parts_js_kg": 3.2,
+      "position": {
+        "frame": "FIA Car Coordinate System, baseline concept geometry (WB 3400, XC 1855, XPU 2235)",
+        "x_mm": null,
+        "z_mm": null,
+        "basis": "no regulation or public figure fixes it; keep the parts.js position"
+      }
+    },
+    {
+      "id": "wheels_front",
+      "name": "Front wheels and tyres (×2)",
+      "mass_kg": {
+        "best": 40.1,
+        "min": 29,
+        "max": 46,
+        "bottom_up": 34
+      },
+      "kind": "engineering estimate",
+      "kinds_in_row": [
+        "engineering estimate"
+      ],
+      "components": [
+        {
+          "item": "2 × magnesium rim (AZ70/AZ80, C10.7.1-2) with fastener, TPMS, outboard disc",
+          "kg": 14,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": [
+            "FIA-C-ISS20",
+            "MCLAREN-SPEC"
+          ]
+        },
+        {
+          "item": "2 × front tyre: 45.5 % of the Nominal Tyre Mass",
+          "kg": 20,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": false,
+          "sources": [
+            "MERCEDES-TYRES",
+            "PIRELLI-2026",
+            "RACEFANS-HORNER"
+          ]
+        }
+      ],
+      "basis": "Rim: no public mass (2026 rims come from more than one supplier, e.g. Enkei for McLaren). Geometry estimate: C10.7.2 dimensions, magnesium 1.80 g/cm³, 4 mm mean barrel wall gives 5.8 kg front / 6.7 kg rear bare; +≈1 kg fittings. Tyre: NTM 44 kg (estimate) split by cross-section (705×280 vs 710×375 mm): front share 0.455 → 10.0 kg per front tyre.",
+      "sources": [
+        "FIA-C-ISS20",
+        "MCLAREN-SPEC",
+        "MERCEDES-TYRES",
+        "PIRELLI-2026",
+        "RACEFANS-HORNER"
+      ],
+      "parts_js_kg": 39.8,
+      "delta_vs_parts_js_kg": 0.3,
+      "position": {
+        "frame": "FIA Car Coordinate System, baseline concept geometry (WB 3400, XC 1855, XPU 2235)",
+        "x_mm": 0,
+        "z_mm": 300,
+        "basis": "XF=0; tyre radius 352.5 mm (705 mm OD) less ≈10 mm deflection, ground at Z ≈ -45 (10 mm plank + 35 mm baseline ride height)"
+      }
+    },
+    {
+      "id": "wheels_rear",
+      "name": "Rear wheels and tyres (×2)",
+      "mass_kg": {
+        "best": 46.9,
+        "min": 34,
+        "max": 54,
+        "bottom_up": 40
+      },
+      "kind": "engineering estimate",
+      "kinds_in_row": [
+        "engineering estimate"
+      ],
+      "components": [
+        {
+          "item": "2 × magnesium rim with fittings",
+          "kg": 16,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": [
+            "FIA-C-ISS20"
+          ]
+        },
+        {
+          "item": "2 × rear tyre: 54.5 % of the Nominal Tyre Mass",
+          "kg": 24,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": false,
+          "sources": [
+            "MERCEDES-TYRES",
+            "PIRELLI-2026",
+            "RACEFANS-HORNER"
+          ]
+        }
+      ],
+      "basis": "As front; 12.0 kg per rear tyre at NTM 44 kg (12.5 kg at 46 kg).",
+      "sources": [
+        "FIA-C-ISS20",
+        "MERCEDES-TYRES",
+        "PIRELLI-2026",
+        "RACEFANS-HORNER"
+      ],
+      "parts_js_kg": 46.2,
+      "delta_vs_parts_js_kg": 0.7,
+      "position": {
+        "frame": "FIA Car Coordinate System, baseline concept geometry (WB 3400, XC 1855, XPU 2235)",
+        "x_mm": 3400,
+        "z_mm": 302,
+        "basis": "XR=0; tyre radius 355 mm (710 mm OD), same deflection and ground offset"
+      }
+    },
+    {
+      "id": "brakes_front",
+      "name": "Front brakes (×2)",
+      "mass_kg": {
+        "best": 11.9,
+        "min": 9.5,
+        "max": 13.5,
+        "bottom_up": 11
+      },
+      "kind": "reported",
+      "kinds_in_row": [
+        "reported",
+        "engineering estimate"
+      ],
+      "components": [
+        {
+          "item": "2 × (carbon disc ≈2.0 kg + caliper ≈2.0 kg + pads)",
+          "kg": 9,
+          "kind": "reported",
+          "scaled_by_reconciliation": false,
+          "sources": [
+            "THERACE-BRAKES",
+            "THEDRIVE-BREMBO",
+            "GASGOO-BREMBO"
+          ]
+        },
+        {
+          "item": "brake ducts and drums",
+          "kg": 2,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": []
+        }
+      ],
+      "basis": "Per corner ≈ 4.5 kg (The Race, 2025); 2026 front disc 2.0 kg (The Drive) and caliper ≈ 2.0 kg (Gasgoo) agree.",
+      "sources": [
+        "THERACE-BRAKES",
+        "THEDRIVE-BREMBO",
+        "GASGOO-BREMBO"
+      ],
+      "parts_js_kg": 15,
+      "delta_vs_parts_js_kg": -3.1,
+      "position": {
+        "frame": "FIA Car Coordinate System, baseline concept geometry (WB 3400, XC 1855, XPU 2235)",
+        "x_mm": 0,
+        "z_mm": 300,
+        "basis": "on the front wheel axis"
+      }
+    },
+    {
+      "id": "brakes_rear",
+      "name": "Rear brakes (×2)",
+      "mass_kg": {
+        "best": 11.5,
+        "min": 7,
+        "max": 13,
+        "bottom_up": 8
+      },
+      "kind": "engineering estimate",
+      "kinds_in_row": [
+        "engineering estimate"
+      ],
+      "components": [
+        {
+          "item": "2 × (disc + caliper + pads), scaled from the front",
+          "kg": 6.6,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": [
+            "FIA-C-ISS20"
+          ]
+        },
+        {
+          "item": "brake ducts",
+          "kg": 1.4,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": []
+        }
+      ],
+      "basis": "Rear discs are 260-280 mm against 325-345 mm at the front (C11.3.3); disc mass ∝ d² gives ≈ 0.7 of the front; brake-by-wire actuator counted in hydraulics.",
+      "sources": [
+        "FIA-C-ISS20"
+      ],
+      "parts_js_kg": 12,
+      "delta_vs_parts_js_kg": -0.5,
+      "position": {
+        "frame": "FIA Car Coordinate System, baseline concept geometry (WB 3400, XC 1855, XPU 2235)",
+        "x_mm": 3400,
+        "z_mm": 302,
+        "basis": "on the rear wheel axis"
+      }
+    },
+    {
+      "id": "cooling",
+      "name": "Cooling (radiators, oil/ERS coolers, intercooler, pipework, fluids)",
+      "mass_kg": {
+        "best": 40.2,
+        "min": 24,
+        "max": 46,
+        "bottom_up": 28
+      },
+      "kind": "engineering estimate",
+      "kinds_in_row": [
+        "engineering estimate"
+      ],
+      "components": [
+        {
+          "item": "heat exchangers, pipework, header tanks, coolant and oil",
+          "kg": 28,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": []
+        }
+      ],
+      "basis": "No public figure found (only forum guesses of 10-12 kg per side with water). Ferrari's 770 kg spec weight explicitly includes coolant and oil.",
+      "sources": [],
+      "parts_js_kg": 38,
+      "delta_vs_parts_js_kg": 2.2,
+      "position": {
+        "frame": "FIA Car Coordinate System, baseline concept geometry (WB 3400, XC 1855, XPU 2235)",
+        "x_mm": null,
+        "z_mm": null,
+        "basis": "no regulation or public figure fixes it; keep the parts.js position"
+      }
+    },
+    {
+      "id": "fuel_system",
+      "name": "Fuel system (bladder, pumps, lines; empty)",
+      "mass_kg": {
+        "best": 10,
+        "min": 6,
+        "max": 11.5,
+        "bottom_up": 7
+      },
+      "kind": "engineering estimate",
+      "kinds_in_row": [
+        "engineering estimate"
+      ],
+      "components": [
+        {
+          "item": "FT5-1999 bladder (C6.1.1), fuel flow meter (C5.9.3), lift pumps, collector, lines",
+          "kg": 7,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": [
+            "FIA-C-ISS20"
+          ]
+        }
+      ],
+      "basis": "No public mass figure for an F1 bladder; fuel itself is outside Car Mass (definition).",
+      "sources": [
+        "FIA-C-ISS20"
+      ],
+      "parts_js_kg": 12,
+      "delta_vs_parts_js_kg": -2,
+      "position": {
+        "frame": "FIA Car Coordinate System, baseline concept geometry (WB 3400, XC 1855, XPU 2235)",
+        "x_mm": 2045,
+        "z_mm": null,
+        "basis": "all fuel ahead of XPU=0 and inboard of Y=450 (C6.1.2); behind the cockpit"
+      }
+    },
+    {
+      "id": "hydraulics",
+      "name": "Hydraulics",
+      "mass_kg": {
+        "best": 10,
+        "min": 6,
+        "max": 11.5,
+        "bottom_up": 7
+      },
+      "kind": "engineering estimate",
+      "kinds_in_row": [
+        "engineering estimate"
+      ],
+      "components": [
+        {
+          "item": "pump, accumulator, valve blocks, actuators (shift, clutch, diff, BBW, steering), fluid",
+          "kg": 7,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": []
+        }
+      ],
+      "basis": "No public figure found.",
+      "sources": [],
+      "parts_js_kg": 8,
+      "delta_vs_parts_js_kg": 2,
+      "position": {
+        "frame": "FIA Car Coordinate System, baseline concept geometry (WB 3400, XC 1855, XPU 2235)",
+        "x_mm": null,
+        "z_mm": null,
+        "basis": "no regulation or public figure fixes it; keep the parts.js position"
+      }
+    },
+    {
+      "id": "electronics",
+      "name": "Electronics (FIA SECU, loom, sensors, FIA cameras, ADR, radio, LV battery)",
+      "mass_kg": {
+        "best": 25.8,
+        "min": 15.5,
+        "max": 29.5,
+        "bottom_up": 18
+      },
+      "kind": "engineering estimate",
+      "kinds_in_row": [
+        "engineering estimate"
+      ],
+      "components": [
+        {
+          "item": "car looms",
+          "kg": 9,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": [
+            "LOOM-LENGTH"
+          ]
+        },
+        {
+          "item": "SECU, sensors, dash electronics",
+          "kg": 4,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": []
+        },
+        {
+          "item": "FIA cameras, ADR, HCPU (or its 0.35 kg ballast, C8.16)",
+          "kg": 2,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": [
+            "FIA-C-ISS20"
+          ]
+        },
+        {
+          "item": "LV battery and power distribution",
+          "kg": 2.5,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": []
+        },
+        {
+          "item": "radio and telemetry",
+          "kg": 0.5,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": []
+        }
+      ],
+      "basis": "Loom: 3-16 km of 22-30 AWG wire reported; ≈ 1-1.5 g/m with insulation plus connectors and sleeving gives 8-12 kg.",
+      "sources": [
+        "LOOM-LENGTH",
+        "FIA-C-ISS20"
+      ],
+      "parts_js_kg": 24,
+      "delta_vs_parts_js_kg": 1.8,
+      "position": {
+        "frame": "FIA Car Coordinate System, baseline concept geometry (WB 3400, XC 1855, XPU 2235)",
+        "x_mm": null,
+        "z_mm": null,
+        "basis": "no regulation or public figure fixes it; keep the parts.js position"
+      }
+    },
+    {
+      "id": "misc",
+      "name": "Paint, fasteners, brackets, mirrors, lights",
+      "mass_kg": {
+        "best": 12.2,
+        "min": 7,
+        "max": 14,
+        "bottom_up": 8.5
+      },
+      "kind": "engineering estimate",
+      "kinds_in_row": [
+        "engineering estimate"
+      ],
+      "components": [
+        {
+          "item": "paint (largely bare carbon in 2026)",
+          "kg": 3,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": [
+            "RN365-PAINT"
+          ]
+        },
+        {
+          "item": "fasteners, brackets, sealant",
+          "kg": 4,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": []
+        },
+        {
+          "item": "mirrors (C14.2), rear and lateral lights (C14.3, C14.7)",
+          "kg": 1.5,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": []
+        }
+      ],
+      "basis": "A fully painted livery is ≈ 6 kg (Zehnder, reported); most 2026 cars run large unpainted areas.",
+      "sources": [
+        "RN365-PAINT"
+      ],
+      "parts_js_kg": 10,
+      "delta_vs_parts_js_kg": 2.2,
+      "position": {
+        "frame": "FIA Car Coordinate System, baseline concept geometry (WB 3400, XC 1855, XPU 2235)",
+        "x_mm": null,
+        "z_mm": null,
+        "basis": "no regulation or public figure fixes it; keep the parts.js position"
+      }
+    },
+    {
+      "id": "driver",
+      "name": "Reference Mass of the Driver (driver + seat + driving equipment, excl. harness)",
+      "mass_kg": {
+        "best": 75,
+        "min": 62,
+        "max": 85,
+        "bottom_up": 75
+      },
+      "kind": "engineering estimate",
+      "kinds_in_row": [
+        "engineering estimate"
+      ],
+      "components": [
+        {
+          "item": "driver body ≈ 68 kg + kit 4-5 kg + seat ≈ 2.5 kg",
+          "kg": 75,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": false,
+          "sources": [
+            "FIA-C-ISS20",
+            "F1-KIT-2014"
+          ]
+        }
+      ],
+      "basis": "Definition 'Mass of the Driver: the mass of the driver with the seat, and driving equipment ... excluding the safety harness'; set by the technical delegate (C4.5.1). The seat is therefore INSIDE the 82 kg, not a separate car part. Kit 4-5 kg (Formula1.com, 2014).",
+      "sources": [
+        "FIA-C-ISS20",
+        "F1-KIT-2014"
+      ],
+      "parts_js_kg": 72,
+      "delta_vs_parts_js_kg": 3,
+      "position": {
+        "frame": "FIA Car Coordinate System, baseline concept geometry (WB 3400, XC 1855, XPU 2235)",
+        "x_mm": null,
+        "z_mm": null,
+        "basis": "no regulation or public figure fixes it; keep the parts.js position"
+      }
+    },
+    {
+      "id": "driver_ballast",
+      "name": "Driver ballast",
+      "mass_kg": {
+        "best": 7,
+        "min": 0,
+        "max": 20,
+        "bottom_up": 7
+      },
+      "kind": "regulation",
+      "kinds_in_row": [
+        "regulation"
+      ],
+      "components": [
+        {
+          "item": "82 kg minus the reference mass",
+          "kg": 7,
+          "kind": "regulation",
+          "scaled_by_reconciliation": false,
+          "sources": [
+            "FIA-C-ISS20"
+          ]
+        }
+      ],
+      "basis": "C4.5.2: reference mass + driver ballast ≥ 82 kg; C4.3.2: inside the cockpit-entry-template X range, fixed to the survival cell, density > 7500 kg/m³.",
+      "sources": [
+        "FIA-C-ISS20"
+      ],
+      "parts_js_kg": 10,
+      "delta_vs_parts_js_kg": -3,
+      "position": {
+        "frame": "FIA Car Coordinate System, baseline concept geometry (WB 3400, XC 1855, XPU 2235)",
+        "x_mm": 1105,
+        "z_mm": 60,
+        "basis": "inside the cockpit-entry-template X range (C4.3.2(a)), lowest practical position"
+      }
+    },
+    {
+      "id": "seat_safety",
+      "name": "Harness, headrest, pedals, extinguisher, drink system (seat moved into driver)",
+      "mass_kg": {
+        "best": 10,
+        "min": 6,
+        "max": 11.5,
+        "bottom_up": 7
+      },
+      "kind": "engineering estimate",
+      "kinds_in_row": [
+        "engineering estimate"
+      ],
+      "components": [
+        {
+          "item": "safety harness (C14.5; excluded from the driver mass)",
+          "kg": 1.5,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": []
+        },
+        {
+          "item": "headrest and cockpit padding (C12.6)",
+          "kg": 1.5,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": []
+        },
+        {
+          "item": "pedals",
+          "kg": 1,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": []
+        },
+        {
+          "item": "fire extinguisher, FIA 8876-2022 (C14.1)",
+          "kg": 2.5,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": [
+            "FIA-C-ISS20"
+          ]
+        },
+        {
+          "item": "drink system (C14.8)",
+          "kg": 0.5,
+          "kind": "engineering estimate",
+          "scaled_by_reconciliation": true,
+          "sources": []
+        }
+      ],
+      "basis": "No public masses found.",
+      "sources": [
+        "FIA-C-ISS20"
+      ],
+      "parts_js_kg": 10,
+      "delta_vs_parts_js_kg": 0,
+      "position": {
+        "frame": "FIA Car Coordinate System, baseline concept geometry (WB 3400, XC 1855, XPU 2235)",
+        "x_mm": null,
+        "z_mm": null,
+        "basis": "no regulation or public figure fixes it; keep the parts.js position"
+      }
+    },
+    {
+      "id": "ballast",
+      "name": "Ballast (by difference to the Minimum Mass)",
+      "mass_kg": null,
+      "kind": "regulation",
+      "kinds_in_row": [
+        "regulation"
+      ],
+      "components": [],
+      "basis": "C4.1 Minimum Mass minus the parts; C4.3.1 fixing rules. See consistency.implied_ballast_kg.",
+      "sources": [
+        "FIA-C-ISS20"
+      ],
+      "parts_js_kg": 5.1,
+      "delta_vs_parts_js_kg": null,
+      "position": {
+        "frame": "FIA Car Coordinate System, baseline concept geometry (WB 3400, XC 1855, XPU 2235)",
+        "x_mm": null,
+        "z_mm": null,
+        "basis": "no regulation or public figure fixes it; keep the parts.js position"
+      }
+    }
+  ],
+  "consistency": {
+    "method": "Bottom-up: every component above. Top-down: reported 2026 cars sit at the 768 kg race minimum ±(under to +26 kg) with their parts alone (RN365-WEIGHTS, PLANETF1-WILLIAMS, MCLAREN-SPEC), so a car 'on the limit' has parts summing to ≈ 768 kg. The bottom-up sum falls short by the mass public part figures never capture (inserts, fixings, local reinforcement, fluids, brackets). Reconciliation: regulation, official, reported and geometry-derived components are held fixed; every component marked scaled_by_reconciliation is multiplied by one factor k so the parts reach the target.",
+    "bottom_up_parts_kg": 652.3,
+    "fixed_kg": 385.8,
+    "scalable_kg": 266.5,
+    "target_parts_kg": 768,
+    "k": 1.434,
+    "reconciled_parts_kg": 767.9,
+    "implied_ballast_kg": {
+      "qualifying_ntm44": 2.1,
+      "race_ntm44": 0.1,
+      "qualifying_ntm46": 4.1,
+      "race_ntm46": 2.1,
+      "bottom_up_qualifying_ntm44": 117.7
+    },
+    "through_parts_js_massSheet": {
+      "note": "researched best masses as overrides on the baseline design; driver_ballast and ballast computed by parts.js",
+      "parts_js_positions": {
+        "session": "qualifying",
+        "parts_kg": 767.9,
+        "ballast_kg": 2.1,
+        "total_kg": 770,
+        "front_share": 0.4496,
+        "cog_z_mm": 297
+      },
+      "race": {
+        "ballast_kg": 0.1,
+        "total_kg": 768
+      },
+      "researched_positions": {
+        "parts_kg": 767.9,
+        "ballast_kg": 2.1,
+        "front_share": 0.4494,
+        "cog_z_mm": 280
+      },
+      "c4_2_window_front_share": [
+        0.44,
+        0.46
+      ]
+    },
+    "parts_js_baseline": {
+      "parts_kg": 764.9,
+      "ballast_kg": 5.1,
+      "front_share": 0.4483
+    }
+  }
+}
