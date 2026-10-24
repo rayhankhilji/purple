@@ -54,7 +54,7 @@ function table(res, args) {
     lines.push(pad(c + " min corner (km/h)", 30) + lpad(p.vmin_kmh, 12) + lpad(q.vmin_kmh, 14) + lpad((q.vmin_kmh - p.vmin_kmh).toFixed(1), 10));
   }
   lines.push(pad("weekend score (s)", 30) + lpad(b.score.toFixed(3), 12) + lpad(x.score.toFixed(3), 14) + lpad((x.score - b.score).toFixed(3), 10));
-  lines.push(pad("grid slot (real 2026 Q)", 30) + lpad("P" + b.weekend.grid_position, 12) + lpad("P" + x.weekend.grid_position, 14));
+  lines.push(pad("grid slot (real 2026 Q)", 30) + lpad("P" + b.weekend.grid_position, 12) + lpad("P" + x.weekend.grid_position, 14) + "  · baseline anchored at pole by construction (sim v0)");
   lines.push(pad("mass (kg)", 30) + lpad(b.mass.total_kg, 12) + lpad(x.mass.total_kg, 14) + lpad((x.mass.total_kg - b.mass.total_kg).toFixed(1), 10));
   lines.push(pad("ballast (kg)", 30) + lpad(b.mass.ballast_kg, 12) + lpad(x.mass.ballast_kg, 14) + lpad((x.mass.ballast_kg - b.mass.ballast_kg).toFixed(1), 10));
   lines.push(pad("front weight share", 30) + lpad(b.mass.front_share, 12) + lpad(x.mass.front_share, 14));

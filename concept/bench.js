@@ -13,7 +13,7 @@
   const regs = req("regs", "./regs.js"), design = req("design", "./design.js"), phys = req("physical", "./physical.js");
   const LABEL = "concept · reduced-order lap model · calibrated to 2026 pole laps · concept aero map v0";
   const V0_LABEL = LABEL + " · sim v0 (game lap model, relative to the baseline concept car)";
-  const SCORE_LABEL = "weekend score · Silverstone · margin to the real 2026 pole and projected grid slot vs the real 2026 qualifying laps (EI.RACEPACE)";
+  const SCORE_LABEL = "weekend score · Silverstone · margin to the real 2026 pole and projected grid slot vs the real 2026 qualifying laps (EI.RACEPACE) · baseline anchored at pole by construction (sim v0)";
 
   // ---- the game, read-only. Node: the headless loader (server/game-headless.js). Browser: whatever the page loaded.
   function game() {

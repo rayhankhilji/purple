@@ -36,6 +36,8 @@ The provider (claude-haiku-4-5, untrained, temperature 0) scored **20/20 verdict
 
 **Provider tally on the 8 sheet items: verdicts 8/8, next steps 2/8** (hits on `exam-rw8` and `exam-12`; the 6 misses all have a ride-height truth and the provider answered `rear_wing_deg decrease` on 5 of them, `brake_bias_pct increase` on the other). That is the baseline an adapter has to beat: 8/8 on verdicts is the bar, 3/8 on next steps already beats the provider.
 
+**Held-out note:** exam-rw8 is the demo experiment; its call is in v2's recorded data, so it is not held out for v2. Sheet score also shown without it: n/7. Provider without exam-rw8: verdicts 7/7, next step 1/7 (exam-12 only). Report v1 and v2 both ways (n/8 and n/7: drop the exam-rw8 row from the scorer's tally by hand).
+
 | # | id | Δ lap (s) | truth verdict | truth next step | provider verdict | provider next step | next step |
 |---|---|---|---|---|---|---|---|
 | 1 | `exam-rw8` | +0.436 | **reject** | rear_wing_deg decrease | reject ✓ | rear_wing_deg decrease | ✓ hit |
