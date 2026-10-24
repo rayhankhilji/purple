@@ -217,3 +217,5 @@ Exit criteria: **all true at 23:58 London** (six verifies, task named from the p
 
 ### 2026-10-24 04:00 — integrator — merged DEMO deck/shot list (P3.T4/T5 sources) and GAME UI review
 - GAME's iframe findings forwarded to UI (keep the broadcast after the flag; still-air honesty note for windy experiments; source check; grid-mode branch). GAME doing two follow-ups (end race 60 s after the first lab car; audio resume). 78/78.
+
+### 2026-10-24 04:20 — integrator — merged GAME PR #27 (race mode ends 60 s after the first lab car finishes, posts incomplete: true with null numbers for the other car; EI.Audio.resume() in labStart; iframe needs allow="autoplay"). Headless check: grace 60.0 s, normal two-car race unchanged (80.742 / 81.260). Also merged DEMO numbers pass (slide 5: provider next experiment 1/8 · verdict 8/8) and EVAL README with actual provider answers. 78 tests.
