@@ -1,0 +1,171 @@
+{
+ "source": "MultiViewer circuit API (api.multiviewer.app), as used by FastF1 get_circuit_info()",
+ "accessed": "2026-10-24",
+ "circuit_key": 2,
+ "layout_year_served": 2022,
+ "rotation_deg": 92,
+ "corners": [
+  {
+   "number": 1,
+   "letter": "",
+   "angle_deg": 98.5,
+   "x_m": 119.3,
+   "y_m": 450.4,
+   "distance_m_on_pole_lap": 440.0,
+   "match_error_m": 1.8
+  },
+  {
+   "number": 2,
+   "letter": "",
+   "angle_deg": -78.0,
+   "x_m": 277.0,
+   "y_m": 446.3,
+   "distance_m_on_pole_lap": 605.0,
+   "match_error_m": 0.8
+  },
+  {
+   "number": 3,
+   "letter": "",
+   "angle_deg": 98.3,
+   "x_m": 484.5,
+   "y_m": 589.5,
+   "distance_m_on_pole_lap": 860.0,
+   "match_error_m": 0.1
+  },
+  {
+   "number": 4,
+   "letter": "",
+   "angle_deg": -75.9,
+   "x_m": 580.3,
+   "y_m": 473.4,
+   "distance_m_on_pole_lap": 1030.0,
+   "match_error_m": 0.7
+  },
+  {
+   "number": 5,
+   "letter": "",
+   "angle_deg": 19.1,
+   "x_m": 623.2,
+   "y_m": 645.9,
+   "distance_m_on_pole_lap": 1220.0,
+   "match_error_m": 2.4
+  },
+  {
+   "number": 6,
+   "letter": "",
+   "angle_deg": 108.3,
+   "x_m": 63.1,
+   "y_m": 1091.0,
+   "distance_m_on_pole_lap": 1950.0,
+   "match_error_m": 3.2
+  },
+  {
+   "number": 7,
+   "letter": "",
+   "angle_deg": -130.0,
+   "x_m": -56.6,
+   "y_m": 954.0,
+   "distance_m_on_pole_lap": 2175.0,
+   "match_error_m": 1.0
+  },
+  {
+   "number": 8,
+   "letter": "",
+   "angle_deg": 122.6,
+   "x_m": 76.1,
+   "y_m": 1236.2,
+   "distance_m_on_pole_lap": 2515.0,
+   "match_error_m": 1.7
+  },
+  {
+   "number": 9,
+   "letter": "",
+   "angle_deg": 59.4,
+   "x_m": 589.4,
+   "y_m": 1294.7,
+   "distance_m_on_pole_lap": 3040.0,
+   "match_error_m": 6.6
+  },
+  {
+   "number": 10,
+   "letter": "",
+   "angle_deg": -159.3,
+   "x_m": 729.6,
+   "y_m": 778.0,
+   "distance_m_on_pole_lap": 3590.0,
+   "match_error_m": 1.2
+  },
+  {
+   "number": 11,
+   "letter": "",
+   "angle_deg": -0.8,
+   "x_m": 753.5,
+   "y_m": 690.6,
+   "distance_m_on_pole_lap": 3680.0,
+   "match_error_m": 1.4
+  },
+  {
+   "number": 12,
+   "letter": "",
+   "angle_deg": 6.1,
+   "x_m": 733.7,
+   "y_m": 547.5,
+   "distance_m_on_pole_lap": 3825.0,
+   "match_error_m": 0.6
+  },
+  {
+   "number": 13,
+   "letter": "",
+   "angle_deg": -11.2,
+   "x_m": 777.6,
+   "y_m": 416.4,
+   "distance_m_on_pole_lap": 3970.0,
+   "match_error_m": 1.2
+  },
+  {
+   "number": 14,
+   "letter": "",
+   "angle_deg": 131.6,
+   "x_m": 680.7,
+   "y_m": 314.7,
+   "distance_m_on_pole_lap": 4120.0,
+   "match_error_m": 1.0
+  },
+  {
+   "number": 15,
+   "letter": "",
+   "angle_deg": -81.5,
+   "x_m": 239.9,
+   "y_m": -409.9,
+   "distance_m_on_pole_lap": 4980.0,
+   "match_error_m": 1.0
+  },
+  {
+   "number": 16,
+   "letter": "",
+   "angle_deg": 61.3,
+   "x_m": -62.0,
+   "y_m": -99.4,
+   "distance_m_on_pole_lap": 5435.0,
+   "match_error_m": 2.7
+  },
+  {
+   "number": 17,
+   "letter": "",
+   "angle_deg": -79.9,
+   "x_m": -143.8,
+   "y_m": -114.7,
+   "distance_m_on_pole_lap": 5520.0,
+   "match_error_m": 2.2
+  },
+  {
+   "number": 18,
+   "letter": "",
+   "angle_deg": -178.6,
+   "x_m": -230.9,
+   "y_m": -10.6,
+   "distance_m_on_pole_lap": 5670.0,
+   "match_error_m": 0.6
+  }
+ ]
+}
