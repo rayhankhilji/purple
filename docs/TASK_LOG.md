@@ -206,3 +206,6 @@ Exit criteria: **all true at 23:58 London** (six verifies, task named from the p
 
 ### 2026-10-24 03:45 — integrator — merged CAR3D P3.T2 part 2, GAME browser verification, SERVER exam details
 - CAR3D: #car3d was black on the merged lab page because lab/index.html does not load teams/liveries/ads; lab/car3d.js now lazy-loads its livery pipeline itself (D-C5); hero verified on the real page at 1440×900, candidate applied in 18.6 ms. GAME: T-F04-AC2 confirmed in a real parent page (purple:result received, 0 errors); AC1 browser run still crawling under software GL, headless numbers stand. SERVER: runExam persists status.exam.details + ran_at. 78/78 tests.
+
+### 2026-10-24 03:50 — integrator — exam re-run with persisted details (20 untrained calls)
+- Same result, deterministic: verdicts 20/20, next-step 10/20. `status.exam.details` now holds every provider answer. **Next-step wrong on exam-02, 03, 05, 09, 10, 11, 14, 15, 16, 20**; of the 8 Try-models sheet scenarios the provider gets the next step right only on `exam-rw8`. That is the bar v1 and v2 are measured against by hand (G-HON-06: show as n/8). Snapshot docs/ledger-snapshot/*-0350-exam-details. Untrained calls today: 41 (21 + 20); trained: 99.
