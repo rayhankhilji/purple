@@ -50,7 +50,9 @@
     pressure_hpa: 1007.6,       // used when the conditions give neither density nor pressure (2026 British GP qualifying mid-range)
     default_strategy: "threshold", // energy strategy used when opts.strategy is not given (see section 3)
     clip_rho: 1,                // "marginal" strategy: superclip where sensitivity < rho x deploy threshold (cal.clip_rho overrides)
-    lambda_iters: 26,           // bisection iterations of the strategy threshold
+    lambda_iters: 22,           // bisection iterations of the strategy threshold
+    clip_search: 5,             // golden-section evaluations of the superclip amount (phi)
+    clip_search_iters: 13,      // bisection iterations inside that search
   };
   // default conditions = 2026 British GP qualifying (4 Jul 2026, 16:00-17:00), mid-range of the FIA Qualifying Weather Report as
   // transcribed in concept/data/silverstone-2026-weekend.json (sessions[Qualifying].weather): air 24.6-25.8 C, track 38.2-42.6 C,
@@ -245,7 +247,7 @@
 
     // the recharge cap is a lap total: braking harvest is free, so superclipping may only fill what braking (estimated on the
     // reference lap) leaves of it
-    let clipCap = harvCap, clipSens = Infinity, clipFrac = 1, clipFracOf = () => 1;
+    let clipCap = harvCap, clipSens = Infinity, clipFrac = 1, clipFracOf = () => 1, phiOut = 1;
     // hot loop: tables share one air-speed grid, so each step computes its grid index once; drag + rolling are pre-summed
     const RES0 = new Float64Array(NU), RES1 = new Float64Array(NU);
     for (let k = 0; k < NU; k++) { RES0[k] = tab[0].DR[k] + tab[0].RR[k]; RES1[k] = tab[1].DR[k] + tab[1].RR[k]; }
@@ -339,16 +341,33 @@
       for (let k = 0; k < ord.length; k++) cum[k + 1] = cum[k] + dts[ord[k]];
       // reference time in the clip set: marginal -> keys below x; threshold -> keys (speeds) at or above x
       const tClip = x => { let lo = 0, hi = sk.length; while (lo < hi) { const m = (lo + hi) >> 1; if (sk[m] < x) lo = m + 1; else hi = m; } return marginal ? cum[lo] : cum[sk.length] - cum[lo]; };
-      clipFracOf = x => { const tc = tClip(x); return tc > 0 ? Math.min(1, clipCap / (PclipMax * tc)) : 1; };
-      let lo, hi;
-      if (marginal) { lo = Math.log(sMin) - 1; hi = Math.log(sMax) + 1; } else { lo = 0; hi = MODEL.vcap + 5; }
-      // marginal: infeasible at lo (deploy everywhere), feasible at hi; threshold: feasible at lo (no deploy), infeasible at hi
+      // superclip is optional: the share fills phi x clipCap, and phi in [0, 1] is chosen for the fastest lap (golden-section,
+      // MODEL.clip_search evaluations, each a bisection on x). More recharge allowance then cannot force a materially slower lap (search tolerance ~0.01 s).
+      let phi = 1;
+      clipFracOf = x => { const tc = tClip(x); return tc > 0 ? Math.min(1, (phi * clipCap) / (PclipMax * tc)) : 1; };
       const X = v => (marginal ? Math.exp(v) : v);
-      for (let it = 0; it < MODEL.lambda_iters; it++) {
-        const mid = 0.5 * (lo + hi), r = forward(X(mid), false), ok = r.Edep <= budget(r);
-        if (marginal) { if (ok) hi = mid; else lo = mid; } else { if (ok) lo = mid; else hi = mid; }
+      const solve = iters => {
+        let lo, hi;
+        if (marginal) { lo = Math.log(sMin) - 1; hi = Math.log(sMax) + 1; } else { lo = 0; hi = MODEL.vcap + 5; }
+        // marginal: infeasible at lo (deploy everywhere), feasible at hi; threshold: feasible at lo (no deploy), infeasible at hi
+        for (let it = 0; it < iters; it++) {
+          const mid = 0.5 * (lo + hi), r = forward(X(mid), false), ok = r.Edep <= budget(r);
+          if (marginal) { if (ok) hi = mid; else lo = mid; } else { if (ok) lo = mid; else hi = mid; }
+        }
+        return X(marginal ? hi : lo);
+      };
+      if (!noClip && clipCap > 0) {
+        const lapAt = p => { phi = p; return forward(solve(MODEL.clip_search_iters), false).t; };
+        const gr = 0.6180339887;
+        let a = 0, b = 1, c1 = b - gr * (b - a), c2 = a + gr * (b - a), f1 = lapAt(c1), f2 = lapAt(c2);
+        for (let k = 2; k < MODEL.clip_search; k++) {
+          if (f1 <= f2) { b = c2; c2 = c1; f2 = f1; c1 = b - gr * (b - a); f1 = lapAt(c1); }
+          else { a = c1; c1 = c2; f1 = f2; c2 = a + gr * (b - a); f2 = lapAt(c2); }
+        }
+        const fEnd = lapAt(1), best = f1 <= f2 ? c1 : c2;
+        phi = Math.min(f1, f2) < fEnd ? best : 1; phiOut = phi;
       }
-      lam = X(marginal ? hi : lo);
+      lam = solve(MODEL.lambda_iters);
       res = forward(lam, true);
       clipFrac = clipFracOf(lam);
     } else if (res.Edep > budget(res)) {
@@ -379,7 +398,7 @@
     const out = {
       lap_s: r3(lap), sectors_s: [r3(s1), r3(s2), r3(s3)],
       vmax_kmh: r1(vmax * 3.6), speed_trap_kmh: r1(vAt(tim.trap_s) * 3.6), vmin_kmh: r1(vmin * 3.6),
-      energy: { deployed_mj: r3(res.Edep / 1e6), harvested_mj: r3(res.Eharv / 1e6), harvested_braking_mj: r3(Math.min(res.EharvBrake, res.Eharv) / 1e6), harvested_superclip_mj: r3(Math.max(0, res.Eharv - res.EharvBrake) / 1e6), recharge_cap_mj: r3(harvCap / 1e6), superclip_share: optimal ? null : r3(clipFrac), energy_limited: lam >= 0, strategy: strat, deploy_ceiling_kmh: strat === "threshold" && lam >= 0 ? r1(lam * 3.6) : null },
+      energy: { deployed_mj: r3(res.Edep / 1e6), harvested_mj: r3(res.Eharv / 1e6), harvested_braking_mj: r3(Math.min(res.EharvBrake, res.Eharv) / 1e6), harvested_superclip_mj: r3(Math.max(0, res.Eharv - res.EharvBrake) / 1e6), recharge_cap_mj: r3(harvCap / 1e6), superclip_share: optimal ? null : r3(clipFrac), superclip_fill: optimal ? null : r3(phiOut), energy_limited: lam >= 0, strategy: strat, deploy_ceiling_kmh: strat === "threshold" && lam >= 0 ? r1(lam * 3.6) : null },
       speeds_kmh: { intermediate_1: r1(vAt(tim.i1_s) * 3.6), intermediate_2: r1(vAt(tim.i2_s) * 3.6), finish_line: r1(vAt(tim.control_s) * 3.6) },
       air_density_kgm3: r3(rho), label: LABEL,
     };

@@ -227,13 +227,28 @@
   }
   // optional per-team physical overrides derived elsewhere from telemetry, e.g. concept/data/redbull-2026-derived.json
   // (Node only). Expected shape: { "physical_car": { ...partial PhysicalCar... } } - deep-merged over the inferred team car.
+  // Also reads the team dossier concept/data/<team>-2026.json (e.g. redbull-2026.json): its measured rpm-per-km/h by gear and
+  // peak rpm become the car's gearing (gears it does not list are extrapolated with the mean ratio step).
   function derivedOverrides(teamId) {
     if (typeof require !== "function") return null;
     try {
-      const fs = require("fs"), path = require("path"), f = path.join(__dirname, "..", "data", teamId + "-2026-derived.json");
-      if (!fs.existsSync(f)) return null;
-      const j = JSON.parse(fs.readFileSync(f, "utf8"));
-      return j && typeof j.physical_car === "object" ? j.physical_car : null;
+      const fs = require("fs"), path = require("path"), dir = path.join(__dirname, "..", "data");
+      let out = null;
+      const fd = path.join(dir, teamId + "-2026-derived.json");
+      if (fs.existsSync(fd)) { const j = JSON.parse(fs.readFileSync(fd, "utf8")); if (j && typeof j.physical_car === "object") out = j.physical_car; }
+      const fo = path.join(dir, teamId + "-2026.json");
+      if (fs.existsSync(fo)) {
+        const j = JSON.parse(fs.readFileSync(fo, "utf8")), rows = [].concat(...Object.values((j.driveline || {})).filter(Array.isArray));
+        const g = rows.find(r => /^rpm_per_kmh_by_gear/.test(r.key || "")), pk = rows.find(r => /^peak_rpm/.test(r.key || ""));
+        if (g && g.value && pk && pk.value) {
+          const known = Object.keys(g.value).map(Number).sort((a, b) => a - b), k = new Array(8).fill(null);
+          for (const n of known) k[n - 1] = g.value[n];
+          const step = Math.pow(g.value[known[known.length - 1]] / g.value[known[0]], 1 / (known[known.length - 1] - known[0]));
+          for (let i = 0; i < 8; i++) if (k[i] == null) { const near = known.reduce((p, q) => (Math.abs(q - 1 - i) < Math.abs(p - 1 - i) ? q : p)); k[i] = Math.round(g.value[near] * Math.pow(step, i - (near - 1)) * 100) / 100; }
+          out = Object.assign(out || {}, { gearing: { rpm_per_kmh: k, shift_rpm: pk.value, source: "concept/data/" + teamId + "-2026.json (" + g.key + ")" } });
+        }
+      }
+      return out;
     } catch (e) { return null; }
   }
   function deepMerge(a, b) { for (const k of Object.keys(b)) { if (b[k] && typeof b[k] === "object" && !Array.isArray(b[k]) && a[k] && typeof a[k] === "object") deepMerge(a[k], b[k]); else a[k] = b[k]; } return a; }
@@ -242,7 +257,7 @@
     if (!t) throw new Error("concept sim: no fitted car for team " + teamId);
     const c = scaledCar(baseOf(f), t, { id: "team-" + t.team, label: t.name + " (inferred from public 2026 British GP qualifying lap + speed trap; not team data)" });
     const o = !fit && derivedOverrides(teamId);
-    if (o) { deepMerge(c, JSON.parse(JSON.stringify(o))); c.label = t.name + " (inferred car + telemetry-derived overrides from concept/data/" + teamId + "-2026-derived.json)"; }
+    if (o) { deepMerge(c, JSON.parse(JSON.stringify(o))); c.label = t.name + " (inferred from public 2026 British GP qualifying lap + speed trap, not team data; telemetry-derived overrides from concept/data/" + teamId + "-2026*.json)"; }
     return c;
   }
   function teamCars(fit) { const f = fit || fitted(); return f.teams.map(t => teamCar(t.team, f)); }
