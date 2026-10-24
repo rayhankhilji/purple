@@ -85,7 +85,7 @@ test("concept mass: the parts sum, ballast tops the car up to the C4.1 minimum, 
 
 test("concept parts: every part has a stated mass basis and appears on the mass sheet; positions follow the wheelbase", () => {
   const sheet = design.facts(B).mass.parts.map(p => p.id);
-  for (const p of parts.CATALOGUE) { assert.ok(p.basis && p.basis.length > 5, p.id); if (p.id !== "layout") assert.ok(sheet.includes(p.id), p.id + " not on the mass sheet"); }
+  for (const p of parts.CATALOGUE) { assert.ok(p.basis && p.basis.length > 5, p.id); if (p.id !== "layout" && p.id !== "setup" && p.id !== "suspension") assert.ok(sheet.includes(p.id), p.id + " not on the mass sheet"); }   // layout, setup and suspension (redesigns v1 architecture): parameters only, no mass row
   for (const id of sheet) assert.ok(parts.BY_ID[id], id + " not in the catalogue");
   const long = design.facts(withParam("layout", "wheelbase_mm", 3400)).mass, short = design.facts(withParam("layout", "wheelbase_mm", 3375)).mass;
   assert.ok(short.front_share < long.front_share || short.front_share > long.front_share);   // moving the rear axle moves the split

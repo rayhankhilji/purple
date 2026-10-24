@@ -5,7 +5,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const run = require("../concept/campaign/run.js"), space = require("../concept/campaign/space.js"), { CMA, eigSym } = require("../concept/campaign/cmaes.js");
 const U = require("../concept/campaign/uncertainty.js"), plot = require("../concept/campaign/plot.js");
-const bench = require("../concept/bench.js"), design = require("../concept/design.js"), regs = require("../concept/regs.js"), phys = require("../concept/physical.js"), sim = require("../concept/sim/index.js");
+const bench = require("../concept/bench.js"), design = require("../concept/design.js"), regs = require("../concept/regs.js"), phys = require("../concept/physical.js"), sim = require("../concept/sim/index.js"), parts = require("../concept/parts.js");
 
 const SHORT = { seeds: [3], evals: 40, lambda: 8, prescreen: 3, patience: 4, refine_evals: 60, combo_evals: 0, baselines: ["redbull"], no_sensitivity: true };
 let cache = {};
@@ -14,7 +14,8 @@ const strip = r => JSON.parse(JSON.stringify(r, (k, v) => (k === "runtime_s" || 
 
 test("space: the box is the catalogue domain tightened by the single-number FIA limits; encode/decode round-trips the baseline", () => {
   const v = k => space.VARS.find(x => x.key === k);
-  assert.equal(space.N, 23);
+  assert.equal(space.N, 36);   // 23 shape parameters + 5 gearing / set-up parameters (more-factors v1) + 8 concept families (redesigns v1)
+  assert.deepEqual(space.VARS.slice(28).map(x => x.key), parts.CONCEPT_KEYS); assert.ok(space.VARS.slice(28).every(x => x.int && x.lo === 0));
   assert.equal(v("floor.width_mm").hi, regs.BY_ID["REG-C-FLOOR-WIDTH"].value);
   assert.equal(v("layout.wheelbase_mm").hi, 3400); assert.deepEqual([v("survival_cell.cockpit_len_mm").lo, v("survival_cell.cockpit_len_mm").hi], [1830, 2030]);
   assert.equal(v("rear_wing.chord_mm").hi, 465); assert.equal(v("front_wing.elements").hi, 3);

@@ -12,7 +12,9 @@ const design = require("../concept/design.js"), bench = require("../concept/benc
 const mubit = require("../server/mubit.js");
 
 const strip = v => JSON.parse(JSON.stringify(v, (k, x) => (k === "latency_ms" || k === "ms" ? undefined : x)));
-const runMock = (seed, extra) => loop.runLoop(Object.assign({ iterations: 10, seed, runId: "loop-test-seed" + seed, llm: loop.mockCaller(seed) }, extra || {}));
+// maxConsecutiveFailures: Infinity keeps the mock LLM in every iteration (the pause rule is the proposer's own), so test (a) sees one
+// call per iteration whatever the sim makes of the mock's proposals (more-factors v1 moved its seed-1 run into a pause)
+const runMock = (seed, extra) => loop.runLoop(Object.assign({ iterations: 10, seed, runId: "loop-test-seed" + seed, llm: loop.mockCaller(seed), maxConsecutiveFailures: Infinity }, extra || {}));
 let cached = null; const run1 = () => (cached = cached || runMock(1));
 
 // ---------------------------------------------------------------- (a) the result of k is in the input of k+1

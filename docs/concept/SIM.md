@@ -66,7 +66,7 @@ baselineCar(teamId?), calibrate(opts?), fitTeams(opts?), heldOut(fit, dir), team
 
 - **`conditions`:** `{ air_temp_c, track_temp_c, air_density_kgm3?, air_pressure_hpa?, humidity_pct?, wind_ms, wind_from_deg, wet, fuel_kg?, recharge_limit_mj?, es_start_mj? }`. Defaults: 2026 British GP qualifying (§4.4). `es_start_mj` is the store at the start of the flying lap (default the full 4 MJ window); `"regulated"` and `"optimal"` track the store within the lap.
 - **`opts`:** `trace`, `debug`, `strategy` (`"regulated"` default; `"optimal"`, `"threshold"` (the v2 default), `"marginal"`), `overtake`, `no_superclip`, `part_throttle_harvest` (default true), `line` (`"telemetry"` default, `"osm"`), `grade_scale` (default 1), `cal` (identity).
-- **PhysicalCar fields the sim reads** (all read defensively; **new in v3 marked ‡**): `mass_kg, fuel_kg, wheelbase_m, track_front_m, track_rear_m, cog_height_m, weight_dist_front, drivetrain_eff`; `aero.corner|straight.{CLA_front_m2, CLA_rear_m2, CDA_m2}`, `aero.floor_stalled` (or top-level), `aero.ride_sens_per_mm`, `aero.stall_margin_mm`, `aero.heave_n_per_mm`, `aero.floor_share`, `aero.yaw_sens`; `pu.{ice_kw, mguk_kw, es_deploy_mj_per_lap, es_harvest_mj_per_lap, superclip_kw?}`; `tyres.{mu_x, mu_y, load_sens, slip_angle_rad‡}` (`slip_angle_rad` optional: absent = `MODEL.slip_angle_rad` 0.08; `concept/physical.js` now copies it from the anchor car); `brakes.max_decel_g_mech`; `gearing.{rpm_per_kmh[8], shift_rpm}`. The meaning of `tyres.load_sens` is unchanged (fraction of μ lost per unit of load ratio at the static load); only the law's shape changed (§3.2).
+- **PhysicalCar fields the sim reads** (all read defensively; **new in v3 marked ‡**): `mass_kg, fuel_kg, wheelbase_m, track_front_m, track_rear_m, cog_height_m, weight_dist_front, drivetrain_eff`; `aero.corner|straight.{CLA_front_m2, CLA_rear_m2, CDA_m2}`, `aero.floor_stalled` (or top-level), `aero.ride_sens_per_mm`, `aero.stall_margin_mm`, `aero.heave_n_per_mm`, `aero.floor_share`, `aero.yaw_sens`; `pu.{ice_kw, mguk_kw, es_deploy_mj_per_lap, es_harvest_mj_per_lap, superclip_kw?}`; `tyres.{mu_x, mu_y, load_sens, slip_angle_rad‡}` (`slip_angle_rad` optional: absent = `MODEL.slip_angle_rad` 0.08; `concept/physical.js` now copies it from the anchor car); `brakes.max_decel_g_mech`, `brakes.bias_front?`, `brakes.bias_ref?`; `gearing.{rpm_per_kmh[8], shift_rpm, rev_limit_rpm?}`; `suspension.lltd_front?` (more-factors v1, §3.4b). The meaning of `tyres.load_sens` is unchanged (fraction of μ lost per unit of load ratio at the static load); only the law's shape changed (§3.2).
 - **Determinism:** fixed iteration counts, Float64, no randomness, no network, no Mubit, never touches `data/` or `data-mock/`.
 
 ## 2. Track (corner by corner)
@@ -116,6 +116,35 @@ Sector distances are on the FIA's 5891 m lap, mapped onto the sim's s by length 
 **What it changes.** The straights now peak and fade like the real traces (pit straight, Wellington, National, Hangar), the Stowe→Vale run no longer overshoots by 36 km/h (now +1.5 / −3.7 km/h peak / end), and the sector bias in S2 (+0.50 s in v2) is gone. The baseline lap deploys 8.15 MJ, harvests 4.15 MJ (1.86 braking, 2.20 superclip, 0.09 part throttle) and ends with an empty store.
 
 The other strategies are kept: `"threshold"` (v2 default, speed ceiling), `"optimal"` (v2: bang-bang by sens, no C5.12), `"marginal"`.
+
+### 3.4b Set-up and gearing (more-factors v1, docs/concept/FACTORS.md)
+
+Each term is read only when the car carries its field. The RB22 team car now carries the RB22 data sheet's inputs (concept/sim/fit.js
+`derivedOverrides`: mass 775 kg, the eight ratios measured on all 25 Red Bull laps, the sheet's 55 % roll split as `suspension.lltd_front`
+0.5215), and `fitTeams` fits every team with its own such inputs merged in. Refit (`build-fit.js`, after the plan smoothing below):
+generic baseline **88.100 s** (pole 88.111), `baselineCar("redbull")` **88.745 s** (HAD 88.746), held-out speed RMS 9.88 km/h, sector
+bias +0.144 / +0.042 / −0.191 s; baseline estimate μy 1.9455, μx 1.7249, CLA 5.043, CdA 1.175 / 0.953 (the sheet check now reports one
+contradiction: μy 1.9455 against the sheet's 1.80 ± 0.10).
+
+- **Lateral load transfer distribution** (`suspension.lltd_front`): the front axle carries `lltd` of the transfer moment `m a h`
+  (`dF = lltd·m·a·h / track_front`), the rear `1 − lltd`; each axle must still produce `m_axle·a`. Absent: `lltd = weight split`
+  (the v3 behaviour). With it, the rear axle's lateral limit at the reference split over its limit at this split (`RK`) scales the
+  friction-ellipse utilisation the traction limit uses: transfer moved onto the rear costs exit traction.
+- **Brake balance** (`brakes.bias_front`, `brakes.bias_ref`, default reference 1 − `rear_brake_share` = 0.57): capacity at a fixed
+  balance is `min(F_front/b, F_rear/(1 − b))` with the longitudinal transfer at the car's own deceleration; the calibrated capacity
+  is scaled by that over the same at the reference. The MGU-K's braking harvest uses the rear share `1 − b`.
+- **Platform stiffness** (`aero.heave_n_per_mm`, existing): the stall onset (as a squat) is now `5 mm × 3500 / k + margin`, the
+  geometric gap the design layer's margin was judged at; before, it was `5 + margin` whatever `k` (no car set `k`).
+- **Gearing** (`MODEL.rev`, estimates): above the car's shift rpm ICE power falls 3 % per 1000 rpm; drive (ICE and MGU-K) is cut
+  over the last 200 rpm before a 13 000 rpm limiter (`gearing.rev_limit_rpm` overrides). Only a top gear too short for the straight
+  reaches either.
+- **Plan smoothing** (more-factors v1; FACTORS.md §4 has the trace that found each): the `"regulated"` plan had five hard switches
+  that made the lap jump between nearby cars (the RB22 sat on a local peak in mass; +0.5 kg was 0.058 s faster). Now: part-throttle
+  harvest and the costate reset at grip-limited points scale with the speed the limit takes off the step (`sens_reset_dv` 1.5 m/s);
+  the ERS-K reaching 100 kW inside a rate-limited period is time-weighted within the step; the clip threshold is interpolated within
+  the point that fills the recharge allowance; feasibility uses a soft minimum over the store's troughs (`soc_soft_mj` 0.03 MJ,
+  conservative); the C5.12.7 speed threshold is blended over ±3 km/h (`reg_vthr_band_kmh`); a period's initial step scales with the
+  dip that starts it (`reg_start_ramp_kw` 20 kW). Mass is now monotone over ±4 kg in 0.5 kg steps (0.0195 s/kg on the RB22).
 
 ### 3.5 Passes
 
@@ -223,11 +252,12 @@ Mean corner-minimum Δ (sim − driver, held-out): Abbey −5.5, Farm −4.3, Vi
 3. **Sector bias S1 +0.17 s, S3 −0.19 s** follows from 1 and 2 (S1 holds The Loop and Brooklands, S3 the Vale–Club complex and the lap end).
 4. **Priors:** CLA is outside its sourced range (5.32 against 4.6) on the evidence in §4.2. Treat the CLA and CdA levels as effective values of this model (the same caveat IDENTIFY.md gives); the relative effects of a design change are what the optimiser uses.
 5. **Geometry estimates:** gradient from an undocumented elevation profile; no banking; one averaged line for every car.
-6. **Quasi-steady state:** no yaw or transient dynamics, no tyre temperature build-up or wear, ideal brake balance; yaw inertia, unsprung masses and material flex (in the PhysicalCar) are not used. Aero balance does not shift with speed or ride height.
+6. **Quasi-steady state:** no yaw or transient dynamics, no tyre temperature build-up or wear, ideal brake balance unless the car declares one (§3.4b; then one fixed balance for the lap, no driver trim or migration); yaw inertia, unsprung masses and material flex (in the PhysicalCar) are not used. Aero balance does not shift with speed or ride height.
 7. **Team cars:** driver, session, tow and strategy are folded into three scales per team.
 
 ## 8. Timing and regeneration
 
+- more-factors v1 adds ~1 ms (the `RK` and fixed-balance tables): ~20-23 ms a lap measured while the test suite ran.
 - One lap: ~21 ms CPU (regulated), ~19 ms (optimal), ~30 ms (threshold) in Node 22 after warm-up; test < 30 ms. The power-law tyre tables take ~3 ms of that. The first call builds the track in ~1 s.
 - `node concept/sim/build-fit.js` re-estimates, refits and re-checks in ~80–110 s, byte-deterministic; `--check` exits non-zero if `fitted.js` is stale; it prints the held-out `track.compare()` summary. `node concept/sim/plot-trace.js ANT HAD SAI` redraws the overlays. `node concept/sim/build-line.js` rebuilds the line (`--fraction-only` for the v2 averaging).
 - Telemetry comes from OpenF1 (openf1.org), an independent community project not associated with Formula 1, the FIA or FOM, used for non-commercial research.

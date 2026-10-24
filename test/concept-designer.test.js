@@ -172,7 +172,7 @@ test("the verdict is numeric only: kept === legal && score_after > score_before,
 });
 
 // ---------------------------------------------------------------- mock loop, determinism, CLI
-test("mock LLM loop: same seed -> identical lineage; the mock exercises parse, illegal and duplicate guards; scenarios stay ≤ 400 tokens", async () => {
+test("mock LLM loop: same seed -> identical lineage; the mock exercises parse, illegal and duplicate guards; scenarios stay ≤ 450 tokens", async () => {
   const run = seed => designer.runDesigner({ gens: 30, seed, designer: { llm: cli.mockLlm(seed), runId: "t" + seed } });
   const a = await run(1), b = await run(1), c = await run(2);
   assert.equal(JSON.stringify(a.lineage), JSON.stringify(b.lineage)); assert.equal(JSON.stringify(a.calls), JSON.stringify(b.calls));
@@ -183,7 +183,8 @@ test("mock LLM loop: same seed -> identical lineage; the mock exercises parse, i
   for (const k of ["parse", "illegal", "duplicate"]) assert.ok(reasons[k], "mock never triggered " + k);
   for (const r of [a, c]) {
     assert.ok(r.best_result.legal && r.best_result.score > r.baseline_result.score, "the loop improves on the baseline");
-    assert.ok(r.calls.every(x => x.scenario_tokens <= 400 && x.trained === false));
+    // ≤ 450 tokens = the fit() budget (S.LIMITS.chars 1800 ≈ 450): the 36 parameters of redesigns v1 (8 concept codes) pass 400
+    assert.ok(r.calls.every(x => x.scenario_tokens <= 450 && x.trained === false));
     const designs = replayDesigns(r.lineage); assert.equal(new Set(designs).size, designs.length, "no tested design is measured twice");
     assert.ok(r.lineage.every(x => ["llm", "fallback"].includes(x.proposer)));
   }

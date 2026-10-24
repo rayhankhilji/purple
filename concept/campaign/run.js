@@ -3,13 +3,15 @@
 // beat the real 2026 Silverstone qualifying laps (pole ANT 88.111 s; Red Bull HAD 88.746 s) ON THE PHYSICS LAP SIM?
 //   node concept/campaign/run.js --seeds 1,2,3,4 --evals 3000 --baselines redbull,generic --out /tmp/purple-campaign
 // Method (docs/concept/CAMPAIGN.md):
-//   - search space: the 23 shape parameters (concept/campaign/space.js, box tightened by the single-number FIA limits); materials
+//   - search space: every catalogue parameter (concept/parts.js PARAMS: shape, set-up, gearing and the redesigns v1 concept-family
+//     codes; concept/campaign/space.js, box tightened by the single-number FIA limits); materials
 //     (only those the bench's material guard allows) and wing volume counts are searched in the refinement;
 //   - per seed: CMA-ES with restarts (baseline, wide IPOP-style, local around the incumbent, random legal start), deterministic per
 //     seed; each generation draws prescreen × λ samples, the SURROGATE (concept/surrogate, physics model) ranks them for
 //     PRE-SCREENING ONLY (plus a random quarter it never ranks), and the λ chosen are run on the PHYSICS LAP SIM in worker threads
 //     through concept/bench.js (FIA legality, PU and material guards, energy-limit re-check): CMA-ES learns only from physics laps;
-//   - refinement of the best over all seeds: wing volume counts (short CMA-ES per combination), material swaps, then a coordinate
+//   - refinement of the best over all seeds: wing volume counts (short CMA-ES per combination), whole-concept switches (redesigns v1: one
+//     concept family at a time, with its packaging partners, short CMA-ES each), material swaps, then a coordinate
 //     pattern search (± 1…32 quantisation steps), all on the physics sim;
 //   - every final number is a fresh physics sim lap of the final design (never a surrogate value), with the full legality report,
 //     the PU check against the homologated PU, sector and per-segment time, and the uncertainty band (concept/campaign/uncertainty.js).
@@ -154,6 +156,42 @@ function coordinateMoves(d) {
   }
   return out;
 }
+// redesigns v1: a car short of cooling (PKG-COOLING) gets the smallest inlet (on the parameter's step) that covers the race need,
+// within the parameter's box and the zeropod's inlet cap; capacity is linear in the inlet (concept/aeromap.js cooling)
+function coolingRepair(d) {
+  const aero = require("../aeromap.js"), c = aero.evaluate(d.params).cooling;
+  if (c.capacity >= c.required - 1e-9 || !(c.capacity > 0)) return d;
+  const v = space.VARS.find(x => x.key === "sidepods.inlet_cm2"), now = d.params.sidepods.inlet_cm2;
+  let hi = v.hi; if (parts.concept(d.params, "sidepods.concept") === "zeropod") hi = Math.min(hi, regs.CONCEPT_LIMITS.zeropod_inlet_max_cm2);
+  const need = Math.min(hi, Math.ceil((now * c.required / c.capacity - v.lo) / v.step - 1e-9) * v.step + v.lo);
+  return need > now ? design.applyChanges(d, [{ part: "sidepods", param: "inlet_cm2", to: need }]).design : d;
+}
+// redesigns v1: every single-family concept switch from design d, with the partner changes its packaging rules need (regs.js
+// CONCEPT_RULES). Returns [{ label, changes, lock }]: `lock` = the concept keys a refinement CMA-ES must hold.
+function conceptSwitches(d) {
+  const out = [], L = regs.CONCEPT_LIMITS, code = k => { const c = parts.CONCEPTS[k]; return d.params[c.part] && typeof d.params[c.part][c.param] === "number" ? d.params[c.part][c.param] : c.base; };
+  for (const key of parts.CONCEPT_KEYS) {
+    const c = parts.CONCEPTS[key];
+    for (const e of c.codes) {
+      if (e.code === code(key)) continue;
+      const base = [{ part: c.part, param: c.param, to: e.code }], lock = [key];
+      if (key === "sidepods.concept" && e.id === "zeropod") {
+        const inlet = Math.min(d.params.sidepods.inlet_cm2, L.zeropod_inlet_max_cm2);
+        for (const cool of [2, 1]) {   // compact, airbox + gills (the standard layout cannot cool a zeropod: COOL_PACK)
+          const ch = base.concat([{ part: "sidepods", param: "inlet_cm2", to: inlet }, { part: "cooling", param: "layout", to: cool }]);
+          if (cool === 1) ch.push({ part: "engine_cover", param: "style", to: 0 });
+          out.push({ label: key + "=" + e.id + " + cooling.layout=" + parts.CONCEPTS["cooling.layout"].codes[cool].id, changes: ch, lock: lock.concat(["cooling.layout"]) });
+        }
+        continue;
+      }
+      if (key === "sidepods.concept" && e.id === "ramp") base.push({ part: "sidepods", param: "undercut_mm", to: Math.max(d.params.sidepods.undercut_mm, L.ramp_undercut_min_mm) });
+      if (key === "cooling.layout" && e.id === "airbox_gills") base.push({ part: "engine_cover", param: "style", to: 0 });
+      if (key === "engine_cover.style" && e.id === "low_narrow" && code("cooling.layout") === 1) base.push({ part: "cooling", param: "layout", to: 0 });
+      out.push({ label: key + "=" + e.id, changes: base, lock });
+    }
+  }
+  return out;
+}
 function materialMoves(d) {
   const out = [], M = require("../materials.js");
   for (const p of space.MATERIAL_PARTS) { const cur = M.materialOf(d.params, p); for (const id of space.materialOptions(p)) if (id !== cur) out.push([{ part: p, param: "material", to: id }]); }
@@ -191,6 +229,28 @@ async function refine(ctx, start) {
       if (cma.state().max_std < 2e-3) break;
     }
     log.push({ stage: "volumes " + fe + "/" + re, lap_s: cb ? cb.lap : null, laps, accepted: !!(cb && cb.lap < cur.lap - 1e-9) });
+    if (cb && cb.lap < cur.lap - 1e-9) { cur = cb; log[log.length - 1].design = { params: cur.design.params, team: cur.design.team || null }; }
+  }
+  // 1b. redesigns v1: whole-concept switches. For every concept family (parts.CONCEPTS) and every other code, the incumbent with that
+  //     code (plus the minimal partner changes its packaging rules need: a zeropod's inlet ≤ 760 cm² and a non-standard cooling
+  //     layout, tried both ways; a ramp pod's undercut ≥ 120 mm; airbox + gills with the full-height cover) and a short CMA-ES
+  //     around it with the switched codes held; kept only if the physics lap improves. Budget: combo_evals per switch. A switch that
+  //     leaves the car short of cooling (PKG-COOLING) first gets the inlet that covers it (coolingRepair).
+  const switches = conceptSwitches(cur.design);
+  for (let ci = 0; ci < switches.length && o.combo_evals > 0 && !stopOf(ctx); ci++) {
+    const sw = switches[ci], d0 = coolingRepair(design.applyChanges(cur.design, sw.changes).design), x0 = space.encode(d0), rng = design.seededRng(2000 + ci);
+    const locks = sw.lock.map(k => space.VARS.findIndex(v => v.key === k)).filter(i => i >= 0);
+    const cma = CMA({ x0, sigma0: 0.05, lambda: 12, rng });
+    let cb = null, n = 0;
+    while (n < o.combo_evals && !stopOf(ctx)) {
+      const xs = cma.ask().map(x => { const y = x.slice(); for (const i of locks) y[i] = x0[i]; return y; });
+      const ds = [d0].concat(xs.map((x, j) => space.decode(x, d0, { id: "concept" + ci + "." + n + "." + j })));
+      const res = await ctx.pool.evaluate(ds, ctx.benchOpts); n += res.length; laps += res.length;
+      cma.tell(xs, res.slice(1).map((q, j) => fitness(q, xs[j])));
+      res.forEach((q, j) => { if (q.legal && (!cb || q.lap_s < cb.lap - 1e-9)) cb = { design: ds[j], res: q, lap: q.lap_s }; });
+      if (cma.state().max_std < 2e-3) break;
+    }
+    log.push({ stage: "concept " + sw.label, lap_s: cb ? cb.lap : null, laps, accepted: !!(cb && cb.lap < cur.lap - 1e-9) });
     if (cb && cb.lap < cur.lap - 1e-9) { cur = cb; log[log.length - 1].design = { params: cur.design.params, team: cur.design.team || null }; }
   }
   // 2-3. materials, then coordinates, until neither improves (or the budget is spent)
@@ -317,6 +377,8 @@ async function report(ctx, final, seeds, refineOut) {
       ["sidepods (inlet, undercut)", ["sidepods.inlet_cm2", "sidepods.undercut_mm"]],
       ["packaging (wheelbase, survival cell)", ["layout.wheelbase_mm", "survival_cell.front_axle_offset_mm", "survival_cell.cockpit_len_mm", "survival_cell.bulkhead_gap_mm"]],
       ["ballast (position, extra)", ["ballast.x_frac", "ballast.extra_kg"]],
+      ["set-up and gearing (roll split, heave, brake balance, ratios)", ["setup.roll_front", "setup.heave_n_mm", "setup.brake_bias", "gearbox.top_kmh", "gearbox.step"]],
+      ["concept families (redesigns v1)", parts.CONCEPT_KEYS.slice()],
       ["materials", "materials"],
     ];
     const M = require("../materials.js");
@@ -481,4 +543,4 @@ async function main(argv) {
   return 0;
 }
 if (require.main === module) main(process.argv.slice(2)).then(c => { process.exitCode = c; }, e => { console.error("concept campaign: " + (e.stack || e)); process.exitCode = 1; });
-module.exports = { runCampaign, runSeed, refine, report, screen, legalityReport, summaryMarkdown, parseArgs, qualiConditions, CAMPAIGN_LABEL };
+module.exports = { runCampaign, runSeed, refine, report, screen, legalityReport, summaryMarkdown, parseArgs, qualiConditions, conceptSwitches, coolingRepair, CAMPAIGN_LABEL };

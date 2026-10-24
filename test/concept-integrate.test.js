@@ -40,7 +40,8 @@ test("calibration: design changes are relative deltas from the part catalogue an
   const half = physical.physical(withParam(RB, "rear_wing", "sm_delta_deg", 7.5)); assert.ok(half.aero.straight.CDA_m2 > b.aero.straight.CDA_m2 && half.aero.straight.CDA_m2 < b.aero.corner.CDA_m2);
   const low = physical.physical(withParam(RB, "rear_wing", "aoa_deg", 15)); assert.ok(low.aero.straight.CDA_m2 < b.aero.straight.CDA_m2 && low.aero.corner.CDA_m2 < b.aero.corner.CDA_m2);
   // the sim sees those deltas: no flaps costs most of a second (sim v2: Straight Mode CDA ratio 0.82, fitted inside priors-2026; was 0.55), a wider floor gains
-  assert.ok(lap(pf) > lap(b) + 0.5); assert.ok(lap(wide) < lap(b));
+  // (difficulty v1: floor width past 1450 mm counts at half rate, so the sim-visible floor delta is checked on a narrower floor)
+  assert.ok(lap(pf) > lap(b) + 0.5); assert.ok(lap(physical.physical(withParam(RB, "floor", "width_mm", 1400))) > lap(b) + 0.05);
 });
 
 test("energy: regulation semantics (C5.2.9 window + C5.2.10 recharge) and the es_harvest exploit is closed in the bench", () => {
@@ -67,7 +68,7 @@ test("bench: physics sim by default with the weekend objective; the baselines ar
   const r = bench.bench(RB), g = bench.bench(G);
   for (const x of [r, g]) { assert.equal(x.sim, "physics"); assert.equal(x.objective, "weekend"); assert.match(x.sim_label, /physics lap sim/); assert.equal(x.legal, true); }
   assert.equal(r.circuits.silverstone.lap_s, lap(sim.baselineCar("redbull"))); assert.equal(g.circuits.silverstone.lap_s, lap(sim.baselineCar()));
-  // the generic car is estimated on the pole lap itself (sim v3: 88.107 s against 88.111 s), so it sits at the front of the sim
+  // the generic car is estimated on the pole lap itself (sim v3, more-factors refit: 88.100 s against 88.111 s), so it sits at the front of the sim
   // field within a few ms of the Mercedes car: P1 or P2 by 0.01 s, not by construction; the RB22 is not
   assert.ok(r.weekend.grid_position > 1 && g.weekend.grid_position <= 2, "P" + r.weekend.grid_position + " / P" + g.weekend.grid_position);
   assert.equal(r.score, r.weekend_model.weekend_score); assert.ok(r.score < 0 && g.score > r.score);

@@ -90,6 +90,10 @@
     reg_deploy_kw: 350,         // "regulated": the ERS-K deployment level the plan uses (kW, <= 350)
     clip_decel_max: 3,          // m/s2: the largest deceleration superclipping may cause at full throttle (model bound, SIM.md §3.4)
     reg_soft_deploy: 0.5, reg_soft_clip: 0.5, // "regulated": widths (in log sens) of the deploy and superclip plan (policy)
+    soc_soft_mj: 0.03,
+    sens_reset_dv: 1.5,         // m/s: speed a grip limit must take off a step to reset the value of a joule fully (more-factors v1; soft below)          // "regulated" / "optimal": soft minimum over the store's troughs, width τ (more-factors v1; 0 = hard minimum)
+    reg_vthr_band_kmh: 3,
+    reg_start_ramp_kw: 20,      // "regulated": a period's initial step reaches its full size once the plan dips this far below the available power       // "regulated": half-width of the blend across the C5.12.7 speed threshold (more-factors v1; 0 = hard switch)
     default_strategy: "regulated", // energy strategy used when opts.strategy is not given (see section 3)
     clip_rho: 1,                // "marginal" strategy: superclip where sensitivity < rho x deploy threshold (cal.clip_rho overrides)
     lambda_iters: 22,           // bisection iterations of the strategy threshold
@@ -106,6 +110,19 @@
     // crosswind yaw (ESTIMATE): downforce x (1 - yaw_sens x |yaw deg|), floored at 0.5, with PhysicalCar.aero.yaw_sens (per degree;
     // default 0 = no yaw effect, contract request). Yaw = atan(crosswind / air speed along the heading).
     yaw_sens_default: 0, yaw_floor: 0.5,
+    // ---- more-factors v1 (docs/concept/FACTORS.md). Each is read only when the car carries the field, so a car without it laps as before.
+    // engine speed above the driver's shift point (only reached when the top gear is too short for the straight): the fuel energy
+    // flow stays at its C5.2.3 cap above 10 500 rpm while friction power rises roughly with N² (FMEP ∝ N), so brake power falls;
+    // ESTIMATE 3 % of ICE power per 1000 rpm above the car's measured shift rpm (friction ≈ 55 kW at 12 000 rpm for 1.6 L at
+    // ≈ 3.5 bar FMEP: d/dN ≈ 9 kW per 1000 rpm, 2.3 %; rounded up). Rev limiter: no regulation cap in 2026 (C5.14 sets only a
+    // 750 rpm band for the limits a team uses); ESTIMATE 13 000 rpm, above the highest 2026 Silverstone Q rpm seen (12 579, NOR;
+    // HAD 12 320). The limiter cuts drive (ICE and MGU-K: both drive through the gearbox) over its last 200 rpm.
+    rev: { over_shift_loss_per_krpm: 0.03, limit_rpm: 13000, cut_band_rpm: 200 },
+    // brake balance: the calibrated braking capacity is the real car's at its (unpublished) balance; a car that declares
+    // brakes.bias_front is braked at that fixed front share, relative to brakes.bias_ref (default 1 − rear_brake_share = 0.57): the
+    // capacity scales by min(F_front/b, F_rear/(1 − b)) / the same at the reference balance, per speed, with the axle loads moved by
+    // the car's own deceleration. Real drivers trim the balance corner by corner and brake-by-wire migration shifts it during a stop;
+    // one fixed balance for the lap is the conservative reading.
   };
   // default conditions = 2026 British GP qualifying (4 Jul 2026, 16:00-17:00), mid-range of the FIA Qualifying Weather Report as
   // transcribed in concept/data/silverstone-2026-weekend.json (sessions[Qualifying].weather): air 24.6-25.8 C, track 38.2-42.6 C,
@@ -204,6 +221,14 @@
     return Math.max(T.floor, 1 - T.k_per_c2 * (+trackC - T.ref_c) ** 2);
   }
 
+  // the car's declared brake balance (front share) and its reference, or null (ideal balance, as calibrated)
+  function brakeBias(car) {
+    const br = car && car.brakes, b = br && br.bias_front;
+    if (!(br && typeof b === "number" && isFinite(b))) return null;
+    const ref = typeof br.bias_ref === "number" && isFinite(br.bias_ref) ? br.bias_ref : 1 - MODEL.rear_brake_share;
+    const cl = x => Math.min(0.9, Math.max(0.1, x));
+    return { b: cl(b), ref: cl(ref) };
+  }
   function num(v, name) { if (typeof v !== "number" || !isFinite(v)) throw new Error("concept sim: car." + name + " must be a finite number"); return v; }
   function checkCar(car) {
     if (!car || typeof car !== "object") throw new Error("concept sim: car required");
@@ -225,7 +250,9 @@
     const rs = isFinite(+a.ride_sens_per_mm) && a.ride_sens_per_mm !== null ? Math.max(0, +a.ride_sens_per_mm) : 0;
     const share = isFinite(+a.floor_share) && a.floor_share !== null ? Math.min(1, Math.max(0, +a.floor_share)) : FL.share;
     const sm = isFinite(+a.stall_margin_mm) && a.stall_margin_mm !== null ? +a.stall_margin_mm : FL.margin_default_mm;
-    const onset = Math.max(0, FL.dyn_mm + sm);
+    // the stall onset as a squat: the design layer's dynamic margin (judged at its dynamic compression) plus that compression,
+    // which scales with the platform stiffness (5 mm at MODEL.heave_n_per_mm; more-factors v1: a softer car reaches it sooner)
+    const onset = Math.max(0, FL.dyn_mm * (MODEL.heave_n_per_mm / kh) + sm);
     const factor = dh => {
       const over = dh - onset, st = over <= 0 ? 1 : Math.max(FL.stall_floor, 1 - (over / FL.stall_w_mm) ** 2);
       return (1 + rs * dh) * (1 - share + share * st);
@@ -251,6 +278,7 @@
     // of its load; the sim multiplies every CLA (both modes, both axles) by MODEL.floor_stall_cla_factor. Drag is unchanged.
     const rhf = car.floor_stalled === true || (car.aero && car.aero.floor_stalled === true) ? MODEL.floor_stall_cla_factor : 1;   // aero.floor_stalled (core) or top-level
     const Fz0f = (m * G * wf) / 2, Fz0r = (m * G * wr) / 2;   // nominal (static) load per tyre
+    const bias = brakeBias(car);
     const out = [];
     // Straight Mode only lowers wing incidence (C3.10.10 n, C3.11.6 c): it can never add load or drag, so its coefficients are
     // capped at the Corner Mode values (closes an optimiser exploit: no straight-mode drag without its downforce loss and v.v.)
@@ -262,9 +290,14 @@
     // the linear law at the static load Fz0, so load_sens keeps its meaning (fraction of mu lost per unit of load ratio at Fz0).
     // Lateral load transfer dF = m_axle a h / track is solved for the axle's limit by Newton iterations (fixed count: deterministic).
     const pw = MODEL.tyre_law === "power";
-    const axlePow = (Fz, Fz0, mAx, tw, mu) => {
+    // lateral load transfer distribution (more-factors v1): the front axle carries the share lltd of the car's total transfer
+    // moment m a h (car.suspension.lltd_front, set by the roll stiffness split; concept/physical.js). Absent: lltd = the weight
+    // split, i.e. dF = m_axle a h / track as before. The force each axle must make stays m_axle a (yaw equilibrium).
+    const sus = car.suspension, lltd = sus && isFinite(+sus.lltd_front) && sus.lltd_front !== null ? Math.min(0.95, Math.max(0.05, +sus.lltd_front)) : wf;
+    const mLtF = m * lltd, mLtR = m * (1 - lltd), lltdOn = Math.abs(lltd - wf) > 1e-12;
+    const axlePow = (Fz, Fz0, mAx, tw, mu, mLt) => {
       if (!(Fz > 0)) return 0;
-      const n1 = 1 - ls, c0 = mu * Math.pow(Fz0, ls), k = (mAx * h) / tw, half = 0.5 * Fz;
+      const n1 = 1 - ls, c0 = mu * Math.pow(Fz0, ls), k = (mLt * h) / tw, half = 0.5 * Fz;
       const F = a => { const d = Math.min(k * a, half), o = half + d, i = half - d; return c0 * (Math.pow(o, n1) + (i > 0 ? Math.pow(i, n1) : 0)); };
       let a = F(0) / mAx;
       for (let it = 0; it < 6; it++) {
@@ -276,6 +309,10 @@
     };
     for (const mode of ["corner", "straight"]) {
       const a = mode === "corner" ? cm : smCapped, AY = new Float64Array(NU), AYR = new Float64Array(NU), TR = new Float64Array(NU), BR = new Float64Array(NU), DR = new Float64Array(NU), RR = new Float64Array(NU);
+      // RK (more-factors v1): the driven (rear) axle's lateral limit at the reference transfer split over its limit at this car's
+      // split. Exit traction is what the rear tyres have left after their own cornering load, so moving transfer onto the rear axle
+      // costs traction: the friction-ellipse utilisation is read as r × RK (1 when the car declares no split: calibrated as before)
+      const RK = lltdOn ? new Float64Array(NU) : null;
       for (let k = 0; k < NU; k++) {
         const u = k * MODEL.du, q = 0.5 * rho * u * u;
         // aero platform (v2): CLA x factor(squat), the squat solved from k dh = q CLA factor(dh) (platform())
@@ -283,14 +320,15 @@
         const Fzf = m * G * wf + q * a.CLA_front_m2 * rhf * hv, Fzr = m * G * wr + q * a.CLA_rear_m2 * rhf * hv;
         // axle lateral capacity with load sensitivity and lateral load transfer (split by axle mass share):
         // F = mu [Fz (1 + ls) - ls (Fz^2/2 + 2 dF^2) / Fz0], dF = m_axle a h / track  ->  quadratic in a
-        const axle = (Fz, Fz0, mAx, tw, mu) => {
-          const C = mu * (Fz * (1 + ls) - (ls * Fz * Fz) / (2 * Fz0)), c2 = (2 * mu * ls * (mAx * h / tw) ** 2) / Fz0;
+        const axle = (Fz, Fz0, mAx, tw, mu, mLt) => {
+          const C = mu * (Fz * (1 + ls) - (ls * Fz * Fz) / (2 * Fz0)), c2 = (2 * mu * ls * (mLt * h / tw) ** 2) / Fz0;
           if (C <= 0) return 0;
           return c2 > 1e-12 ? (-mAx + Math.sqrt(mAx * mAx + 4 * c2 * C)) / (2 * c2) : C / mAx;
         };
-        const ayf = pw ? axlePow(Fzf, Fz0f, m * wf, car.track_front_m, muy) : axle(Fzf, Fz0f, m * wf, car.track_front_m, muy);
-        const ayr = pw ? axlePow(Fzr, Fz0r, m * wr, car.track_rear_m, muy) : axle(Fzr, Fz0r, m * wr, car.track_rear_m, muy);
+        const ayf = pw ? axlePow(Fzf, Fz0f, m * wf, car.track_front_m, muy, mLtF) : axle(Fzf, Fz0f, m * wf, car.track_front_m, muy, mLtF);
+        const ayr = pw ? axlePow(Fzr, Fz0r, m * wr, car.track_rear_m, muy, mLtR) : axle(Fzr, Fz0r, m * wr, car.track_rear_m, muy, mLtR);
         AY[k] = Math.min(ayf, ayr); AYR[k] = ayr;
+        if (RK) { const ayr0 = pw ? axlePow(Fzr, Fz0r, m * wr, car.track_rear_m, muy, m * wr) : axle(Fzr, Fz0r, m * wr, car.track_rear_m, muy, m * wr); RK[k] = ayr > 0 ? ayr0 / ayr : 1; }
         // longitudinal capacity of one axle (two tyres sharing Fz equally) per unit of mu
         const cap = pw ? (Fz, Fz0) => (Fz > 0 ? Fz * Math.pow(Fz / (2 * Fz0), -ls) : 0) : (Fz, Fz0) => (Fz > 0 ? Math.max(0, Fz * (1 + ls) - (ls * Fz * Fz) / (2 * Fz0)) : 0);
         DR[k] = q * a.CDA_m2 * cal.drag_scale;
@@ -300,12 +338,17 @@
         // low-speed traction; fixed point (4 iterations) on the car's own deceleration / acceleration. Ideal brake balance.
         let ab = (mux * (cap(Fzf, Fz0f) + cap(Fzr, Fz0r)) + DR[k] + RR[k]) / m, Fb = 0;
         for (let it = 0; it < 4; it++) { const d = Math.min(Fzr, (m * ab * h) / wb); Fb = mux * (cap(Fzf + d, Fz0f) + cap(Fzr - d, Fz0r)); ab = (Fb + DR[k] + RR[k]) / m; }
+        // fixed brake balance (more-factors v1, MODEL comment): the capacity at balance b over the capacity at the reference balance
+        if (bias) {
+          const fixedB = b => { let a = ab, F = 0; for (let it = 0; it < 4; it++) { const d = Math.min(Fzr, (m * a * h) / wb); F = mux * Math.min(cap(Fzf + d, Fz0f) / b, cap(Fzr - d, Fz0r) / (1 - b)); a = (F + DR[k] + RR[k]) / m; } return F; };
+          const Fref = fixedB(bias.ref); if (Fref > 0) Fb *= fixedB(bias.b) / Fref;
+        }
         BR[k] = Fb;
         let at = (mux * cap(Fzr, Fz0r)) / m, Ft = 0;
         for (let it = 0; it < 4; it++) { const d = Math.min(Fzf, (m * Math.max(0, at) * h) / wb); Ft = mux * cap(Fzr + d, Fz0r); at = (Ft - DR[k] - RR[k]) / m; }
         TR[k] = Ft;                                          // rear-wheel drive
       }
-      out.push({ AY, AYR, TR, BR, DR, RR });
+      out.push({ AY, AYR, TR, BR, DR, RR, RK });
     }
     return out;
   }
@@ -380,7 +423,11 @@
     // under shift_rpm; below 10 500 rpm the fuel energy flow (so ICE power) is limited to (0.27 N + 165) / 3000 (C5.2.4)
     const gr = carF.gearing && Array.isArray(carF.gearing.rpm_per_kmh) && carF.gearing.rpm_per_kmh.length ? carF.gearing : null;
     const gearOf = vk => { const k = gr.rpm_per_kmh; for (let g = 0; g < k.length; g++) if (k[g] * vk <= gr.shift_rpm) return g; return k.length - 1; };
-    const iceFactor = vk => { if (!gr) return 1; const N = gr.rpm_per_kmh[gearOf(vk)] * vk; return N >= 10500 ? 1 : Math.max(0.3, (0.27 * N + 165) / 3000); };
+    // more-factors v1: above the shift rpm (top gear only) friction eats ICE power (MODEL.rev, estimate); revCut: the limiter
+    const RV = MODEL.rev;
+    const iceFactor = vk => { if (!gr) return 1; const N = gr.rpm_per_kmh[gearOf(vk)] * vk; return N >= 10500 ? (N > gr.shift_rpm ? Math.max(0.3, 1 - RV.over_shift_loss_per_krpm * (N - gr.shift_rpm) / 1000) : 1) : Math.max(0.3, (0.27 * N + 165) / 3000); };
+    const revLim = gr ? (isFinite(+gr.rev_limit_rpm) && +gr.rev_limit_rpm > 0 ? +gr.rev_limit_rpm : RV.limit_rpm) : Infinity;
+    const revCut = vk => { if (!gr) return 1; const N = gr.rpm_per_kmh[gearOf(vk)] * vk, x = (revLim - N) / RV.cut_band_rpm; return x >= 1 ? 1 : x > 0 ? x : 0; };
     const clipKw = Math.min(pu.superclip_kw != null ? pu.superclip_kw : MODEL.superclip_kw, kKw);
     const recLim = c.recharge_limit_mj != null && isFinite(+c.recharge_limit_mj) ? +c.recharge_limit_mj : Infinity;
     const harvCap = Math.min(pu.es_harvest_mj_per_lap, recLim, REGS.recharge_max_mj) * 1e6, depCap = pu.es_deploy_mj_per_lap * 1e6, soc = REGS.es_soc_window_mj * 1e6;
@@ -401,11 +448,13 @@
     // hot loop: tables share one air-speed grid, so each step computes its grid index once; drag + rolling are pre-summed
     const RES0 = new Float64Array(NU), RES1 = new Float64Array(NU);
     for (let k = 0; k < NU; k++) { RES0[k] = tab[0].DR[k] + tab[0].RR[k]; RES1[k] = tab[1].DR[k] + tab[1].RR[k]; }
-    const AY0 = tab[0].AY, AY1 = tab[1].AY, TR0 = tab[0].TR, TR1 = tab[1].TR;
+    const AY0 = tab[0].AY, AY1 = tab[1].AY, TR0 = tab[0].TR, TR1 = tab[1].TR, RK0 = tab[0].RK, RK1 = tab[1].RK;
+    // traction utilisation of the rear axle (RK, more-factors v1): r × RK, capped at 1
+    const rTr = (RKm, gg, gt, r) => { if (!RKm) return r; const q = r * (RKm[gg] + gt * (RKm[gg + 1] - RKm[gg])); return q < 1 ? q : 1; };
     const gF = new Float64Array(n), absK = new Float64Array(n);
     for (let i = 0; i < n; i++) { gF[i] = m * G * grade[i]; absK[i] = Math.abs(kap[i]); }
     const inv = 1 / du, uTop = NU - 1.001, swS = MODEL.aero_switch_s, latF = MODEL.straight_lat_frac;
-    const PclipMax = Math.min(clipKw * 1e3, ETA * Pice), rbs = ETA * eff * MODEL.rear_brake_share, kW = kKw * 1e3;
+    const bb = brakeBias(carF), PclipMax = Math.min(clipKw * 1e3, ETA * Pice), rbs = ETA * eff * (bb ? 1 - bb.b : MODEL.rear_brake_share), kW = kKw * 1e3;
     const shiftS = Math.min(MODEL.upshift_cut_max_s, Math.max(0, MODEL.upshift_cut_s));
     function forward(x, record) {   // x < 0: reference lap (deploy everywhere, no superclip)
       let v = vb[iMin], t = 0, Edep = 0, Eclip = 0, EharvBrake = 0, zoneT = zone[iMin] ? -1e9 : Infinity, cut = 0;
@@ -426,7 +475,7 @@
         const AY = md ? AY1 : AY0, TR = md ? TR1 : TR0, RES = md ? RES1 : RES0;
         const aym = AY[gg] + gt * (AY[gg + 1] - AY[gg]);
         const r = aym > 0 ? (ay < aym ? ay / aym : 1) : 1;
-        const Ftrac = (TR[gg] + gt * (TR[gg + 1] - TR[gg])) * Math.sqrt(1 - r * r);
+        const rt = rTr(md ? RK1 : RK0, gg, gt, r), Ftrac = (TR[gg] + gt * (TR[gg + 1] - TR[gg])) * Math.sqrt(1 - rt * rt);
         const vv = v > 3 ? v : 3;
         // deploy (K power limited by the C5.2.8 taper) or superclip
         let PkMech = 0, PclipElec = 0;
@@ -435,7 +484,7 @@
         else if (!marginal || sens[i] < x * clipRho) PclipElec = PclipThr;   // threshold / marginal: uniform power share
         const PiceN = gr ? Pice * iceFactor(v * 3.6) : Pice;
         if (PclipElec > ETA * PiceN) PclipElec = ETA * PiceN;
-        const Fice = (eff * (PiceN - PclipElec / ETA)) / vv, Ffull = Fice + (eff * PkMech) / vv;
+        const rc = gr ? revCut(v * 3.6) : 1, Fice = (rc * eff * (PiceN - PclipElec / ETA)) / vv, Ffull = Fice + (rc * eff * PkMech) / vv;
         const dtE = ds / vv, phi = cut > 0 ? (cut < dtE ? cut / dtE : 1) : 0;
         const Fx = (1 - phi) * (Ffull < Ftrac ? Ffull : Ftrac);
         const PkUsed = Fx > Fice ? Math.min(PkMech, ((Fx - Fice) * vv) / eff) : 0;
@@ -476,6 +525,11 @@
     // throttle through a corner) the K harvests for free: the rear-axle share of the brake force, and at part throttle the ICE's
     // surplus over what the corner lets the car use (the ICE stays at full fuel flow; C5.2.10 counts all of it as Recharge).
     const lim = new Uint8Array(n), tl = new Uint8Array(n), pw = new Float64Array(n), kOut = new Float64Array(n);
+    // limW (more-factors v1): how much speed the grip limit took off a recorded point: 1 when it took nothing, 0 when it took
+    // MODEL.sens_reset_dv or more (a real lift or braking). The value of a joule resets by (1 − limW) there instead of all at once,
+    // so an apex the car only just touches at full throttle does not cut the costate in two (that made a 0.065 s lap jump for
+    // +0.5 kg on the RB22 at Maggotts, FACTORS.md §4)
+    const limW = new Float64Array(n);
     const partHarv = opts.part_throttle_harvest !== false;
     // per-segment energy flows of the last forward pass (J, electrical): deploy, harvest under braking, at part throttle, superclip
     const eD = new Float64Array(n), eB = new Float64Array(n), eP = new Float64Array(n), eC = new Float64Array(n);
@@ -504,7 +558,7 @@
         const AY = md ? AY1 : AY0, TR = md ? TR1 : TR0, RES = md ? RES1 : RES0;
         const aym = AY[gg] + gt * (AY[gg + 1] - AY[gg]);
         const r = aym > 0 ? (ay < aym ? ay / aym : 1) : 1;
-        const Ftrac = (TR[gg] + gt * (TR[gg + 1] - TR[gg])) * Math.sqrt(1 - r * r);
+        const rt = rTr(md ? RK1 : RK0, gg, gt, r), Ftrac = (TR[gg] + gt * (TR[gg + 1] - TR[gg])) * Math.sqrt(1 - rt * rt);
         const vv = v > 3 ? v : 3, s = sens[i];
         let PkMech = 0, PclipElec = 0;
         // soft bang-bang: the share of full deployment / full superclip is a logistic function of log(sens) around the thresholds
@@ -522,7 +576,7 @@
           // except in a reset sector; a period ends when the driver lifts (the speed is set by grip or braking).
           const tp = mgukTaperKw(v * 3.6, overtake), kDep = Math.min(kKw, MODEL.reg_deploy_kw), Kav = tp < kDep ? (tp > 0 ? tp : 0) : kDep;   // kW (electrical)
           const clipK = Math.min(PclipMax, ETA * PiceN) / 1e3;
-          let K = Kav;
+          let K = Kav, kStep = null;
           if (x >= 0) {
             const plan = q => { if (!(q > 0)) return -(noClip || !(y > 0) ? 0 : clipK); const lq = Math.log(q), d = 1 / (1 + Math.exp((lx - lq) * idep)); return d * Kav - (noClip || !(y > 0) ? 0 : (1 - d) * clipK / (1 + Math.exp((lq - ly) * iclip))); };
             // the value of a joule scales as 1/v^3 (sens ~ sum ds / v^3): a car slower than the reference lap here values energy more
@@ -535,14 +589,33 @@
               if (Kp < Kav - REG_RATE.start_kw) {
                 const K1 = Math.min(Kp, plan(sens[ahead1[i]]));
                 inP = true; free = false; tP = t + REG_RATE.hold_s;
-                kc = Kav - Math.min(rBig[i] ? REG_RATE.step_big_kw : REG_RATE.step_kw, Kav - K1);
+                // the initial step is sized to the plan 1 s ahead and scaled by how decisively the plan dips now (more-factors v1:
+                // a 2 kW dip used to trigger a full 150 kW one-step cut, a 6 kJ blip that moved the energy root and the lap by ~0.01 s)
+                const wd = Math.min(1, (Kav - REG_RATE.start_kw - Kp) / MODEL.reg_start_ramp_kw);
+                kc = Kav - wd * Math.min(rBig[i] ? REG_RATE.step_big_kw : REG_RATE.step_kw, Kav - K1);
               } else kc = Kav;
             } else if (Kp < kc) {
-              if (!free && (v * 3.6 < rVthr[i] || kc <= REG_RATE.free_below_kw)) free = true;
+              // C5.12.7 speed threshold, read through a ±MODEL.reg_vthr_band_kmh blend (more-factors v1 smoothing): a hard switch at
+              // the threshold made the lap jump by ~0.065 s when a 0.5 kg change moved the car 1.5 km/h across 300 km/h at Maggotts
+              // (docs/concept/FACTORS.md §4). wv = 1 rate-limited (above the band), 0 free (below it); exact outside the band.
+              const bw = MODEL.reg_vthr_band_kmh, zv = bw > 0 ? (v * 3.6 - rVthr[i]) / bw : (v * 3.6 < rVthr[i] ? -1 : 1);
+              const wv = zv <= -1 ? 0 : zv >= 1 ? 1 : 0.5 + zv * (0.75 - 0.25 * zv * zv);
+              if (!free && (wv === 0 || kc <= REG_RATE.free_below_kw)) free = true;
               if (free) kc = Kp;
-              else if (t >= tP) { kc = Math.max(Kp, kc - REG_RATE.rate_kw_s * (ds / vv)); if (kc < REG_RATE.free_below_kw) { free = true; kc = Kp; } }
+              else {
+                let kn = kc; const k0 = kc, drop = REG_RATE.rate_kw_s * (ds / vv);
+                if (t >= tP) kn = Math.max(Kp, kc - drop);
+                kc = wv * kn + (1 - wv) * Kp;
+                if (kc < REG_RATE.free_below_kw) {
+                  // the command reaches 100 kW part-way through this step: from there on the ERS-K follows the plan (C5.12.6). The
+                  // step's power is the time-weighted mix, so where on the 2.5 m grid the crossing falls no longer makes a jump
+                  // (more-factors v1: a one-step 146 kW difference moved the energy root and the lap by ~0.01 s)
+                  const ph = k0 > REG_RATE.free_below_kw && drop > 0 ? Math.min(1, (k0 - REG_RATE.free_below_kw) / drop) : 0;
+                  free = true; kc = Kp; kStep = ph * 0.5 * (k0 + REG_RATE.free_below_kw) + (1 - ph) * Kp;
+                }
+              }
             }
-            K = Math.min(kc, Kav);
+            K = Math.min(kStep !== null ? kStep : kc, Kav);
           }
           if (K > 0) PkMech = ETA * 1e3 * K;
           else if (K < 0) {
@@ -557,7 +630,7 @@
           if (fc > 1e-4) PclipElec = fc * PclipMax;
         }
         if (PclipElec > ETA * PiceN) PclipElec = ETA * PiceN;
-        const Fice = (eff * (PiceN - PclipElec / ETA)) / vv, Ffull = Fice + (eff * PkMech) / vv;
+        const rc = gr ? revCut(v * 3.6) : 1, Fice = (rc * eff * (PiceN - PclipElec / ETA)) / vv, Ffull = Fice + (rc * eff * PkMech) / vv;
         // upshift torque cut: no drive force (ICE or K) for the share phi of this step that is still inside a cut (continuous in
         // the car's parameters: the cut is consumed in fractions of a step)
         const dtE = ds / vv, phi = cut > 0 ? (cut < dtE ? cut / dtE : 1) : 0;
@@ -575,16 +648,20 @@
           let x0 = u0 * inv; if (x0 > uTop) x0 = uTop;
           const h0 = x0 | 0, f0 = x0 - h0, R0 = md ? RES1 : RES0;
           const Freq = (me * (vn * vn - v * v)) / (2 * ds) + (R0[h0] + f0 * (R0[h0 + 1] - R0[h0])) + slip + gF[i];   // > 0: part throttle
+          // wl (more-factors v1): how much of a real lift this step is, from the speed the grip limit took off it (0 for an apex the
+          // car only just touches at full throttle, 1 from MODEL.sens_reset_dv): the part-throttle harvest of a one-step touch scales
+          // with it, so a touch / no-touch flip no longer moves the lap's energy by a whole step of ICE surplus (16 kJ at Becketts)
+          const dvl = (v2 > 1 ? Math.sqrt(v2) : 1) - vn, wl = dvl <= 0 ? 0 : dvl >= MODEL.sens_reset_dv ? 1 : dvl / MODEL.sens_reset_dv;
           if (Freq < 0) eB[i] = Math.min(kW, rbs * -Freq * vm) * dt;
           else {
             const crank = (Freq * vm) / eff;   // crank power the corner lets the car use
             if (crank > PiceN) eD[i] = ((crank - PiceN) / ETA) * dt;   // the K tops up (counted against the budget)
-            else if (partHarv) eP[i] = Math.min(kW, ETA * (PiceN - crank)) * dt;
+            else if (partHarv) eP[i] = wl * Math.min(kW, ETA * (PiceN - crank)) * dt;
           }
           // a power-limited period ends with a real lift: braking, or less than half the ICE power used (a step that is only just
           // grip-limited at full throttle does not end it: that kept the lap from being a smooth function of the car)
           wasLim = Freq < 0 || (Freq * vm) / eff < 0.5 * PiceN;
-          if (record) { modeAt[i] = md; brk[i] = Freq < 0 ? 1 : 0; lim[i] = 1; tl[i] = 0; pw[i] = 0; kOut[i] = 0; }
+          if (record) { modeAt[i] = md; brk[i] = Freq < 0 ? 1 : 0; lim[i] = 1; tl[i] = 0; pw[i] = 0; kOut[i] = 0; limW[i] = 1 - wl; }
           if (cutOn) { const gn = gearOf(vn * 3.6); if (gn < gHeld) gHeld = gn; }   // downshifts follow the speed (no cut)
         } else {
           dt = (2 * ds) / (v + vn);
@@ -605,8 +682,14 @@
     // 4 MJ window, charged on the out-lap) and may never go below empty; harvest is stored only while the store is below the
     // top of its window and the lap's recharge total is below the cap (the rest is not harvested: friction brakes / no clip).
     // feasible: the store never runs empty and deployment stays within the car's own cap.
+    // feasibility uses a SOFT minimum over the store's troughs (more-factors v1): one price of energy (x) serves the whole lap, so
+    // when two troughs (e.g. after Stowe and at the lap end) are nearly equally low, a tiny change of the car moved the binding one
+    // and the solved lap jumped (0.065 s for +0.5 kg on the RB22). softmin = m_min − τ log Σ exp(−(m_j − m_min)/τ) over the troughs
+    // (hysteresis τ) is ≤ the true minimum, so the store still never runs below empty, and it moves continuously between the troughs.
+    const socTau = MODEL.soc_soft_mj * 1e6;
     function ledger() {
       let soc = socStart, Edep = 0, H = 0, hB = 0, hP = 0, hC = 0, socMin = socStart;
+      let down = true, mLo = socStart, mHi = socStart; const tr = [];
       for (let k = 0; k < n; k++) {
         const i = (iCtl + k) % n, h = eB[i] + eP[i] + eC[i];
         if (h > 0) {
@@ -614,8 +697,14 @@
           if (st > 0) { const f = st / h; H += st; soc += st; hB += eB[i] * f; hP += eP[i] * f; hC += eC[i] * f; }
         }
         if (eD[i] > 0) { soc -= eD[i]; Edep += eD[i]; if (soc < socMin) socMin = soc; }
+        if (socTau > 0) {
+          if (down) { if (soc < mLo) mLo = soc; else if (soc > mLo + socTau) { tr.push(mLo); down = false; mHi = soc; } }
+          else { if (soc > mHi) mHi = soc; else if (soc < mHi - socTau) { down = true; mLo = soc; } }
+        }
       }
-      return { Edep, Eharv: H, EharvBrake: hB, EharvPart: hP, Eclip: hC, socMin, socEnd: soc, ok: socMin >= -1 && Edep <= depCap + 1 };
+      let soft = socMin;
+      if (socTau > 0) { if (down) tr.push(mLo); let sum = 0; for (const m of tr) sum += Math.exp(-(m - socMin) / socTau); soft = socMin - socTau * Math.log(Math.max(1, sum)); }
+      return { Edep, Eharv: H, EharvBrake: hB, EharvPart: hP, Eclip: hC, socMin, socSoft: soft, socEnd: soc, ok: soft >= -1 && Edep <= depCap + 1 };
     }
     // costate of kinetic energy along a recorded lap (seconds gained per J/kg added at i): backward recursion
     // sens_i = ds/v^3 + sens_{i+1} (1 + ds dF/de), dF/de = (dF_prop/dv - dF_res/dv) / (m_e v), with dF_prop/dv = -P/v^2 when
@@ -625,14 +714,14 @@
     function computeSens() {
       let acc = 0; sMin = Infinity; sMax = 0;
       for (let sweep = 0; sweep < 2; sweep++) for (let k = n - 1; k >= 0; k--) {
-        const i = (iMin + k) % n;
-        if (lim[i]) acc = 0;
+        const i = (iMin + k) % n, kp = lim[i] ? limW[i] : 1;
+        if (!(kp > 0)) acc = 0;
         else {
           const v = vf[i] > 3 ? vf[i] : 3, R = modeAt[i] ? RES1 : RES0;
           let x0 = (v + w[i] > 0 ? v + w[i] : 0) * inv; if (x0 > uTop) x0 = uTop;
           const h0 = x0 | 0, dRes = (R[h0 + 1] - R[h0]) * inv, dProp = tl[i] ? 0 : -pw[i] / (v * v);
           const f = 1 + (seg[i] * (dProp - dRes)) / (me * v);
-          acc = acc * (f > 0 ? f : 0) + seg[i] / (v * v * v);
+          acc = kp * (acc * (f > 0 ? f : 0) + seg[i] / (v * v * v));
         }
         sens[i] = acc;
       }
@@ -648,7 +737,9 @@
         pts.push([sens[i], (P * 2 * seg[i]) / (vf[i] + vf[j])]);
       }
       pts.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
-      let e = 0; for (const [sv, de] of pts) { e += de; if (e >= left) return sv; }
+      // interpolated within the point that fills the allowance (more-factors v1: returning that point's own value made the threshold
+      // a staircase in the car's parameters, and with it the energy root and the lap)
+      let e = 0, prev = 0; for (const [sv, de] of pts) { if (e + de >= left) return prev + (sv - prev) * (de > 0 ? (left - e) / de : 1); e += de; prev = sv; }
       return Infinity;
     }
     const budget = r => Math.min(depCap, soc + r.Eharv);

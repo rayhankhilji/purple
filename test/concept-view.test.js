@@ -31,7 +31,10 @@ test("honesty: the in-view label says concept geometry built to the dimensions, 
 });
 
 test("EFFECTS names what every shape parameter builds", () => {
-  for (const s of parts.PARAMS) assert.ok(view.EFFECTS[s.part + "." + s.param], s.part + "." + s.param);
+  // parameters with no geometry of their own (nothing for the view to build): the more-factors v1 gear ratios and the set-up
+  // values (springs, anti-roll bars, brake balance). Explicit list: a new geometric parameter must still get an EFFECTS entry.
+  const NON_GEOMETRIC = ["gearbox.top_kmh", "gearbox.step", "setup.roll_front", "setup.heave_n_mm", "setup.brake_bias"];
+  for (const s of parts.PARAMS) { const k = s.part + "." + s.param; if (!NON_GEOMETRIC.includes(k)) assert.ok(view.EFFECTS[k], k); }
   assert.doesNotMatch(Object.values(view.EFFECTS).join(" "), /schematic/);
 });
 

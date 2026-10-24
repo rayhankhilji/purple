@@ -41,7 +41,8 @@ edges); it fails if a single check drifts by a few mm (tried: +3 mm on the front
 | J. Survival cell, crash structures, halo (C12, C13, C15.5) | 4 | | 2 | | | 2 |
 | K. Materials (C15, general) | 11 | 6 | 2 | 2 | | 1 |
 | L. Concept-model rules (not regulation text) | 5 | 5 | | | | |
-| **Total** | **94** | **45** | **9** | **13** | **4** | **23** |
+| M. Gearing, suspension set-up, brake balance (C9, C10.2-C10.4, C11.1; more-factors v1) | 9 | 2 | | | | 7 |
+| **Total** | **103** | **47** | **9** | **13** | **4** | **30** |
 
 Gaps found in this pass and closed in `regs.js` (each with a test): 14 (listed under "Gaps fixed"). Fixes requested in files this
 checklist does not own: 7 (listed under "Fixes requested"); two are regulation conflicts, kept visible as `todo` tests.
@@ -266,6 +267,40 @@ row's E and density.
 | `PKG-FLOOR-STALL` | Dynamic floor gap ≥ 2 mm above the modelled stall onset | l.501 | guards 9, oracle | checked |
 | `PKG-PART-MASS` | Part masses finite, ≥ 0, inside the car | l.516 | checklist: "robustness", oracle | checked |
 | `PKG-PU-FIXED` | **PU lock** (owner brief: the baseline team's PU, unchanged; it is a homologated unit, C5.5.7): every PU part's mass and position relative to XPU=0 / XC=0 (`PU_LOCK`, l.112), the MGU-K transmission option, and on a PhysicalCar (`checkPhysical(pc, { pu_ref })`, l.434) MGU-K power and the energy figures equal to the baseline team's, ICE power not above it (only the cooling derate may lower it) | l.521 | checklist: "PU lock", oracle (PU override samples) | checked |
+
+## M. Gearing, suspension set-up, brake balance (C9, C10.2-C10.4, C11.1; more-factors v1, docs/concept/FACTORS.md)
+
+Rules in `regs.SETUP_RULES` (kept apart from `RULES` / `COMBO_RULES`, so the proposer context and the designer scenario budgets are
+unchanged). Quotes matched against the Issue 19 text (C9.6 p. C105, C9.8 p. C106, C9.9 p. C107, C10.2 p. C108, C10.4 p. C111,
+C11.1 p. C119).
+
+| Article | Rule | Touches | Check | Test | Status |
+|---|---|---|---|---|---|
+| C9.6.1 (C105) | 8 forward ratios, no CVT | `gearbox.top_kmh`, `gearbox.step` set all eight (`parts.gearSet`) | info `REG-C-GEARS` | concept-factors "gearing" | fixed (always 8) |
+| C9.6.2 (C105) | Ratios (crankshaft to driveshafts) nominated at or before the first Competition; in 2026 the set (pairs and final drive) may be changed once | the season's ratio set | **new** `PKG-GEAR-TOP` (concept rule from this article): 8th gear at the 13 000 rpm limiter (estimate) must reach 333.5 km/h, the RB22's best 2026 trap (Monza race), i.e. `top_kmh ≥ 309` with the ratios measured on all RB laps | concept-factors, oracle | checked (concept model) |
+| C9.8.2 (C106) | Every gear fitted must reach ≥ 80 km/h at 15 000 rpm | every ratio ≤ 187.5 rpm per km/h | **new** `REG-C-GEAR-80KMH` on `facts.gearing` (the measured 1st is 118.8; a 290 km/h final drive with a 1.24 step reaches 225) | concept-factors, oracle | checked |
+| C9.8.4 (C106) | Up-changes ≤ 200 ms, down-changes ≤ 300 ms | the sim's 30 ms up-shift drive cut | info `REG-C-GEARS` | — | fixed |
+| C5.2.4, C5.14 (C64, C77) | Fuel energy flow ≤ 0.27 N + 165 MJ/h below 10 500 rpm; rev limits only within a 750 rpm band (no cap) | engine speed from the gearing | the sim's fuel-flow ramp; 13 000 rpm limiter is an estimate (`MODEL.rev`) | concept-factors "rev limiter" | fixed (PU locked) |
+| C9.1.2, C9.9.1 (C102, C107) | No traction control; no torque transfer from a slower to a faster wheel | (differential: not a parameter) | info `REG-C-TORQUE-TRANSFER` | — | not applicable (FACTORS.md §5) |
+| C10.2.2, C10.2.4-C10.2.6, C10.4.3 (C108-C111) | Axles independent; no powered device; no adjustment in motion; springs (no fluid medium) and dampers only; no ride-height control | `setup.roll_front`, `setup.heave_n_mm` (passive, fixed for the lap) | info `REG-C-SUSP-PASSIVE` | — | fixed (by construction) |
+| C11.1.1, C11.1.4, C11.6 (C119-C120) | One pedal, two master cylinders (bores within 3 mm), one circuit per axle; changes on track only by the driver's direct input; rear BBW ≤ 1.2 × the driver's rear pressure | `setup.brake_bias` | info `REG-C-BRAKE-BALANCE` | concept-factors "brake balance" | fixed (one balance for the lap) |
+| C10.8.1 (C115) | Tyres used as supplied by the appointed supplier (minimum pressures and camber limits are the supplier's per-event prescriptions, not Section C text) | (pressures / camber: not parameters) | — | — | fixed |
+
+## N. Concept families (redesigns v1, docs/concept/REDESIGNS.md)
+
+Rules in `regs.CONCEPT_RULES` (kept apart from `RULES` / `COMBO_RULES`, like section M). The three `PKG-` rows are concept
+definitions (`verified: false`); the `REG-C-` rows record the Section C articles a concept touches without checking their geometry.
+
+| Article | Rule | Touches | Check | Test | Status |
+|---|---|---|---|---|---|
+| concept packaging model | A zeropod's inlet ≤ 760 cm² (both sides) | `sidepods.concept` 1 × `sidepods.inlet_cm2` | **new** `PKG-ZEROPOD-INLET` | concept-redesigns, oracle | checked (model rule) |
+| concept packaging model | A ramp pod's undercut ≥ 120 mm | `sidepods.concept` 2 × `sidepods.undercut_mm` | **new** `PKG-RAMP-UNDERCUT` | concept-redesigns, oracle | checked (model rule) |
+| concept packaging model | Airbox + gills cooling only with the high-fin cover | `cooling.layout` 1 × `engine_cover.style` | **new** `PKG-AIRBOX-COVER` | concept-redesigns, oracle | checked (model rule) |
+| C3.8.1, App. C2 §16 | Sidepod inside RV-SIDEPOD | every `sidepods.concept` shape | info `REG-C-SIDEPOD-VOLUME` | — | not checked (shape drawn by the view) |
+| C3.8.2, C3.16.10-C3.16.12 | Engine cover inside RV-EC; louvre / cooling apertures only where permitted | `cooling.layout` 1 / 2, `engine_cover.style` | info `REG-C-EC-APERTURES` | — | not checked |
+| C3.10.2-C3.10.9, App. C2 §23-27 | Endplate, footplate, diveplane, pylon, strake volumes | `front_wing.endplate`, `nose.concept` 1 (pylons) | info `REG-C-FW-ENDPLATE-VOLUMES` | — | not checked |
+| front impact structure test | The nose passes the FIA frontal impact test at any length | `nose.concept` 1 | info `REG-C-NOSE-IMPACT` (+1.2 kg assumption) | — | not modelled |
+| C10.2.2, C10.2.4-C10.2.6 | Push or pull rods: both passive, both permitted | `suspension.front` | info `REG-C-SUSP-ACTUATION` | — | fixed |
 
 ## Combinations covered
 

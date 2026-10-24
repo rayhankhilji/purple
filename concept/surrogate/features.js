@@ -1,5 +1,5 @@
 // PURPLE CONCEPT - surrogate feature map. Two layers over a PhysicalCar (concept/physical.js):
-//   RAW      the 22 independent physical inputs the design of experiments varies (mass, aero levels, balance, power, tyres, ...),
+//   RAW      the 27 independent physical inputs the design of experiments varies (mass, aero levels, balance, power, tyres, ...),
 //            each read from / written to a PhysicalCar. The training box and the extrapolation check live in this space.
 //   FEATURES the dimensionless groups the models are fitted on: forces over the car's weight at a reference speed, power over
 //            weight × reference speed, energy over kinetic energy, balances and ratios. A lap sim is (very nearly) a function of
@@ -10,7 +10,7 @@
 (function () {
   const root = typeof window !== "undefined" ? window : globalThis;
   const EI = (root.EI = root.EI || {}); const C = (EI.concept = EI.concept || {});
-  const VERSION = "surrogate features v4";
+  const VERSION = "surrogate features v5";
 
   // reference constants. Changing any of them changes every feature: bump VERSION (saved models record it and refuse a mismatch).
   const K = Object.freeze({
@@ -22,6 +22,10 @@
     bottoming_mm: 30,    // below this static ride height the plank works the ground (lab/aero.js BOTTOMING, sim v0 grip term)
     load_ref_n: 1000,    // tyre load-sensitivity unit (load_sens is μ fraction lost per kN)
     stall_nominal_mm: 5, // stall margin assumed for a car that does not report one (unstalled; the concept baseline has 3.67)
+    // v5 (more-factors v1): nominal values for cars that do not carry the set-up / gearing fields (the sim's own behaviour then)
+    heave_nominal: 3500, // N/mm, concept/sim/lapsim.js MODEL.heave_n_per_mm
+    bias_nominal: 0.57,  // front brake share the sim's calibration is referred to (1 − MODEL.rear_brake_share)
+    gear_top_nominal_kmh: 345, gear_step_nominal: 1.156,   // RB22 (all RB laps): 12 320 rpm / 35.75 rpm per km/h in 8th; (63.96 / 35.75)^(1/4)
   });
 
   const sumC = pc => pc.aero.corner.CLA_front_m2 + pc.aero.corner.CLA_rear_m2;
@@ -30,6 +34,19 @@
   // or −K.stall_nominal_mm when the car says the floor is stalled
   const stallMargin = pc => (typeof pc.aero.stall_margin_mm === "number" ? pc.aero.stall_margin_mm : (pc.aero.floor_stalled || pc.floor_stalled ? -K.stall_nominal_mm : K.stall_nominal_mm));
   const stalled = pc => !!(pc.aero.floor_stalled || pc.floor_stalled);
+  // v5 set-up and gearing readers (absent = the sim's own default behaviour, see K)
+  const isNum = v => typeof v === "number" && isFinite(v);
+  const lltdOffset = pc => (pc.suspension && isNum(pc.suspension.lltd_front) ? pc.suspension.lltd_front - pc.weight_dist_front : 0);
+  const heaveOf = pc => (isNum(pc.aero.heave_n_per_mm) ? pc.aero.heave_n_per_mm : K.heave_nominal);
+  const biasOf = pc => (pc.brakes && isNum(pc.brakes.bias_front) ? pc.brakes.bias_front : K.bias_nominal);
+  const gearK = pc => (pc.gearing && Array.isArray(pc.gearing.rpm_per_kmh) && pc.gearing.rpm_per_kmh.length >= 5 ? pc.gearing.rpm_per_kmh : null);
+  const gearTop = pc => { const k = gearK(pc); return k ? pc.gearing.shift_rpm / k[k.length - 1] : K.gear_top_nominal_kmh; };
+  const gearStep = pc => { const k = gearK(pc); return k ? Math.pow(k[k.length - 5] / k[k.length - 1], 1 / 4) : K.gear_step_nominal; };
+  function setGears(pc, top, step) {   // rescale the car's own ratios to a new top-gear speed (at its shift rpm) and spread
+    const k = gearK(pc); if (!k) return;
+    const t0 = gearTop(pc), s0 = gearStep(pc), n = k.length;
+    pc.gearing = Object.assign({}, pc.gearing, { rpm_per_kmh: k.map((x, i) => x * (t0 / top) * Math.pow(step / s0, n - 1 - i)) });
+  }
 
   // ---- RAW: the DOE coordinates. get(pc) -> number; set(pc, v, x) writes it (x = the whole raw vector by name, for coupled fields)
   const RAW = [
@@ -55,6 +72,12 @@
     { name: "mu_y", unit: "", get: pc => pc.tyres.mu_y, set: (pc, v) => { pc.tyres.mu_y = v; } },
     { name: "load_sens", unit: "1/kN", get: pc => pc.tyres.load_sens, set: (pc, v) => { pc.tyres.load_sens = v; } },
     { name: "drivetrain_eff", unit: "", get: pc => pc.drivetrain_eff, set: (pc, v) => { pc.drivetrain_eff = v; } },
+    // v5 (more-factors v1, docs/concept/FACTORS.md). Order matters: weight_dist_front is written above before the LLTD offset.
+    { name: "lltd_offset", unit: "", get: lltdOffset, set: (pc, v) => { pc.suspension = Object.assign({}, pc.suspension, { lltd_front: pc.weight_dist_front + v }); } },
+    { name: "heave_n_per_mm", unit: "N/mm", get: heaveOf, set: (pc, v) => { pc.aero.heave_n_per_mm = v; } },
+    { name: "brake_bias_front", unit: "", get: biasOf, set: (pc, v) => { pc.brakes = Object.assign({}, pc.brakes, { bias_front: v }); } },
+    { name: "gear_top_kmh", unit: "km/h", get: gearTop, set: (pc, v) => { setGears(pc, v, gearStep(pc)); } },
+    { name: "gear_step", unit: "", get: gearStep, set: (pc, v) => { setGears(pc, gearTop(pc), v); } },
   ];
   const RAW_NAMES = RAW.map(r => r.name);
   const RI = {}; RAW_NAMES.forEach((n, i) => { RI[n] = i; });
@@ -109,6 +132,12 @@
     { name: "stall_margin", why: "floor stall margin / 10 mm" },
     { name: "floor_stalled", why: "1 if the floor is stalled at the dynamic ride height, else 0" },
     { name: "load_sens_loss", why: "load_sens × (W/4) / 1 kN: fractional μ lost to the static wheel load" },
+    { name: "lltd_offset", why: "front share of lateral load transfer − weight split: the roll-stiffness trim of the axle balance" },
+    { name: "balance_trim", why: "|balance_offset − baseline offset + LLTD offset|: the axle imbalance left after the roll-stiffness trim (a kink in the sim)" },
+    { name: "heave_compliance", why: "3500 N/mm / platform stiffness: squat per unit aero load relative to the calibrated car" },
+    { name: "brake_bias_front", why: "fixed front brake share" },
+    { name: "gear_top_rel", why: "top-gear speed at the shift rpm / 345 km/h (final drive)" },
+    { name: "gear_step", why: "mean ratio step 4th→8th (gear spacing)" },
   ];
   const NAMES = FEATURES.map(f => f.name);
 
@@ -145,10 +174,17 @@
     out[22] = stallMargin(pc) / 10;
     out[23] = stalled(pc) ? 1 : 0;
     out[24] = ty.load_sens * (W / 4) / K.load_ref_n;
+    const lo = lltdOffset(pc);
+    out[25] = lo;
+    out[26] = Math.abs(off - K.bal_ref + lo);
+    out[27] = K.heave_nominal / heaveOf(pc);
+    out[28] = biasOf(pc);
+    out[29] = gearTop(pc) / K.gear_top_nominal_kmh;
+    out[30] = gearStep(pc);
     return out;
   }
 
-  const api = { VERSION, K, stallMargin, stalled, RAW, RAW_NAMES, RI, FIXED, FEATURES, NAMES, rawVector, fromRaw, features };
+  const api = { VERSION, K, stallMargin, stalled, lltdOffset, heaveOf, biasOf, gearTop, gearStep, setGears, RAW, RAW_NAMES, RI, FIXED, FEATURES, NAMES, rawVector, fromRaw, features };
   C.surrogateFeatures = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();

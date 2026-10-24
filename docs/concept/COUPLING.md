@@ -157,3 +157,62 @@ Already there and still unread by the sim: `wheelbase_m` (longitudinal load tran
   directions are unchanged (the sensitivity test passes as before). `PhysicalCar.tyres.slip_angle_rad` (new) is copied from
   the anchor.
 
+
+## more-factors v1 (2026-10-24): gearing and set-up (docs/concept/FACTORS.md)
+
+Five parameters join the 23 (28 in all), with the RB22 data sheet's values as baselines. The same pass refit the sim (RB22 sheet
+mass 775 kg and measured ratios, energy-plan smoothing): `physical(design.baseline())` now laps **88.100 s** (was 88.107) and
+`physical(design.baseline({ team: "redbull" }))` **88.745 s** (was 88.763); both still map exactly onto their anchors (tested).
+Measured as §2 (RB22 anchor, one change at a time, −10 % / +10 % of the baseline; for `gearbox.step` ±10 % of `step − 1`), on the
+default `"regulated"` energy plan and, in brackets, on the `"marginal"` plan. † = illegal.
+
+| Parameter | Base ± step | PhysicalCar fields moved (+) | Mechanism | Expected effect | Δlap −/+ regulated (marginal) | Generic anchor (regulated) | Status |
+|---|---|---|---|---|---|---|---|
+| gearbox.top_kmh | 336 ± 34 km/h | gearing.rpm_per_kmh ↓ (all eight) | rpm at speed: C5.2.4 fuel-flow ramp below 10 500 rpm, up-shift count × 30 ms cut, over-rev loss and 13 000 rpm limiter | too short: limiter caps vmax; otherwise small | +0.049† / +0.001 (−0.234† / −0.001) | +0.042† / −0.010 | new; PKG-GEAR-TOP makes < 309 illegal; plan-dependent staircase |
+| gearbox.step | 1.156 ± 0.0156 | low-gear rpm_per_kmh ↑ (8th fixed) | spread about 8th: closer → slow corners at low rpm; wider → post-shift rpm below 10 500, C9.8.2 in 1st | interior optimum near the RB22's | +0.003 / +0.035 (+0.026 / +0.057) | 0.000 / +0.027 | new |
+| setup.roll_front | 55 ± 5.5 % front | suspension.lltd_front ↑ | per-axle lateral load transfer with load-sensitive tyres; rear traction utilisation (RK) | the front-limited RB22 gains from less front transfer until the rear (and traction) limits | −0.073 / +0.101 (−0.091 / +0.095) | −0.013 / +0.056 | new; the trim §6 asked for |
+| setup.heave_n_mm | 3500 ± 350 N/mm | aero.heave_n_per_mm ↑, aero.stall_margin_mm ↑, aero.dyn_compression_mm ↓ | platform stiffness → squat → ride-height downforce; stall margin in the design layer | softer: more downforce at speed, less stall margin (PKG-FLOOR-STALL) | −0.001 / +0.005 (−0.015 / +0.009) | −0.001 / +0.003 | new; small, monotone |
+| setup.brake_bias | 57 ± 5.75 % front | brakes.bias_front ↑ | fixed-balance braking capacity min(F_f/b, F_r/(1−b)) relative to 57 %; harvest from the rear share | broad optimum 55-59 %; front-heavy clearly slower | +0.074 / +0.120 (−0.004 / +0.144) | +0.061 / +0.121 | new |
+
+Interactions: roll split × aero balance (best split moves with the front wing; the front × rear wing interaction of §3 is now
+measured at a 45 % split, where the RB22 sits at the balance point), brake balance × CoG height, heave × ride height (stall margin,
+legality AND), final drive × drag (limiter caps the top-speed gain); numbers in FACTORS.md §3, tests in `test/concept-factors.test.js`.
+
+**§5 contract, added:** `suspension: { lltd_front (read by the sim), roll_stiffness_front, elastic_share, heave_n_mm }`,
+`aero.heave_n_per_mm` (now set by the design; read), `aero.dyn_compression_mm` (not read), `brakes.bias_front` and
+`brakes.bias_ref` (read), `gearing.rpm_per_kmh` now design-dependent. **`concept/bench.js simKey` must add `pc.suspension`**
+(brakes, gearing and `aero.heave_n_per_mm` are already in the key).
+
+**§6 update:** the axle-balance kink now has its trim (`setup.roll_front`); the RB22's sheet split (55 %) puts it front-limited, so
+rear-wing changes are no longer "slower both ways" at the baseline (front wing +2°: −0.25 s).
+
+## redesigns v1 (2026-10-24): concept families and difficulty (docs/concept/REDESIGNS.md)
+
+Eight discrete concept-family parameters join the 28 (36 in all; codes and contract in REDESIGNS.md §1). Each one reaches the
+simulated car through the mass sheet (`parts.REDESIGN_MASS`: part masses and CoG positions) and the aero map
+(`aeromap.REDESIGN`: component downforce / drag multipliers, floor and front-wing ground-effect exponents, stall onset, the
+undercut's slopes, straight-mode relief, cooling capacity with `COOL_PACK`, interactions `CONCEPT_COMBOS`), and from there through
+`physical()` exactly like the continuous parameters. Both baselines still map exactly onto their anchors (every concept effect is the
+identity at the baseline codes; tested). Measured on the RB22 anchor, one switch at a time from the baseline (the inlet raised to
+the smallest that cools the car where the switch needs it, as the campaign's concept stage does), default "regulated" plan;
+generic anchor in brackets. Every magnitude is an assumption (REDESIGNS.md §2).
+
+| Parameter | Switch | PhysicalCar fields moved | Mechanism | Δlap RB22 (generic) | Status |
+|---|---|---|---|---|---|
+| sidepods.concept | 0 → 1 zeropod (+ compact cooling, inlet 730) | cla ↓, cda ↓, mass ↓ (pod), CoG ↑ (cores under the cover) | body drag −7 %, floor −2.5 %, undercut slopes × 0.5, stall +1 mm; COOL_PACK 0.78 / 0.92 / 1.0 | −0.102 (−0.119) | new; with the standard layout PKG-COOLING fails (capacity 0.91 at the 760 cm² cap) |
+| sidepods.concept | 0 → 2 ramp (undercut 120, inlet 720) | cla ↑, cda ↑, bal ↓ | floor +2 %, rear wing +1.2 %, body drag +3 %, undercut × 1.3 but eats radiator volume 30 mm sooner | +0.257 (+0.258) | new; needs re-tuning around it |
+| nose.concept | 0 → 1 short high | bal ↓, mass ↑, CoG ↑ | front wing −2 %, floor +1.5 %, front-wing ground effect × 0.85 | +0.094 (+0.082) | new |
+| front_wing.endplate | 0 → 1 closed inwash | cla ↓, bal ↑, cda ↑ | front wing +2 % load / −5 % drag; wheels drag +3 %, floor −1.5 % | +0.039 (+0.052) | new |
+| rear_wing.style | 1 → 0 low-drag / 1 → 2 high-df | cla ∓, bal ±, cda ∓ | rear wing ∓14 % / +12 % load, ∓16 % / +17 % drag, flap relief × 0.8 / × 1.1, high-df stalls 3° sooner | +0.040 / +0.163 (+0.340 / +0.151) | new; outside the balance window alone |
+| floor.edge | 0 → 1 scrolled | cla ↑, bal ↓, cda ↑, ride sensitivity ↑ | floor +3.5 % load / +6 % drag, front share −0.02, stall −0.8 mm, exponent × 1.10 | +0.088 (+0.096) | new; wants more front wing |
+| cooling.layout | 0 → 1 airbox + gills / 0 → 2 compact (inlet 730) | cda ↑, mass ↑, CoG ↑ | capacity × 1.12 / × 0.90; cooling drag +10 % / −8 %; rear wing −1 % / −1.5 % | +0.203 / +0.140 (+0.202 / +0.132) | new; airbox pays back only with a smaller inlet, compact only on a zeropod |
+| engine_cover.style | 0 → 1 low narrow (inlet 680) | cda ↓, cla ↑, CoG ↓, aero.yaw_sens 0.003 | body drag −2.5 %, rear wing +1.5 %, capacity × 0.96, balance window −0.004 forward, crosswind yaw sensitivity | −0.011 (−0.011) | new; without the larger inlet PKG-COOLING fails and the ICE derates |
+| suspension.front | 0 → 1 pullrod | heave ↑, CoG ↓ | platform × 1.05 (parts.heaveRatio), floor +0.6 %, body drag +0.4 %, +0.4 kg 35 mm lower | +0.005 (+0.007) | new; small |
+
+Difficulty v1 (REDESIGNS.md §4) also changed what the continuous parameters reach: wing spans past 1300 / 1100 mm, floor width past
+1450 mm, the rear endplate past 860 mm and straight-mode flap openings past 4° / 15° now count at half rate (aeromap `EDGE`); the
+cooling must cover the RACE need (parc fermé: `COOLING.need` 0.95); and an aero balance more than 1.5 points rearwards or 1.2 points
+forwards of the team baseline's costs grip (`physical.BALANCE_WINDOW`, PhysicalCar `stability`). **§5 contract, added:**
+`stability: { balance_shift, window, excess, grip_factor }` (informational; the grip factor is already in `tyres.mu_x / mu_y`),
+`concepts` (ids, informational), `aero.yaw_sens` (read by the sim, only set for a concept that adds it). `concept/bench.js simKey`
+now includes `suspension.lltd_front` (it was missing: a roll-split-only change could return a cached lap of the same car).

@@ -152,6 +152,12 @@
       fl.throat_mm = quant(s, was * THROAT_V1_TO_V2);
       out.migrated = (out.migrated || []).concat([{ part: "floor", param: "throat_mm", from: was, to: fl.throat_mm, rule: "v1 → v2 × " + THROAT_V1_TO_V2 + (was * THROAT_V1_TO_V2 > s.max ? ", clamped to the C3.5.1(a) roof" : "") }]);
     }
+    // more-factors v1 / redesigns v1: a design saved before the gearbox / set-up parameters or the concept families existed meant
+    // the baseline set-up and concepts; fill them in
+    if (out.params && typeof out.params === "object") for (const s of parts.PARAMS) {
+      if (!own(out.params, s.part)) out.params[s.part] = {};
+      if (typeof out.params[s.part][s.param] !== "number") { out.params[s.part][s.param] = s.base; out.migrated = (out.migrated || []).concat([{ part: s.part, param: s.param, from: null, to: s.base, rule: (s.concept ? "redesigns v1" : "more-factors v1") + ": absent = the baseline value" }]); }
+    }
     return out;
   }
   // diff(a, b): every parameter that differs, b relative to a (material swaps carry delta null)
@@ -165,16 +171,18 @@
     return out;
   }
   const fmt = (v, u) => (Math.round(v * 100) / 100) + (u ? (u === "°" ? "°" : " " + u) : "");
+  // redesigns v1: a concept family shows its code id ("zeropod (1)"), not a bare number
+  const fmtS = (s, v) => (s.codes && typeof v === "number" && s.codes[Math.round(v)] ? s.codes[Math.round(v)].id + " (" + v + ")" : fmt(v, s.unit));
   const matName = id => { const m = mats() && mats().get(id); return m ? m.name : String(id); };
   function describeChange(c) {
     const part = parts.BY_ID[c.part].name.split(" (")[0];
     if (c.param === "material") return part + " · material " + matName(c.from) + " → " + matName(c.to);
-    const s = spec(c.part, c.param); return part + " · " + s.label + " " + fmt(c.from, s.unit) + " → " + fmt(c.to, s.unit);
+    const s = spec(c.part, c.param); return part + " · " + s.label + " " + fmtS(s, c.from) + " → " + fmtS(s, c.to);
   }
   // describe(design): short human lines per part with parameters, plus the headline numbers
   function describe(d) {
     const f = facts(d), lines = [];
-    for (const p of parts.CATALOGUE) { const ks = Object.keys(p.params); if (!ks.length) continue; lines.push(p.name.split(" (")[0] + ": " + ks.map(k => p.params[k].label.toLowerCase() + " " + fmt(d.params[p.id][k], p.params[k].unit)).join(", ")); }
+    for (const p of parts.CATALOGUE) { const ks = Object.keys(p.params); if (!ks.length) continue; lines.push(p.name.split(" (")[0] + ": " + ks.map(k => p.params[k].label.toLowerCase() + " " + fmtS(p.params[k], d.params[p.id][k])).join(", ")); }
     const ms = f.mass.materials || {}; for (const id of Object.keys(ms)) lines.push(parts.BY_ID[id].name.split(" (")[0] + ": material " + matName(ms[id].material) + " (mass ×" + ms[id].mass_factor.toFixed(3) + " of its material share, stiffness ×" + ms[id].stiffness_ratio.toFixed(2) + ")");
     lines.push("Mass " + f.mass.total_kg + " kg (parts " + f.mass.parts_kg + ", ballast " + f.mass.ballast_kg + "), front " + (f.mass.front_share * 100).toFixed(1) + " %, CoG height " + f.mass.cog_height_mm + " mm above the ground, Izz " + f.mass.izz_kgm2 + " kg·m²");
     lines.push("Aero (" + aeromap.VERSION + "): downforce ×" + f.aero.df.toFixed(3) + ", drag ×" + f.aero.cd.toFixed(3) + " (straight mode ×" + f.aero.cd_sm.toFixed(3) + "), balance " + (f.aero.balance * 100).toFixed(1) + " % front");
@@ -189,6 +197,7 @@
       plank_wear_mm: +parts.plankWear(p.floor.ride_height_mm).toFixed(3),
       mass: parts.massSheet(p, { session: opts && opts.session, overrides: d.overrides }),
       aero: aeromap.evaluate(p),
+      gearing: parts.gearSet(p),   // more-factors v1: the eight ratios the design declares (C9.6, concept/regs.js SETUP_RULES)
     };
   }
 

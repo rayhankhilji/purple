@@ -3824,7 +3824,7 @@
    "id": "aero.cla_corner_sim_effective",
    "group": "aero",
    "label": "Downforce area, Corner Mode (physics-sim effective)",
-   "value": 5.3161,
+   "value": 5.0651,
    "unit": "m2",
    "sd_or_range": {
     "range": [
@@ -3837,7 +3837,7 @@
    "sources": [
     "repo_sim"
    ],
-   "derivation": "fitted.js baseline_estimate (5.32 m2 on the pole lap) x Red Bull cla_scale 0.9992. Effective: it carries the sim line's curvature scale and its tyre law, ~1.36x the physical central; compare cars through a_y(v), not ClA (SIM.md 4.2)",
+   "derivation": "fitted.js baseline_estimate (5.32 m2 on the pole lap) x Red Bull cla_scale 1.0043. Effective: it carries the sim line's curvature scale and its tyre law, ~1.36x the physical central; compare cars through a_y(v), not ClA (SIM.md 4.2)",
    "used_by": [
     "concept/sim/lapsim.js",
     "concept/sim/fit.js",
@@ -7430,19 +7430,17 @@
  "sim_check": {
   "car": "concept/sim baselineCar('redbull')",
   "car_label": "Red Bull Racing (inferred from public 2026 British GP qualifying lap + speed trap, not team data; telemetry-derived overrides from concept/data/redbull-2026*.json)",
-  "lap_s": 88.763,
-  "sheet_fix_lap_delta_s": 0.042,
+  "lap_s": 88.745,
+  "sheet_fix_lap_delta_s": 0.018,
   "sheet_fix_note": "lap change with mass 775 kg, all eight measured gear ratios and the measured upshift rpm (12045) together",
   "rows": [
    {
     "field": "mass_kg",
-    "sim_value": 770,
+    "sim_value": 775,
     "sheet_id": "mass.car_no_fuel",
     "sheet_value": 775,
     "sheet_sd": 4,
-    "status": "contradiction",
-    "z": -1.25,
-    "lap_effect_s": 0.034
+    "status": "equal"
    },
    {
     "field": "fuel_kg",
@@ -7504,42 +7502,42 @@
    },
    {
     "field": "aero.corner.CLA_total",
-    "sim_value": 5.3161,
+    "sim_value": 5.0651,
     "sheet_id": "aero.cla_corner_sim_effective",
-    "sheet_value": 5.3161,
+    "sheet_value": 5.0651,
     "status": "mapped",
     "mapping": "effective CLA of the sim (its line curvature and tyre law); the physical estimate is aero.cla_corner_physical (3.9, 3.2-4.6). The sim value must equal the sheet's sim-effective entry; the comparable quantity is the lateral capacity (lateral_scale below)"
    },
    {
     "field": "aero.corner.balance",
-    "sim_value": 0.4415,
+    "sim_value": 0.4409,
     "sheet_id": "aero.balance_front",
     "sheet_value": 0.44,
     "sheet_sd": 0.02,
     "status": "within_sd",
-    "z": 0.07
+    "z": 0.04
    },
    {
     "field": "aero.corner.CDA_m2",
-    "sim_value": 1.2297,
+    "sim_value": 1.2117,
     "sheet_id": "aero.cda_corner_effective",
     "sheet_value": 1.2,
     "sheet_sd": 0.15,
     "status": "within_sd",
-    "z": 0.2
+    "z": 0.08
    },
    {
     "field": "aero.straight.CDA_m2",
-    "sim_value": 0.9866,
+    "sim_value": 0.9828,
     "sheet_id": "aero.cda_straight_effective",
     "sheet_value": 0.95,
     "sheet_sd": 0.15,
     "status": "within_sd",
-    "z": 0.24
+    "z": 0.22
    },
    {
     "field": "aero.straight.CLA_ratio",
-    "sim_value": 0.7193,
+    "sim_value": 0.7203,
     "sheet_id": "aero.straight_over_corner_cla",
     "sheet_value": 0.72,
     "sheet_sd": 0.04,
@@ -7547,12 +7545,12 @@
    },
    {
     "field": "aero.straight.CDA_ratio",
-    "sim_value": 0.8023,
+    "sim_value": 0.8111,
     "sheet_id": "aero.straight_over_corner_cda",
     "sheet_value": 0.8,
     "sheet_sd": 0.05,
     "status": "within_sd",
-    "z": 0.05
+    "z": 0.22
    },
    {
     "field": "aero.ride_height_mm",
@@ -7582,12 +7580,12 @@
    },
    {
     "field": "pu.ice_kw",
-    "sim_value": 396.08,
+    "sim_value": 396.72,
     "sheet_id": "pu.ice_power_peak",
     "sheet_value": 410,
     "sheet_sd": 15,
     "status": "within_sd",
-    "z": -0.93
+    "z": -0.89
    },
    {
     "field": "pu.mguk_kw",
@@ -7615,38 +7613,40 @@
    },
    {
     "field": "tyres.mu_x",
-    "sim_value": 1.7155,
+    "sim_value": 1.7249,
     "sheet_id": "tyre.mu_x",
     "sheet_value": 1.75,
     "sheet_sd": 0.1,
     "status": "within_sd",
-    "z": -0.34
+    "z": -0.25
    },
    {
     "field": "tyres.mu_y",
-    "sim_value": 1.8896,
+    "sim_value": 1.9455,
     "sheet_id": "tyre.mu_y",
     "sheet_value": 1.8,
     "sheet_sd": 0.1,
-    "status": "within_sd",
-    "z": 0.9
+    "status": "contradiction",
+    "z": 1.45,
+    "lap_effect_s": null
    },
    {
     "field": "tyres.load_sens_pct_per_kN",
-    "sim_value": 4.5072,
+    "sim_value": 4.3899,
     "sheet_id": "tyre.load_sensitivity",
     "sheet_value": 4.5,
     "sheet_sd": 0.75,
-    "status": "equal"
+    "status": "within_sd",
+    "z": -0.15
    },
    {
     "field": "tyres.slip_angle_rad",
-    "sim_value": 0.098,
+    "sim_value": 0.1029,
     "sheet_id": "tyre.slip_angle_peak",
     "sheet_value": 0.08,
     "sheet_sd": 0.0275,
     "status": "within_sd",
-    "z": 0.65
+    "z": 0.83
    },
    {
     "field": "tyres.radius_m",
@@ -7666,62 +7666,52 @@
    },
    {
     "field": "gearing.rpm_per_kmh[1]",
-    "sim_value": 91.69,
+    "sim_value": 118.8072,
     "sheet_id": "tx.gear1",
     "mapping": "sheet km/h per 1000 rpm -> rpm per km/h = 1000 / value",
     "sheet_value": 118.8,
     "sheet_sd": 4.63,
-    "status": "contradiction",
-    "z": -5.86,
-    "lap_effect_s": -0.018
+    "status": "equal"
    },
    {
     "field": "gearing.rpm_per_kmh[2]",
-    "sim_value": 80.13,
+    "sim_value": 94.8227,
     "sheet_id": "tx.gear2",
     "mapping": "sheet km/h per 1000 rpm -> rpm per km/h = 1000 / value",
     "sheet_value": 94.82,
     "sheet_sd": 1.76,
-    "status": "contradiction",
-    "z": -8.35,
-    "lap_effect_s": 0.023
+    "status": "equal"
    },
    {
     "field": "gearing.rpm_per_kmh[3]",
-    "sim_value": 70.03,
+    "sim_value": 77.0951,
     "sheet_id": "tx.gear3",
     "mapping": "sheet km/h per 1000 rpm -> rpm per km/h = 1000 / value",
     "sheet_value": 77.1,
     "sheet_sd": 0.83,
-    "status": "contradiction",
-    "z": -8.52,
-    "lap_effect_s": 0.017
+    "status": "equal"
    },
    {
     "field": "gearing.rpm_per_kmh[4]",
-    "sim_value": 61.2,
+    "sim_value": 63.955,
     "sheet_id": "tx.gear4",
     "mapping": "sheet km/h per 1000 rpm -> rpm per km/h = 1000 / value",
     "sheet_value": 63.96,
     "sheet_sd": 0.85,
-    "status": "contradiction",
-    "z": -3.25,
-    "lap_effect_s": -0.008
+    "status": "equal"
    },
    {
     "field": "gearing.rpm_per_kmh[5]",
-    "sim_value": 53.1,
+    "sim_value": 53.749,
     "sheet_id": "tx.gear5",
     "mapping": "sheet km/h per 1000 rpm -> rpm per km/h = 1000 / value",
     "sheet_value": 53.75,
     "sheet_sd": 0.41,
-    "status": "contradiction",
-    "z": -1.59,
-    "lap_effect_s": 0
+    "status": "equal"
    },
    {
     "field": "gearing.rpm_per_kmh[6]",
-    "sim_value": 45.8,
+    "sim_value": 45.7917,
     "sheet_id": "tx.gear6",
     "mapping": "sheet km/h per 1000 rpm -> rpm per km/h = 1000 / value",
     "sheet_value": 45.79,
@@ -7739,7 +7729,7 @@
    },
    {
     "field": "gearing.rpm_per_kmh[8]",
-    "sim_value": 35.7,
+    "sim_value": 35.7462,
     "sheet_id": "tx.gear8",
     "mapping": "sheet km/h per 1000 rpm -> rpm per km/h = 1000 / value",
     "sheet_value": 35.75,
@@ -7863,86 +7853,46 @@
    }
   ],
   "counts": {
-   "contradiction": 6,
+   "equal": 28,
    "within_sd": 13,
-   "equal": 23,
-   "mapped": 7
+   "mapped": 7,
+   "contradiction": 1
   },
   "contradictions": [
    {
-    "field": "mass_kg",
-    "sim": 770,
-    "sheet": 775,
-    "sheet_id": "mass.car_no_fuel",
-    "z": -1.25,
-    "lap_effect_s": 0.034
-   },
-   {
-    "field": "gearing.rpm_per_kmh[1]",
-    "sim": 91.69,
-    "sheet": 118.8,
-    "sheet_id": "tx.gear1",
-    "z": -5.86,
-    "lap_effect_s": -0.018
-   },
-   {
-    "field": "gearing.rpm_per_kmh[2]",
-    "sim": 80.13,
-    "sheet": 94.82,
-    "sheet_id": "tx.gear2",
-    "z": -8.35,
-    "lap_effect_s": 0.023
-   },
-   {
-    "field": "gearing.rpm_per_kmh[3]",
-    "sim": 70.03,
-    "sheet": 77.1,
-    "sheet_id": "tx.gear3",
-    "z": -8.52,
-    "lap_effect_s": 0.017
-   },
-   {
-    "field": "gearing.rpm_per_kmh[4]",
-    "sim": 61.2,
-    "sheet": 63.96,
-    "sheet_id": "tx.gear4",
-    "z": -3.25,
-    "lap_effect_s": -0.008
-   },
-   {
-    "field": "gearing.rpm_per_kmh[5]",
-    "sim": 53.1,
-    "sheet": 53.75,
-    "sheet_id": "tx.gear5",
-    "z": -1.59,
-    "lap_effect_s": 0
+    "field": "tyres.mu_y",
+    "sim": 1.9455,
+    "sheet": 1.8,
+    "sheet_id": "tyre.mu_y",
+    "z": 1.45,
+    "lap_effect_s": null
    }
   ],
   "lateral_scale": {
    "rows": [
     {
      "kmh": 75,
-     "sim_ay_g": 2.14,
+     "sim_ay_g": 2.16,
      "telemetry_ay_g": 2.87,
-     "ratio_tel_over_sim": 1.34
+     "ratio_tel_over_sim": 1.33
     },
     {
      "kmh": 125,
-     "sim_ay_g": 2.65,
+     "sim_ay_g": 2.66,
      "telemetry_ay_g": 3.39,
-     "ratio_tel_over_sim": 1.28
+     "ratio_tel_over_sim": 1.27
     },
     {
      "kmh": 175,
-     "sim_ay_g": 3.42,
+     "sim_ay_g": 3.4,
      "telemetry_ay_g": 4.36,
      "ratio_tel_over_sim": 1.28
     },
     {
      "kmh": 225,
-     "sim_ay_g": 4.43,
+     "sim_ay_g": 4.39,
      "telemetry_ay_g": 5.32,
-     "ratio_tel_over_sim": 1.2
+     "ratio_tel_over_sim": 1.21
     }
    ],
    "mapping": "telemetry a_y (v^2 max|kappa| on each lap's own smoothed x/y) reads above the sim's capacity on its averaged line by about the 20-40 % factor IDENTIFY.md documents for this estimator against an x/y-acceleration estimate; the sim's CLA (5.32 m2) is fitted on its own line, so this ratio, not a CLA value, is the transferable check"
@@ -7953,88 +7903,88 @@
     {
      "sheet_id": "mass.car_no_fuel",
      "step": "4 kg",
-     "lap_delta_plus_s": 0.013,
-     "lap_delta_minus_s": -0.089
+     "lap_delta_plus_s": 0.074,
+     "lap_delta_minus_s": -0.077
     },
     {
      "sheet_id": "pu.ice_power_peak",
      "step": "15 kW",
-     "lap_delta_plus_s": -0.608,
-     "lap_delta_minus_s": 0.597
+     "lap_delta_plus_s": -0.531,
+     "lap_delta_minus_s": 0.591
     },
     {
      "sheet_id": "aero.cda_corner_effective",
      "step": "0.15 m2 (12.5 %, both modes)",
-     "lap_delta_plus_s": 1.437,
-     "lap_delta_minus_s": -1.488
+     "lap_delta_plus_s": 1.482,
+     "lap_delta_minus_s": -1.401
     },
     {
      "sheet_id": "aero.straight_mode_delta_cda",
      "step": "0.06 m2 more Straight Mode relief",
-     "lap_delta_plus_s": -0.313,
-     "lap_delta_minus_s": 0.315
+     "lap_delta_plus_s": -0.29,
+     "lap_delta_minus_s": 0.299
     },
     {
      "sheet_id": "aero.cla_corner_sim_effective",
      "step": "5 % CLA (about the lateral-envelope uncertainty at 200-250 km/h)",
-     "lap_delta_plus_s": -0.481,
-     "lap_delta_minus_s": 0.4
+     "lap_delta_plus_s": -0.382,
+     "lap_delta_minus_s": 0.498
     },
     {
      "sheet_id": "aero.balance_front",
      "step": "0.02 front",
-     "lap_delta_plus_s": 0.033,
-     "lap_delta_minus_s": 0.265
+     "lap_delta_plus_s": -0.187,
+     "lap_delta_minus_s": 0.334
     },
     {
      "sheet_id": "tyre.mu_y",
      "step": "0.1",
-     "lap_delta_plus_s": -1.129,
-     "lap_delta_minus_s": 1.131
+     "lap_delta_plus_s": -0.947,
+     "lap_delta_minus_s": 1.163
     },
     {
      "sheet_id": "tyre.mu_x",
      "step": "0.1",
-     "lap_delta_plus_s": -0.277,
-     "lap_delta_minus_s": 0.305
+     "lap_delta_plus_s": -0.251,
+     "lap_delta_minus_s": 0.297
     },
     {
      "sheet_id": "mass.cog_height",
      "step": "0.025 m",
-     "lap_delta_plus_s": -0.02,
-     "lap_delta_minus_s": -0.063
+     "lap_delta_plus_s": 0.089,
+     "lap_delta_minus_s": -0.068
     },
     {
      "sheet_id": "mass.weight_dist_front",
      "step": "0.007",
-     "lap_delta_plus_s": 0.077,
-     "lap_delta_minus_s": -0.165
+     "lap_delta_plus_s": 0.13,
+     "lap_delta_minus_s": -0.101
     },
     {
      "sheet_id": "tx.drivetrain_efficiency",
      "step": "0.01",
-     "lap_delta_plus_s": -0.261,
-     "lap_delta_minus_s": 0.216
+     "lap_delta_plus_s": -0.18,
+     "lap_delta_minus_s": 0.214
     },
     {
      "sheet_id": "mass.fuel_q",
      "step": "2 kg",
-     "lap_delta_plus_s": -0.042,
-     "lap_delta_minus_s": -0.046
+     "lap_delta_plus_s": 0.039,
+     "lap_delta_minus_s": -0.04
     }
    ],
    "mass_pm10kg_s": [
-    -0.241,
-    0.143
+    -0.179,
+    0.208
    ],
-   "mass_slope_s_per_kg_10kg": 0.0192,
+   "mass_slope_s_per_kg_10kg": 0.0194,
    "public_mass_slope_s_per_kg": [
     0.025,
     0.035
    ]
   },
   "braking": {
-   "sim_brake_g_at_226_kmh": 4.42,
+   "sim_brake_g_at_226_kmh": 4.32,
    "sheet_hard_stop_g": 4,
    "sheet_sd": 0.5,
    "status": "within_sd",

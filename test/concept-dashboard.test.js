@@ -9,7 +9,7 @@ const { createApp } = require("../server/app.js");
 const route = require("../server/campaign-route.js");
 const loop = require("../concept/designer/loop.js"), designerPrompt = require("../concept/designer/prompt.js");
 const { localSearch } = require("../concept/campaign/local.js"), { Pool } = require("../concept/campaign/pool.js");
-const design = require("../concept/design.js"), regs = require("../concept/regs.js");
+const design = require("../concept/design.js"), regs = require("../concept/regs.js"), parts = require("../concept/parts.js");
 
 const ROOT = path.join(__dirname, "..");
 const H = { "content-type": "application/json", host: "127.0.0.1:8787" };
@@ -52,13 +52,13 @@ test("routes: info, garage lap (legal and illegal, FIA articles, per-corner delt
   const info = (await get(a, "/api/concept/engine/info")).data;
   assert.equal(info.trained_run_cap, 2000); assert.equal(info.budget.total, 100000); assert.ok(info.cpus >= 1);
   const init = (await get(a, "/api/concept/engine/garage/init?team=redbull")).data;
-  assert.equal(init.legal, true); assert.equal(init.d_lap_s, 0); assert.equal(init.catalogue.length, 23); assert.ok(Object.keys(init.materials).length >= 5);
+  assert.equal(init.legal, true); assert.equal(init.d_lap_s, 0); assert.equal(init.catalogue.length, parts.PARAMS.length); assert.ok(Object.keys(init.materials).length >= 5);
   for (const p of Object.keys(init.materials)) assert.ok(init.materials[p].options.every(o => /permitted|baseline/.test(o.fia || "permitted") || o.id === init.materials[p].base), p);
   const params = JSON.parse(JSON.stringify(init.design.params)); params.floor.width_mm = 1540; params.rear_wing.sm_delta_deg = 25;
   const lap = (await post(a, "/api/concept/engine/garage/lap", { team: "redbull", params })).j.data;
   assert.equal(lap.legal, true); assert.ok(lap.d_lap_s < 0, "wider floor + more flap is faster on the sim: " + lap.d_lap_s);
   const segSum = lap.segments.reduce((s, x) => s + x.d_s, 0); assert.ok(Math.abs(segSum - lap.d_lap_s) < 0.01, "segments add up to the lap delta");
-  assert.equal(lap.ranges.length, 23); assert.ok(lap.ranges.every(r => r.lo <= r.value + 1e-9 && r.hi >= r.value - 1e-9));
+  assert.equal(lap.ranges.length, parts.PARAMS.length); assert.ok(lap.ranges.every(r => r.lo <= r.value + 1e-9 && r.hi >= r.value - 1e-9));
   for (const k of ["legality", "physics_lap", "contributions", "ranges"]) assert.ok(typeof lap.timings_ms[k] === "number", k);
   params.layout.wheelbase_mm = 3600;
   const bad = (await post(a, "/api/concept/engine/garage/lap", { team: "redbull", params })).j.data;
@@ -69,7 +69,7 @@ test("routes: info, garage lap (legal and illegal, FIA articles, per-corner delt
   assert.ok(sheet.rows.length >= 30 && sheet.rows.every(r => ["FIA", "EST", "MODEL"].includes(r.flag) && r.source && r.source.length > 5));
   for (const name of ["MGU-K power", "ES state-of-charge window", "Max rpm (upshift)", "μx (longitudinal, effective)", "Drag ratio straight / corner"]) assert.ok(sheet.rows.some(r => r.name === name), name);
   assert.equal(sheet.rows.find(r => r.name === "MGU-K power").flag, "FIA");
-  assert.equal(sheet.coupling.rows.length, 23); assert.ok(sheet.coupling.rows.filter(r => r.mechanism).length >= 20, "mechanisms from COUPLING.md");
+  assert.equal(sheet.coupling.rows.length, parts.PARAMS.length); assert.ok(sheet.coupling.rows.filter(r => r.mechanism).length >= 20, "mechanisms from COUPLING.md");
   const t = (await get(a, "/api/concept/engine/timings")).data.stages;
   assert.ok(t.physics_lap && t.legality && t.contributions && t.ranges && t.physics_lap.n >= 1);
 });
