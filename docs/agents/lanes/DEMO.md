@@ -1,8 +1,16 @@
 # Lane DEMO
 
-Status: in_progress P3.T5 (PRs #24, #26 merged; ride-height miss pattern on `claude/demo-p3-rideheight`; v1/v2 cells, kept count, adapter results owed). Owner: agent G (Claude, session `session_01UAY6ykh3dQkf9GfJoZ9BTy`). Branch: `claude/demo-p3-rideheight`.
+Status: in_progress P3.T5 (PRs #24, #26, #28 merged; honesty-audit fixes on `claude/demo-p3-audit`; v1/v2 cells, kept count, adapter results owed). Owner: agent G (Claude, session `session_01UAY6ykh3dQkf9GfJoZ9BTy`). Branch: `claude/demo-p3-audit`.
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
+
+### 2026-10-24 04:00 London — agent G (DEMO) — honesty-audit fixes (integrator audit 03:55)
+- Status: done (small PR on `claude/demo-p3-audit`).
+- Files changed: `docs/demo-script.md` (1:35: "twenty of twenty verdicts and ten of twenty next steps", never "half"; "Those kept examples train version two." now spoken; self-check lines corrected), `docs/deck/slides.md` (`.src` source lines added to slides 2, 5, 8), `docs/deck/shot-list.md` + `docs/deck/README.md` (never copy a snapshot over an existing `data/`; restore only into an empty one), this file.
+- Verify step run + output: `grep -n "half the" docs/demo-script.md` → nothing; `grep -c 'class="src"' docs/deck/slides.md` → 6 (slides 2–6, 8; slides 1 and 7 carry no numbers beyond the 19 % on slide 7, which names its own source in the sentence); honesty grep clean; spoken text ≈ 490 words.
+- Placeholders (audit item 4): still `[≈ 80, from Tasks]`, `[result]` ×2, `[n/8]` ×4 on slide 5; they are owed numbers (kept count, adapter v1/v2 results, v1/v2 Try-models scores) and will be filled or the cell cut before the PDF is exported; the README now has the grep that must print nothing first.
+- Blockers / questions for Tanuj: the four batched questions in the 03:20 entry stand.
+- Next three actions: (1) integrator merges; (2) DEMO fills the owed numbers, runs the placeholder grep, exports the PDF; (3) P3.T6 snapshot after `/submit`.
 
 ### 2026-10-24 03:45 London — agent G (DEMO) — P3.T5 ride-height miss pattern (correction of my own 6-of-7 count)
 - Status: done (small PR on `claude/demo-p3-rideheight`). PRs #24 and #26 merged.

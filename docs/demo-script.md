@@ -82,7 +82,7 @@ Fixed facts the script is built on (all measured 2026-10-23/24, London):
 
 **On screen:** Ledger, newest first, scrolled to the Friday rows: change column shows front-wing moves almost everywhere; verdict column `reject`. Widget exam line: `provider 20/20 verdicts · 10/20 next-step`. Open **Overrule** on the demo experiment: verdict stays **reject**, reason "Weigh straight-line drag against corner gain; judge on full-lap delta." Submit. A rule chip appears on the row (R-01 is already on this experiment from the first overrule at 01:45; a live re-enactment adds a second chip with the same text; say "the rule", not an id). LEARN card lights. Press **Run next**: the new trace line's input carries the rule under `rules`. Cut to the Saturday rows in the ledger: changes across ride height, rear wing, brake bias; verdicts now include `promote`. Then console → Adapters: v1 [result], v2 [status / result].
 
-**Say:** "The verdict was right. The next experiment is where the agent is weak: on twenty held-out scenarios it gets every verdict and half the next steps. Version one also learned from our mistake: a seeding bug made ninety-four percent of Friday's candidates front-wing moves. We fixed the generator. The engineer kept the verdict and wrote the rule: weigh straight-line drag against corner gain, judge on the full-lap delta. The rule enters every later task input. Forty new scenarios across all five parameters, verdicts agreeing with the evaluator on thirty-eight of thirty-nine, and Mubit trains version two. That is rule-conditioned learning."
+**Say:** "The verdict was right. The next experiment is where the agent is weak: on twenty held-out scenarios it gets twenty of twenty verdicts and ten of twenty next steps. Version one also learned from our mistake: a seeding bug made ninety-four percent of Friday's candidates front-wing moves. We fixed the generator. The engineer kept the verdict and wrote the rule: weigh straight-line drag against corner gain, judge on the full-lap delta. The rule enters every later task input. Forty new scenarios across all five parameters, verdicts agreeing with the evaluator on thirty-eight of thirty-nine. Those kept examples train version two. That is rule-conditioned learning."
 
 **Trigger:** `POST /api/overrule { experiment_id, verdict: "reject", reason }` → rule active → next `POST /api/plan` input includes it. v2 was collected at 01:50 with `npm run collect -- --n 40 --with-rules --promote-bias 0.3 --seed 2` (not live in the video; show the ledger rows and the Adapters page).
 
@@ -129,7 +129,7 @@ Fixed facts the script is built on (all measured 2026-10-23/24, London):
 
 - G-HON-01: every number shot carries its label (EVALUATE, RACE, Try models, Monza).
 - G-HON-02: the words CFD, wind tunnel, validated, aerodynamically tested do not appear. "Calibrated" is the only quality word, and it describes what was done (80.800 s anchor).
-- G-HON-03: 1:35 beat says rule → task input → provider answers → kept examples → new adapter version, and names "rule-conditioned learning".
+- G-HON-03: the spoken 1:35 line says rule → every later task input → answers → "those kept examples train version two", and names "rule-conditioned learning".
 - G-HON-04: disclosure at 0:00–0:20 and on slide 2.
 - G-HON-05: grid footage captioned "cinematic — mixes car and driver"; the result is the baseline-vs-candidate race.
-- G-HON-06: Try models scores are n/8, never %.
+- G-HON-06: exam scores are spoken and shown as counts (ten of twenty, n/8), never "half" or %.
