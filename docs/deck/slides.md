@@ -110,9 +110,9 @@ Speaker notes: Two identical neutral bots, seed 42, three laps. The model predic
 # 5 · v1 vs v2
 <small>The story is the next experiment, not the verdict</small>
 
-- Held-out exam, 20 scenarios, truth from the evaluator. Provider: **verdicts 20/20 · next experiment 10/20**. The prompt states the thresholds, so verdicts cannot separate v1 from v2; **what to try next** can.
+- Held-out exam, 20 scenarios, truth from the evaluator. Provider: **verdicts 20/20 · next experiment 10/20**; on the 8 hard ones, **8/8 and 1/8**. On all 7 misses the truth is a **ride-height** change; the provider proposes rear wing (5), front wing (1) or brake bias (1) instead.
 - **v1 learned from our mistake:** a seeding bug made 94 % of Friday's candidates front-wing moves (39 of 43 answers: "front wing"). Fixed before v2.
-- **v2 learns the engineer's rule:** *"Weigh straight-line drag against corner gain; judge on full-lap delta."* in every input; 40 scenarios over all five parameters, verdicts agreeing with the evaluator 38 of 39. **Rule-conditioned learning.**
+- **v2 learns the engineer's rule:** *"Weigh straight-line drag against corner gain; judge on full-lap delta."* in every input; 40 scenarios over all five parameters, verdicts agreeing with the evaluator 38 of 39, ride height proposed 13 times. **Rule-conditioned learning.**
 
 | 8 held-out scenarios (Try models) | provider | v1 | v2 |
 |---|---|---|---|
@@ -122,7 +122,7 @@ Speaker notes: Two identical neutral bots, seed 42, three laps. The model predic
 ![shot bg right:34% fit](shots/try-models-side-by-side.png)
 
 <!--
-Speaker notes: Same unseen scenario to provider, v1 and v2 in Try models, side by side. On these eight the provider gets every verdict and one next step (the demo premise); on six misses the truth is ride height. Counts, never percentages. If v2 does not beat v1 we show the number anyway. Figure: Try models on exam-rw8, the demo premise, with the version label visible.
+Speaker notes: Same unseen scenario to provider, v1 and v2 in Try models, side by side. On these eight the provider gets every verdict and one next step (the demo premise); on all seven misses the truth is a ride-height change and it proposes wings or brake bias instead. Counts, never percentages. If v2 does not beat v1 we show the number anyway. Figure: Try models on exam-rw8, the demo premise, with the version label visible.
 -->
 
 ---
