@@ -1,8 +1,13 @@
 # Lane GAME
 
-Status: in_progress (lane-file PR: filming notes + P1.T2 browser numbers pending). Owner: agent A (Claude, session `session_019VA5sAvTHuQ3bGbWV5CX4M`). Branch: `claude/game-lane-film`; merged: `claude/game-p1-aero` (P1.T1), `claude/game-p1-aero-broadcast` (P1.T2), `claude/game-p3-grid` (P3.T3).
+Status: in_progress (lane-file PR #14: filming notes + browser verification; a long browser lap is still running). Owner: agent A (Claude, session `session_019VA5sAvTHuQ3bGbWV5CX4M`). Branch: `claude/game-lane-film`; merged: `claude/game-p1-aero` (P1.T1), `claude/game-p1-aero-broadcast` (P1.T2), `claude/game-p3-grid` (P3.T3).
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
+
+### 2026-10-24 03:20 London — agent A (Claude) — P1.T2 browser verification (T-F04-AC1 / AC2 in a real page)
+- **T-F04-AC2, parent page + iframe (Playwright, headless Chromium, software GL):** the game page auto-started inside an iframe of a parent page listening for `message`; at race time 6.1 s (both cars at ~246 km/h) both cars were marked finished from the test harness to trigger classification early; the page then posted `{ type: 'purple:result', experiment_id: 'exp-test-rw8', seed: 42, circuit: 'silverstone', laps: 3, cars: [{ role: 'baseline', …, setup, aero: {1,1,1,1} }, { role: 'candidate', …, setup (rear wing 28), aero: { df 1.144, cd 1.088, a0 0.9872, b0 1 } }] }` and **the parent received it**; 0 page errors, 0 console errors. (`lap`/`sectors` are `null` in that forced run because no lap was completed; the shape, ids and roles are what the server route reads.)
+- **T-F04-AC1 in the browser:** the full-length run is limited by software GL here (about 0.03× real time): a 1-lap run reached 41 s of race time, both cars racing cleanly on the TV camera with the HUD on the baseline car and 0 errors, before the harness's 25-minute cap. A second attempt with a 95-minute cap is running; its best lap / vmax / Becketts vmin will be appended here if it lands. The 3-lap AC1 is covered by the headless race (same `race.js` + `car.js` + `ai.js`, 3 laps, both cars classified, numbers in the P1 entry below); on a laptop GPU the page runs in real time.
+- No code changed. Files: this file only.
 
 ### 2026-10-24 02:55 London — agent A (Claude) — How to film it (for Tanuj's recording, P3.T4)
 
