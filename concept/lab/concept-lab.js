@@ -259,7 +259,7 @@
       host.hidden = true; $("#plan").hidden = false; renderModeButtons(); return;
     }
     try {
-      S.view = EI.conceptView.mount(host, { baseline: S.baseline, design: S.best, parts: M.parts, mode: S.mode });
+      S.view = EI.conceptView.mount(host, { baseline: S.baseline, design: S.best, parts: M.parts, mode: S.mode, label: false, legend: false });   // the page prints labelText() in its own overlay
       S.view.setDesign(S.best, { baseline: S.baseline, animate: false });
     } catch (e) { viewFailed(e); }
     renderModeButtons();
@@ -369,8 +369,8 @@
     const W = weekendModule();
     if (!W) return null;   // bench weekend(): grid slot = 1 + real laps strictly faster
     try {
-      const r = W.score({ design: S.best, bench: S.bestResult, physical: S.bestResult && S.bestResult.physical, lap_s: lapOf(S.bestResult), circuit: CIRCUIT });
-      if (r && typeof r === "object") return "weekend module: " + (isNum(r.score) ? "score " + fmtN(r.score, 3) + " · " : "") + (r.label || "concept/weekend");
+      const r = W.score(S.best, {});   // weekend.score(car, opts): car may be a Design (physical() + the module's sim)
+      if (r && typeof r === "object") return "weekend: " + (isNum(r.weekend_score) ? "score " + fmtN(r.weekend_score, 3) + " s/lap · " : "") + (r.quali ? "Q P" + r.quali.pos + " · " : "") + (r.race ? "race P" + r.race.pos + " (" + (r.race.strategy && r.race.strategy.name || "") + ") · " : "") + (r.label || "concept/weekend");
       return isNum(r) ? "weekend module: score " + fmtN(r, 3) : "weekend module present (no result)";
     } catch (e) { return "weekend module error: " + String(e && e.message || e); }
   }
