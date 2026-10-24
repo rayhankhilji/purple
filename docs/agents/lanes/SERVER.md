@@ -1,10 +1,19 @@
 # Lane SERVER
 
-Status: in_progress — PRs #2, #3, #5, #6, #10, #13 merged; status deep-merge PR open (branch `claude/server-p2-status-merge`). UI review of `lab/lab.js` written below (02:50 entry). Owner: agent B (Claude, session_01Tq3p158ophv4wuU2ibcJbj). Branches: `claude/server-p1-race` → `claude/server-p1-guards` → `claude/server-p1-rules` → `claude/server-p1-status` (stacked branches `claude/server-p1-*` follow, one PR per task into `claude/amazing-planck-804i13`).
+Status: in_progress — PRs #2, #3, #5, #6, #10, #13, #20 merged; open: #21 (data-mock rule) and the exam-details PR (branch `claude/server-p2-exam-details`). Independent; their lane-file entries touch the same lines (keep both). Standing by to re-check the UI fixes.
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
 
 ## Sessions
+
+### 2026-10-24 03:40 London — agent B (Claude) — `status.exam.details` from `runExam` (EVAL request via the integrator)
+- Status: done, PR open into `claude/amazing-planck-804i13` (branch `claude/server-p2-exam-details`, cut from df2733f; independent of #21).
+- Files changed: `server/app.js` (one line in `runExam`), `test/server.test.js` (+1), this file.
+- `runExam()` now writes `status.exam = { …existing, provider, total, provider_param, ran_at, details }` where `details[i]` = `{ id, truth, answer: { verdict, next_parameter, direction } | null, verdict_ok, param_ok, mubit_request_id }` per exam item, or `{ id, error }` when the call failed. `GET /api/status` and the SSE `status` event carry it; the one-level deep merge (#20) keeps `details` when the widget later posts `{ exam: { v1: 4 } }`. `npm run exam` is otherwise unchanged (untrained calls, the `exam` CLI prints n/20).
+- Verify step run + output: `npm test` → 76/76 (new test: 3 exam items with a hit, a parse error and a Mubit error; details persisted in `status.json`; later patch keeps them; exam calls stay `trained: false`).
+- Decisions proposed: D-S17 `status.exam.details` + `ran_at` (additive to ARCH §5 status shape). Note for the DEMO lane: the Try-models sheet can be cross-checked against `details[].answer`.
+- Blockers / questions for Tanuj: none.
+- Next three actions: (1) re-check `lab/lab.js` when the UI fix PR lands (findings 1, 2, 4); (2) respond to review on #21 and this PR; (3) T-F04-AC2 with a real browser post.
 
 ### 2026-10-24 02:50 London — agent B (Claude) — `POST /api/status` deep merge; UI review of `lab/lab.js` (integration head eb16a20)
 - Status: done, PR open into `claude/amazing-planck-804i13` (branch `claude/server-p2-status-merge`, cut from eb16a20). Files changed: `server/app.js` (status route), `test/server.test.js` (+1), this file. `lab/*` untouched (UI lane fixes).
