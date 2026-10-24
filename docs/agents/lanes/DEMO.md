@@ -1,13 +1,21 @@
 # Lane DEMO
 
-Status: in_progress P3.T5 (deck + script + shot list merged via PR #24; provider 1/8 · 8/8 filled on `claude/demo-p3-numbers`; v1/v2 cells, kept count and adapter results still owed). Owner: agent G (Claude, session `session_01UAY6ykh3dQkf9GfJoZ9BTy`). Branch: `claude/demo-p3-numbers`.
+Status: in_progress P3.T5 (PRs #24, #26 merged; ride-height miss pattern on `claude/demo-p3-rideheight`; v1/v2 cells, kept count, adapter results owed). Owner: agent G (Claude, session `session_01UAY6ykh3dQkf9GfJoZ9BTy`). Branch: `claude/demo-p3-rideheight`.
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
+
+### 2026-10-24 03:45 London — agent G (DEMO) — P3.T5 ride-height miss pattern (correction of my own 6-of-7 count)
+- Status: done (small PR on `claude/demo-p3-rideheight`). PRs #24 and #26 merged.
+- Files changed: `docs/deck/slides.md` (slide 5 bullets + note: on all 7 misses the truth is ride height; provider proposes rear wing 5 / front wing 1 / brake bias 1; v2 data proposed ride height 13 times), `docs/demo-script.md` (facts table, 2:10 line), this file (03:35 entry corrected).
+- Verify step run + output: recount from `docs/ledger-snapshot/2026-10-24_02-14-07Z-0350-exam-details/status.json`: misses on the sheet = exam-02, -03, -05, -14, -15, -16, -20; truth `next_parameter` is `ride_height_mm` on all 7 (exam-05 direction increase, the rest decrease). Matches the integrator's 03:40 message and EVAL's PR #25 README. "Never proposes ride height" holds only on these 8 (on the full 20 the provider did propose ride height on exam-12, -13, -17, -18), so the deck says "on all 7 misses", not "never". Honesty grep clean.
+- Numbers owed: unchanged (kept count after v2, adapter v1 / v2 results, v1 / v2 n/8 cells, screenshots).
+- Blockers / questions for Tanuj: the four batched questions in the 03:20 entry stand.
+- Next three actions: (1) integrator merges; (2) DEMO fills v1/v2 cells and adapter results when they exist, exports the PDF; (3) P3.T6 snapshot after `/submit`.
 
 ### 2026-10-24 03:35 London — agent G (DEMO) — P3.T5 provider Try-models score filled in
 - Status: done (small PR). PR #24 (script v2.1, deck, shot list) was merged by the integrator at 847128b.
 - Files changed: `docs/deck/slides.md` (slide 5 table: provider next experiment **1/8**, verdict **8/8**; speaker note), `docs/demo-script.md` (facts table, 2:10 beat), `docs/deck/shot-list.md` (shot 11 widget line; shot 1 reference frame), `docs/deck/README.md` (reference frames in the repo), this file.
-- Verify step run + output: read `docs/ledger-snapshot/2026-10-24_02-14-07Z-0350-exam-details/status.json` on the integration branch: `exam.details` has 20 rows, `verdict_ok` true on all 20, `param_ok` true on 10 (exam-rw8, -04, -06, -07, -08, -12, -13, -17, -18, -19); of the 8 sheet items (exam-rw8, -03, -02, -14, -15, -16, -20, -05) only exam-rw8 has `param_ok` → **1/8 next step, 8/8 verdicts**, matching the integrator's message. On 6 of the 7 misses the truth parameter is ride_height_mm and the provider answered rear_wing_deg (5), front_wing_deg (1) or brake_bias_pct (1). Honesty grep still clean.
+- Verify step run + output: read `docs/ledger-snapshot/2026-10-24_02-14-07Z-0350-exam-details/status.json` on the integration branch: `exam.details` has 20 rows, `verdict_ok` true on all 20, `param_ok` true on 10 (exam-rw8, -04, -06, -07, -08, -12, -13, -17, -18, -19); of the 8 sheet items (exam-rw8, -03, -02, -14, -15, -16, -20, -05) only exam-rw8 has `param_ok` → **1/8 next step, 8/8 verdicts**, matching the integrator's message. On all 7 misses the truth parameter is ride_height_mm (exam-05's truth is ride height *increase*, which I had miscounted as a non-ride-height miss in the first draft of this entry; corrected 03:45) and the provider answered rear_wing_deg (5), front_wing_deg (1) or brake_bias_pct (1). Honesty grep still clean.
 - Numbers owed: unchanged except the provider n/8 cells, now measured. Still owed: kept count after v2, adapter v1 / v2 results, v1 / v2 next-step and verdict n/8 (hand-entered Saturday via `docs/try-models/sheet.md` + `npm run exam:score`), screenshots.
 - Decisions proposed: none new.
 - Blockers / questions for Tanuj: the four batched questions in the 03:20 entry stand.
