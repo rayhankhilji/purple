@@ -107,13 +107,13 @@ test("energy limits: every physics lap is re-checked (C5.2.9 SoC window, C5.2.10
   assert.deepEqual(ids(bench.checkEnergy({ energy: { deployed_mj: 10.2, harvested_mj: 6, recharge_cap_mj: 6.5 } }, cond)), ["ENERGY-LIMIT"]);
   assert.deepEqual(ids(bench.checkEnergy({ energy: { deployed_mj: 9, harvested_mj: 6, recharge_cap_mj: 9 } }, null)), ["ENERGY-LIMIT"]);
   const laps = {};
-  for (const s of ["threshold", "marginal", "optimal"]) {
+  for (const s of ["regulated", "threshold", "marginal", "optimal"]) {
     const r = bench.bench(RB, { sim: "physics", objective: "quali", strategy: s });
     assert.ok(r.legal, s); const e = r.circuits.silverstone.energy;
     assert.equal(e.strategy, s); assert.ok(e.harvested_mj <= 6.5 + 1e-9 && e.deployed_mj <= e.harvested_mj + 4 + 0.002, s);
     laps[s] = r.circuits.silverstone.lap_s;
   }
-  assert.equal(laps.threshold, sim.simulateLap(bench.guardEnergy(phys.physical(RB)), "silverstone").lap_s);
+  assert.equal(laps.regulated, sim.simulateLap(bench.guardEnergy(phys.physical(RB)), "silverstone").lap_s);   // sim v3 default strategy
   assert.notEqual(laps.marginal, laps.threshold);   // the strategy reaches the sim (and moves the lap: why the campaign keeps the calibrated one)
   assert.throws(() => bench.bench(RB, { sim: "physics", objective: "quali", strategy: "boost", cache: false }), /strategy/);
 });
@@ -124,8 +124,12 @@ test("FIA checklist in the bench and the proposer: regs.checkPhysical (PKG-PU-FI
   assert.ok(ids(r.violations).includes("PKG-PU-FIXED"));
   // what regs.js allows but the backstop does not: an extra PU field the sim could read (superclip_kw) is caught by checkPU
   assert.deepEqual(regs.checkPhysical(Object.assign({}, pcOf(RB), { pu: Object.assign({}, pcOf(RB).pu, { superclip_kw: 500 }) }), { pu_ref: bench.homologatedPU("redbull") }).filter(v => v.id !== "REG-C-SUSP-WIDTH"), []);
-  assert.deepEqual(bench.PHYSICAL_SKIP, ["REG-C-SUSP-WIDTH"]);
-  assert.ok(regs.checkPhysical(pcOf(RB), {}).some(v => v.id === "REG-C-SUSP-WIDTH"), "still pending upstream: when this fails, empty PHYSICAL_SKIP");
+  // sim v3 fixed the track widths (1.540 / 1.470 m, C10.10.1): nothing is skipped any more and every baseline passes checkPhysical
+  assert.deepEqual(bench.PHYSICAL_SKIP, []);
+  assert.deepEqual(regs.checkPhysical(pcOf(RB), {}), []);
+  const wide = Object.assign({}, pcOf(RB), { track_front_m: 1.6 });
+  assert.ok(bench.bench(RB, { sim: () => ({ lap_s: 80, sectors_s: [26, 30, 24], energy: {}, label: "spy" }), objective: "quali", cache: false, calibration: { cla_scale: 1 } }).legal);
+  assert.ok(regs.checkPhysical(wide, {}).some(v => v.id === "REG-C-SUSP-WIDTH"), "a track past C10.10.1 is caught");
   assert.ok(bench.bench(RB, { sim: spy, objective: "quali", cache: false }).legal);
   const L = optimize.proposerLimits(RB.params);
   assert.equal(L["rear_wing.elements"].min, 2);

@@ -62,7 +62,7 @@ Material-able parts (`concept/materials.js PARTS`, `parts.MATERIAL_PARTS`):
 | survival_cell | `cfrp_t1100g` | 0.6 | laminate | 0.6 / 1.5 | — | skins of the homologated sandwich laminates (C15.5.3 requires CC-UHS plies and an aluminium honeycomb core); core, inserts and the fuel-cell bay fittings (40 %) stay |
 | nose | `cfrp_t1100g` | 0.85 | laminate, metal | 0.6 / 2 | — | front impact structure: sized by the dynamic test (energy absorption, proxied by strength); 15 % fittings |
 | rear_impact | `cfrp_t1100g` | 0.85 | laminate, metal | 0.6 / 2 | — | rear impact structure, as the nose |
-| front_wing | `cfrp_t800s` | 1 | laminate, metal | 0.6 / 1.6 | 0.5° of setting | profiles and endplates (the straight-mode actuator is separate) |
+| front_wing | `cfrp_t800s` | 1 | laminate | 0.6 / 1.6 | 0.5° of setting | profiles and endplates (the straight-mode actuator is separate); laminate only since the FIA pass: the endplates must be laminate PL-ANTISPLINTER (C3.19.1, C15.5.2(b)) and the part has one material |
 | rear_wing | `cfrp_t800s` | 1 | laminate, metal | 0.6 / 1.6 | 0.5° of setting | profiles, endplates, pylon and brace (actuator separate) |
 | floor | `cfrp_t800s` | 1 | laminate, metal | 0.6 / 2 | 1 mm | floor body (the plank and skids are regulated, C3.6.2-C3.6.3, and stay) |
 | diffuser | `cfrp_t800s` | 1 | laminate, metal | 0.6 / 2 | — | diffuser surfaces |
@@ -98,7 +98,7 @@ Cores: out-of-plane stabilised compressive modulus and strength. Specific modulu
 |---|---|---|---|---|---|---|---|---|---|
 | `cfrp_t700s` | Carbon/epoxy prepreg, standard modulus (T700S class), quasi-isotropic | laminate | 1568 | 55.6 | 944 | — | permitted (C15.2.3(a)(i), (b)(i)) | secondary structure, bodywork, tooling-friendly panels | datasheet UD values + engineering estimate (QI rule); TORAY-T700S, FIA-C-ISS19 |
 | `cfrp_t800s` | Carbon/epoxy prepreg, intermediate modulus (T800S class), quasi-isotropic | laminate | 1568 | 66.4 | 1086 | — | permitted (C15.2.3(a)(i), (b)(i)) | concept baseline for wings, floor, bodywork, wishbones, gearbox casing | datasheet UD values + engineering estimate (QI rule); TORAY-T800S, FIA-C-ISS19 |
-| `cfrp_t1100g` | Carbon/epoxy prepreg, ultra-high strength (T1100G class, CC-UHS-eligible), quasi-isotropic | laminate | 1562 | 74.7 | 1142 | — | permitted (C15.2.3(b)(i); C15.5.1(f) CC-UHS) | concept baseline for the survival cell skins and impact structures (C15.5.3 requires CC-UHS plies, fibre Ftu > 6250 MPa) | datasheet UD values + engineering estimate (QI rule); TORAY-T1100G, FIA-C-ISS19 |
+| `cfrp_t1100g` | Carbon/epoxy prepreg, ultra-high strength (T1100G class), quasi-isotropic | laminate | 1562 | 74.7 | 1142 | — | permitted (C15.2.3(b)(i); C15.5.1(f) CC-UHS) | concept baseline for the survival cell skins and impact structures (C15.5.3 requires CC-UHS plies, fibre Ftu > 6250 MPa) | datasheet UD values + engineering estimate (QI rule); TORAY-T1100G, FIA-C-ISS19 |
 | `cfrp_m55j` | Carbon/epoxy prepreg, high modulus (M55J class), quasi-isotropic | laminate | 1634 | 130.5 | 667 | — | permitted (C15.2.3(b)(i)) | stiffness-critical parts (wing main planes, floor edges, suspension members) where brittleness is acceptable | datasheet UD values + engineering estimate (QI rule); TORAY-M55J, FIA-C-ISS19 |
 | `cfrp_m60j` | Carbon/epoxy prepreg, ultra-high modulus (M60J class), quasi-isotropic | laminate | 1646 | 138.8 | 663 | — | forbidden (C15.2.3(b)(i)) | none on a legal car (space structures) | datasheet UD values + engineering estimate (QI rule); TORAY-M60J, FIA-C-ISS19 |
 | `afrp_k49` | Aramid/epoxy (Kevlar 49 class), quasi-isotropic | laminate | 1352 | 31.9 | 455 | — | permitted (C15.2.3(b)(ii); C15.5) | anti-splinter and prescribed laminates (PL-HALO KC60, PL-HEADREST), wheel tethers, fairings | handbook UD values + engineering estimate (QI rule); DUPONT-KEVLAR, HANDBOOK-COMPOSITES, FIA-C-ISS19 |
@@ -111,11 +111,11 @@ Cores: out-of-plane stabilised compressive modulus and strength. Specific modulu
 | `al_li_2099` | Aluminium-lithium alloy 2099 (T83 extrusion) | metal | 2630 | 78 | 560 | 29.7 | permitted (C15.2.1(b)(v)) | stiff light brackets and housings | handbook typical (estimate where the temper varies); HANDBOOK-METALS, FIA-C-ISS19 |
 | `al_li_2195` | Aluminium-lithium alloy 2195 | metal | 2710 | 76 | 590 | 28.0 | not_listed (C15.2.1(b)(ii)-(v); C15.1.9) | none on a legal car (launch-vehicle tanks) | handbook typical; HANDBOOK-METALS, FIA-C-ISS19 |
 | `mg_az80a` | Magnesium alloy AZ80A-T5 | metal | 1800 | 45 | 380 | 25.0 | permitted (C15.2.1(c)(iv); C10.7.1; C15.6.1(a)) | wheel rims (C10.7.1: AZ70 or AZ80 only), housings outside the PU | handbook typical; HANDBOOK-METALS, FIA-C-ISS19 |
-| `mg_we43` | Magnesium alloy WE43 (T6) | metal | 1840 | 44 | 250 | 23.9 | permitted (C15.2.1(c)(i)-(ii)) | gearbox and ancillary housings outside the PU | handbook typical; HANDBOOK-METALS, FIA-C-ISS19 |
+| `mg_we43` | Magnesium alloy WE43C (UNS M18434), T6 | metal | 1840 | 44 | 250 | 23.9 | permitted (C15.2.1(c)) | gearbox and ancillary housings outside the PU | handbook typical; HANDBOOK-METALS, FIA-C-ISS19 |
 | `steel_17_4ph` | Stainless steel 17-4PH (H900) | metal | 7780 | 196.5 | 1310 | 25.3 | permitted (C15.2.1(a); C15.2.2(e); C3.6.3(d)(iv)) | skids (C3.6.3(d)(iv), ≤ 38 HRC when new), fittings | handbook typical; HANDBOOK-METALS, FIA-C-ISS19 |
 | `steel_maraging_300` | Maraging steel 18Ni(300), aged | metal | 8000 | 190 | 2050 | 23.8 | permitted (C15.2.1(a)) | gears, shafts, highly loaded pins; also usable as ballast | handbook typical; HANDBOOK-METALS, FIA-C-ISS19 |
 | `inconel_718` | Nickel superalloy Inconel 718 (aged) | metal | 8190 | 200 | 1375 | 24.4 | permitted (C15.2.1(d)(ii); C15.2.2(g)) | exhaust and turbo hardware (PU), high-temperature fasteners | handbook typical; HANDBOOK-METALS, FIA-C-ISS19 |
-| `tungsten_ha` | Tungsten heavy alloy (≈ 95 % W, W-Ni-Fe, ASTM B777 class 3) | metal | 18000 | 360 | 758 | 20.0 | permitted (C15.2.1(g); C4.3.2(d); C15.6.1(g), (l)) | ballast (free and driver ballast): the densest practical choice | standard minimum / typical; ASTM-B777, FIA-C-ISS19 |
+| `tungsten_ha` | Tungsten heavy alloy (≈ 95 % W, W-Ni-Fe, ASTM B777 class 3) | metal | 18000 | 360 | 758 | 20.0 | permitted (C15.2.1(g); C4.3.2(d); C15.6.1(g)) | ballast (free and driver ballast): the densest practical choice | standard minimum / typical; ASTM-B777, FIA-C-ISS19 |
 | `mmc_supremex_225xe` | Particulate-reinforced aluminium MMC (SupremEX 225XE) | metal | 2880 | 115 | 610 | 39.9 | permitted (C15.2.1(h)(i); C15.3.3(iii); C15.3.4) | uprights (C15.3.3(iii)), stiff brackets and housings | maker typical; MATERION-SUPREMEX, FIA-C-ISS19 |
 | `albemet_am162` | Aluminium-beryllium alloy (AlBeMet AM162) | metal | 2071 | 193 | 400 | 93.2 | forbidden (C15.1.4; C15.2.1) | none on a legal car (banned in F1 since the early 2000s; aerospace optics) | maker typical (recalled); MATERION-ALBEMET, FIA-C-ISS19 |
 | `carbon_carbon` | Carbon-carbon composite (brake / clutch friction grade) | friction | 1800 | 30 | 100 | — | specific_use (C15.4(c)) | brake discs and pads, clutch plates | engineering estimate; FIA-C-ISS19 |
@@ -196,3 +196,23 @@ rearwards (all the light swaps together with the ballast at x_frac 0.7: −0.039
 
 The full grid (every part × ten candidate materials) is reproducible with the materials API; the rows above are a representative
 subset.
+
+## FIA pass corrections (2026-10-24)
+
+Applied to `concept/data/materials-2026.json` (and re-embedded into `concept/materials.js` with `node concept/tools/embed-materials.js`)
+from docs/concept/FIA_CHECKLIST.md section K, read against Section C Issue 19:
+
+- `mg_we43` names its variant: **WE43C (UNS M18434)**, listed in C15.2.1(c) with WE43B (M18432); WE43A is not. Property values are
+  WE43 T6 typical. regs.js now accepts it outside the PU.
+- `afrp_k49`: the prescribed laminates use **KC60 only** (PL-HALO [KC60, CC100, KC60], PL-HEADREST [KC60, KC60], C15.5.2); KC170
+  is defined in C15.5.1(c) but used by neither.
+- `cfrp_t1100g`: CC-UHS is a **woven** carbon cloth epoxy prepreg with fibre Ftu > 6250 MPa (C15.5.1(f)); the fibre qualifies, the
+  row (a quasi-isotropic laminate) is the concept's stand-in for it. Wording only.
+- `tungsten_ha`: excluded from the PU by **C15.6.1(g)** (tungsten-base alloys); C15.6.1(l) (density > 18,400 kg/m³) does not apply at
+  18,000 kg/m³. Wording only.
+- `front_wing` takes laminates only (C3.19.1 PL-ANTISPLINTER endplates); a metal front wing was always illegal (REG-C-MAT-COMPONENT).
+- `regs.js` REG-C-MAT-COMPONENT now requires a CC-UHS-grade fibre (Ftu > 6250 MPa, C15.5.1(f), C15.5.3) on the survival cell:
+  `cfrp_t1100g` (7000 MPa) passes, `cfrp_t800s` (5880 MPa) does not.
+- `design.mutate(d, rng, step, { materials: true })` draws only materials with no `regs.materialViolations` on the part (C15
+  status and the component articles), so it no longer proposes `cfrp_m60j`, `albemet_am162` or `al_li_2195`.
+

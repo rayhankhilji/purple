@@ -53,7 +53,7 @@ test("segments: the named corner / straight times partition the simulated lap; d
   const d2 = design.applyChanges(d, [{ part: "rear_wing", param: "aoa_deg", to: d.params.rear_wing.aoa_deg + 3 }]).design, b = segments.segmentTimes(d2);
   const delta = segments.segmentDelta(a, b);
   assert.ok(Math.abs(delta.reduce((s, x) => s + x.d_s, 0) - (b.lap_s - a.lap_s)) < 0.012);
-  const mv = segments.topMoves(delta); assert.ok(mv.loss.some(x => /Str \+/.test(x)), "more wing loses time on a straight: " + JSON.stringify(mv));
+  const mv = segments.topMoves(delta); assert.ok(mv.loss.some(x => /Str \+|Maggotts|Copse/.test(x)), "more wing loses time on a straight or a flat-out complex (sim v3): " + JSON.stringify(mv));
 });
 
 // ---------------------------------------------------------------- (b) kept is the simulator's

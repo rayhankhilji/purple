@@ -389,7 +389,12 @@
         "sim_kmh": 111,
         "diff_kmh": 3.3
        }
-      ]
+      ],
+      "compare": {
+       "rms_kmh": 9.74,
+       "mean_kmh": -0.097,
+       "corner_rms_kmh": 11.228
+      }
      }
     },
     {
@@ -486,7 +491,12 @@
         "sim_kmh": 109.4,
         "diff_kmh": -3
        }
-      ]
+      ],
+      "compare": {
+       "rms_kmh": 10.109,
+       "mean_kmh": 1.864,
+       "corner_rms_kmh": 12.025
+      }
      }
     },
     {
@@ -583,7 +593,12 @@
         "sim_kmh": 109,
         "diff_kmh": -2.4
        }
-      ]
+      ],
+      "compare": {
+       "rms_kmh": 10.155,
+       "mean_kmh": 1.115,
+       "corner_rms_kmh": 12.435
+      }
      }
     },
     {
@@ -680,7 +695,12 @@
         "sim_kmh": 109.1,
         "diff_kmh": -8.5
        }
-      ]
+      ],
+      "compare": {
+       "rms_kmh": 9.782,
+       "mean_kmh": 0.352,
+       "corner_rms_kmh": 12.686
+      }
      }
     },
     {
@@ -777,7 +797,12 @@
         "sim_kmh": 108.3,
         "diff_kmh": -4
        }
-      ]
+      ],
+      "compare": {
+       "rms_kmh": 8.996,
+       "mean_kmh": 0.325,
+       "corner_rms_kmh": 11.267
+      }
      }
     },
     {
@@ -874,7 +899,12 @@
         "sim_kmh": 106.9,
         "diff_kmh": -4.7
        }
-      ]
+      ],
+      "compare": {
+       "rms_kmh": 10.525,
+       "mean_kmh": 1.712,
+       "corner_rms_kmh": 11.118
+      }
      }
     },
     {
@@ -971,7 +1001,12 @@
         "sim_kmh": 107.4,
         "diff_kmh": -4.4
        }
-      ]
+      ],
+      "compare": {
+       "rms_kmh": 8.916,
+       "mean_kmh": 0.713,
+       "corner_rms_kmh": 10.984
+      }
      }
     },
     {
@@ -1068,7 +1103,12 @@
         "sim_kmh": 109.6,
         "diff_kmh": -3.8
        }
-      ]
+      ],
+      "compare": {
+       "rms_kmh": 9.264,
+       "mean_kmh": -0.373,
+       "corner_rms_kmh": 10.122
+      }
      }
     },
     {
@@ -1165,7 +1205,12 @@
         "sim_kmh": 105.3,
         "diff_kmh": -3.2
        }
-      ]
+      ],
+      "compare": {
+       "rms_kmh": 12.985,
+       "mean_kmh": 2.72,
+       "corner_rms_kmh": 13.663
+      }
      }
     },
     {
@@ -1262,7 +1307,12 @@
         "sim_kmh": 106.1,
         "diff_kmh": -7
        }
-      ]
+      ],
+      "compare": {
+       "rms_kmh": 9.784,
+       "mean_kmh": 1.078,
+       "corner_rms_kmh": 10.96
+      }
      }
     },
     {
@@ -1359,7 +1409,12 @@
         "sim_kmh": 105.8,
         "diff_kmh": -2.7
        }
-      ]
+      ],
+      "compare": {
+       "rms_kmh": 10.487,
+       "mean_kmh": 1.626,
+       "corner_rms_kmh": 12.763
+      }
      }
     }
    ]

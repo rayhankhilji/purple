@@ -106,7 +106,7 @@ test("schema rejects prose, broken JSON, unknown / duplicate params, 0 or 4 chan
   const cases = [
     ["Here you go: " + answer(good), "json"], [answer(good) + " Hope this helps!", "json"], [fenced(answer(good)) + "\nNote: fast.", "json"],
     [fenced(answer(good)) + "\n" + fenced(answer(good)), "json"], ['{"changes": [', "json"], ["[]", "json"], ["", "json"],
-    [answer([{ part: "front_wing", param: "twist_deg", to: 3 }]), "changes[0]"], [answer([{ part: "floor", param: "throat_mm", to: 90 }, { part: "floor", param: "throat_mm", to: 95 }]), "changes[1]"],
+    [answer([{ part: "front_wing", param: "twist_deg", to: 3 }]), "changes[0]"], [answer([{ part: "floor", param: "throat_mm", to: 90 }, { part: "floor", param: "throat_mm", to: 62 }]), "changes[1]"],
     [answer([]), "changes"], [answer([good[0], { part: "floor", param: "width_mm", to: 1850 }, { part: "diffuser", param: "expansion_deg", to: 15 }, { part: "sidepods", param: "inlet_cm2", to: 600 }]), "changes"],
     [answer([{ part: "floor", param: "throat_mm", to: "90" }]), "changes[0].to"], [answer([{ part: "floor", param: "throat_mm", to: null }]), "changes[0].to"],
     [answer([{ part: "floor", param: "throat_mm" }]), "changes[0].to"], [answer([{ part: "floor", param: "throat_mm", to: 90, why: "x" }]), "changes[0].why"],
@@ -138,7 +138,7 @@ test("guard: garbage output pauses the LLM after 3 consecutive failures for 5 ge
 });
 test("guard: an illegal proposal is refused before the bench with its article and shown to the LLM next time; llm errors fall back", async () => {
   const seen = []; let i = 0;
-  const llm = async (text) => { seen.push(JSON.parse(text)); i++; if (i === 1) return fenced(answer([{ part: "front_wing", param: "span_mm", to: 1400 }])); if (i === 2) throw new Error("socket hang up"); return answer([{ part: "floor", param: "throat_mm", to: 100 - i }]); };
+  const llm = async (text) => { seen.push(JSON.parse(text)); i++; if (i === 1) return fenced(answer([{ part: "front_wing", param: "span_mm", to: 1400 }])); if (i === 2) throw new Error("socket hang up"); return answer([{ part: "floor", param: "throat_mm", to: 60 + i }]); };
   const res = await designer.runDesigner({ gens: 4, seed: 2, designer: { llm } });
   assert.equal(res.lineage[0].proposer, "fallback"); assert.equal(res.lineage[0].designer.reason, "illegal");
   assert.deepEqual(res.lineage[0].designer.refused, { gen: 1, change: "front_wing.span_mm 1300->1400", why: "illegal C3.10.1(a)" });
@@ -148,17 +148,17 @@ test("guard: an illegal proposal is refused before the bench with its article an
   assert.ok(res.lineage.every(r => r.legal), "fallbacks pick legal untested designs");
 });
 test("guard: trained calls are refused while the prompt is DRAFT; a frozen prompt passes trained through; maxCalls caps the budget", async () => {
-  const llm = async () => answer([{ part: "floor", param: "throat_mm", to: 95 }]);
+  const llm = async () => answer([{ part: "floor", param: "throat_mm", to: 62 }]);
   const draft = Object.assign({}, prompt, { DRAFT: true, DESIGNER_PROMPT_VERSION: "0-draft" });
   assert.throws(() => designer.llmProposer({ llm, trained: true, prompt: draft }), /DRAFT/);
   assert.throws(() => designer.llmProposer({}), /llm/);
   const metas = [];
   const frozen = Object.assign({}, prompt, { DRAFT: false, DESIGNER_PROMPT_VERSION: "1" });
-  const res = await designer.runDesigner({ gens: 5, seed: 1, designer: { llm: async (t, m) => { metas.push(m); return answer([{ part: "floor", param: "throat_mm", to: 99 - metas.length }]); }, trained: true, prompt: frozen, maxCalls: 3 } });
+  const res = await designer.runDesigner({ gens: 5, seed: 1, designer: { llm: async (t, m) => { metas.push(m); return answer([{ part: "floor", param: "throat_mm", to: 60 + metas.length }]); }, trained: true, prompt: frozen, maxCalls: 3 } });
   assert.equal(metas.length, 3); assert.ok(metas.every(m => m.trained === true));
   assert.deepEqual(metas.map(m => m.sessionId), ["dsg-seed1-g1", "dsg-seed1-g2", "dsg-seed1-g3"], "one session id per decision");
   assert.deepEqual(res.lineage.map(r => r.designer.reason), [null, null, null, "llm_budget", "llm_budget"]);
-  const dflt = await designer.runDesigner({ gens: 1, seed: 1, designer: { llm: async (t, m) => { assert.equal(m.trained, false); return answer([{ part: "floor", param: "throat_mm", to: 95 }]); } } });
+  const dflt = await designer.runDesigner({ gens: 1, seed: 1, designer: { llm: async (t, m) => { assert.equal(m.trained, false); return answer([{ part: "floor", param: "throat_mm", to: 62 }]); } } });
   assert.equal(dflt.calls[0].trained, false);
 });
 test("the verdict is numeric only: kept === legal && score_after > score_before, whatever the LLM expected; clamped values are flagged", async () => {

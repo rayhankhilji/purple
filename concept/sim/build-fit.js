@@ -59,3 +59,5 @@ for (const t of fit.teams) {
   console.log(t.team.padEnd(13), t.driver, t.q_real_s.toFixed(3), t.q_sim_s.toFixed(3), t.residual_lap_s.toFixed(3).padStart(6), t.trap_real_kmh.toFixed(1), t.trap_sim_kmh.toFixed(1), t.residual_trap_kmh.toFixed(1).padStart(6), t.cla_scale.toFixed(3), t.cda_scale.toFixed(3), t.pu_scale.toFixed(3), (t.at_bound.join(",") || "-").padEnd(5), "|", h ? h.trace_rms_kmh.toFixed(1) + "  " + h.sector_residuals_s.join(" / ") : "no telemetry");
 }
 console.log("pu_scale", JSON.stringify(teams.pu_scale));
+const ho = fit.teams.filter(t => t.heldout && t.heldout.compare && t.driver !== fit.reference_driver), mean = a => a.reduce((p, x) => p + x, 0) / a.length;
+if (ho.length) console.log("held-out (" + ho.length + " laps, track.compare): mean speed RMS", mean(ho.map(t => t.heldout.compare.rms_kmh)).toFixed(2), "km/h; mean sector bias", [0, 1, 2].map(i => mean(ho.map(t => t.heldout.sector_residuals_s[i])).toFixed(3)).join(" / "), "s");

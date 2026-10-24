@@ -218,7 +218,7 @@
   // (C5.5, C5.18.7, C5.17.9, C5.3.4), no override on a PU part, and the anchor team. Fuel flow (C5.2.3-4) and the MGU-K taper
   // (C5.2.8) are constants inside the sim (REGS), not PhysicalCar fields, so no design reaches them.
   // checkPhysical rules not enforced yet (re-enable by emptying this list once the inputs are fixed; docs/concept/CAMPAIGN.md §3)
-  const PHYSICAL_SKIP = ["REG-C-SUSP-WIDTH"];
+  const PHYSICAL_SKIP = [];   // emptied with sim v3: the PhysicalCar tracks (1.540 / 1.470 m) fit C10.10.1
   const PU_PARTS = Object.freeze(["pu_ice", "pu_turbo", "pu_mguk", "pu_es", "pu_electronics"]);
   const PU_FIELDS = Object.freeze(["ice_kw", "mguk_kw", "es_deploy_mj_per_lap", "es_harvest_mj_per_lap", "es_soc_window_mj"]);
   const PU_RULE = "C5 · the baseline team's homologated power unit, unchanged (campaign rule: same engine)";

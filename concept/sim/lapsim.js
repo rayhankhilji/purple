@@ -1,9 +1,10 @@
 // PURPLE concept - physics lap-time simulator (docs/concept/SIM.md). simulateLap(car, "silverstone", conditions, opts) ->
 // { lap_s, sectors_s, vmax_kmh, speed_trap_kmh, vmin_kmh, energy, trace?, label }.
-// Quasi-steady-state point mass on a minimum-curvature racing line (concept/sim/track.js): aero load per axle, load-sensitive
-// tyres with a friction ellipse, drag + rolling resistance + grade, power-limited traction (ICE + MGU-K under the FIA 2026
-// speed taper), harvest under braking and superclipping, a lap energy budget solved by one deploy/clip speed threshold, and
-// 2026 Straight / Corner Mode aero. Backward (braking) and forward (traction) passes; apex limits from the GG envelope.
+// Quasi-steady-state point mass on the measured racing line (concept/sim/track.js): aero load per axle with the aero platform,
+// power-law load-sensitive tyres with lateral load transfer and a friction ellipse, drag + rolling resistance + grade + slip
+// drag, power-limited traction (ICE + MGU-K under the FIA 2026 speed taper), harvest under braking, at part throttle and by
+// superclipping, the energy store tracked over the lap, deployment planned by the value of a joule and shaped by the C5.12
+// power-reduction rules ("regulated", v3 default), and 2026 Straight / Corner Mode aero. Backward (braking) and forward (traction) passes; apex limits from the GG envelope.
 // Deterministic: no randomness, fixed iteration counts. No network, no Mubit. Numbers, not an LLM.
 // Dual browser / Node: attaches to window.EI.conceptSim and to module.exports.
 (function () {
@@ -469,7 +470,7 @@
       const Eharv = Math.min(harvCap, EharvBrake + Eclip);
       return { t, Edep, Eharv, EharvBrake, Eclip, EharvPart: 0, vEnd: v };
     }
-    // ---- v2 "optimal" strategy (the default): bang-bang deployment and superclip chosen by the lap-time value of a joule.
+    // ---- "optimal" (v2) and "regulated" (v3 default): deployment and superclip chosen by the lap-time value of a joule.
     // forwardOpt(x, y): the K deploys (C5.2.8 taper, traction permitting) where sens >= x and superclips at full clip power where
     // 0 < sens <= y; x < 0 is the reference lap (deploy everywhere, no clip). Where the speed is set by grip (braking, or part
     // throttle through a corner) the K harvests for free: the rear-axle share of the brake force, and at part throttle the ICE's

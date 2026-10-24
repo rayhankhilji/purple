@@ -290,13 +290,18 @@
     const fs = require("fs"), path = require("path");
     dir = dir || path.join(__dirname, "..", "data", "telemetry");
     const tr = T.buildTrack((opts && opts.trackId) || "silverstone"), cond = (opts && opts.conditions) || {};
+    let TM = null; try { TM = require("../track/track.js"); } catch (e) { TM = null; }
     const out = [];
     for (const t of fit.teams) {
       const f = path.join(dir, "silverstone-2026-q-" + t.driver.toLowerCase() + ".json");
       if (!fs.existsSync(f)) continue;
       const lap = JSON.parse(fs.readFileSync(f, "utf8"));
       const car = teamCar(t.team, fit), r = S.simulateLap(car, "silverstone", cond, { trace: true, cal: fit.global || { grip_scale: 1, drag_scale: 1 } });
-      out.push(Object.assign({ team: t.team, driver: t.driver, used_in_fit: t.driver === fit.reference_driver ? "trace (baseline estimate) + lap + trap" : "lap + trap only" }, compareLap(r, lap.channels, tr, lap.lap)));
+      const row = Object.assign({ team: t.team, driver: t.driver, used_in_fit: t.driver === fit.reference_driver ? "trace (baseline estimate) + lap + trap" : "lap + trap only" }, compareLap(r, lap.channels, tr, lap.lap));
+      // the held-out score of record: concept/track/track.js compare() on the track model's axis (the sim trace is on the pole
+      // lap's speed-integral axis, mapped by ANT's stored warp), against this driver's lap
+      if (TM) { const c = TM.compare({ s_m: r.trace.s_m, v_kmh: r.trace.v_kmh }, "silverstone", { basis: "driver:" + fit.reference_driver, driver: t.driver }); row.compare = { rms_kmh: c.vs_driver.rms_kmh, mean_kmh: c.vs_driver.mean_kmh, corner_rms_kmh: c.vs_driver.corner_rms_kmh }; }
+      out.push(row);
     }
     return out;
   }
