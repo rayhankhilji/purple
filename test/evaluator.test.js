@@ -172,3 +172,21 @@ test("scoreSheet: filled fixture scores provider 8/7, v1 4/0, v2 7/5; score-card
   // cell tolerance: order, case, punctuation, dashes for "no answer"
   assert.deepEqual(scenarios.parseSheet("### 1. `exam-rw8`\n| model | verdict | next_parameter | direction |\n|---|---|---|---|\n| v2 | RIDE_HEIGHT_MM decrease; promote | | |\n| v1 | — | - | |\n")["exam-rw8"], { v2: { verdict: "promote", next_parameter: "ride_height_mm", direction: "decrease" } });
 });
+
+// ---- wind cap fix (2026-10-24): the profile caps each sample at its own terminal speed against the local headwind; timing() must
+// not re-cap at the still-air terminal (that clipped tailwind samples and made every windy lap lean slow)
+test("tailwind down the Hangar Straight raises that sector's vmax above still air; head/tail laps bracket the old clipped values", () => {
+  const t = evaluator.trackFor("silverstone"), str = aero.REF_STRAIGHT.silverstone, i = Math.round(((str.s0 + str.s1) / 2) / t.ds), from = Math.round(aero.bearingOfHeading(t.heading[i]));
+  const still = evaluator.evaluate("silverstone", B, DRY), tail = evaluator.evaluate("silverstone", B, Object.assign({}, DRY, { wind_ms: 10, wind_from_deg: (from + 180) % 360 })), head = evaluator.evaluate("silverstone", B, Object.assign({}, DRY, { wind_ms: 10, wind_from_deg: from }));
+  const si = evaluator.sectorIndex(t, (str.s0 + str.s1) / 2);
+  assert.ok(tail.sector_vmax_kmh[si] > still.sector_vmax_kmh[si], `S${si + 1} vmax tail ${tail.sector_vmax_kmh[si]} vs still ${still.sector_vmax_kmh[si]}`);
+  assert.ok(tail.straight_vmax_kmh > still.terminal_kmh, "a tailwind sample may exceed the still-air terminal " + tail.straight_vmax_kmh + " vs " + tail.terminal_kmh);
+  assert.ok(head.lap < 80.83 && tail.lap < 81.354 && head.lap > still.lap, `head ${head.lap} tail ${tail.lap} (clipped values were 80.830 / 81.354)`);
+  assert.equal(tail.terminal_kmh, still.terminal_kmh, "terminal_kmh stays the setup's still-air terminal for display");
+});
+test("still air is byte-identical to the fixtures (lap, sectors, vmax, vmin, straight vmax) after the wind cap fix", () => {
+  for (const circuit of ["silverstone", "monza"]) {
+    const fx = JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures", `baseline.${circuit}.json`), "utf8")), e = evaluator.evaluate(circuit, B, { circuit, wet: false, wind_ms: 0, wind_from_deg: 0 });
+    for (const k of ["lap", "sectors", "vmax_kmh", "vmin_kmh", "vmin_lap_kmh", "terminal_kmh", "straight_vmax_kmh", "sector_vmax_kmh", "multipliers", "grip_scale"]) assert.deepEqual(e[k], fx[k], circuit + " " + k);
+  }
+});

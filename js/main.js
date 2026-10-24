@@ -489,7 +489,7 @@ window.EI = window.EI || {};
     });
     const msg = { type: 'purple:result', experiment_id: LAB.exp, seed: race.seed, circuit: track.data.id, laps: race.laps, incomplete: !!race.labIncomplete || cars.some(c => !c.finished), cars };
     EI.labResult = msg; console.log('purple:result ' + JSON.stringify(msg));
-    try { window.parent.postMessage(msg, '*'); } catch (e) { console.warn('PURPLE: postMessage failed', e); }
+    try { window.parent.postMessage(msg, window.location.origin); } catch (e) { console.warn('PURPLE: postMessage failed', e); }   // same-origin lab page only (ARCHITECTURE §10)
   }
   // ---------------------------------------------------------------- PURPLE (F-10, P3.T3): grid mode ?lab=1&mode=grid&driver=<code>
   // The candidate car with a real 2026 driver profile on the full 2026 grid (a real starting grid of this circuit), TV camera on that
@@ -519,7 +519,7 @@ window.EI = window.EI || {};
       setup: LAB.candidate.setup, aero: LAB.candidate.aero, label: 'cinematic — mixes car and driver',
     };
     EI.labResult = msg; console.log('purple:grid ' + JSON.stringify(msg));
-    try { window.parent.postMessage(msg, '*'); } catch (e) { console.warn('PURPLE: postMessage failed', e); }
+    try { window.parent.postMessage(msg, window.location.origin); } catch (e) { console.warn('PURPLE: postMessage failed', e); }   // same-origin lab page only (ARCHITECTURE §10)
   }
   function endRace() {
     if (EI.Replay) EI.Replay.detach();

@@ -6,7 +6,7 @@
   const KEYS = aero.KEYS, RANGES = aero.RANGES;
   const VERDICTS = ["promote", "reject", "retest"], DIRECTIONS = ["increase", "decrease"];
   const PLAN_KEYS = ["verdict", "next_parameter", "direction", "magnitude", "expected_sector_effect", "hypothesis", "reject_if"];
-  const LIMITS = { hypothesis: 160, reject_if: 80, scenario_chars: 1400 };   // 1,400 chars ≈ 350 tokens (G-MUBIT-04)
+  const LIMITS = { hypothesis: 160, reject_if: 80, rule_chars: 160, rules: 3, scenario_chars: 1400 };   // 1,400 chars ≈ 350 tokens (G-MUBIT-04)
   const fail = (field, message) => ({ ok: false, field, message, error: field + ": " + message });
 
   // shape + type check of a Setup. Range legality is aero.violations (REG-* IDs); this is BAD_INPUT territory.
@@ -70,6 +70,15 @@
   // the compact Scenario the agent reads (ARCHITECTURE §4.5). Numbers rounded so the token count stays under 350.
   const r3 = v => (typeof v === "number" ? +v.toFixed(3) : v), r0 = v => (typeof v === "number" ? Math.round(v) : v);
   function compactSetup(s) { return Object.fromEntries(KEYS.map(k => [k, k === "ers_deploy" ? +s[k].toFixed(1) : r0(s[k])])); }
+  // the rules the agent reads: the NEWEST active rules, at most LIMITS.rules, oldest first so they read in the order they were given.
+  // Decision 2026-10-24 (EVAL, guardrail audit): the old slice(0, 5) kept the five OLDEST, so a sixth correction never reached the
+  // agent, and five 160-char rules pushed the input past 350 tokens. Rules are { text, created_at?, active? } or plain strings;
+  // without created_at the array order is the age order. Text is cut to LIMITS.rule_chars as a last guard (the overrule route trims).
+  function selectRules(rules) {
+    const list = (rules || []).map((x, i) => (typeof x === "string" ? { text: x, i } : Object.assign({ i }, x))).filter(r => r && typeof r.text === "string" && r.active !== false);
+    list.sort((a, b) => { const ta = a.created_at ? Date.parse(a.created_at) : NaN, tb = b.created_at ? Date.parse(b.created_at) : NaN; if (isFinite(ta) && isFinite(tb) && ta !== tb) return ta - tb; return a.i - b.i; });
+    return list.slice(-LIMITS.rules).map(r => (r.text.length > LIMITS.rule_chars ? r.text.slice(0, LIMITS.rule_chars - 1).trimEnd() + "…" : r.text));
+  }
   function buildScenario(o) {
     const cond = { wet: !!o.conditions.wet, wind_ms: r0(o.conditions.wind_ms || 0) };
     if (cond.wind_ms) cond.wind_from_deg = r0(o.conditions.wind_from_deg || 0);
@@ -80,7 +89,7 @@
       baseline: Object.assign(compactSetup(o.baseline), { lap: r3(o.baselineEval.lap), sectors: o.baselineEval.sectors.map(r3), vmax_kmh: r0(o.baselineEval.vmax_kmh) }),
       candidate: compactSetup(o.candidate),
       result: { delta_lap: r3(o.evaluation.delta_lap), delta_sectors: o.evaluation.delta_sectors.map(r3), vmax_kmh: r0(o.evaluation.vmax_kmh), vmin_kmh: r0(o.evaluation.vmin_kmh), legal: !!o.evaluation.legal },
-      rules: (o.rules || []).slice(0, 5).map(x => (typeof x === "string" ? x : x.text)),
+      rules: selectRules(o.rules),
       history: (o.history || []).slice(-3).map(h => ({ change: h.change, delta_lap: r3(h.delta_lap) })),
     };
     return sc;
@@ -94,7 +103,7 @@
     return parts.join(", ") || "no change";
   }
 
-  const api = { KEYS, PLAN_KEYS, VERDICTS, DIRECTIONS, LIMITS, validateSetup, validatePlanOutput, magnitudeOk, applyPlan, buildScenario, serializeScenario, approxTokens, describeChange, compactSetup };
+  const api = { KEYS, PLAN_KEYS, VERDICTS, DIRECTIONS, LIMITS, validateSetup, validatePlanOutput, magnitudeOk, applyPlan, selectRules, buildScenario, serializeScenario, approxTokens, describeChange, compactSetup };
   root.EI = root.EI || {}; root.EI.schema = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();

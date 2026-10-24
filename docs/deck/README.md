@@ -18,9 +18,9 @@ Needs Node (already installed for the repo) and Chrome, Edge or Chromium on the 
    | `lab-race-card.png` | RACE card with +0.518 s, 19 %, label "measured in race, seed 42" | lab page after Race it (or the ledger race already posted) |
    | `try-models-side-by-side.png` | Side by side: provider and adapter answers on `exam-rw8`, version label in frame | Mubit console → Try models (steps: `docs/try-models/README.md`) |
    | `lab-design-td01.png` | DESIGN card error with badge TD-01: "Technical directive TD-01: rear wing capped at 20°" | lab page, TD-01 on, `EI.lab.run` with rear wing 25° (UI lane's `09-td01-violation.png` is a mock-data stand-in) |
-   | `ledger-row.png` | ledger with row 01M5NHXH… (rule chip R-01, measured +0.518, agree 19 %) and the Saturday rows below | lab page, ledger table (restore `docs/ledger-snapshot/…/` into `data/` first) |
+   | `ledger-row.png` | ledger with row 01M5NHXH… (rule chip R-01, measured +0.518, agree 19 %) and the Saturday rows below | lab page, ledger table (`data/` must hold the real ledger; if it is empty restore from the latest `docs/ledger-snapshot/`, never over an existing `data/`) |
 
-   A missing file shows as a broken image; the deck still exports. Fill the `[…]` placeholders in `slides.md` (kept count, v1 result, v2 result, the v1/v2 cells of the n/8 table from `npm run exam:score`; the provider cells 1/8 and 8/8 are measured) before exporting. Reference frames already in the repo: `docs/agents/integrator-screens/lab-1440-0315.png` (lab page), `docs/agents/lanes/car3d-screens/hero-rw8.png` (3D car, rear wing 28°), `docs/agents/lanes/ui-screens/*.png` (mock-data card states).
+   A missing file shows as a broken image; the deck still exports. Fill the `[…]` placeholders in `slides.md` (kept count, v1 result, v2 result, the v1/v2 cells of the n/8 table from `npm run exam:score`; the provider cells 1/8 and 8/8 are measured) before exporting. Reference frames already in the repo: `docs/agents/integrator-screens/lab-1440-0505-merged.png` (the merged lab page at 1440×900: real 3D car with the baseline wing ghosted in purple, EVALUATE card rear wing +8° = +0.436 s with sector deltas, trace and ledger; taken against the mock planner in a fresh data dir, so its widget reads 0 kept / 0 trained: do not use that corner in the deck, re-shoot against `npm run dev` with the real ledger, where the widget reads 43 kept at 23:58, 99 trained, exam 20/20 · 10/20), `docs/agents/integrator-screens/lab-1440-0315.png` (earlier lab page), `docs/agents/lanes/car3d-screens/hero-rw8.png` (3D car, rear wing 28°), `docs/agents/lanes/ui-screens/*.png` (mock-data card states).
 
 2. From the repo root:
 
@@ -50,4 +50,4 @@ If Marp cannot find a browser: `CHROME_PATH="/Applications/Google Chrome.app/Con
 - The words CFD, wind tunnel, validated, aerodynamically tested appear nowhere (`grep -niE "cfd|wind tunnel|validated|aerodynamically tested" docs/deck/slides.md` prints nothing).
 - Slide 2 discloses Equation I as pre-existing.
 - Exam scores on slide 5 are n/8 and n/20, never %.
-- Any remaining `[…]` placeholder means the number does not exist yet; cut the line rather than invent it.
+- Any remaining `[…]` placeholder means the number does not exist yet; cut the line (or the table cell) rather than invent it. `grep -n '\[' docs/deck/slides.md | grep -v shot` must print nothing before the PDF is exported.
