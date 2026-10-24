@@ -3,8 +3,11 @@
 // INPUT ORDER. Every result is a pure function of (design, benchOpts), so which worker ran it never matters: the campaign is
 // deterministic per seed for any worker count (test/concept-campaign.test.js runs 0 and 2 workers and compares).
 // workers = 0 runs in this thread (tests, small batches).
+// Engine dashboard hooks (server/campaign-route.js): pool.laps counts laps started, pool.done counts laps finished and pool.ms_sum
+// their summed bench() time inside the workers; onLap(ms) (optional) is called once per finished lap. Timings never enter a result.
 "use strict";
 const path = require("path");
+const { performance } = require("perf_hooks");
 
 // the compact record the campaign keeps for every physics lap
 function compact(r) {
@@ -22,13 +25,13 @@ function evalOne(bench, d, benchOpts) { return compact(bench.bench(d, benchOpts)
 
 class Pool {
   constructor(n) {
-    this.n = Math.max(0, n | 0); this.workers = []; this.queue = []; this.pending = new Map(); this.seq = 0; this.laps = 0;
+    this.n = Math.max(0, n | 0); this.workers = []; this.queue = []; this.pending = new Map(); this.seq = 0; this.laps = 0; this.done = 0; this.ms_sum = 0; this.onLap = null;
     if (this.n > 0) {
       const { Worker } = require("worker_threads");
       for (let i = 0; i < this.n; i++) {
         const w = new Worker(path.join(__dirname, "worker.js"));
         w.busy = false;
-        w.on("message", m => { const p = this.pending.get(m.id); this.pending.delete(m.id); w.busy = false; if (m.error) p.reject(new Error(m.error)); else p.resolve(m.result); this.pump(); });
+        w.on("message", m => { const p = this.pending.get(m.id); this.pending.delete(m.id); w.busy = false; if (m.error) p.reject(new Error(m.error)); else { this.timed(m.ms); p.resolve(m.result); } this.pump(); });
         w.on("error", e => { for (const p of this.pending.values()) p.reject(e); this.pending.clear(); });
         this.workers.push(w);
       }
@@ -40,9 +43,10 @@ class Pool {
       const job = this.queue.shift(); w.busy = true; this.pending.set(job.id, job); w.postMessage({ id: job.id, design: job.design, benchOpts: job.benchOpts });
     }
   }
+  timed(ms) { this.done++; if (typeof ms === "number") { this.ms_sum += ms; if (this.onLap) this.onLap(ms); } }
   run(d, benchOpts) {
     this.laps++;
-    if (!this.n) return Promise.resolve(evalOne(this.bench, d, benchOpts));
+    if (!this.n) { const t0 = performance.now(), r = evalOne(this.bench, d, benchOpts); this.timed(performance.now() - t0); return Promise.resolve(r); }
     return new Promise((resolve, reject) => { this.queue.push({ id: ++this.seq, design: d, benchOpts, resolve, reject }); this.pump(); });
   }
   // evaluate(designs, benchOpts) -> Promise<compact[]> in input order

@@ -388,6 +388,7 @@ function createApp(opts) {
   });
   // ---- the concept designer's closed loop with Mubit (server/concept.js, docs/concept/LOOP.md); mock runs never write to data/
   const concept = require("./concept.js").mount(app, { ok, fail, body, ApiError, mock, dataDir: resolved.dir, mockDir: opts.dataDir ? resolved.dir : path.join(headless.ROOT, "data-mock"), mubit: opts.conceptMubit, log });
-  return { app, emit, db, state, setState, runPlan, collect, dryCollect, runExam, statusView, EI, concept };
+  const engine = require("./campaign-route.js").mount(app, { ok, body, ApiError, mock, dataDir: resolved.dir, mubit: opts.conceptMubit, log, root: headless.ROOT, workers: opts.engineWorkers, tmpDir: opts.engineTmpDir });   // the engine dashboard (docs/concept/DASHBOARD.md)
+  return { app, emit, db, state, setState, runPlan, collect, dryCollect, runExam, statusView, EI, concept, engine };
 }
 module.exports = { createApp, ApiError, STATUS, seededRng, mockMode, resolveDataDir };
