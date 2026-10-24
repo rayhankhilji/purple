@@ -1,0 +1,898 @@
+diff --git a/concept/view/car3d.js b/concept/view/car3d.js
+index d2386b2..a69eddd 100644
+--- a/concept/view/car3d.js
++++ b/concept/view/car3d.js
+@@ -44,9 +44,13 @@
+     floor: { xBib: 350, xMax: 1100, taperY: 70, xStep: -335, yStep: 400, xDiffW: -150, yDiff: 365, xExit: 300, xKink: -525, xLead: 720 },
+     // nose tip (concept: 35 mm behind the FW profiles' front plane, on the main plane)
+     noseTip: -1215,
+-    // halo, cockpit, helmet (concept placement from the game car's cockpit, relative to XC; RV-HALO is a drawing)
++    // halo, cockpit, helmet (RV-HALO is a drawing): placed relative to XC from the RB22 photos (CK below)
+     halo: { tube: 46 },
+   };
++  // Cockpit-area placement, mm ahead of XC (the design's cockpit rear), measured on the 2026 RB22 photos along the axle line
++  // (docs/concept/rb22-refs/REFERENCES.md): helmet centre 1215 mm behind the front axle, airbox mouth 1450, halo front pillar
++  // root 425, sidepod inlet 955 (baseline XC 1855). The concept mass sheet puts the driver at XC-750 (1105), consistent with these.
++  const CK = { open0: 1245, open1: 400, helmet: 640, airbox: 405, haloRear: 455, haloPillar: 1430, wheel: 1185, inlet: 900, mirror: 930 };
+   const ROUND = (v) => Math.round(v * 1000) / 1000;
+ 
+   // ---------------------------------------------------------------- the spec: every dimension the geometry uses (mm)
+@@ -81,13 +85,15 @@
+     };
+     S.fl.halfW = (X) => floorHalfW(S, X);
+     S.fl.roof = (X) => floorRoof(S, X);
+-    // sidepods: inlet (both sides = inlet_cm2) as a superellipse (n = 4) of aspect h/w = 0.55; per-side area in mm²
+-    const A = S.sp.inlet * 100 / 2, aspect = 0.55, k4 = superArea(4);   // area = k4 · w · h
+-    const wI = Math.sqrt(A / (k4 * aspect)), hI = wI * aspect;
+-    S.pod = { A, w: wI, h: hI, n: 4, X: XC - 600, Zc: 515, Yin: 0 };
++    // sidepods: inlet (both sides = inlet_cm2) as a rounded square (superellipse n = 3.4, aspect h/w = 1.0: the RB22's upright
++    // "traditional" inlet, not a letterbox) under the mirror; per-side area in mm²
++    const A = S.sp.inlet * 100 / 2, aspect = 1.0, nI = 3.4, kI = superArea(nI);   // area = kI · w · h
++    const wI = Math.sqrt(A / (kI * aspect)), hI = wI * aspect;
++    S.pod = { A, w: wI, h: hI, n: nI, X: XC - CK.inlet, Zc: 0, Yin: 0 };
++    S.pod.Zc = 640 - hI / 2;                                 // inlet top at Z 640, level with the cockpit sides
+     S.pod.Yin = bodyAt(S, S.pod.X).yw + 6;                   // inlet inner edge just outboard of the chassis side
+     S.pod.Yc = S.pod.Yin + wI / 2; S.pod.Yout = S.pod.Yin + wI + 30;   // shoulder = inlet outer edge + 30 mm lip
+-    S.pod.Ztop = S.pod.Zc + hI / 2 + 34; S.pod.Zsh = S.pod.Zc - hI / 2 - 18; S.pod.Zf = 72;
++    S.pod.Ztop = S.pod.Zc + hI / 2 + 30; S.pod.Zsh = S.pod.Zc - hI / 2 - 18; S.pod.Zf = 72;
+     return S;
+   }
+   // area of the superellipse |x/(w/2)|^n + |y/(h/2)|^n ≤ 1 as a multiple of w·h: Γ(1+1/n)² / Γ(1+2/n)
+@@ -120,23 +126,31 @@
+   // ---------------------------------------------------------------- body sections (chassis + nose + engine cover + tail)
+   // section parameters at X, by monotone cubics through stations that move with the design's anchors (XA, XC, XPU, XR)
+   function bodyStations(S) {
+-    const { XA, XC, XPU, XR } = S, NT = DIM.noseTip;
+-    // [X, zb, zt, yw, zw, ys]  (bottom, top, max half width, its height, spine half width)
++    const { XA, XC, XPU, XR } = S, NT = DIM.noseTip, o0 = XC - CK.open0, o1 = XC - CK.open1;
++    // [X, zb, zt, yw, zw, ys]  (bottom, top, max half width, its height, spine half width), from the RB22 photos: a broad blunt nose
++    // rising in a near-straight line to a high chassis (top ~Z 610 at the front axle), cockpit sides at Z ~680, and the engine
++    // cover's broad black deck staying high (Z ~900 behind the airbox) all the way back to the rear-wing pylons
+     const rows = [
+-      [NT, 128, 212, 62, 166, 34], [NT + 60, 122, 236, 78, 172, 48], [XA - 700, 132, 336, 112, 214, 74], [XA - 320, 150, 452, 148, 286, 104],
+-      [XA, 172, 548, 178, 344, 132], [XA + 420, 150, 628, 236, 404, 182], [XC - 900, 104, 664, 296, 446, 286], [XC - 520, 62, 684, 360, 458, 300],
+-      [XC - 150, 44, 694, 392, 456, 304], [XC + 60, 40, 792, 336, 446, 152], [XC + 260, 42, 802, 312, 426, 124], [XPU, 44, 762, 286, 392, 112],
+-      [XPU + 420, 46, 652, 226, 346, 98], [XR - 520, 52, 528, 192, 306, 84], [XR - 160, 120, 474, 162, 302, 72], [XR + 160, 214, 436, 122, 318, 62],
+-      [XR + 440, 254, 404, 84, 330, 52],
++      [NT, 146, 290, 86, 208, 68], [NT + 60, 136, 312, 98, 214, 78], [XA - 720, 146, 412, 124, 262, 98], [XA - 360, 160, 512, 152, 318, 118],
++      [XA, 178, 590, 176, 364, 132], [XA + 380, 152, 640, 222, 418, 168], [o0 - 40, 104, 664, 274, 448, 226], [o0 + 300, 60, 680, 330, 458, 286],
++      [o1 - 260, 44, 686, 352, 458, 300], [o1 + 40, 42, 714, 346, 452, 250], [o1 + 170, 42, 856, 330, 440, 150], [XC - 60, 42, 906, 312, 428, 138],
++      [XPU, 44, 884, 282, 404, 126], [XPU + 420, 46, 836, 226, 360, 110], [XR - 520, 52, 806, 192, 330, 98], [XR - 160, 120, 760, 160, 330, 86],
++      [XR + 160, 214, 664, 124, 360, 70], [XR + 440, 254, 452, 84, 340, 46],
+     ];
+     for (let i = 1; i < rows.length; i++) if (rows[i][0] < rows[i - 1][0] + 25) rows[i][0] = rows[i - 1][0] + 25;
+     const xs = rows.map(r => r[0]), col = (k) => rows.map(r => r[k]);
+     return { xs, f: m3.table(xs, { zb: col(1), zt: col(2), yw: col(3), zw: col(4), ys: col(5) }), x0: xs[0], x1: xs[xs.length - 1] };
+   }
+   function bodyAt(S, X) { if (!S._bs) S._bs = bodyStations(S); return S._bs.f(clamp(X, S._bs.x0, S._bs.x1)); }
++  // the body's outer half width at (X, Z): the section outline (behind the cockpit) where it crosses height Z
++  function bodyYAt(S, X, Z) {
++    const pts = bodyHalf(S, X).out; let best = 0;
++    for (let i = 1; i < pts.length; i++) { const [y0, z0] = pts[i - 1], [y1, z1] = pts[i]; if ((z0 - Z) * (z1 - Z) <= 0 && z0 !== z1) best = Math.max(best, lerp(y0, y1, (Z - z0) / (z1 - z0))); }
++    return best;
++  }
+   // cockpit opening: half width cw (plan: a rounded front, straight sides, a short rear radius) and depth below the rim
+   function cockpitAt(S, X) {
+-    const x0 = S.XC - 905, x1 = S.XC - 30, cwMax = 252;
++    const x0 = S.XC - CK.open0, x1 = S.XC - CK.open1, cwMax = 248;
+     if (X <= x0 || X >= x1) return { cw: 0, d: 0 };
+     const a = X - x0, b = x1 - X;
+     const cw = cwMax * Math.sqrt(clamp(a / 230, 0, 1) * (2 - clamp(a / 230, 0, 1))) * Math.sqrt(clamp(b / 70, 0, 1) * (2 - clamp(b / 70, 0, 1)));
+@@ -149,7 +163,9 @@
+     const s = bodyAt(S, X), ck = cockpitAt(S, X), out = [], inner = [];
+     const k = scale == null ? 1 : scale, zm = zc == null ? (s.zb + s.zt) / 2 : zc;
+     const Z = (z) => zm + (z - zm) * k, Y = (y) => y * k;
+-    const nl = lerp(2.0, 2.8, ss(S.XA, S.XC - 400, X)), nu = 2.3;   // a rounder keel under the nose and the front chassis
++    // a rounder keel under the nose and the front chassis; a boxy tub; the engine cover's flanks run straighter (a tent) from the
++    // broad deck down into the sidepods
++    const nl = lerp(2.0, 2.8, ss(S.XA, S.XC - 800, X)), nu = lerp(lerp(2.3, 2.7, ss(DIM.noseTip, S.XA + 300, X)), 1.75, ss(S.XC - CK.open1, S.XC - 150, X));
+     for (let i = 0; i < NL; i++) { const ph = -Math.PI / 2 + (Math.PI / 2) * i / NL, c = Math.cos(ph), sn = Math.sin(ph); out.push([Y(s.yw * Math.pow(Math.abs(c), 2 / nl)), Z(s.zw + (s.zw - s.zb) * -Math.pow(Math.abs(sn), 2 / nl))]); }
+     for (let i = 0; i < NU; i++) { const ph = (Math.PI / 2) * i / NU, c = Math.cos(ph), sn = Math.sin(ph); out.push([Y(s.ys + (s.yw - s.ys) * Math.pow(c, 2 / nu)), Z(s.zw + (s.zt - s.zw) * Math.pow(sn, 2 / nu))]); }
+     // the top run from the spine edge to the rim (or the centre), with a slight crown
+@@ -198,9 +214,9 @@
+     const NT = DIM.noseTip, xEnd = bs.x1;
+     // stations: dense at the nose tip and around the cockpit opening
+     const xs = [];
+-    const tipR = 70; for (let k = 0; k <= 10; k++) xs.push(NT + tipR * (1 - Math.cos(Math.PI / 2 * k / 10)));
++    const tipR = 48; for (let k = 0; k <= 10; k++) xs.push(NT + tipR * (1 - Math.cos(Math.PI / 2 * k / 10)));
+     for (let x = NT + tipR + 30; x < xEnd - 40; x += 28) xs.push(x);
+-    const ck0 = S.XC - 905, ck1 = S.XC - 30; for (const x of [ck0 + 0.8, ck1 - 0.8, ck0 + 4, ck0 + 15, ck0 + 35, ck0 + 70, ck0 + 120, ck1 - 60, ck1 - 30, ck1 - 12, ck1 - 3]) xs.push(x);
++    const ck0 = S.XC - CK.open0, ck1 = S.XC - CK.open1; for (const x of [ck0 + 0.8, ck1 - 0.8, ck0 + 4, ck0 + 15, ck0 + 35, ck0 + 70, ck0 + 120, ck1 - 60, ck1 - 30, ck1 - 12, ck1 - 3]) xs.push(x);
+     for (const x of [S.XA, S.XC, S.XPU, S.XR]) xs.push(x);   // rings exactly at the design's anchors (the section there is the station's)
+     for (let k = 0; k <= 6; k++) xs.push(xEnd - 40 + 40 * k / 6);
+     xs.sort((a, b) => a - b);
+@@ -210,7 +226,7 @@
+     let seg = null;
+     for (const x of X) {
+       let k = 1, zc = null;
+-      if (x < NT + tipR) { const t = (x - NT) / tipR; k = Math.max(0.04, Math.sqrt(1 - Math.pow(1 - t, 2))); const s0 = bodyAt(S, NT + tipR); zc = (s0.zb + s0.zt) / 2 - 8; }
++      if (x < NT + tipR) { const t = (x - NT) / tipR; k = Math.max(0.05, Math.cbrt(1 - Math.pow(1 - t, 3))); const s0 = bodyAt(S, NT + tipR); zc = (s0.zb + s0.zt) / 2 - 6; }   // a blunt, squarish tip
+       const r = bodyRing(S, x, k, zc); rings.push(r.ring); seg = r.seg;
+     }
+     // paint (outer) and cockpit interior (inner) segments of the same loft; the tip and the tail capped
+@@ -230,15 +246,18 @@
+   function podAt(S, X) {
+     const P = S.pod, x0 = P.X;
+     if (!S._pt) {
+-      const rows = [[x0 + 40, P.Ztop, P.Yout, P.Zsh, 1], [x0 + 420, P.Ztop - 6, P.Yout + 8, P.Zsh - 12, 1], [S.XPU - 60, Math.max(P.Zsh + 40, P.Ztop - 110), P.Yout - 34, Math.max(300, P.Zsh - 70), 0.92],
+-        [S.XPU + 420, Math.max(330, P.Ztop - 220), 0, 260, 0.7], [S.XR - 560, 270, 0, 205, 0.45], [S.XR - 270, 222, 0, 170, 0.2]];
++      // RB22 (photos): the top falls away right behind the inlet (downwash ramp) and the pod is shrink-wrapped, narrowing from
++      // mid-length into a tight coke bottle; the lower flank stays above the floor
++      const xm = Math.max(x0 + 520, Math.min(S.XPU - 120, x0 + 820));
++      const rows = [[x0 + 40, P.Ztop, P.Yout, P.Zsh, 1], [x0 + 400, P.Ztop - 8, P.Yout + 12, P.Zsh - 24, 1], [xm, Math.max(P.Zsh + 90, P.Ztop - 34), P.Yout - 8, Math.max(330, P.Zsh - 60), 0.95],
++        [S.XPU + 120, Math.max(P.Zsh + 60, 596), 0, 300, 0.8], [S.XPU + 480, 524, 0, 260, 0.6], [S.XR - 560, 440, 0, 220, 0.42], [S.XR - 270, 336, 0, 180, 0.2]];
+       for (let i = 1; i < rows.length; i++) if (rows[i][0] < rows[i - 1][0] + 30) rows[i][0] = rows[i - 1][0] + 30;
+       const xs = rows.map(r => r[0]);
+-      S._pt = { xs, f: m3.table(xs, { zt: rows.map(r => r[1]), zsh: rows.map(r => r[3]), uk: rows.map(r => r[4]) }), yo: m3.monoCubic(xs.slice(0, 3), rows.slice(0, 3).map(r => r[2])).f };
++      S._pt = { xs, xm: xs[2], f: m3.table(xs, { zt: rows.map(r => r[1]), zsh: rows.map(r => r[3]), uk: rows.map(r => r[4]) }), yo: m3.monoCubic(xs.slice(0, 3), rows.slice(0, 3).map(r => r[2])).f };
+     }
+     const t = S._pt.f(clamp(X, S._pt.xs[0], S._pt.xs[S._pt.xs.length - 1])), b = bodyAt(S, X);
+-    // the outer width holds to the ICE face, then blends to the body (+ 22 mm) at the gearbox (coke bottle)
+-    const y0 = S._pt.yo(Math.min(X, S.XPU - 60)), yo = X <= S.XPU - 60 ? y0 : lerp(y0, b.yw + 22, sstep((X - (S.XPU - 60)) / Math.max(60, S.XR - 270 - (S.XPU - 60))));
++    // the outer width holds to mid-pod, then blends to the body (+ 24 mm) at the gearbox (coke bottle)
++    const xb = S._pt.xm, y0 = S._pt.yo(Math.min(X, xb)), yo = X <= xb ? y0 : lerp(y0, b.yw + 24, sstep((X - xb) / Math.max(60, S.XR - 270 - xb)));
+     const zf0 = Math.min(t.zt - 40, floorRoof(S, X) + 12), zsh0 = clamp(t.zsh, zf0 + 30, t.zt - 40);
+     const zf = lerp(zsh0 - 30, zf0, ss(x0 + 40, x0 + 520, X));
+     const yi = Math.max(60, b.yw - 45);
+@@ -290,18 +309,23 @@
+     items.push(...pair(item("pod_duct", "sidepods", "interior", Md, { meta: { inletRing: ex.length } })));
+     const Mr = m3.mesh(); m3.cap(Mr, duct[duct.length - 1], W(S, x0 + 600, P.Yc, P.Zc));
+     items.push(...pair(item("pod_radiator", "cooling", "radiator", Mr)));
+-    // cooling louvres on the pod top ahead of the rear tyre: 6 raised gills over dark slots
+-    const Ml = m3.mesh(), Mg = m3.mesh();
+-    for (let i = 0; i < 6; i++) {
+-      const X = S.XPU - 40 + i * 62; if (X > xEnd - 120) break;
+-      const q = podAt(S, X), y0 = q.yo - 175, y1 = q.yo - 60; if (y1 - y0 < 40) continue;
+-      const zs = q.zt + 1;
+-      const ring = (dx, dz) => [[y0, zs + dz], [y1, zs + dz], [y1, zs + dz + 3], [y0, zs + dz + 3]].map(([y, z]) => W(S, X + dx, y, z));
+-      m3.loft(Ml, [ring(-22, 0), ring(-10, 6), ring(4, 13), ring(14, 16)], { capA: true, capB: true, wrap: true, solid: true });
+-      const sl = (dx) => [[y0, zs - 2], [y1, zs - 2], [y1, zs + 1], [y0, zs + 1]].map(([y, z]) => W(S, X + dx, y, z));
+-      m3.loft(Mg, [sl(-20), sl(12)], { wrap: true, capA: true, capB: true, solid: true });
++    // cooling louvres (RB22 photos: a grille of upright bright slats on the engine cover's flank, just above the sidepod's top and
++    // ahead of the rear tyre): a dark recessed panel on the body surface with thin slats standing out of it
++    const xL0 = S.XPU - 40, xL1 = Math.min(S.XPU + 300, S.XR - 600);
++    if (xL1 - xL0 > 120) {
++      const Ml = m3.mesh(), Mg = m3.mesh(), NZ = 6;
++      const zr = (X) => { const z0 = podAt(S, X).zt + 16; return [z0, Math.min(z0 + 96, bodyAt(S, X).zt - 90)]; };
++      const panel = []; for (let k = 0; k <= 10; k++) { const X = lerp(xL0, xL1, k / 10), [z0, z1] = zr(X), row = [];
++        for (let j = 0; j <= NZ; j++) { const z = lerp(z0, z1, j / NZ); row.push(W(S, X, bodyYAt(S, X, z) + 2.5, z)); }
++        for (let j = NZ; j >= 0; j--) { const z = lerp(z0, z1, j / NZ); row.push(W(S, X, bodyYAt(S, X, z) - 6, z)); }
++        panel.push(row); }
++      m3.loft(Mg, panel, { wrap: true, capA: true, capB: true, solid: true });
++      for (let i = 0; i < 11; i++) {
++        const X = lerp(xL0 + 16, xL1 - 16, i / 10), [z0, z1] = zr(X), ring = (dx) => { const pts = []; for (let j = 0; j <= 4; j++) { const z = lerp(z0 + 6, z1 - 6, j / 4); pts.push([X + dx + 0.12 * (z - z0), bodyYAt(S, X, z) - 2, z]); } for (let j = 4; j >= 0; j--) { const z = lerp(z0 + 6, z1 - 6, j / 4); pts.push([X + dx + 0.12 * (z - z0), bodyYAt(S, X, z) + 13, z]); } return pts.map(([x, y, z]) => W(S, x, y, z)); };
++        m3.loft(Ml, [ring(-2.2), ring(2.2)], { wrap: true, capA: true, capB: true, solid: true });
++      }
++      items.push(...pair(item("pod_louvres", "sidepods", "metal", Ml, { look: "al_7075_t6" }))); items.push(...pair(item("pod_louvre_slots", "sidepods", "interior", Mg)));
+     }
+-    if (Ml.count) { items.push(...pair(item("pod_louvres", "sidepods", "paint", Ml, { role: "body", proj: "main" }))); items.push(...pair(item("pod_louvre_slots", "sidepods", "interior", Mg))); }
+     return items;
+   }
+ 
+@@ -482,7 +506,9 @@
+     const rings = [];
+     for (const st of stations) { const sp = sectionPolys(st.els, st.x0, st.z0, d(st), st.pivot)[ei]; rings.push(sp.pts.map(([x, z]) => mapPt(x, st.y, z))); }
+     const n = rings[0].length, le = n >> 1, mid = stations[Math.floor(stations.length / 2)];
+-    const inside = (() => { const sp = sectionPolys(mid.els, mid.x0, mid.z0, d(mid), mid.pivot)[ei]; let x = 0, z = 0; for (const p of sp.pts) { x += p[0]; z += p[1]; } return mapPt(x / sp.pts.length, mid.y, z / sp.pts.length); })();
++    // a point inside the section: midway between the upper and lower surfaces at mid-chord (the centroid of the ring's points can
++    // fall outside a strongly cambered flap, which would wind its surfaces inside out)
++    const inside = (() => { const sp = sectionPolys(mid.els, mid.x0, mid.z0, d(mid), mid.pivot)[ei], q = sp.pts, h = le >> 1, a = q[h], b = q[le + h]; return mapPt((a[0] + b[0]) / 2, mid.y, (a[1] + b[1]) / 2); })();
+     m3.loft(outs.top, rings, { segments: [[0, le]], inside });
+     m3.loft(outs.bot, rings, { segments: [[le, n - 1]], inside });
+     m3.loft(outs.te, rings, { segments: [[n - 1, n]], wrap: true, inside });
+@@ -500,7 +526,7 @@
+       elementMeshes(st, ei, dCur, mapPt, outs);
+       const flap = ei > 0;
+       const fl = flap ? { wing: "front", pivot: "le" } : null;
+-      items.push(item("fw_el" + ei + "_top", "front_wing", "paint", outs.top, { role: flap ? "fwFlap" : "fwMain", proj: flap ? "none" : "fwTop", flap: fl }));
++      items.push(item("fw_el" + ei + "_top", "front_wing", "paint", outs.top, { role: flap ? "fwFlap" : "fwMain", proj: "fwTop", flap: fl }));
+       items.push(item("fw_el" + ei + "_bot", "front_wing", "carbon", outs.bot, { flap: fl }));
+       items.push(item("fw_el" + ei + "_te", "front_wing", "carbon", outs.te, { flap: fl }));
+     }
+@@ -594,7 +620,7 @@
+         const outs = { top: m3.mesh(), bot: m3.mesh(), te: m3.mesh() };
+         elementMeshes(stations, ei, d, mapPt, outs);
+         const nm = "rw_el" + ei + (si === 0 ? "" : si === 1 ? "_tipR" : "_tipL");
+-        items.push(item(nm + "_top", "rear_wing", "paint", outs.top, { role: flap ? "rwFlap" : "rwMain", proj: "top", flap: flg }));
++        items.push(item(nm + "_top", "rear_wing", "paint", outs.top, { role: flap ? "rwFlap" : "rwMain", proj: "rwTop", flap: flg }));
+         items.push(item(nm + "_bot", "rear_wing", "carbon", outs.bot, { flap: flg }));
+         items.push(item(nm + "_te", "rear_wing", "carbon", outs.te, { flap: flg }));
+       });
+@@ -613,7 +639,7 @@
+       for (const [dz, k] of [[4, 0.7], [7, 0.3]]) { const z = E - 7 + dz, a = (xr(E) - xf(E)) / 2 - 3 * (1 - k), cx = (xr(E) + xf(E)) / 2; rs.push(m3.superellipse(a, t / 2 * k, 5, 28).map(([u, v]) => W(S, cx + u, yTop + v, z))); }
+       rs[rs.length - 3] = rs[rs.length - 3].map((p) => [p[0], (E - 7 + 10 + S.rh) / 1000, p[2]]);
+       const Me = m3.mesh(); m3.loft(Me, rs, { wrap: true, capA: true, capB: true, solid: true });
+-      items.push(...pair(item("rw_endplate", "rear_wing", "paint", Me, { role: "rwEnd", proj: "main" })));
++      items.push(...pair(item("rw_endplate", "rear_wing", "paint", Me, { role: "rwEnd", proj: "rwEnd" })));
+       // lateral safety / ERS light strip on the endplate's trailing edge (2026)
+       const Ml = m3.mesh(), rl = [];
+       for (let k = 0; k <= 6; k++) { const z = lerp(E - 240, E - 40, k / 6); rl.push(m3.superellipse(5, 3.5, 2, 8).map(([u, v]) => W(S, xr(z) + 2 + u, yTop + t / 2 + 1 + v, z))); }
+@@ -675,7 +701,9 @@
+     m3.lathe(Ms, hubP, C0, ax, ref, 40, { inside: C0 });
+     const nut = [[0, aS + 46], [24, aS + 46], [34, aS + 40], [36, aS + 16], [44, aS + 12], [44, aS + 8]].map(([r, a]) => mm(r, a));
+     const Mn = m3.mesh(); m3.lathe(Mn, nut, C0, ax, ref, 12, { inside: C0 });
+-    items.push(item("rim", part, "rim", Mr, { look: "mg_az80a" }), item("rim_spokes", part, "rim", Ms, { look: "mg_az80a" }), item("wheel_nut", part, "metal", Mn, { look: "ti64" }));
++    // RB22 (photos): black rims with a thin blue band on the outer lip, a fluorescent wheel nut
++    const Mlip = m3.mesh(); m3.lathe(Mlip, [[231, rimH + 0.8], [249.2, rimH + 0.8], [249.4, rimH - 3]].map(([r, a]) => mm(r, a)), C0, ax, ref, 96, { inside: [C0[0], C0[1], C0[2] - 1] });
++    items.push(item("rim", part, "rim", Mr, { look: "mg_az80a" }), item("rim_spokes", part, "rim", Ms, { look: "mg_az80a" }), item("rim_lip", part, "rimLip", Mlip, { look: "mg_az80a" }), item("wheel_nut", part, "nut", Mn, { look: "ti64" }));
+     // brake disc (carbon-carbon, C11.3.3 diameter) + bell, caliper behind the axle, duct drum and inlet scoop
+     const rd = wh.disc / 2, aD = aS - 92, Md = m3.mesh();
+     m3.lathe(Md, [[100, aD - 16], [rd, aD - 16], [rd + 1, aD], [rd, aD + 16], [100, aD + 16], [99, aD - 16]].map(([r, a]) => mm(r, a)), C0, ax, ref, 72, { inside: C0 });
+@@ -721,15 +749,16 @@
+     const corner = (w, pts, part, rear) => {
+       const Mw = m3.mesh(), Mr = m3.mesh(), Mu = m3.mesh();
+       // wishbones: two legs each, aero sections (chord 64 / 52 mm, 16 mm thick)
+-      for (const [o, i1, i2, c] of [[pts.lbj, pts.lf, pts.lr, 0.062], [pts.ubj, pts.uf, pts.ur, 0.052]]) { blade(Mw, o, i1, c, 0.016); blade(Mw, o, i2, c, 0.016); }
+-      blade(Mr, pts.pr0, pts.pr1, 0.044, 0.022);                  // push rod
+-      blade(Mr, pts.tr0, pts.tr1, 0.040, 0.016);                  // track (front) / toe (rear) rod
++      // aero-faired carbon legs (RB22 photos: broad, near-horizontal front wishbones)
++      for (const [o, i1, i2, c] of [[pts.lbj, pts.lf, pts.lr, 0.078], [pts.ubj, pts.uf, pts.ur, 0.066]]) { blade(Mw, o, i1, c, 0.019); blade(Mw, o, i2, c, 0.019); }
++      blade(Mr, pts.pr0, pts.pr1, 0.052, 0.024);                  // push rod
++      blade(Mr, pts.tr0, pts.tr1, 0.050, 0.018);                  // track (front) / toe (rear) rod
+       if (rear) rod(Mr, pts.ds0, pts.ds1, 0.022);                 // driveshaft
+       // upright: a block between the ball joints (inside the rim)
+       const up = [pts.lbj, m3.v3.lerp3(pts.lbj, pts.ubj, 0.5), pts.ubj];
+       m3.sweep(Mu, up, () => m3.roundPoly([[-1, -1, 0.3], [1, -1, 0.3], [1, 1, 0.3], [-1, 1, 0.3]], 2).map(([u, v]) => [u * 0.05, v * 0.03]), { up: [0, 0, 1], fixedUp: true });
+-      items.push(...pair(item("wishbones" + (rear ? "_r" : "_f"), part, "carbon", Mw)));
+-      items.push(...pair(item("rods" + (rear ? "_r" : "_f"), part, "carbon", Mr)));
++      items.push(...pair(item("wishbones" + (rear ? "_r" : "_f"), part, "carbon", Mw, { carbon: "matte" })));
++      items.push(...pair(item("rods" + (rear ? "_r" : "_f"), part, "carbon", Mr, { carbon: "matte" })));
+       items.push(...pair(item("upright" + (rear ? "_r" : "_f"), part, "metal", Mu, { look: "ti64" })));
+     };
+     const X0 = fr.X, Y0 = fr.Y;
+@@ -755,60 +784,69 @@
+     const Wp = (p) => W(S, p[0], p[1], p[2]);
+     // halo (titanium, faired, painted): rear legs on the cockpit rim, hoop over the driver, front pillar onto the chassis
+     {
+-      const zt = (x) => bodyAt(S, x).zt;
+-      const hoopR = [[XC - 135, 330, zt(XC - 135) - 4], [XC - 230, 338, 790], [XC - 420, 330, 828], [XC - 640, 286, 840], [XC - 820, 196, 840], [XC - 930, 92, 836], [XC - 968, 0, 834]];
++      // halo (black on the RB22): rear legs on the cockpit rim beside the headrest, hoop at helmet-top height, the centre pillar
++      // down onto the chassis ahead of the cockpit; a faired (wider, flatter) top bar
++      const zt = (x) => bodyAt(S, x).zt, hr = XC - CK.haloRear, hf = XC - CK.haloPillar;
++      const hoopR = [[hr, 318, zt(hr) - 6], [hr - 90, 326, 788], [hr - 260, 318, 826], [hr - 470, 268, 840], [hr - 640, 180, 842], [hr - 740, 86, 838], [hr - 776, 0, 836]];
+       const pts = hoopR.concat(hoopR.slice(0, -1).reverse().map(([x, y, z]) => [x, -y, z]));
+-      const path = m3.catmull(pts, 6).map(Wp);
+-      const Mh = m3.mesh(); m3.sweep(Mh, path, () => m3.superellipse(0.023, 0.027, 2.3, 18), { up: [0, 1, 0] });
+-      const pil = m3.catmull([[XC - 968, 0, 834], [XC - 1040, 0, 812], [XC - 1180, 0, zt(XC - 1180) + 40], [XC - 1260, 0, zt(XC - 1260) - 6]], 6).map(Wp);
+-      m3.sweep(Mh, pil, (t) => m3.superellipse(lerp(0.022, 0.032, t), lerp(0.026, 0.016, t), 2.4, 18), { up: [0, 0, 1], fixedUp: true });
++      const path = m3.catmull(pts, 7).map(Wp);
++      const Mh = m3.mesh(); m3.sweep(Mh, path, (t) => { const top = Math.pow(Math.sin(Math.PI * t), 0.5); return m3.superellipse(lerp(0.024, 0.034, top), lerp(0.028, 0.02, top), 2.4, 20); }, { up: [0, 1, 0] });
++      const pil = m3.catmull([[hr - 776, 0, 836], [hr - 840, 0, 818], [hf + 150, 0, zt(hf + 150) + 70], [hf, 0, zt(hf) - 6]], 7).map(Wp);
++      m3.sweep(Mh, pil, (t) => m3.superellipse(lerp(0.024, 0.036, t), lerp(0.028, 0.018, t), 2.4, 20), { up: [0, 0, 1], fixedUp: true });
+       items.push(item("halo", "halo", "paint", Mh, { role: "halo", proj: "halo" }));
+     }
+     // airbox + roll hoop: a tall section over the spine with the intake mouth at its front, the T-camera on top
+     {
+-      const x0 = XC - 110, x1 = S.XPU + 380, zb = (x) => bodyAt(S, x).zt - 70;
+-      const T = m3.table([x0, XC - 60, XC + 30, XC + 220, S.XPU, x1], { top: [952, 966, 974, 930, 840, bodyAt(S, x1).zt + 6], hw: [116, 128, 134, 116, 92, 60] });
+-      const N = 40, mouth = (grow) => m3.superellipse(84 + grow, 56 + grow, 3, N, -Math.PI / 2), mc = 884;
+-      const sec = (x) => { const t = T(x), b = zb(x), a = t.hw, h = (t.top - b) / 2; return m3.superellipse(a, h, 2.6, N, -Math.PI / 2).map(([u, v]) => [x, u, b + h + v]); };
++      // RB22 (photos): a big rounded intake over the driver's head with a thick lip (painted sun-yellow), the roll-hoop fairing
++      // sweeping back into the engine cover's broad deck; the T-camera on a short pylon above the hoop
++      const x0 = XC - CK.airbox, x1 = XC + 300, zb = (x) => bodyAt(S, x).zt - 90;
++      const T = m3.table([x0, x0 + 60, x0 + 180, XC - 60, x1], { top: [1010, 1016, 996, bodyAt(S, XC - 60).zt + 30, bodyAt(S, x1).zt - 4], hw: [184, 186, 168, 146, 112] });
++      const N = 44, mc = 872, mouth = (grow) => m3.superellipse(148 + grow, 112 + grow, 2.5, N, -Math.PI / 2).map(([u, v]) => [u * (1 - 0.34 * Math.max(0, -v) / (112 + grow)), v]);   // narrower at the bottom
++      const sec = (x) => { const t = T(x), b = zb(x), a = t.hw, h = (t.top - b) / 2; return m3.superellipse(a, h, 2.5, N, -Math.PI / 2).map(([u, v]) => [x, u * (1 - 0.12 * Math.max(0, v) / h), b + h + v]); };
+       const blendR = (x, gr, k) => { const m = mouth(gr), s2 = sec(x); return m.map(([u, v], i) => [x, lerp(u, s2[i][1], k), lerp(mc + v, s2[i][2], k)]); };
+-      const rings = [mouth(0).map(([u, v]) => [x0 + 18, u, mc + v]), mouth(6).map(([u, v]) => [x0 + 4, u, mc + v]), mouth(13).map(([u, v]) => [x0, u, mc + v]), blendR(x0 + 10, 20, 0.45), blendR(x0 + 34, 22, 0.85)];
+-      for (let x = x0 + 60; x < x1; x += 30) rings.push(sec(x));
+-      rings.push(sec(x1).map((p) => [x1, p[1] * 0.3, Math.max(p[2], zb(x1) + 20)]));
++      const rings = [mouth(0).map(([u, v]) => [x0 + 20, u, mc + v]), mouth(8).map(([u, v]) => [x0 + 5, u, mc + v]), mouth(18).map(([u, v]) => [x0, u, mc + v]), blendR(x0 + 12, 26, 0.45), blendR(x0 + 40, 30, 0.85)];
++      for (let x = x0 + 70; x < x1; x += 30) rings.push(sec(x));
++      rings.push(sec(x1).map((p) => [x1, p[1] * 0.4, Math.max(p[2] - 30, zb(x1) + 20)]));
+       const Ma = m3.mesh(); m3.loft(Ma, rings.map(r => r.map(Wp)), { wrap: true, capB: true, solid: true });
+       items.push(item("airbox", "engine_cover", "paint", Ma, { role: "body", proj: "main" }));
+-      const duct = [[x0 + 18, 1], [x0 + 120, 0.86], [x0 + 210, 0.6]].map(([x, k]) => mouth(0).map(([u, v]) => Wp([x, u * k, mc + v * k])));
++      const duct = [[x0 + 20, 1], [x0 + 130, 0.84], [x0 + 230, 0.55]].map(([x, k]) => mouth(0).map(([u, v]) => Wp([x, u * k, mc + v * k])));
+       const Md = m3.mesh(); m3.loft(Md, duct, { wrap: true, capB: true, inside: Wp([x0 + 100, 0, mc]), flip: true });
+       items.push(item("airbox_duct", "engine_cover", "interior", Md));
+-      // T-camera pod on the airbox (FIA camera housing)
+-      const tc = XC + 70, tz = T(tc).top - 4, Mc = m3.mesh();
+-      m3.loft(Mc, ellRings([tc - 70, tc - 60, tc - 20, tc + 40, tc + 70, tc + 76], (x) => ({ cy: 0, cz: tz + 22, a: 34 * Math.sin(Math.PI * clamp((x - tc + 76) / 152, 0.05, 0.95)) + 4, b: 18 * Math.sin(Math.PI * clamp((x - tc + 76) / 152, 0.05, 0.95)) + 3, n: 3 }), 16).map(r => r.map(Wp)), { wrap: true, capA: true, capB: true, solid: true });
+-      for (const s of [-1, 1]) m3.loft(Mc, [0, 1].map(k => m3.roundPoly([[tc - 30, tz, 3], [tc + 40, tz, 3], [tc + 30, tz + 34, 3], [tc - 10, tz + 30, 3]], 2).map(([x, z]) => Wp([x, s * 40 + (k ? 3 : -3), z]))), { wrap: true, capA: true, capB: true, solid: true });
++      // T-camera on its pylon (FIA camera housing, the "T" wing over the hoop)
++      const tc = x0 + 120, tz = T(tc).top - 6, Mc = m3.mesh(), th = 62;
++      m3.loft(Mc, [0, 1].map(k => m3.roundPoly([[tc - 40, tz - 10, 6], [tc + 36, tz - 10, 6], [tc + 22, tz + th, 4], [tc - 26, tz + th, 4]], 2).map(([x, z]) => Wp([x, k ? 9 : -9, z]))), { wrap: true, capA: true, capB: true, solid: true });
++      const fo = m3.foil(0.02, 0.4, 0.16, 10, 0.03);
++      const wr = []; for (let k = 0; k <= 6; k++) { const y = lerp(-118, 118, k / 6); wr.push(m3.placeFoil(fo.ring, [tc - 62, tz + th + 4], 128, rad(-3), 0, null).map(([x, z]) => Wp([x, y, z]))); }
++      m3.loft(Mc, wr, { wrap: true, capA: true, capB: true, solid: true });
++      for (const s of [-1, 1]) m3.loft(Mc, ellRings([tc - 48, tc - 40, tc, tc + 50, tc + 58], (x) => ({ cy: s * 118, cz: tz + th + 12, a: 15 * Math.sin(Math.PI * clamp((x - tc + 48) / 106, 0.08, 0.92)) + 2, b: 14 * Math.sin(Math.PI * clamp((x - tc + 48) / 106, 0.08, 0.92)) + 2, n: 2.4 }), 12).map(r => r.map(Wp)), { wrap: true, capA: true, capB: true, solid: true });
+       items.push(item("t_camera", "electronics", "tcam", Mc));
+-      // engine-cover fin
+-      const fx0 = S.XPU + 60, fx1 = S.XR - 120, Mf = m3.mesh();
+-      const fo = []; for (let k = 0; k <= 10; k++) { const x = lerp(fx0, fx1, k / 10); fo.push([x, bodyAt(S, x).zt - 10]); }
+-      for (let k = 10; k >= 0; k--) { const x = lerp(fx0, fx1, k / 10); fo.push([x, bodyAt(S, x).zt + 22 + 70 * Math.sin(Math.PI * Math.pow(k / 10, 0.7)) * (1 - 0.4 * k / 10)]); }
+-      m3.slab(Mf, fo.map(([x, z]) => [(1750 - x) / 1000, (z + 10 + S.rh) / 1000]), m3.frameXY(0), 0.006, 0.0028, 2);
++      // engine-cover fin at the rear of the deck (carries the race number on the RB22)
++      const fx0 = S.XR - 620, fx1 = S.XR + 60, Mf = m3.mesh();
++      const fo2 = []; for (let k = 0; k <= 10; k++) { const x = lerp(fx0, fx1, k / 10); fo2.push([x, bodyAt(S, x).zt - 12]); }
++      for (let k = 10; k >= 0; k--) { const x = lerp(fx0, fx1, k / 10); fo2.push([x, bodyAt(S, x).zt + 8 + 105 * Math.pow(Math.sin(Math.PI * 0.5 * Math.min(1, k / 7)), 1.4) * (1 - 0.25 * Math.max(0, k - 7) / 3)]); }
++      m3.slab(Mf, fo2.map(([x, z]) => [(1750 - x) / 1000, (z + 10 + S.rh) / 1000]), m3.frameXY(0), 0.008, 0.0035, 2);
+       items.push(item("fin", "engine_cover", "paint", Mf, { role: "fin", proj: "main" }));
+     }
+     // mirrors (C3.7.5): housing ahead of the sidepod, glass facing back, inner stay to the chassis, rear stay to the sidepod
+     {
+-      const mx = XC - 930, my = 548, mz = 688, Mm = m3.mesh(), Mg = m3.mesh(), Mst = m3.mesh();
+-      const ys = []; for (let k = 0; k <= 10; k++) ys.push(lerp(my - 88, my + 88, k / 10));
+-      const rings = ys.map((y) => { const t = (y - (my - 88)) / 176, e = Math.sin(Math.PI * clamp(t, 0.02, 0.98)); return m3.superellipse(36 * (0.55 + 0.45 * e), 32 * (0.6 + 0.4 * e), 3, 20).map(([u, v]) => [mx + u + 8, y, mz + v]); });
++      // RB22 (photos): a wide flat black housing above the inlet's leading edge, an inner stay to the chassis and a rear stay down
++      // onto the sidepod's top
++      const mx = XC - CK.mirror, my = Math.max(500, S.pod.Yc + 70), mz = Math.max(720, S.pod.Ztop + 70), Mm = m3.mesh(), Mg = m3.mesh(), Mst = m3.mesh(), hw = 104;
++      const ys = []; for (let k = 0; k <= 12; k++) ys.push(lerp(my - hw, my + hw, k / 12));
++      const rings = ys.map((y) => { const t = (y - (my - hw)) / (2 * hw), e = Math.pow(Math.sin(Math.PI * clamp(t, 0.02, 0.98)), 0.35); return m3.superellipse(40 * (0.5 + 0.5 * e), 34 * (0.55 + 0.45 * e), 3.2, 22).map(([u, v]) => [mx + u + 8 - 0.12 * v, y, mz + v]); });
+       m3.loft(Mm, rings.map(r => r.map(Wp)), { wrap: true, capA: true, capB: true, solid: true });
+-      const gl = m3.roundPoly([[my - 80, mz - 26, 10], [my + 80, mz - 26, 10], [my + 80, mz + 26, 10], [my - 80, mz + 26, 10]], 3);
+-      m3.loft(Mg, [gl.map(([y, z]) => Wp([mx + 43, y, z])), gl.map(([y, z]) => Wp([mx + 46, y, z]))], { wrap: true, capA: true, capB: true, solid: true });
+-      const yc = bodyAt(S, mx + 20).yw - 10;
+-      m3.sweep(Mst, [[mx + 10, my - 80, mz - 6], [mx + 14, (my + yc) / 2, mz - 20], [mx + 20, yc, mz - 50]].map(Wp), () => m3.superellipse(0.018, 0.005, 2.2, 10), { up: [0, 1, 0] });
+-      m3.sweep(Mst, [[mx + 30, my + 20, mz - 26], [mx + 160, my - 10, mz - 70], [S.pod.X + 60, my - 60, S.pod.Ztop - 6]].map(Wp), () => m3.superellipse(0.016, 0.005, 2.2, 10), { up: [0, 1, 0] });
++      const gl = m3.roundPoly([[my - hw + 10, mz - 27, 10], [my + hw - 10, mz - 27, 10], [my + hw - 10, mz + 27, 10], [my - hw + 10, mz + 27, 10]], 3);
++      m3.loft(Mg, [gl.map(([y, z]) => Wp([mx + 47, y, z])), gl.map(([y, z]) => Wp([mx + 50, y, z]))], { wrap: true, capA: true, capB: true, solid: true });
++      const yc = bodyAt(S, mx + 30).yw - 14, zc = bodyAt(S, mx + 30).zt - 40;
++      m3.sweep(Mst, [[mx + 14, my - hw + 20, mz - 8], [mx + 22, (my - hw + yc) / 2, mz - 18], [mx + 30, yc, zc]].map(Wp), () => m3.superellipse(0.02, 0.006, 2.2, 10), { up: [0, 1, 0] });
++      m3.sweep(Mst, [[mx + 26, my + 30, mz - 30], [mx + 70, my + 20, (mz + S.pod.Ztop) / 2 - 10], [S.pod.X + 70, my + 6, S.pod.Ztop - 4]].map(Wp), () => m3.superellipse(0.018, 0.006, 2.2, 10), { up: [0, 1, 0] });
+       items.push(...pair(item("mirror", "misc", "paint", Mm, { role: "mirror", proj: "main" })));
+       items.push(...pair(item("mirror_glass", "misc", "mirror", Mg)));
+       items.push(...pair(item("mirror_stays", "misc", "carbon", Mst)));
+     }
+     // driver: helmet (livery helmet design, cylindrical u around the head, v down from the crown), visor, HANS / shoulders, headrest
+     {
+-      const hx = XC - 268, hz = 688, Mh = m3.mesh(), xs = [];
++      const hx = XC - CK.helmet, hz = 712, Mh = m3.mesh(), xs = [];
+       for (let k = 0; k <= 22; k++) xs.push(hx - 142 + 284 * (0.5 - 0.5 * Math.cos(Math.PI * k / 22)));
+       const rings = xs.map((x) => { const t = (x - hx) / 142, e = Math.sqrt(Math.max(0.0004, 1 - t * t)); return m3.superellipse(110 * e, 124 * e, 2.15, 32).map(([u, v]) => [x, u, hz + v + 6 * t]); });
+       m3.loft(Mh, rings.map(r => r.map(Wp)), { wrap: true, solid: true, uv: (r, i) => { const p = rings[r][i]; return [0.5 + Math.atan2(p[1], hx - p[0]) / (2 * Math.PI), clamp((hz + 124 - p[2]) / 248, 0, 1)]; } });
+@@ -823,12 +861,12 @@
+       items.push(item("driver_body", "driver", "suit", Ms));
+       // headrest pads around the helmet (dark foam)
+       const Mp = m3.mesh(), cwR = (x) => cockpitAt(S, x).cw;
+-      for (const s of [-1, 1]) { const pr = []; for (let k = 0; k <= 10; k++) { const x = lerp(XC - 400, XC - 80, k / 10), y = s * (Math.max(120, cwR(x) - 34)); pr.push([x, y, bodyAt(S, x).zt - 14 + 10 * Math.sin(Math.PI * k / 10)]); }
++      for (const s of [-1, 1]) { const pr = []; for (let k = 0; k <= 10; k++) { const x = lerp(hx - 110, XC - CK.open1 - 14, k / 10), y = s * (Math.max(120, cwR(x) - 34)); pr.push([x, y, bodyAt(S, x).zt - 14 + 10 * Math.sin(Math.PI * k / 10)]); }
+         m3.sweep(Mp, pr.map(Wp), (t) => m3.superellipse(0.026 * (0.7 + 0.3 * Math.sin(Math.PI * t)), 0.03, 3, 14), { up: [0, 1, 0] }); }
+-      m3.loft(Mp, ellRings([XC - 140, XC - 125, XC - 70, XC - 55], (x) => ({ cy: 0, cz: bodyAt(S, XC - 100).zt + 4, a: 150 * (x > XC - 130 && x < XC - 60 ? 1 : 0.85), b: 60, n: 3 }), 20).map(r => r.map(Wp)), { wrap: true, capA: true, capB: true, solid: true });
++      const hb = XC - CK.open1 - 90; m3.loft(Mp, ellRings([hb - 40, hb - 25, hb + 30, hb + 45], (x) => ({ cy: 0, cz: bodyAt(S, hb).zt + 4, a: 150 * (x > hb - 30 && x < hb + 40 ? 1 : 0.85), b: 60, n: 3 }), 20).map(r => r.map(Wp)), { wrap: true, capA: true, capB: true, solid: true });
+       items.push(item("headrest", "seat_safety", "interior", Mp, { soft: true }));
+       // steering wheel (flat, grips, display)
+-      const sx = XC - 845, sz = 560, Mw = m3.mesh(), Md = m3.mesh();
++      const sx = XC - CK.wheel, sz = 580, Mw = m3.mesh(), Md = m3.mesh();
+       const ol = m3.roundPoly([[-130, -62, 30], [130, -62, 30], [118, 52, 40], [62, 70, 18], [-62, 70, 18], [-118, 52, 40]], 4);
+       m3.loft(Mw, [0, 1].map(k => ol.map(([y, z]) => Wp([sx + (k ? 22 : -22) + (z - sz) * 0.25, y, sz + z]))), { wrap: true, capA: true, capB: true, solid: true });
+       const dp = m3.roundPoly([[-46, 2, 4], [46, 2, 4], [46, 42, 4], [-46, 42, 4]], 2);
+@@ -858,9 +896,10 @@
+       const lr = m3.roundPoly([[-58, -26, 8], [58, -26, 8], [58, 26, 8], [-58, 26, 8]], 3);
+       m3.loft(Ml, [lr.map(([y, z]) => Wp([xe - 6, y, lz + z])), lr.map(([y, z]) => Wp([xe + 6, y, lz + z]))], { wrap: true, capA: true, capB: true, solid: true });
+       items.push(item("rain_light", "rear_impact", "led", Ml));
+-      const ez = bodyAt(S, S.XR + 120).zt + 52, path = [[S.XR - 40, 0, ez - 30], [S.XR + 120, 0, ez], [S.XR + 330, 0, ez + 8]].map(Wp);
+-      m3.lathe(Mx, [[0.047, -0.001], [0.047, 0.24], [0.051, 0.25], [0.051, 0.255], [0.043, 0.25]], Wp([S.XR + 330, 0, ez + 8]), [1, 0, 0], [0, 1, 0], 28, { inside: Wp([S.XR + 200, 0, ez + 8]) });
+-      m3.lathe(Mxi, [[0.044, 0.248], [0.044, 0.18]], Wp([S.XR + 330, 0, ez + 8]), [1, 0, 0], [0, 1, 0], 28, { inside: Wp([S.XR + 200, 0, ez + 40]) });
++      // tailpipe (C3.9) exiting just above the crash structure's tail, under the rear wing
++      const ez = bodyAt(S, S.XR + 440).zt + 38, xp = S.XR + 520;
++      m3.lathe(Mx, [[0.047, -0.001], [0.047, 0.24], [0.051, 0.25], [0.051, 0.255], [0.043, 0.25]], Wp([xp, 0, ez]), [1, 0, 0], [0, 1, 0], 28, { inside: Wp([xp - 130, 0, ez]) });
++      m3.lathe(Mxi, [[0.044, 0.248], [0.044, 0.18]], Wp([xp, 0, ez]), [1, 0, 0], [0, 1, 0], 28, { inside: Wp([xp - 130, 0, ez + 32]) });
+       items.push(item("exhaust", "pu_electronics", "metal", Mx, { look: "inconel_718" }), item("exhaust_inner", "pu_electronics", "black", Mxi));
+     }
+     return items;
+@@ -886,7 +925,7 @@
+   }
+   function buildAll(S, o) { const out = {}; for (const id of Object.keys(GROUPS)) out[id] = buildGroup(id, S, o); return out; }
+ 
+-  const api = { DIM, GROUPS, spec, buildGroup, buildAll, groupKey, floorHalfW, floorRoof, bodyAt, cockpitAt, superArea, W, Gd, mirrorGeo, mergeGeo, chainSection, sectionPolys, fwStation, rwStation };
++  const api = { DIM, CK, GROUPS, spec, buildGroup, buildAll, groupKey, floorHalfW, floorRoof, bodyAt, cockpitAt, superArea, W, Gd, mirrorGeo, mergeGeo, chainSection, sectionPolys, fwStation, rwStation };
+   C.car3d = api;
+   if (typeof module !== "undefined" && module.exports) module.exports = api;
+ })();
+diff --git a/concept/view/livery-rb22.js b/concept/view/livery-rb22.js
+new file mode 100644
+index 0000000..154625f
+--- /dev/null
++++ b/concept/view/livery-rb22.js
+@@ -0,0 +1,260 @@
++// PURPLE CONCEPT - concept car view: the 2026 Red Bull RB22 livery, painted in the concept car's own FIA frame (browser only).
++// Laid out from the 2026 RB22 photos (docs/concept/rb22-refs/REFERENCES.md): gloss deep royal blue with a fine darker "jacquard"
++// pattern, black engine-cover deck, floor and lower sidepods; sun-yellow airbox with the big red charging bull running back over
++// the engine cover; yellow-to-orange nose with a red bull on each side; ORACLE large on the sidepod following its downward slope;
++// the Red Bull wordmark (red, white keyline) on the pod's rear flank; ROKT by the halo; CARLYLE / 1Password / Hard Rock on the
++// chassis; Ford + RACING on the cover's rear flank; the race number on a white tag on the fin and on the nose; bare-carbon front-wing
++// main plane, navy flaps with "Red" / "Bull" in red and VISA; Mobil + Pegasus and AT&T on the front endplates; black rear wing with
++// ORACLE on top, Mobil 1 and Heineken 0.0 on its endplates; black halo and mirrors.
++//
++// Coordinates: X mm rearward from the front axle, Z mm above the plank's top (the reference plane), Y mm to the right, on the
++// RB22 baseline (XA -75, XC 1855, XPU 2235, XR 3400, ride height 35). concept/view/parts3d.js maps any design's surfaces onto this
++// frame through the design's anchors (so decals stay on their parts when the cell or wheelbase changes) and calls:
++//   EI.concept.liveryRB22.paint(g, tiles, size, car) -> fills the atlas canvas g (size px) tile by tile
++//   .TILES (px at 4096) / .RANGES (world metres of the baseline car, the shader's projection ranges) / .ANCHORS / .BODY colours
++// Partner artwork comes through EI.Ads (assets/brand/partners); a styled wordmark stands in where there is none.
++// Concept geometry built to the design's dimensions · FIA 2026 frame · not a team CAD model.
++(function () {
++  const root = typeof window !== "undefined" ? window : globalThis;
++  const EI = (root.EI = root.EI || {}); const C = (EI.concept = EI.concept || {});
++
++  // ---------------------------------------------------------------- colours (sRGB, sampled on the daylight photos)
++  const COL = {
++    navy: "#08164f", navyHi: "#0e2378", navyDk: "#050c2e", black: "#0b0c10", deck: "#0d0e13", yellow: "#ffc414", yellowNose: "#ffcb24",
++    orange: "#f39a1c", red: "#e2231a", white: "#ffffff", carbon: "#121317",
++  };
++  // the baseline's anchors (FIA X, mm) and ride height; parts3d maps a design's X through these
++  const ANCHORS = { XR: 3400, XPU: 2235, XC: 1855, XA: -75, tip: -1215, rh: 35 };
++  const wx = (X) => 1.75 - X / 1000, wy = (Z) => (Z + 10 + ANCHORS.rh) / 1000;
++  // tiles of the atlas (px at 4096) and their projection ranges (baseline world metres: side [x0, x1, y0, y1], top [x0, x1, z0, z1])
++  const TILES = {
++    sideL: [0, 0, 4096, 960], sideR: [0, 960, 4096, 960], top: [0, 1920, 4096, 1440],
++    fwT: [0, 3360, 720, 736], rwT: [720, 3360, 560, 736], epFL: [1280, 3360, 760, 368], epFR: [1280, 3728, 760, 368], epRL: [2040, 3360, 560, 368], epRR: [2040, 3728, 560, 368],
++  };
++  const RANGES = {
++    main: { s: [wx(4150), wx(-1450), wy(-60), wy(1250)], t: [wx(4150), wx(-1450), -1.0, 1.0] },
++    fw: { t: [wx(-350), wx(-1320), -0.75, 0.75] },
++    rw: { t: [wx(XRp(760)), wx(XRp(100)), -0.62, 0.62] },
++    epF: { s: [wx(-260), wx(-1300), wy(-20), wy(440)] },
++    epR: { s: [wx(XRp(800)), wx(XRp(120)), wy(200), wy(920)] },
++  };
++  function XRp(d) { return ANCHORS.XR + d; }
++
++  // ---------------------------------------------------------------- drawing kits
++  // side kit for one tile: s = +1 right side (nose to the right), -1 left side (nose to the left); R = [x0, x1, y0, y1] (world m)
++  function sideKit(g, tile, R, s, k) {
++    const [ox, oy, w, h] = tile.map(v => v * k), px = w / (R[1] - R[0]), py = h / (R[3] - R[2]);
++    const P = (X, Z) => [s > 0 ? ox + (wx(X) - R[0]) * px : ox + (R[1] - wx(X)) * px, oy + (R[3] - wy(Z)) * py];
++    const mmx = px / 1000, mmy = py / 1000;   // canvas px per mm
++    return {
++      s, fwd: s, mm: mmx, P, ox, oy, w, h,
++      clip(fn) { g.save(); g.beginPath(); g.rect(ox, oy, w, h); g.clip(); fn(); g.restore(); },
++      path(pts) { g.beginPath(); pts.forEach(([X, Z], i) => { const p = P(X, Z); i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]); }); g.closePath(); },
++      // smooth closed region through points (Catmull-Rom -> Bézier)
++      blob(pts) { g.beginPath(); const n = pts.length, Q = pts.map(([X, Z]) => P(X, Z)); g.moveTo(Q[0][0], Q[0][1]);
++        for (let i = 0; i < n; i++) { const p0 = Q[(i - 1 + n) % n], p1 = Q[i], p2 = Q[(i + 1) % n], p3 = Q[(i + 2) % n];
++          g.bezierCurveTo(p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6, p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6, p2[0], p2[1]); }
++        g.closePath(); },
++      fill(col) { g.fillStyle = col; g.fill(); },
++      // run fn at (X, Z) in screen millimetres (x right, y down, no mirroring), rotated by rot (rad, screen)
++      at(X, Z, fn, rot) { const p = P(X, Z); g.save(); g.translate(p[0], p[1]); if (rot) g.rotate(rot); g.scale(mmx, mmy); fn(); g.restore(); },
++    };
++  }
++  // top kit: (X, Y) -> tile px; text helpers read from the rear (rot +90°) or from the front (rot -90°)
++  function topKit(g, tile, R, k) {
++    const [ox, oy, w, h] = tile.map(v => v * k), pu = w / (R[1] - R[0]), pv = h / (R[3] - R[2]);
++    const P = (X, Y) => [ox + (wx(X) - R[0]) * pu, oy + (Y / 1000 - R[2]) * pv];
++    const mmu = pu / 1000, mmv = pv / 1000;
++    return {
++      P, ox, oy, w, h, mm: mmu,
++      clip(fn) { g.save(); g.beginPath(); g.rect(ox, oy, w, h); g.clip(); fn(); g.restore(); },
++      path(pts) { g.beginPath(); pts.forEach(([X, Y], i) => { const p = P(X, Y); i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]); }); g.closePath(); },
++      blob(pts) { g.beginPath(); const n = pts.length, Q = pts.map(([X, Y]) => P(X, Y)); g.moveTo(Q[0][0], Q[0][1]);
++        for (let i = 0; i < n; i++) { const p0 = Q[(i - 1 + n) % n], p1 = Q[i], p2 = Q[(i + 1) % n], p3 = Q[(i + 2) % n];
++          g.bezierCurveTo(p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6, p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6, p2[0], p2[1]); }
++        g.closePath(); },
++      fill(col) { g.fillStyle = col; g.fill(); },
++      // screen-mm frame at (X, Y): reads from the front (text up = rearward) unless fromRear
++      at(X, Y, fn, fromRear, extraRot) { const p = P(X, Y); g.save(); g.translate(p[0], p[1]); g.rotate((fromRear ? Math.PI / 2 : -Math.PI / 2) + (extraRot || 0)); g.scale(mmv, mmu); fn(); g.restore(); },
++    };
++  }
++
++  // ---------------------------------------------------------------- logos and lettering (screen mm at the current origin)
++  const Ads = () => EI.Ads;
++  const has = (id) => !!(Ads() && Ads().hasPartner && Ads().hasPartner(id));
++  function logo(g, id, w, h, tone, fallback) {
++    if (has(id)) { Ads().drawPartner(g, id, 0, 0, w, h, { tone: tone || "color" }); return; }
++    if (fallback) fallback(); else word(g, String(id).toUpperCase(), h * 0.8, tone && tone.indexOf("mono:") === 0 ? tone.slice(5) : COL.white, { w: 800, maxW: w });
++  }
++  function word(g, str, cap, col, o) {
++    o = o || {}; g.save(); g.font = (o.it ? "italic " : "") + (o.w || 800) + " " + cap.toFixed(1) + "px " + (o.ff || '"Titillium Web", Arial, sans-serif');
++    if (Ads() && Ads().setLS) Ads().setLS(g, (o.ls || 0) * cap);
++    g.textAlign = "center"; g.textBaseline = "middle";
++    const tw = g.measureText(str).width; if (o.maxW && tw > o.maxW) g.scale(o.maxW / tw, 1);
++    if (o.line) { g.lineWidth = o.line[0]; g.strokeStyle = o.line[1]; g.lineJoin = "round"; g.strokeText(str, 0, cap * 0.04); }
++    g.fillStyle = col; g.fillText(str, 0, cap * 0.04);
++    if (Ads() && Ads().setLS) Ads().setLS(g, 0); g.restore();
++  }
++  // a logo with a keyline: the logo in `line` tone at 12 offsets, then the logo itself
++  function keylined(g, id, w, h, tone, line, d) {
++    if (!has(id)) return false;
++    for (let i = 0; i < 12; i++) { const a = i * Math.PI / 6; g.save(); g.translate(Math.cos(a) * d, Math.sin(a) * d); Ads().drawPartner(g, id, 0, 0, w, h, { tone: line }); g.restore(); }
++    Ads().drawPartner(g, id, 0, 0, w, h, { tone }); return true;
++  }
++  // the charging bull facing +x (screen right), red with a yellow keyline; w x h box (mm)
++  function bull(g, w, h, line, col) {
++    if (has("redbullbull")) { if (line) keylined(g, "redbullbull", w, h, "mono:" + (col || COL.red), "mono:" + line, Math.max(3, h * 0.03)); else Ads().drawPartner(g, "redbullbull", 0, 0, w, h, { tone: "mono:" + (col || COL.red) }); return; }
++    // fallback silhouette
++    g.save(); g.scale(w / 100, h / 50); g.fillStyle = col || COL.red; g.beginPath();
++    [[-48, 10], [-30, -8], [-6, -12], [14, -16], [30, -22], [40, -16], [48, -20], [44, -8], [50, 2], [36, 4], [30, 18], [22, 8], [0, 10], [-12, 22], [-20, 12], [-36, 22], [-44, 18]].forEach(([a, b], i) => (i ? g.lineTo(a, b) : g.moveTo(a, b)));
++    g.closePath(); g.fill(); g.restore();
++  }
++  function mobil(g, w, h, one) {
++    const tw = one ? w * 0.78 : w;
++    g.save(); if (one) g.translate(-(w - tw) / 2, 0);
++    if (has("mobil")) Ads().drawPartner(g, "mobil", 0, 0, tw, h, { tone: "whiteKeepRed" });
++    else word(g, "Mobil", h * 0.9, COL.white, { w: 700, maxW: tw });
++    g.restore();
++    if (one) { const bx = w / 2 - h * 0.42, s = h * 0.8; g.strokeStyle = COL.white; g.lineWidth = s * 0.09; g.strokeRect(bx - s / 2, -s / 2, s, s); g.save(); g.translate(bx, 0); word(g, "1", s * 0.8, COL.white, { w: 700, ff: "Arial, Helvetica, sans-serif" }); g.restore(); }
++  }
++  function pegasus(g, w, fwd) {   // Mobil's red Pegasus, facing the direction of travel
++    g.save(); g.scale(fwd * w / 30, w / 30); g.fillStyle = "#ef1c25"; g.beginPath();
++    [[-12, 4], [-6, -2], [0, -2], [6, -10], [14, -14], [8, -6], [12, -4], [16, 0], [10, 2], [6, 2], [4, 8], [8, 14], [4, 14], [0, 8], [-4, 8], [-8, 14], [-12, 14], [-8, 6]].forEach(([a, b], i) => (i ? g.lineTo(a, b) : g.moveTo(a, b)));
++    g.closePath(); g.fill(); g.restore();
++  }
++  function numberTag(g, num, w, h, opts) {   // white rounded tag with a red slanted number
++    opts = opts || {};
++    g.save(); g.fillStyle = COL.white; if (Ads() && Ads().rr) Ads().rr(g, -w / 2, -h / 2, w, h, Math.min(w, h) * (opts.round || 0.22)); else { g.beginPath(); g.rect(-w / 2, -h / 2, w, h); } g.fill();
++    g.transform(1, 0, -0.14, 1, 0, 0); word(g, String(num), h * 0.86, COL.red, { w: 900, it: 0, ff: '"Titillium Web", Arial, sans-serif', maxW: w * 0.9 }); g.restore();
++  }
++
++  // ---------------------------------------------------------------- the paint (base + jacquard)
++  // navy with the fine jacquard weave (darker diamonds, density varying along the car), drawn into the current clip
++  function jacquard(g, x0, y0, w, h, mmPx, seed) {
++    const cell = Math.max(3, 16 * mmPx), r = cell * 0.3;
++    let s = seed || 7; const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647);
++    g.save(); g.fillStyle = "rgba(4,8,30,0.2)";
++    for (let y = y0; y < y0 + h + cell; y += cell) for (let x = x0 + ((Math.round((y - y0) / cell) % 2) * cell) / 2; x < x0 + w + cell; x += cell) {
++      const dens = 0.5 + 0.5 * Math.sin(x * 0.0021 + y * 0.0013) * Math.cos(x * 0.0007 - y * 0.0031);
++      if (rnd() > 0.25 + 0.6 * dens) continue;
++      const rr = r * (0.55 + 0.45 * rnd()); g.beginPath(); g.moveTo(x, y - rr); g.lineTo(x + rr, y); g.lineTo(x, y + rr); g.lineTo(x - rr, y); g.closePath(); g.fill();
++    }
++    g.restore();
++  }
++  function navyBase(g, K, seed) {
++    const grd = g.createLinearGradient(0, K.oy, 0, K.oy + K.h); grd.addColorStop(0, COL.navyHi); grd.addColorStop(0.45, COL.navy); grd.addColorStop(1, COL.navyDk);
++    g.fillStyle = grd; g.fillRect(K.ox, K.oy, K.w, K.h); jacquard(g, K.ox, K.oy, K.w, K.h, K.mm, seed);
++  }
++
++  // ---------------------------------------------------------------- side view (one side)
++  function side(g, K, car) {
++    const { fwd } = K, num = car.num;
++    K.clip(() => {
++      navyBase(g, K, K.s > 0 ? 11 : 23);
++      // black: floor edge, lower sidepods and chassis bottom (a soft-edged band rising from the nose to the gearbox), the engine
++      // cover's top deck behind the airbox, the crash structure
++      K.blob([[-1500, -80], [-1500, 140], [-600, 168], [200, 196], [900, 250], [1350, 320], [1900, 340], [2500, 322], [3000, 300], [3500, 330], [4200, 360], [4200, -80]]); K.fill(COL.black);
++      K.blob([[1650, 1300], [1700, 900], [2000, 866], [2500, 838], [2950, 806], [3300, 760], [3600, 660], [4200, 600], [4200, 1300]]); K.fill(COL.deck);
++      // the airbox sun: yellow over the intake's flanks and the hoop
++      const sun = g.createLinearGradient(...K.P(1440, 0), ...K.P(1900, 0)); sun.addColorStop(0, COL.yellow); sun.addColorStop(0.7, "#ffb51a"); sun.addColorStop(1, COL.orange);
++      K.blob([[1380, 1080], [1400, 800], [1540, 772], [1760, 772], [1930, 800], [1960, 940], [1760, 1080]]); K.fill(sun);
++      // the big charging bull over the engine cover, head at the sun, with its yellow keyline
++      K.at(2200, 850, () => { g.scale(fwd, 1); bull(g, 1020, 330, COL.yellow); }, -0.06 * fwd);
++      // nose: yellow tip grading to orange, the boundary sweeping back along the bottom; red bull on it
++      const ng = g.createLinearGradient(...K.P(-1250, 0), ...K.P(-300, 0)); ng.addColorStop(0, COL.yellowNose); ng.addColorStop(0.55, "#ffb623"); ng.addColorStop(1, COL.orange);
++      K.blob([[-1300, 120], [-1300, 330], [-900, 384], [-560, 448], [-380, 470], [-300, 400], [-240, 236], [-340, 168], [-800, 150]]); K.fill(ng);
++      K.at(-780, 300, () => { g.scale(fwd, 1); bull(g, 400, 160, null); }, -0.12 * fwd);
++      // sidepod: ORACLE along the pod's downward slope; the Red Bull wordmark on the rear flank; Hard Rock by the inlet
++      K.at(1560, 470, () => logo(g, "oracle", 1080, 150, "white"), -0.085 * fwd);
++      K.at(2470, 515, () => { if (!keylined(g, "redbull", 500, 130, "color", "white", 6)) word(g, "Red Bull", 110, COL.red, { w: 900, line: [14, COL.white] }); }, -0.03 * fwd);
++      K.at(860, 400, () => logo(g, "hardrock", 100, 52, "color"));
++      // cockpit side / chassis: CARLYLE, 1Password; ROKT by the halo rear mount; TAG Heuer by the inlet
++      K.at(740, 560, () => word(g, "CARLYLE", 62, COL.white, { w: 700, ff: 'Georgia, "Times New Roman", serif', ls: 0.12, maxW: 330 }));
++      K.at(740, 488, () => { if (has("1password")) { g.save(); g.translate(-112, 0); Ads().drawPartner(g, "1password", 0, 0, 46, 46, { tone: "white" }); g.restore(); word(g, "1Password", 44, COL.white, { w: 700, maxW: 230 }); } else word(g, "1Password", 44, COL.white, { w: 700 }); });
++      K.at(1560, 712, () => word(g, "ROKT", 64, COL.white, { w: 900, ls: 0.04 }));
++      // floor-edge / lower-pod partners (white on black)
++      K.at(2300, 262, () => word(g, "CLEAR", 34, COL.white, { w: 700, ls: 0.08 }));
++      K.at(2560, 262, () => logo(g, "siemens", 200, 34, "white"));
++      K.at(1180, 200, () => logo(g, "indeed", 240, 60, "white"));
++      // Ford + RACING on the cover's rear flank above the rear tyre
++      K.at(2980, 640, () => logo(g, "ford", 170, 66, "color"));
++      K.at(2980, 590, () => word(g, "RACING", 28, COL.white, { w: 700, ls: 0.16 }));
++      // race number on a white tag on the fin; driver code and flag by the cockpit
++      K.at(3060, 770, () => numberTag(g, num, 150, 124));
++      if (car.code) K.at(1140, 616, () => word(g, car.code, 36, COL.white, { w: 900, it: 1 }));
++    });
++  }
++  // ---------------------------------------------------------------- top view
++  function top(g, K, car) {
++    K.clip(() => {
++      navyBase(g, K, 5);
++      // engine cover deck (black) behind the airbox, narrowing to the fin; the sun on the hoop
++      K.blob([[1600, -150], [2300, -130], [3000, -110], [3500, -80], [4200, -70], [4200, 70], [3500, 80], [3000, 110], [2300, 130], [1600, 150]]); K.fill(COL.deck);
++      K.blob([[1395, -170], [1395, 170], [1640, 190], [1780, 120], [1780, -120], [1640, -190]]); K.fill(COL.yellow);
++      // the bulls' backs where the cover's flanks turn up (they wrap from the sides)
++      for (const s of [-1, 1]) K.blob([[1760, s * 150], [2300, s * 150], [2700, s * 135], [2700, s * 175], [2300, s * 205], [1760, s * 205]]), K.fill(COL.red);
++      // nose: yellow from the tip, the number tag behind it, the partner stack on the chassis top (reads from the front)
++      const ng = g.createLinearGradient(...K.P(-1250, 0), ...K.P(-300, 0)); ng.addColorStop(0, COL.yellowNose); ng.addColorStop(0.6, "#ffb623"); ng.addColorStop(1, COL.orange);
++      K.blob([[-1300, -150], [-1300, 150], [-700, 150], [-430, 110], [-360, 0], [-430, -110], [-700, -150]]); K.fill(ng);
++      K.at(-1040, 0, () => logo(g, "ford", 120, 46, "color"));
++      K.at(300, 0, () => numberTag(g, car.num, 150, 118, { round: 0.5 }));
++      K.at(80, 0, () => logo(g, "visa", 170, 52, "white"));
++      K.at(-80, 0, () => logo(g, "att", 170, 46, "white"));
++      K.at(-210, 0, () => word(g, "CARLYLE", 34, COL.white, { w: 700, ff: 'Georgia, "Times New Roman", serif', ls: 0.12, maxW: 180 }));
++      K.at(-320, 0, () => logo(g, "pirelli", 170, 38, "color"));
++      K.at(470, 0, () => logo(g, "tagheuer", 90, 70, "color"));
++    });
++  }
++  // ---------------------------------------------------------------- front wing top: carbon main plane, navy flaps, "Red" / "Bull", VISA
++  function fwTop(g, K) {
++    K.clip(() => {
++      g.fillStyle = COL.navyDk; g.fillRect(K.ox, K.oy, K.w, K.h); jacquard(g, K.ox, K.oy, K.w, K.h, K.mm, 3);
++      // red lettering across the flaps: "Red" on the car's right half, "Bull" on the left (as read from in front)
++      K.at(-830, 370, () => word(g, "Red", 230, COL.red, { w: 900, line: [22, COL.white], maxW: 500 }));
++      K.at(-830, -370, () => word(g, "Bull", 230, COL.red, { w: 900, line: [22, COL.white], maxW: 540 }));
++      for (const s of [-1, 1]) K.at(-610, s * 330, () => logo(g, "visa", 260, 80, "white"));
++    });
++  }
++  // ---------------------------------------------------------------- rear wing top: black, ORACLE on the flap (reads from behind)
++  function rwTop(g, K) {
++    K.clip(() => {
++      g.fillStyle = COL.black; g.fillRect(K.ox, K.oy, K.w, K.h);
++      K.at(XRp(480), 0, () => logo(g, "oracle", 900, 150, "white"), true);
++      K.at(XRp(250), 0, () => word(g, "redbullracing.com", 40, "rgba(255,255,255,0.75)", { w: 700 }), true);
++    });
++  }
++  // ---------------------------------------------------------------- endplates (side projections, one per side)
++  function fwEnd(g, K) {
++    K.clip(() => {
++      g.fillStyle = COL.navyDk; g.fillRect(K.ox, K.oy, K.w, K.h); jacquard(g, K.ox, K.oy, K.w, K.h, K.mm, 9);
++      K.at(-760, 250, () => mobil(g, 300, 76, false));
++      K.at(-700, 160, () => pegasus(g, 70, K.fwd));
++      K.at(-1060, 320, () => logo(g, "att", 150, 44, "white"));
++    });
++  }
++  function rwEnd(g, K) {
++    K.clip(() => {
++      const grd = g.createLinearGradient(...K.P(0, 900), ...K.P(0, 300)); grd.addColorStop(0, COL.navy); grd.addColorStop(0.55, COL.navyDk); grd.addColorStop(1, COL.black);
++      g.fillStyle = grd; g.fillRect(K.ox, K.oy, K.w, K.h); jacquard(g, K.ox, K.oy, K.w, K.h, K.mm, 13);
++      K.at(XRp(450), 820, () => mobil(g, 400, 92, true));
++      K.at(XRp(430), 640, () => logo(g, "heineken", 240, 70, "whiteKeepRed"));
++    });
++  }
++
++  // ---------------------------------------------------------------- the atlas
++  function paint(g, size, car) {
++    const k = size / 4096;
++    side(g, sideKit(g, TILES.sideL, RANGES.main.s, -1, k), car);
++    side(g, sideKit(g, TILES.sideR, RANGES.main.s, 1, k), car);
++    top(g, topKit(g, TILES.top, RANGES.main.t, k), car);
++    fwTop(g, topKit(g, TILES.fwT, RANGES.fw.t, k));
++    rwTop(g, topKit(g, TILES.rwT, RANGES.rw.t, k));
++    fwEnd(g, sideKit(g, TILES.epFL, RANGES.epF.s, -1, k)); fwEnd(g, sideKit(g, TILES.epFR, RANGES.epF.s, 1, k));
++    rwEnd(g, sideKit(g, TILES.epRL, RANGES.epR.s, -1, k)); rwEnd(g, sideKit(g, TILES.epRR, RANGES.epR.s, 1, k));
++  }
++  // base colours of the painted parts when no projection reaches them (and the colour roles parts3d resolves)
++  const BODY = { body: COL.navy, fin: COL.navy, mirror: COL.black, halo: COL.black, fwEnd: COL.navyDk, fwFlap: COL.navyDk, fwMain: COL.carbon, rwEnd: COL.navyDk, rwMain: COL.black, rwFlap: COL.black };
++
++  C.liveryRB22 = { paint, TILES, RANGES, ANCHORS, BODY, COL, team: "redbull" };
++  if (typeof module !== "undefined" && module.exports) module.exports = C.liveryRB22;
++})();
+diff --git a/concept/view/parts3d.js b/concept/view/parts3d.js
+index 2f11861..250eee9 100644
+--- a/concept/view/parts3d.js
++++ b/concept/view/parts3d.js
+@@ -51,14 +51,14 @@
+   // ---------------------------------------------------------------- shaders (onBeforeCompile patches of MeshPhysicalMaterial)
+   const PAINT_VS = ["attribute vec3 aRef; varying vec3 vRef; varying vec3 vONrm;", "vRef = aRef; vONrm = normal;"];
+   const PAINT_FS = [
+-    "uniform sampler2D livery; uniform vec4 tL; uniform vec4 tR; uniform vec4 tT; uniform vec4 rS; uniform vec4 rT; uniform float hasSide; uniform float hasTop; varying vec3 vRef; varying vec3 vONrm;",
++    "uniform sampler2D livery; uniform vec4 tL; uniform vec4 tR; uniform vec4 tT; uniform vec4 rS; uniform vec4 rT; uniform float hasSide; uniform float hasTop; uniform float sideOut; uniform vec2 topEdge; varying vec3 vRef; varying vec3 vONrm;",
+     "vec4 cvRect(vec4 t, vec2 uv) { if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) return vec4(0.0); return texture2D(livery, vec2(t.x + uv.x * t.z, 1.0 - (t.y + uv.y * t.w))); }",
+     "vec3 cvDec(vec4 s) { return s.a < 0.002 ? vec3(0.0) : s.rgb / s.a; }",
+   ].join("\n");
+   const PAINT_FRAG = [
+-    "{ vec3 n = normalize(vONrm); float wT = hasTop * smoothstep(0.32, 0.72, n.y); vec3 c = pow(max(diffuseColor.rgb, vec3(0.0)), vec3(1.0 / 2.2));",   // composite in sRGB, like the canvas the designs were drawn for
++    "{ vec3 n = normalize(vONrm); float wT = hasTop * smoothstep(topEdge.x, topEdge.y, n.y); vec3 c = pow(max(diffuseColor.rgb, vec3(0.0)), vec3(1.0 / 2.2));",   // composite in sRGB, like the canvas the designs were drawn for
+     "  if (hasSide > 0.5) { float uS = vRef.z < 0.0 ? (rS.y - vRef.x) / (rS.y - rS.x) : (vRef.x - rS.x) / (rS.y - rS.x); float vS = (rS.w - vRef.y) / (rS.w - rS.z);",
+-    "    vec4 s = vRef.z < 0.0 ? cvRect(tL, vec2(uS, vS)) : cvRect(tR, vec2(uS, vS)); c = mix(c, cvDec(s), s.a * (1.0 - wT)); }",
++    "    vec4 s = vRef.z < 0.0 ? cvRect(tL, vec2(uS, vS)) : cvRect(tR, vec2(uS, vS)); float wO = mix(1.0, smoothstep(-0.12, 0.2, n.z * sign(vRef.z)), sideOut); c = mix(c, cvDec(s), s.a * (1.0 - wT) * wO); }",
+     "  if (hasTop > 0.5) { vec4 s = cvRect(tT, vec2((vRef.x - rT.x) / (rT.y - rT.x), (vRef.z - rT.z) / (rT.w - rT.z))); c = mix(c, cvDec(s), s.a * wT); }",
+     "  diffuseColor.rgb = pow(c, vec3(2.2)); }",
+   ].join("\n");
+@@ -84,8 +84,8 @@
+   ].join("\n");
+ 
+   function makePaint(THREE, opts) {
+-    const m = new THREE.MeshPhysicalMaterial({ color: opts.color, metalness: 0.08, roughness: opts.rough != null ? opts.rough : 0.4, clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 1, side: THREE.DoubleSide });
+-    m.userData.u = { livery: { value: opts.tex || null }, tL: { value: new THREE.Vector4() }, tR: { value: new THREE.Vector4() }, tT: { value: new THREE.Vector4() }, rS: { value: new THREE.Vector4(0, 1, 0, 1) }, rT: { value: new THREE.Vector4(0, 1, 0, 1) }, hasSide: { value: 0 }, hasTop: { value: 0 } };
++    const m = new THREE.MeshPhysicalMaterial({ color: opts.color, metalness: 0.08, roughness: opts.rough != null ? opts.rough : 0.4, clearcoat: opts.coat != null ? opts.coat : 1, clearcoatRoughness: 0.03, envMapIntensity: 1, side: THREE.DoubleSide });
++    m.userData.u = { livery: { value: opts.tex || null }, tL: { value: new THREE.Vector4() }, tR: { value: new THREE.Vector4() }, tT: { value: new THREE.Vector4() }, rS: { value: new THREE.Vector4(0, 1, 0, 1) }, rT: { value: new THREE.Vector4(0, 1, 0, 1) }, hasSide: { value: 0 }, hasTop: { value: 0 }, sideOut: { value: 0 }, topEdge: { value: new THREE.Vector2(0.32, 0.72) } };
+     m.extensions = { derivatives: true };
+     m.onBeforeCompile = (sh) => {
+       Object.assign(sh.uniforms, m.userData.u);
+@@ -167,6 +167,18 @@
+     out.tex = tex; out.rect = rect; out.canvas = c;
+     return out;
+   }
++  // the RB22 atlas (concept/view/livery-rb22.js paints every tile in the concept car's frame)
++  function buildAtlasRB22(THREE, LR, car, code, size) {
++    const c = document.createElement("canvas"); c.width = c.height = size; const g = c.getContext("2d");
++    const draw = () => { g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, size, size); try { LR.paint(g, size, { num: car.num, code, driver: car.driver }); } catch (e) { console.warn("conceptView: RB22 livery skipped", e); } };
++    draw();
++    const tex = new THREE.CanvasTexture(c); tex.premultiplyAlpha = true; tex.anisotropy = 8; tex.generateMipmaps = true;
++    const rect = (t) => { const [x, y, w, h] = LR.TILES[t]; return new THREE.Vector4(x / 4096, y / 4096, w / 4096, h / 4096); };
++    // partner artwork (EI.Ads) can arrive after the first paint (the view waits at most 3.5 s for it): paint again once it is in
++    const A = EI.Ads, artIn = () => !!(A && A.hasPartner && A.hasPartner("oracle") && A.hasPartner("redbullbull"));
++    const late = !artIn() && A && A.ready ? Promise.race([A.ready(), new Promise((r) => setTimeout(r, 20000))]).then(() => { if (!tex.cvGone && artIn()) { draw(); tex.needsUpdate = true; return true; } return false; }) : Promise.resolve(false);
++    return { kind: "rb22", has: true, ep: true, halo: false, fw: true, tex, rect, canvas: c, late };
++  }
+   function helmetTexture(THREE, car) {
+     const c = document.createElement("canvas"); c.width = 512; c.height = 256; const g = c.getContext("2d"), d = car.driver || {};
+     g.fillStyle = d.helmet || car.team.helmet || car.team.accent || "#dddddd"; g.fillRect(0, 0, 512, 256);
+@@ -199,9 +211,16 @@
+     const code = drv && drv.code ? drv.code : String(team.short || "EI").slice(0, 3).toUpperCase();
+     const disposables = [], keep = (x) => { disposables.push(x); return x; };
+     const Mats = C.materials || null;
+-    const pc = (EI.LIVERIES && EI.LIVERIES.partColours) ? EI.LIVERIES.partColours(team) : { body: team.primary, fwFlap: team.secondary, fwEnd: team.primary, rwMain: team.primary, rwEnd: team.secondary, rwFlap: team.secondary, halo: null, mirror: team.primary, fin: team.secondary };
+-    const atlas = buildAtlas(THREE, team, car.num, code, Math.max(1024, Math.min(4096, (o.liverySize || 2048) * 2)));
++    // the RB22 livery (concept/view/livery-rb22.js) is painted in the concept car's own frame; other teams use the game's livery
++    // designs (js/liveries.js), drawn for the game car's proportions and mapped through the design's anchors
++    const LR = team.id === "redbull" && C.liveryRB22 ? C.liveryRB22 : null;
++    const pc = LR ? LR.BODY : (EI.LIVERIES && EI.LIVERIES.partColours) ? EI.LIVERIES.partColours(team) : { body: team.primary, fwFlap: team.secondary, fwEnd: team.primary, rwMain: team.primary, rwEnd: team.secondary, rwFlap: team.secondary, halo: null, mirror: team.primary, fin: team.secondary };
++    const atlasSize = Math.max(1024, Math.min(4096, (o.liverySize || 2048) * 2));
++    const atlas = LR ? buildAtlasRB22(THREE, LR, car, code, atlasSize) : buildAtlas(THREE, team, car.num, code, atlasSize);
+     keep(atlas.tex);
++    // resolves once the livery is final (after a late repaint with the partner artwork); ctx.onRepaint asks the view for a frame
++    const liveryReady = (atlas.late || Promise.resolve(false)).then((did) => { if (did && ctx.onRepaint) ctx.onRepaint(); });
++    const matte = o.finish === "matte";   // the 2026 RB22 is gloss (photos; Red Bull's launch notes); `finish: "matte"` for the 2022-25 look
+     const lin = (hex) => new THREE.Color(hex).convertSRGBToLinear();
+ 
+     // ---- materials (cached)
+@@ -210,13 +229,23 @@
+     function paintMat(role, proj) {
+       return cached("paint:" + role + ":" + proj, () => {
+         const col = role === "halo" ? (pc.halo || "#15161a") : role === "fwMain" ? (pc.fwFlap || pc.body) : (pc[role] || pc.body || team.primary);
+-        const m = makePaint(THREE, { color: lin(col), tex: atlas.tex, rough: 0.38 }), u = m.userData.u;
++        const m = makePaint(THREE, { color: lin(col), tex: atlas.tex, rough: matte ? 0.62 : 0.3, coat: matte ? 0 : 1 }), u = m.userData.u;
++        // broad, near-horizontal wing surfaces mirror the studio's overhead light box: a softer reflection keeps their livery legible
++        if (/^(fwFlap|fwMain|fwEnd|rwMain|rwFlap)$/.test(role)) { m.envMapIntensity = /^rw/.test(role) ? 0.12 : 0.4; m.roughness = Math.max(m.roughness, /^rw/.test(role) ? 0.78 : 0.48); m.metalness = /^rw/.test(role) ? 0 : m.metalness; m.clearcoat = Math.min(m.clearcoat, /^rw/.test(role) ? 0 : 0.3); m.clearcoatRoughness = 0.2; }
+         const set = (sKey, tKey, R) => { if (sKey) { u.tL.value.copy(atlas.rect(sKey + "L")); u.tR.value.copy(atlas.rect(sKey + "R")); u.rS.value.set(R.s[0], R.s[1], R.s[2], R.s[3]); u.hasSide.value = 1; } if (tKey) { u.tT.value.copy(atlas.rect(tKey)); u.rT.value.set(R.t[0], R.t[1], R.t[2], R.t[3]); u.hasTop.value = 1; } };
+-        if (atlas.has) {
+-          if (proj === "main") set("side", "top", RANGES.main);
+-          else if (proj === "top") set(null, "top", RANGES.main);
++        if (atlas.kind === "rb22") {
++          const R = LR.RANGES;
++          if (role === "mirror" || role === "halo") { /* plain black */ }
++          else if (proj === "main") { set("side", "top", R.main); u.topEdge.value.set(0.62, 0.9); }   // the side graphics (the bull) reach up the cover's sloping flanks
++          else if (proj === "rwTop") set(null, "rwT", R.rw);
++          else if (proj === "rwEnd") { set("epR", null, R.epR); u.sideOut.value = 1; }   // the outer faces only (no mirrored decals inside)
++          else if (proj === "fwEnd") { set("epF", null, R.epF); u.sideOut.value = 1; }
++          else if (proj === "fwTop") set(null, "fwT", R.fw);
++        } else if (atlas.has) {
++          if (proj === "main" || proj === "rwEnd") set("side", "top", RANGES.main);
++          else if (proj === "top" || proj === "rwTop") set(null, "top", RANGES.main);
+           else if (proj === "fwEnd") set(atlas.ep ? "ep" : "side", null, atlas.ep ? RANGES.ep : RANGES.main);
+-          else if (proj === "fwTop" && atlas.fw) set(null, "fwT", RANGES.fw);
++          else if (proj === "fwTop" && role === "fwMain" && atlas.fw) set(null, "fwT", RANGES.fw);
+           else if (proj === "halo") { if (atlas.halo) set("halo", "haloT", RANGES.halo); }
+         }
+         return m;
+@@ -240,6 +269,10 @@
+       tcam: () => new THREE.MeshPhysicalMaterial({ color: lin(drv && ds.indexOf(drv) === 1 ? "#f2d300" : "#101012"), roughness: 0.35, metalness: 0.1, clearcoat: 1, clearcoatRoughness: 0.05 }),
+       helmet: () => new THREE.MeshPhysicalMaterial({ map: helmetTex, roughness: 0.3, metalness: 0.15, clearcoat: 1, clearcoatRoughness: 0.03 }),
+       disc: () => makeLook(THREE, LOOKS.carbon_carbon),
++      // RB22 wheels (photos): satin-black rims, a thin blue band on the outer lip, fluorescent yellow wheel nuts
++      rimPaint: () => new THREE.MeshPhysicalMaterial({ color: lin("#0e0f12"), roughness: 0.42, metalness: 0.35, clearcoat: 0.5, clearcoatRoughness: 0.25 }),
++      rimLip: () => new THREE.MeshPhysicalMaterial({ color: lin(LR ? "#1d3fb8" : team.primary || "#1d3fb8"), roughness: 0.3, metalness: 0.2, clearcoat: 1, clearcoatRoughness: 0.05, side: THREE.DoubleSide }),
++      nut: () => new THREE.MeshPhysicalMaterial({ color: lin("#d8f000"), emissive: lin("#2a3000"), roughness: 0.3, metalness: 0.1, clearcoat: 1, clearcoatRoughness: 0.05 }),
+     };
+     const raw = (k) => cached("raw:" + k, RAW[k]);
+ 
+@@ -260,17 +293,21 @@
+         const id = lookIdOf(it); return id ? lookMat(id, false) : raw("suit");
+       }
+       switch (it.mat) {
+-        case "paint": if (it.role === "fwMain" && !atlas.fw && !(EI.LIVERIES && EI.LIVERIES.hasFrontWing && EI.LIVERIES.hasFrontWing(team.id))) return lookMat(lookIdOf(it), false); return paintMat(it.role || "body", it.proj || "main");
++        case "paint": if (it.role === "fwMain" && (LR || (!atlas.fw && !(EI.LIVERIES && EI.LIVERIES.hasFrontWing && EI.LIVERIES.hasFrontWing(team.id))))) return lookMat(lookIdOf(it), !!LR); return paintMat(it.role || "body", it.proj || "main");
+         case "carbon": return lookMat(lookIdOf(it), it.carbon === "matte");
+         case "metal": return lookMat(it.look || lookIdOf(it), false);
+-        case "rim": return lookMat(lookIdOf(it), false);
++        case "rim": return LR ? raw("rimPaint") : lookMat(lookIdOf(it), false);
++        case "rimLip": return LR ? raw("rimLip") : lookMat(lookIdOf(it), false);
++        case "nut": return LR ? raw("nut") : lookMat(it.look || "ti64", false);
+         case "disc": return raw("disc");
+         default: return RAW[it.mat] ? raw(it.mat) : lookMat("cfrp_t800s", false);
+       }
+     }
+ 
+     // ---- livery reference coordinates: the design's x mapped through the anchors onto the livery designs' car (js/liveries.js)
+-    const LREF = { RA: -1.85, XPU: -0.485, XC: -0.105, XA: 1.825, tip: 3.04, ride: 52 };
++    // (RB22 livery: its own frame = the RB22 baseline's anchors, so the baseline maps 1:1 and a changed design is stretched between them)
++    const LREF = LR ? (() => { const A = LR.ANCHORS, w = (X) => 1.75 - X / 1000; return { RA: w(A.XR), XPU: w(A.XPU), XC: w(A.XC), XA: w(A.XA), tip: w(A.tip), ride: A.rh }; })()
++      : { RA: -1.85, XPU: -0.485, XC: -0.105, XA: 1.825, tip: 3.04, ride: 52 };
+     function refMapper(sp) {
+       const wx = (X) => 1.75 - X / 1000;
+       const xs = [wx(sp.XR), wx(sp.XPU), wx(sp.XC), wx(sp.XA), wx(C3.DIM.noseTip)], ys = [LREF.RA, LREF.XPU, LREF.XC, LREF.XA, LREF.tip];
+@@ -427,11 +464,11 @@
+       for (const id of Object.keys(S.groups)) unmountGroup(S.groups[id]); S.groups = {};
+       clearGhost();
+       for (const m of xrMats.values()) m.dispose(); xrMats.clear();
+-      for (const x of disposables) x && x.dispose && x.dispose();
++      atlas.tex.cvGone = true; for (const x of disposables) x && x.dispose && x.dispose();
+     }
+     return {
+       setLayout, setGhost, hideGhost, setFlaps, setHighlight, setXray, setMode, flash, tick, partCentre, materialsUsed, stats, dispose,
+-      spec: () => S.spec, _S: S, team, driver: drv,
++      spec: () => S.spec, _S: S, team, driver: drv, liveryReady,
+     };
+   }
+ 
+diff --git a/concept/view/view3d.js b/concept/view/view3d.js
+index b540b81..4bb5b94 100644
+--- a/concept/view/view3d.js
++++ b/concept/view/view3d.js
+@@ -147,6 +147,7 @@
+       }
+       if (!C.mesh3d) await loadScript(ROOT + "concept/view/mesh3d.js");
+       if (!C.car3d) await loadScript(ROOT + "concept/view/car3d.js");
++      if (!C.liveryRB22) await loadScript(ROOT + "concept/view/livery-rb22.js");
+       if (!C.parts3d) await loadScript(ROOT + "concept/view/parts3d.js");
+       if (EI.Ads && EI.Ads.ready) await Promise.race([EI.Ads.ready(), new Promise((r) => setTimeout(r, 3500))]);
+       return C.parts3d;
+@@ -302,7 +303,7 @@
+       car: null, xrGeos: [], changes: [], changeEls: [], rebuilt: [],
+     };
+ 
+-    const carCtx = { THREE, o, carRoot, mirror, ghostRoot, hiRoot, scene, renderer };
++    const carCtx = { THREE, o, carRoot, mirror, ghostRoot, hiRoot, scene, renderer, onRepaint: () => { s.dirty = true; } };
+     ensureAssets().then(() => {
+       if (s.disposed) return;
+       s.car = C.parts3d.createCar(carCtx);
+@@ -630,7 +631,7 @@
+       setDesign, setHighlight, setMode, setView, setAero, screenshot, labelText, stats, dispose,
+       render: () => { if (s.tween && s.car) { const tw = s.tween; s.tween = null; s.lastMs = build(tw.to, true); } render(); },
+       state: () => ({ loading: s.loading, error: s.error ? String(s.error.message || s.error) : null, mode: s.mode, view: s.view, aero: s.aero, straight: s.smT, ghost: (s.ghostParts || []).slice(), highlight: Array.from(s.highlight), ms: s.lastMs, layout: s.L, rebuilt: (s.rebuilt || []).slice(), changes: s.changes.slice() }),
+-      ready: () => ensureAssets().then(() => new Promise(r => { const k = () => (s.car || s.disposed ? r() : setTimeout(k, 20)); k(); })),
++      ready: () => ensureAssets().then(() => new Promise(r => { const k = () => (s.car || s.disposed ? r() : setTimeout(k, 20)); k(); })).then(() => (s.car && s.car.liveryReady) || null),
+       el: container, canvas: cv,
+       _debug: { scene, renderer, camera, s },
+     };
+@@ -667,8 +668,9 @@
+       group.userData = { units: "m", forward: "+x", up: "+y", right: "+z", ground_y: 0, frontAxleX: GLB.FA, rearAxleX: wx(sp.XR), wheelCentreY: sp.wheel.front.hc / 1000, wheelCentreYRear: sp.wheel.rear.hc / 1000, design_id: cur.id || null, team: o.team, driver: o.driver };
+     };
+     const make = () => { if (disposed) return group; car = C.parts3d.createCar({ THREE, o, carRoot, mirror, ghostRoot, hiRoot }); apply(); return group; };
+-    const have = !!(C.parts3d && C.car3d && C.mesh3d && EI.TEAM_BY_ID && EI.LIVERIES);
+-    group.ready = have ? Promise.resolve(make()) : ensureAssets().then(make);
++    const have = !!(C.parts3d && C.car3d && C.mesh3d && C.liveryRB22 && EI.TEAM_BY_ID && EI.LIVERIES);
++    // resolves with the group once the car is built and its livery final (partner artwork in)
++    group.ready = (have ? Promise.resolve(make()) : ensureAssets().then(make)).then(() => (car && car.liveryReady ? car.liveryReady : null)).then(() => group);
+     group.setDesign = (d) => { if (!d || !d.params) throw new Error("buildCar.setDesign: a Design { params } is required"); cur = d; apply(); return group; };
+     group.setAero = (t) => { flap = clamp(+t || 0, 0, 1); if (car) car.setFlaps(flap); return group; };
+     group.dispose = () => {
+diff --git a/test/concept-view-dims.test.js b/test/concept-view-dims.test.js
+index cb073f4..26ca56b 100644
+--- a/test/concept-view-dims.test.js
++++ b/test/concept-view-dims.test.js
+@@ -67,8 +67,8 @@ test("ride height and plank: plank bottom at the static ride height, 10 mm thick
+ test("survival cell anchors: cockpit opening relative to XC, body sections at XA and XPU, wheelbase-referenced tail", () => {
+   for (const { label, S, G } of CASES) {
+     const ck = { lo: [Infinity], hi: [-Infinity] }; verts(byName(G, /^cockpit_tub$/), (x, y, z) => { if (Math.abs(z) > 0.005) { ck.lo[0] = Math.min(ck.lo[0], x); ck.hi[0] = Math.max(ck.hi[0], x); } });   // where the opening has width
+-    near(mmX(ck.hi[0]), S.XC - 905, TOL, label + " cockpit opening front (XC - 905)");
+-    near(mmX(ck.lo[0]), S.XC - 30, TOL, label + " cockpit opening rear (XC - 30)");
++    near(mmX(ck.hi[0]), S.XC - car3d.CK.open0, TOL, label + " cockpit opening front (XC - " + car3d.CK.open0 + ")");
++    near(mmX(ck.lo[0]), S.XC - car3d.CK.open1, TOL, label + " cockpit opening rear (XC - " + car3d.CK.open1 + ")");
+     const body = byName(G, /^body$/), at = (X) => { let w = 0; verts(body, (x, y, z) => { if (Math.abs(mmX(x) - X) < 0.01) w = Math.max(w, Math.abs(z) * 1000); }); return w; };
+     near(at(S.XA), car3d.bodyAt(S, S.XA).yw, TOL, label + " body half width at the cell front XA");
+     near(at(S.XPU), car3d.bodyAt(S, S.XPU).yw, TOL, label + " body half width at the ICE face XPU");
+diff --git a/test/concept-view.test.js b/test/concept-view.test.js
+index 077ec79..394bc7a 100644
+--- a/test/concept-view.test.js
++++ b/test/concept-view.test.js
+@@ -8,7 +8,7 @@ const fs = require("fs"), path = require("path");
+ const parts = require("../concept/parts.js"), design = require("../concept/design.js"), materials = require("../concept/materials.js");
+ const view = require("../concept/view/view3d.js");
+ const m3 = require("../concept/view/mesh3d.js"), car3d = require("../concept/view/car3d.js"), p3 = require("../concept/view/parts3d.js");
+-const SRC = ["view3d.js", "parts3d.js", "car3d.js", "mesh3d.js", "index.html"].map(f => fs.readFileSync(path.join(__dirname, "..", "concept", "view", f), "utf8")).join("\n");
++const SRC = ["view3d.js", "parts3d.js", "car3d.js", "mesh3d.js", "livery-rb22.js", "index.html"].map(f => fs.readFileSync(path.join(__dirname, "..", "concept", "view", f), "utf8")).join("\n");
+ 
+ test("conceptView exports the v1/v2 API (mount, buildCar, layout, LABEL, EFFECTS, VIEWS, FIX, DEFAULTS, RAMP, reducedMotion, labelText)", () => {
+   for (const k of ["mount", "buildCar", "layout", "reducedMotion", "labelText", "changesBetween"]) assert.equal(typeof view[k], "function", k);
+@@ -88,3 +88,28 @@ test("materials: every material in concept/materials.js has a look; fixed (regul
+   const S = car3d.spec(d.params); assert.equal(S.materials.rear_wing, "ti64");
+   assert.ok(car3d.buildGroup("rear_wing", S, {}).items.length > 10);
+ });
++
++test("RB22 livery: its frame is the RB22 baseline (1:1 mapping), tiles fit the atlas without overlap, every projection range is ordered", () => {
++  const L = require("../concept/view/livery-rb22.js"), B = design.baseline("redbull"), g = parts.geometry(B.params);
++  assert.equal(L.team, "redbull");
++  assert.deepEqual([L.ANCHORS.XA, L.ANCHORS.XC, L.ANCHORS.XPU, L.ANCHORS.XR, L.ANCHORS.rh], [g.XA, g.XC, g.XPU, g.XR, B.params.floor.ride_height_mm]);
++  assert.equal(L.ANCHORS.tip, car3d.DIM.noseTip);
++  const T = Object.entries(L.TILES);
++  for (const [k, [x, y, w, h]] of T) assert.ok(x >= 0 && y >= 0 && x + w <= 4096 && y + h <= 4096 && w > 0 && h > 0, k);
++  for (let i = 0; i < T.length; i++) for (let j = i + 1; j < T.length; j++) { const [a, A] = T[i], [b, Bt] = T[j]; assert.ok(A[0] + A[2] <= Bt[0] || Bt[0] + Bt[2] <= A[0] || A[1] + A[3] <= Bt[1] || Bt[1] + Bt[3] <= A[1], a + " overlaps " + b); }
++  for (const [k, R] of Object.entries(L.RANGES)) for (const r of [R.s, R.t].filter(Boolean)) assert.ok(r[0] < r[1] && r[2] < r[3], k);
++  for (const role of ["body", "mirror", "halo", "fwEnd", "fwFlap", "rwEnd", "rwMain", "rwFlap"]) assert.match(L.BODY[role], /^#[0-9a-f]{6}$/i, role);
++});
++
++test("wing elements: every profile's upper surface faces up and its lower surface down (corner and straight mode)", () => {
++  // the decals (front-wing lettering, ORACLE on the rear flap) are projected from above onto faces whose normal points up; a
++  // strongly cambered flap once had its orientation point outside the section and was wound inside out
++  for (const [label, d] of [["redbull", design.baseline("redbull")], ["3el-high", design.applyChanges(design.baseline(), [{ part: "rear_wing", param: "elements", to: 3 }, { part: "rear_wing", param: "aoa_deg", to: 30 }, { part: "front_wing", param: "aoa_deg", to: 38 }]).design]]) {
++    const S = car3d.spec(d.params);
++    for (const g of ["front_wing", "rear_wing"]) for (const flap of [0, 1]) for (const it of car3d.buildGroup(g, S, { flap, flapOnly: flap === 1 }).items) {
++      if (!/_(top|bot)$/.test(it.name)) continue;
++      let ny = 0; for (let i = 1; i < it.geo.nrm.length; i += 3) ny += it.geo.nrm[i]; ny /= it.geo.count;
++      if (/_top$/.test(it.name)) assert.ok(ny > 0.3, label + " " + it.name + " mean normal y " + ny.toFixed(3)); else assert.ok(ny < -0.2, label + " " + it.name + " mean normal y " + ny.toFixed(3));
++    }
++  }
++});

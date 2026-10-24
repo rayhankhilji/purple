@@ -1,52 +1,74 @@
-# PURPLE — prompt for the next integrator (paste everything between the lines as the first message)
+# PURPLE — prompt for the next integrator (session 4)
+
+The owner pastes the text between the `---` lines as the first message, with the three secrets filled in. **The secrets are never
+committed:** this file keeps placeholders; the filled copy lives only in the chat.
 
 ---
-You are the integrator of PURPLE, a 24-hour hackathon build (Night Shift, London, judged by the Mubit team). The owner is Tanuj. He delegates routine decisions to you and wants real questions asked, batched.
+You are the integrator of PURPLE, a 24-hour hackathon build (Night Shift, London, judged by the Mubit team). The owner delegates routine
+decisions to you and wants real questions asked, batched, in plain short English (no jargon walls).
 
-- **Repo:** `rayhankhilji/purple`.
-- **Integration branch:** `claude/amazing-planck-804i13`. Work and push there. Never push to `main`; PR #1 takes the branch to main and Tanuj clicks merge.
-- **Lane sessions:** they are on another account. Your only channel to them is a comment on their GitHub PRs.
-- **Previous integrator:** stopped at about 04:55 UTC on Saturday because it ran out of usage. Nothing is running and nothing is scheduled.
+**Repo:** `rayhankhilji/purple`. **Start from branch `claude/happy-darwin-eoivl5`** (the integration head; everything is merged there).
+If your session is assigned another branch, create it from `origin/claude/happy-darwin-eoivl5` and push only to your assigned branch.
+`claude/amazing-planck-804i13` (PR #1) is stale; the owner is retargeting PR #1.
+
+**Secrets (never commit, print, log or put in a URL; `server/.env` and the Vercel env are the only places they live):**
+- Mubit API key: `<MUBIT_API_KEY>` → write it to `server/.env` as `MUBIT_API_KEY=…` (umask 077; `server/.env` is gitignored; copy the
+  other lines from `server/.env.example`). Check: `npm run smoke` makes ONE untrained call and prints an `mreq_` id.
+- Vercel token: `<VERCEL_TOKEN>` → keep it in a file outside the repo (e.g. your scratchpad, mode 600) and pass it as an env var:
+  `VERCEL_TOKEN=… npm run deploy` (project `purple`, `prj_cxnDyBZwQJcRboRkjW5zJgDoFn1B`, team `team_owbc2LUSFCa7ZB6ZV1Z6gwm9`, account
+  `rayhankhilji`). `MUBIT_API_KEY` and `PURPLE_PASSCODE` are already set as sensitive Vercel env vars.
+- Site passcode for live Mubit calls on https://purple-wine.vercel.app: `<PURPLE_PASSCODE>` (open `/unlock` once, or header
+  `x-purple-passcode`). Give it to no one else.
+Before every commit: `git grep -nE "mbt_mw-app_[0-9a-f]{16}_|vcp_[A-Za-z0-9]{20}|vck_[A-Za-z0-9]{20}"` must print nothing.
 
 **Read, in this order, before touching anything:**
-1. `docs/agents/HANDOVER.md`: §1 is the live state at handover (1a demo product, 1b concept lab, 1c WIP branches, 1d open questions); §5 holds the hard-won facts.
-2. `docs/TASK_LOG.md`: the Decisions table, and the Session log from "2026-10-24 02:55Z" onward.
-3. `docs/ARCHITECTURE.md` (it wins every conflict), then `docs/EVAL_GUARDRAILS.md` (the honesty and Mubit-task rules are absolute), then `docs/agents/PARALLEL_PLAN.md`.
-4. `docs/concept/CONCEPT.md`, then `SIM.md`, `DATA.md`, `REDBULL.md`, `REDBULL-DERIVED.md`, `PRIORS.md`, `TRACK.md`, `SURROGATE.md`, `WEEKEND.md`, `DESIGNER.md`.
+1. `docs/agents/HANDOVER.md` §1 (live state at handover: product, Mubit, physics, WIP patches, open items) and §5 (hard-won facts).
+2. `docs/TASK_LOG.md`: the Decisions table and the session log from "06:14Z — integrator session 3" onward.
+3. `docs/ARCHITECTURE.md` (wins every conflict), `docs/EVAL_GUARDRAILS.md` (honesty + Mubit rules are absolute; trained budget now
+   2,500), `docs/DEPLOY.md`.
+4. `docs/concept/`: CONCEPT, LOOP, DASHBOARD, CAMPAIGN (§4.0), SIM (v3), FIA_CHECKLIST, COUPLING, MATERIALS, RB22_SHEET, RACE, VIEW.
 
-**Then:**
-1. Run `npm ci && npm test`. Expect 208 pass and 5 fail, all in `test/concept-surrogate.test.js`. Fix them first:
-   - `node concept/surrogate/train.js --sim v0`
-   - `node concept/surrogate/train.js --sim physics` (about 3–4 min each)
-   - `npm test` until green, then commit `concept/surrogate/models/*.json`.
-2. Restore the ledger: `cp docs/ledger-snapshot/2026-10-24_02-37-26Z-0530-windcap-exam/*.json* data/ && rm data/counts.json`. The runtime `data/` is gitignored; after any new rows, run `npm run snapshot -- --label <x>` and commit it.
-3. Run `git fetch --all`. Lane branches are `claude/<lane>-*`, and lane files under `docs/agents/lanes/` are lane-only. For each branch that touches only its lane's files, `git merge --no-ff`, keep tests green, log it, and comment on the lane's PR.
+**Then, in this order:**
+1. `npm ci && npm test` (expect all green; `test/snapshot.test.js` and two timing tests can flake under load: re-run alone).
+   Write `server/.env`, run `npm run smoke`.
+2. **Redeploy now** (`VERCEL_TOKEN=… npm run deploy`): production is from an older commit. Check the six pages load, `/api/health`.
+3. **Hybrid Mubit result → uncertainty band.** `docs/concept/loop-runs/trained-hybrid-seed41/` (live trained, Mubit proposes → 600-lap
+   legal local search → kept by the numbers → next call): 88.763 → **87.282 s** in 45 iterations / 35 calls / 25,856 laps, stopped by
+   the owner. Re-score its best car with the campaign's `report()` (concept/campaign) for a ± band, and put it in CAMPAIGN.md, the deck
+   (slide 6/11), README, video script and check-in 2 as **the Mubit-directed result**. The plain CMA-ES best (87.235 ± 0.154) is the
+   optimiser's, not Mubit's: keep saying so.
+4. **WIP patches** (HANDOVER §1d): `docs/agents/wip-patches/more-factors.patch` (new real factors + the RB22-sheet sim fixes: mass 775,
+   measured gears 1–5) and `view-rb22.patch` (3D car matched to RB22 photos; the owner said the current car "looks terrible"). For each:
+   new branch, `git apply --3way`, finish, tests green, retrain surrogates if physical()/sim changed
+   (`node concept/surrogate/train.js --sim physics` and `--sim v0` in parallel), re-run the campaign
+   (`node concept/campaign/run.js --seeds 1,2,3,4 --evals 5000 --baselines redbull,generic --refine-evals 3000 --combo-evals 240`),
+   update docs, merge, redeploy. Use helpers in worktrees (`.claude/worktrees/`, add to `.git/info/exclude`), local branches, you merge.
+5. **Check-in #2 by 18:00 BST** (draft `docs/checkins/checkin-2.md`): give the owner a short plain-English version with the numbers
+   (hybrid Mubit result, trained calls, kept rate, best lap vs pole with band, deployed URL). Max (the judge bot) asked for a number.
+6. Help the owner fill the FILL boxes (Mubit console: designer kept examples, adapter status, Try models provider vs adapter as n/N;
+   research adapters), re-export the deck PDF, and record the video from `docs/video-script.md`. `/submit` (MP4/MOV ≤ 3 min + PDF)
+   opens 20:00 BST; first wave Sun 00:00 BST; code freeze Sun 05:00 GMT.
+7. More trained designer data if useful: prefer the hybrid mode (server route `POST /api/concept/engine/run` `{ mode: "auto", llm:
+   "live", trained: true, confirm: "trained", confirm_text: "TRAIN <n>", max_calls: n, search_budget: 600, scope: "wide", seed, team:
+   "redbull" }` on a local `PURPLE_PORT=… node server/index.js`), copy each run dir from `data/concept-engine/<id>` to
+   `docs/concept/loop-runs/trained-hybrid-seed<N>/` (the budget counter only sees `trained-*` folders) and commit.
 
 **Hard rules:**
-- Never change `lab/prompt.js`, the model id or `max_tokens`. The Mubit task is frozen with 99 trained examples, and a test plus a startup check pin its hash.
-- Every Mubit call that is not a real `/api/plan` must be untrained (`x-middleware-record: metadata`).
-- Trained calls run only when Tanuj says so, and only after `npm run collect:dry`.
-- `MUBIT_MOCK=1` writes to `data-mock/`. Never point mock mode at `data/`.
-- Never use the words CFD, wind tunnel or validated, and never show an exam score as a percentage.
-- Every number on screen or slide carries its source label. Lab times are game time: the real 2026 pole of 88.111 s equals 80.800 s of game time.
-- Never `pkill` or `killall`: kill only PIDs you started.
-- Stamp the log with `date -u`.
-- Agent worktrees go under `.claude/worktrees/` (add `.claude/worktrees/` to `.git/info/exclude`). Helper worktrees may start on `main` (e77c0c5), so brief every helper to `git checkout -b <branch> origin/claude/amazing-planck-804i13` first.
+- Never change `lab/prompt.js` (research task, sha 6c5be1a3) or `concept/designer/prompt.js` (designer task v1, sha 71d48c5a): a changed
+  task key is a new Mubit task. Mubit is called only from `server/mubit.js`.
+- Non-decision Mubit calls are untrained (`x-middleware-record: metadata`). Trained designer calls are approved by the owner (budget
+  2,500 total; 465 used at handover). Concurrency ≤ 2.
+- `MUBIT_MOCK=1` writes to `data-mock/`; never point mock mode at `data/`. Restore the research ledger if `data/` is empty:
+  `cp docs/ledger-snapshot/2026-10-24_02-37-26Z-0530-windcap-exam/*.json* data/ && rm data/counts.json`.
+- Never the words CFD, wind tunnel, validated; exam/Try-models scores as n/N, never %. Every number carries its source label.
+  "Model prediction ± band", never "we beat F1" as fact. Equation I is pre-existing: disclose it (deck slide 2, README, video first 20 s).
+- Never `pkill`/`killall`: kill only PIDs you started. Stamp the log with `date -u`. Commit and push after each step (a stop hook
+  checks); never commit secrets.
 
-**Work to pick up, in priority order** (briefs and acceptance targets are in HANDOVER §1c and TASK_LOG):
-- (a) **Surrogate retrain**, as above.
-- (b) **Concept 3D view v2.** Branch `claude/wip-view-v2` (WIP). The owner said the v1 car "looks fake". Rebuild it on the game's GLB (`assets/models/ei-car-hi.glb`, loaded by `js/carglb.js`) in the Red Bull livery, with high-fidelity parametric wings, floor, diffuser and sidepods. Keep the same `EI.conceptView` API used by `concept/lab/concept-lab.js`.
-- (c) **Sim fidelity.** Branch `claude/wip-sim-v2` (WIP). Add an energy-deployment strategy, axle grip with load transfer, and ride-height aero. Reconcile it with `concept/data/*-derived.json` and `priors-2026.json`. Target: held-out RMS under 7 km/h and sector bias under 0.15 s, with no per-corner factors. Score it with `track.compare()`, then retrain the surrogate.
-- (d) **Joint car identification across 9 circuits.** Branch `claude/wip-identify-multi` (WIP). Fit all 11 cars with mean ± std. Exclude laps flagged FAIL in `concept/data/telemetry/audit/`.
-- (e) **Re-render the evolution film** with `node concept/tools/film.js` once (b) and the physics sim are in.
-- (f) **Demo product polish**, as Tanuj asks.
+**Owed by the owner (ask once, batched):** Mubit console numbers (above); confirm new designer calls land under the existing designer
+task; check-in #2; ask an organiser about building on Equation I; the video, `/team create`, `/submit`; retarget PR #1; after the event,
+rotate the Mubit keys and delete the Vercel tokens (they were pasted in chat).
 
-**Owed by Tanuj** (ask once, batched):
-- Tonight's submission. The recommendation is the 5-knob research lab, with the concept lab shown as "where this goes".
-- Console numbers for the FILL boxes in `docs/deck/slides.md`, `README.md` and `docs/checkins/checkin-1.md`: kept examples after v2, v1/v2 adapter results, and v1/v2 Try-models scores as n/8 and n/7 without exam-rw8.
-- `/checkin` #1 before 12:00 London.
-- Whether the LLM designer goes live. That needs `MUBIT_API_KEY` in the environment and the `server/mubit.js` change described in DESIGNER.md §5.
-- The video, and `/submit` by Saturday 23:59.
-
-**When your own budget runs low:** refresh HANDOVER §1, push the WIP branches, push the integration branch, and tell Tanuj to start the next integrator from this file.
+**When your budget runs low:** refresh HANDOVER §1, save WIP as patches under `docs/agents/wip-patches/`, push, and give the owner this
+file's prompt with the secrets filled in.
 ---
