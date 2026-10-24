@@ -1,10 +1,27 @@
 # Lane SERVER
 
-Status: in_progress — audit part 1 PR #34 (branch `claude/server-p3-hardening`) and part 2 stacked on it (branch `claude/server-p3-budget`) open; PR #23 (exam details) open. Merge order: #23 any time, #34, then part 2.
+Status: in_progress — #23, #34, #37 and the cache fix merged; correctness batch PR open (branch `claude/server-p3-correctness`, merged with the integration head). UI findings 1–4 re-checked: all PASS.
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
 
 ## Sessions
+
+### 2026-10-24 06:30 London — agent B (Claude) — correctness review items a–g + QA S2/N6; UI re-check; cache fix (d)
+- Status: done, PR open into `claude/amazing-planck-804i13` (branch `claude/server-p3-correctness`, stacked on the now-merged #37 and merged with the integration head b95177e; no conflicts). Item (d) shipped separately on `claude/server-p3-cache` (83b7250, merged as c801014). Item (h) is #37's semaphore.
+- Files changed: `server/app.js`, `server/store.js`, `test/server.test.js` (+6 tests, 3 extended), this file.
+- What changed (UI-facing in bold):
+  - (a) An agent-chosen candidate that is illegal (TD-01 toggled after a plan) still returns one 422 `ILLEGAL_SETUP`, now with `candidate_source: "agent"` and `last_plan_cleared: true`, and `last_plan` is cleared, so the next Run draws a fresh random candidate instead of 422-ing forever. The DESIGN card still gets its directive moment once.
+  - **(b) Decision: `POST /api/promote` keeps `last_plan = x.plan`**: the agent's next step applies to the new baseline (`candidate_source: "agent"` on the next Run). Only overrule clears it.
+  - (c) `runExam`: a failed call now writes an `exam` calls row (`status: "error"`, `mubit_code`, `http_status`, `trained: false`) and a details item `{ id, truth, error, mubit_code, http_status }`; `status.exam` gains `errors` and `answered`; **`provider`/`provider_param` are written only by a complete run; a partial run writes `provider_partial`/`provider_param_partial` and leaves the previous score.** The CLI result carries `partial: true`.
+  - (d) The 10 s `x-client-id` cache drops rejected promises (merged); the UI's same-id Retry now runs a fresh plan.
+  - (e)+(N6) **No-op candidates** (equal to the baseline after clamping, or with predicted `delta_lap` exactly 0, e.g. ERS-only since the lap model has no ERS): a supplied one → 400 `BAD_INPUT` with `noop: true` and a message naming the change; the agent's plan that clamps to a no-op is dropped (`last_plan` cleared) and a fresh random candidate is drawn with `fallback_from: "agent-noop"` on the row; random draws are redrawn (up to 10). `collect()` and `dryCollect` skip the same seeds and report `noop_retries`.
+  - (f) `store.appendJsonl` starts on a fresh line when the file's last byte is not `\n`, so a torn line swallows only itself.
+  - (g) `scenario_overrides.baseline` and `/api/evaluate`'s `baseline`: bad shape → 400 `baseline …`, illegal → 422 `baseline violates …` (never a 500 from the evaluator).
+  - (S2) a `status` SSE event (full `statusView()`) follows every `calls.jsonl` append (plan, retry, illegal, exam, smoke), so the widget's counters and budget line are live. **UI: nothing to change; expect more `status` events.**
+- Verify step run + output: `npm test` → 97/97 after merging the integration head. Dry run vs live collect compared by seed (collect runs 2 at a time, so ledger order is not item order; two existing tests now sort by seed).
+- Decisions proposed: D-S24 (b) promote keeps the plan; D-S25 no-op rule incl. `delta_lap === 0`; D-S26 partial exam runs never overwrite `provider`.
+- Blockers / questions for Tanuj: none.
+- Next three actions: (1) respond to review on this PR; (2) T-F04-AC2 with a real browser post (UI has `exp` on the URL); (3) idle for the integrator's next batch.
 
 ### 2026-10-24 05:20 London — agent B (Claude) — security/guardrail audit, part 2 (items 2, 3, 7, 8)
 - Status: done, PR open into `claude/amazing-planck-804i13` (branch `claude/server-p3-budget`, stacked on `claude/server-p3-hardening` = PR #34; merge #34 first).
