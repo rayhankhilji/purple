@@ -93,7 +93,7 @@ const BASE = {
   tau_s: 0.3,                              // x/y smoothing time constant (method choice; varied 0.2-0.4)
   aero_balance_front: 0.43,                // front share of downforce (assumption; not separable from these data)
   weight_front: 0.45,                      // static front axle share (C4.2 bounds: front >= 0.44, rear >= 0.54 of the minimum)
-  cog_height_m: 0.28, wheelbase_m: 3.4, track_front_m: 1.58, track_rear_m: 1.52,
+  cog_height_m: 0.28, wheelbase_m: 3.4, track_front_m: 1.54, track_rear_m: 1.47, // tracks: the C10.10.1 maxima (docs/concept/RB22_SHEET.md geom.track_*)
   k_top_phases: 3,                         // CdA anchor: mean of the top-3 per-straight peak deployments = 350 kW (method choice)
 };
 const kTaper = vkmh => Math.max(0, Math.min(REG.mguk_max_dc_kw, vkmh < 340 ? 1800 - 5 * vkmh : vkmh < 345 ? 6900 - 20 * vkmh : 0)); // C5.2.8 i
