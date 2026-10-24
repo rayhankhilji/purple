@@ -10,14 +10,14 @@
 (function () {
   const root = typeof window !== "undefined" ? window : globalThis;
   const EI = (root.EI = root.EI || {}); const C = (EI.concept = EI.concept || {});
-  const VERSION = "surrogate features v2";
+  const VERSION = "surrogate features v3";
 
   // reference constants. Changing any of them changes every feature: bump VERSION (saved models record it and refuse a mismatch).
   const K = Object.freeze({
     rho: 1.225,          // kg/m³, ISA sea-level air: only scales the aero groups (a constant factor, not a weather model)
     g: 9.81,             // m/s²
     v_ref: 60,           // m/s (216 km/h): a characteristic medium-fast corner speed; q_ref = ½ ρ v_ref² ≈ 2205 Pa
-    bal_ref: -0.0110,    // aero balance − weight distribution of the baseline concept car (0.4390 − 0.4500, physical() on the sim scale): the reference set-up
+    bal_ref: -0.0033,    // aero balance − weight distribution of the baseline concept car (0.4467 − 0.4500, physical() on the sim v2 anchor car): the reference set-up
     rh_ref_mm: 35,       // baseline static ride height
     bottoming_mm: 30,    // below this static ride height the plank works the ground (lab/aero.js BOTTOMING, sim v0 grip term)
     load_ref_n: 1000,    // tyre load-sensitivity unit (load_sens is μ fraction lost per kN)
@@ -51,7 +51,7 @@
     { name: "mguk_kw", unit: "kW", get: pc => pc.pu.mguk_kw, set: (pc, v) => { pc.pu.mguk_kw = v; } },
     { name: "es_deploy_mj", unit: "MJ", get: pc => pc.pu.es_deploy_mj_per_lap, set: (pc, v) => { pc.pu.es_deploy_mj_per_lap = v; } },
     { name: "es_harvest_mj", unit: "MJ", get: pc => pc.pu.es_harvest_mj_per_lap, set: (pc, v) => { pc.pu.es_harvest_mj_per_lap = v; } },
-    { name: "mu_x", unit: "", get: pc => pc.tyres.mu_x, set: (pc, v) => { pc.tyres.mu_x = v; pc.brakes.max_decel_g_mech = v; } },
+    { name: "mu_x", unit: "", get: pc => pc.tyres.mu_x, set: (pc, v) => { pc.tyres.mu_x = v; } },   // the brake system cap (brakes.max_decel_g_mech, sim v2: 5 g) is the template car's, not μx
     { name: "mu_y", unit: "", get: pc => pc.tyres.mu_y, set: (pc, v) => { pc.tyres.mu_y = v; } },
     { name: "load_sens", unit: "1/kN", get: pc => pc.tyres.load_sens, set: (pc, v) => { pc.tyres.load_sens = v; } },
     { name: "drivetrain_eff", unit: "", get: pc => pc.drivetrain_eff, set: (pc, v) => { pc.drivetrain_eff = v; } },

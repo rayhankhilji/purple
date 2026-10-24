@@ -188,7 +188,7 @@
   const physCache = new Map(), physStats = { hits: 0, misses: 0, ms: 0 };
   function physicsSim() { return phys.sim ? phys.sim() : null; }
   function simKey(pc, trackId, conditions) {
-    const k = { m: pc.mass_kg, f: pc.fuel_kg, wb: pc.wheelbase_m, t: [pc.track_front_m, pc.track_rear_m], h: pc.cog_height_m, w: pc.weight_dist_front, a: [pc.aero.corner, pc.aero.straight, pc.aero.floor_stalled], pu: [pc.pu.ice_kw, pc.pu.mguk_kw], ty: pc.tyres, b: pc.brakes, e: pc.drivetrain_eff, g: pc.gearing || null };
+    const k = { m: pc.mass_kg, f: pc.fuel_kg, wb: pc.wheelbase_m, t: [pc.track_front_m, pc.track_rear_m], h: pc.cog_height_m, w: pc.weight_dist_front, a: [pc.aero.corner, pc.aero.straight, pc.aero.floor_stalled, pc.aero.ride_sens_per_mm, pc.aero.stall_margin_mm, pc.aero.heave_n_per_mm, pc.aero.floor_share, pc.aero.yaw_sens], pu: [pc.pu.ice_kw, pc.pu.mguk_kw], ty: pc.tyres, b: pc.brakes, e: pc.drivetrain_eff, g: pc.gearing || null };
     return trackId + "|" + JSON.stringify(conditions || null) + "|" + JSON.stringify(k);
   }
   function guardEnergy(pc) {
