@@ -126,8 +126,9 @@ test("extrapolation: outside the training box the surrogate refuses (and says wh
   assert.deepEqual(S.inBox(wide, "silverstone", "v0").out_of_box.map(o => o.field), ["track_front_m"], "fields the DOE held fixed are checked too");
   const stalled = require("../concept/sim/index.js").baselineCar("redbull"); stalled.aero.floor_stalled = true;
   assert.equal(S.predict(stalled, "silverstone", { sim: "physics" }).ok, false, "a stalled floor (CLA × 0.5 in the physics sim) is not in the physics box");
-  // the concept-scale car is not the physics sim's car: refused unless carried relative to the baseline
-  assert.equal(S.predict(PC0, "silverstone", { sim: "physics" }).ok, false);
+  // physical() maps the concept car onto the physics sim's anchor car, so the concept baseline is inside the physics box;
+  // carrying it relative to the baseline (relativeCar) still lands inside too
+  assert.equal(S.predict(PC0, "silverstone", { sim: "physics" }).ok, true);
   const rel = S.relativeCar(PC0, PC0, S.load("physics", "silverstone").json.centre_car);
   assert.equal(S.predict(rel, "silverstone", { sim: "physics" }).ok, true);
   assert.throws(() => S.asSim("silverstone", { sim: "v0" })(big, "silverstone"), /refused/);

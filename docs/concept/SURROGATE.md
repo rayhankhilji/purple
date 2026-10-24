@@ -167,6 +167,24 @@ Lap RMSE vs distance (Silverstone / Monza, ms): 0–0.1: 17 / 15 · 0.1–0.2: 2
 (all in box); 150 uniform random concept designs 85 / 74 ms; ranking ρ 0.994 / 0.994 (sign agreement 99.0 / 97.7 %, best child
 the same in 92.5 % of generations). The baseline concept car is predicted at 88.111 s ± < 50 ms (the test checks it).
 
+### 4a. Retrain 2026-10-24 06:14Z (features v2), after the concept-integrate merge
+
+`physical()` now maps concept cars onto the physics sim's anchor car, so the saved models no longer matched. Changes:
+`K.bal_ref` −0.0142 → −0.0110 (the baseline's aero balance − weight distribution is now 0.4390 − 0.4500), `VERSION`
+"surrogate features v2", both sims retrained (seed 1, n 6000), and the test now expects the concept baseline to be inside the
+physics box. Numbers from the retrain report (the tables above are from the first training and are kept for comparison):
+
+| Check | physics | v0 Silverstone | v0 Monza |
+|---|---|---|---|
+| lap RMSE near the centre (distance 0–0.1) | 20.0 ms | 19.4 ms | 18.8 ms |
+| 11 fitted team cars | 31.7 ms (max 65.2) · trap 3.0 km/h | — | — |
+| 150 concept mutations | 16.5 ms (114 in box) | 91.2 ms (150 in box) | 168.7 ms (150 in box) |
+| 150 uniform random concept designs | 1 in box (refused) | 150.4 ms (148 in box) | 225.1 ms (148 in box) |
+| ranking ρ / sign agreement / best child same | 0.994 / 98.7 % / 93.9 % | 0.993 / 99.0 % / 95.0 % | 0.994 / 99.0 % / 97.5 % |
+
+**v0's fresh-check errors grew** (concept mutations 26.8 / 19.3 ms → 91 / 169 ms): concept cars now land in a different part of
+v0's wide, clamped box. v0 is the secondary sim; ranking agreement is unchanged. The physics surrogate (primary) is as accurate as before.
+
 ## 5. Speed
 
 Node 22, one call, warm (median of batches; `report.machine.timing` in each file):
