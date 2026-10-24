@@ -1,0 +1,55 @@
+{
+  "ledger_rows": 93,
+  "ledger_torn_lines": 0,
+  "experiments": 91,
+  "by_status": {
+    "planned": 82,
+    "parse_error": 8,
+    "overruled": 1
+  },
+  "raced": 1,
+  "with_agreement_pct": 1,
+  "overruled": 1,
+  "parse_error": 8,
+  "unique_session_ids": 91,
+  "mubit_request_ids": 91,
+  "calls": {
+    "total": 120,
+    "trained": 99,
+    "untrained": 21,
+    "by_kind": {
+      "smoke": {
+        "total": 1,
+        "trained": 0,
+        "untrained": 1
+      },
+      "plan": {
+        "total": 99,
+        "trained": 99,
+        "untrained": 0
+      },
+      "exam": {
+        "total": 20,
+        "trained": 0,
+        "untrained": 20
+      }
+    }
+  },
+  "rules": {
+    "total": 1,
+    "active": 1
+  },
+  "exam_items": 20,
+  "status": {
+    "task_name": "Research engineer of F1",
+    "kept_examples": 43,
+    "adapter_version": null,
+    "test_result": "training v1",
+    "exam": {
+      "provider": 20,
+      "total": 20,
+      "provider_param": 10
+    },
+    "last_console_read_at": null
+  }
+}

@@ -3,6 +3,8 @@ const path = require("path");
 require("dotenv").config({ path: process.env.PURPLE_ENV_FILE || path.join(__dirname, ".env") });
 const prompt = require("../lab/prompt.js");
 const mock = process.env.MUBIT_MOCK === "1";
+// the mock planner must never write into the real ledger: without an explicit PURPLE_DATA_DIR it uses data-mock/ (gitignored)
+if (mock && !process.env.PURPLE_DATA_DIR) process.env.PURPLE_DATA_DIR = "./data-mock";
 if (!mock && !process.env.MUBIT_API_KEY) { console.error("PURPLE: MUBIT_API_KEY is not set (server/.env). Refusing to start. Use MUBIT_MOCK=1 for the no-network drill."); process.exit(1); }
 if (process.env.PURPLE_MODEL && process.env.PURPLE_MODEL !== prompt.MODEL) { console.error(`PURPLE: PURPLE_MODEL=${process.env.PURPLE_MODEL} differs from lab/prompt.js MODEL=${prompt.MODEL}; the model is part of the frozen task key. Refusing to start.`); process.exit(1); }
 // G-MUBIT-01: the prompt file is the frozen task key; a changed hash means a new Mubit task at 0 examples. Refuse unless explicitly allowed.

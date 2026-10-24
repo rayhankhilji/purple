@@ -194,3 +194,7 @@ Exit criteria: **all true at 23:58 London** (six verifies, task named from the p
 
 ### 2026-10-24 03:05 — integrator session 1 (continuing; usage reset) — merged EVAL PR #15, CAR3D hero part 1, DEMO script/deck
 - `npm run exam:score` added. 74/74 tests. Lane decisions D-U6, D-U1, D-U2, D-U3, D-U4, D-U5, D-C1, D-C2, D-C3, D-C4, D-D1, D-D2, D-D3 copied into Decisions. Honesty grep over deck/script/UI: see this commit (clean unless noted). Handover to a new integrator NOT executed: session 1 continues; INTEGRATOR_PROMPT.md stays valid for the next time.
+
+### 2026-10-24 03:20 — integrator — lab page verified in headless Chromium; mock-row cleanup
+- http://127.0.0.1:8788/lab/ at 1440×900 (docs/agents/integrator-screens/lab-1440-0315.png): all 13 scripts load, widget shows the console values, trace stream shows the real v2 `mreq_` ids, Run with the mock planner reaches the DESIGN success state, no page errors (one transient 404 that did not reproduce). The 3D area is black under software GL in headless Chromium; CAR3D verified it in a GPU browser.
+- Mistake undone: that mock Run wrote one fake experiment + call row into the REAL data/ (ledger row 91, mreq_test…). Removed both rows and reset state.last_plan. Guard added: `MUBIT_MOCK=1` without `PURPLE_DATA_DIR` now uses `data-mock/` (gitignored). Re-snapshot: `npm run snapshot -- --label 0320-clean`.

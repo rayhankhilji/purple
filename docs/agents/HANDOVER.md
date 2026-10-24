@@ -10,7 +10,7 @@ Living document. Owned by the **integrator** (whoever merges lane branches). Lan
 
 **Merged into the integration branch (71 tests):** SERVER #2 race result, #3 integrity guards, #5 overrule/rules, #6 status fields + promote-bias plumbing, #10 collect-dry; EVAL #4 exam.json + bias + TD-01, #9 try-sheet + dry run + canonical rng; GAME #7 car aero, #8 broadcast mode, #11 grid race; CAR3D #12 3D car view (`EI.labCar3D`, `EI.rebuildWings`, 10.8 ms wing swap). CORS on /api/* for the lab page.
 
-**Ledger:** `npm run snapshot -- --label <x>` (SERVER PR #13) freezes it properly; runtime `data/` is gitignored; the frozen copy is `docs/ledger-snapshot/2026-10-24T0215-after-v2/` (93 ledger rows, 120 calls, R-01, status, state). Restore it first thing. Re-snapshot after any new rows.
+**Ledger (latest snapshot: docs/ledger-snapshot/*-0320-clean):** `npm run snapshot -- --label <x>` (SERVER PR #13) freezes it properly; runtime `data/` is gitignored; the frozen copy is `docs/ledger-snapshot/2026-10-24T0215-after-v2/` (93 ledger rows, 120 calls, R-01, status, state). Restore it first thing. Re-snapshot after any new rows.
 
 **Lane sessions (message them with send_message; tell them the new integrator id first):**
 
@@ -81,6 +81,7 @@ curl -s localhost:8787/api/status | jq .   # widget data; /api/ledger, /api/rule
 - **Game hooks are opt-in:** with no `aero` argument every profile and lap is identical to the shipped game. Keep it that way (INSTRUCTIONS §8).
 - **Append-only ledger:** a later `ledger.jsonl` row with the same `id` supersedes (overrule, race result, promote). `store.readLedger()` dedupes.
 - **State:** `data/state.json` holds `baseline`, `conditions`, `td01`, `last_plan`. `/api/plan` with no overrides applies `last_plan` to the baseline; `POST /api/state { reset_plan: true }` clears it.
+- **Never run the mock planner against the real ledger.** `MUBIT_MOCK=1 npm run dev` now writes to `data-mock/` automatically; if you set `PURPLE_DATA_DIR` yourself, point it away from `data/`. The real ledger is `data/` + the latest `docs/ledger-snapshot/` folder.
 - **Numbers on screen must carry the label** "reduced-order lap model · calibrated to 2026 pole laps · aero map v1" (it is `evaluation.model`). Never "CFD", "wind tunnel", "validated".
 
 ## 6. Handover protocol (every session, last 10 minutes)
