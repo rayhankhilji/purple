@@ -93,10 +93,18 @@
     if (!(sPrev < target && sNow >= target)) return null;
     return tPrev + ((target - sPrev) / (sNow - sPrev || 1)) * (tNow - tPrev);
   }
+  // the same finish solved exactly on the car's own timeline: bisection of dist(t) = target inside the step (the replay's position
+  // function, not an assumption), so the measured finish equals the source lap to the sim clock's precision at any playback rate
+  function crossingExact(tl, tPrev, tNow, target) {
+    if (!(tl.dist(tPrev) < target && tl.dist(tNow) >= target)) return null;
+    let a = tPrev, b = tNow;
+    for (let i = 0; i < 60 && b - a > 1e-9; i++) { const m = (a + b) / 2; if (tl.dist(m) >= target) b = m; else a = m; }
+    return b;
+  }
   const fmt = (x, dp) => (x == null || !isFinite(x) ? '—' : x.toFixed(dp == null ? 3 : dp));
   const sgn = (x, dp) => (x == null || !isFinite(x) ? '—' : (x < 0 ? '−' : '+') + Math.abs(x).toFixed(dp == null ? 3 : dp));
 
-  const api = { timeline, mapLine, crossing, fmt, sgn, active: false };
+  const api = { timeline, mapLine, crossing, crossingExact, fmt, sgn, active: false };
   EI.ConceptRace = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 
@@ -104,6 +112,16 @@
   const q = typeof location !== 'undefined' && typeof document !== 'undefined' ? new URLSearchParams(location.search) : null;
   if (!q || q.get('concept') !== '1' || q.get('lab') === '1') return;
   api.active = true;
+  // licensing: no F1 / FIA marks in the concept views. The loading splash's F1 logo and championship line become a neutral PURPLE
+  // title, and the trackside F1 logo boards draw nothing (EI.Ads is the game's own painter; only this page load is affected).
+  try {
+    const ld = document.getElementById('loading');
+    if (ld) { for (const e of ld.querySelectorAll('.f1-logo,.f1-kicker')) e.remove(); const ev = document.getElementById('loader-event'); if (ev) ev.textContent = 'PURPLE · lap replay'; }
+    if (EI.Ads) {
+      const dp = EI.Ads.drawPartner; if (typeof dp === 'function') EI.Ads.drawPartner = function (ctx, id) { if (id === 'f1') return [0, 0]; return dp.apply(this, arguments); };
+      if (typeof EI.Ads.drawF1 === 'function') EI.Ads.drawF1 = function () { return [0, 0]; };
+    }
+  } catch (e) { /* splash already gone */ }
   // the concept car's own geometry (EI.conceptView.buildCar, docs/concept/VIEW.md): the design layer and the viewer, loaded only here
   const VIEW_SCRIPTS = ['concept/regs.js', 'concept/materials.js', 'concept/parts.js', 'concept/aeromap.js', 'concept/design.js', 'concept/view/mesh3d.js', 'concept/view/car3d.js', 'concept/view/parts3d.js', 'concept/view/view3d.js'];   // concept/view/index.html order + the three geometry files view3d would fetch
   api.viewReady = VIEW_SCRIPTS.reduce((p, src) => p.then(() => new Promise((res) => {
@@ -193,13 +211,14 @@
   function run() {
     const D = st.D, P = st.P; const w = document.getElementById('crWait'); if (w) w.remove();
     if (st.race) return;   // one replay per page load (restart: command 'restart')
-    const specs = P.cars.map((c, i) => ({ role: c.id, team: c.team, tyre: 'soft', aero: null, driver: { name: c.short || c.id.toUpperCase(), code: (c.short || c.id).slice(0, 3).toUpperCase(), num: c.num || 90 + i } }));
+    const specs = P.cars.map((c, i) => ({ role: c.id, team: c.team, tyre: 'soft', aero: null, driver: { name: c.short || c.id.toUpperCase(), code: (c.code || c.short || c.id).slice(0, 4).toUpperCase(), num: c.num || 90 + i } }));
     D.startRace({ players: [], bots: 0, laps: 1, difficulty: 100, grid: 'front', assist: 'full', seed: 1, lab: { mode: 'race', concept: true, cars: specs } });
     const race = D.race, track = D.track; st.race = race;
     race.started = true; race.phase = 'racing'; race.time = 0; race.lightsOn = 0;
     st.map = mapLine(track, P.line);
     st.cars = race.cars.map((car, i) => ({ car, spec: P.cars[i], tl: timeline(P.cars[i]), finish: null, secT: [null, null], prevD: null, prevH: null }));
-    st.cars.forEach((k) => { if (k.spec.ghost && !k.spec.design) ghostify(k.car); });
+    st.quali = P.mode === 'quali';
+    st.cars.forEach((k) => { if (k.spec.ghost && !k.spec.design) ghostify(k.car, st.quali ? 0.5 : 0.38); });
     api.viewReady.then(() => st.cars.forEach((k) => { if (k.spec.design) conceptBody(k, race); }));
     race.update = function (dt) { step(dt); };   // this race instance only: main.js calls it at 120 Hz like Race.update
     st.t = -RUNUP; pose(0, true); setCam(st.cam); st.dirI = 0; st.dirT = 0;
@@ -208,13 +227,13 @@
   }
 
   // a ghost: never the detailed near model (its shared shaders), always the car's own LOD material, drawn translucent, no shadow
-  function ghostify(car) {
+  function ghostify(car, opacity) {
     const lodSet = car.setLOD.bind(car); car.setLOD = (far, dist) => lodSet(far, Math.max(dist, 30));
     car.setLOD(false, 30); if (car.lodNear && car.lodMid) car.lodNear.visible = false;
     const seen = new Set();
     const fade = (o) => {
       if (!o.isMesh) return; o.castShadow = false; o.receiveShadow = false;
-      for (const m of Array.isArray(o.material) ? o.material : [o.material]) { if (!m || seen.has(m)) continue; seen.add(m); m.transparent = true; m.opacity = 0.38; m.depthWrite = false; m.needsUpdate = true; }
+      for (const m of Array.isArray(o.material) ? o.material : [o.material]) { if (!m || seen.has(m)) continue; seen.add(m); m.transparent = true; m.opacity = opacity || 0.38; m.depthWrite = false; m.needsUpdate = true; }
     };
     if (car.lodMid) { car.lodMid.traverse(fade); if (car.lodFar) car.lodFar.traverse(fade); } else car.group.traverse(fade);
     if (car.shadowProxy) { car.shadowProxy.castShadow = false; car.shadowProxy.visible = false; }
@@ -271,7 +290,7 @@
     pose(h, false);
     for (const k of st.cars) {
       const L = k.tl.L;
-      if (k.finish == null) { const f = crossing(k.dPrev, k.d, tPrev, st.t, L); if (f != null) k.finish = f; }
+      if (k.finish == null) { const f = crossingExact(k.tl, tPrev, st.t, L); if (f != null) k.finish = f; }
       for (let j = 0; j < 2; j++) if (k.secT[j] == null) { const f = crossing(k.dPrev, k.d, tPrev, st.t, st.P.timing.sectors[j]); if (f != null) k.secT[j] = f; }
     }
     if (!st.finished && st.cars.every((k) => k.finish != null)) { st.finished = true; finishPost(); }
@@ -281,12 +300,13 @@
   function result() {
     const r3 = (x) => (x == null ? null : Math.round(x * 1000) / 1000);
     return { label: st.P.label, conditions: st.P.conditions_label, mapping: st.map.stats, rate: st.rate,
-      cars: st.cars.map((k) => ({ id: k.spec.id, name: k.spec.name, source: k.spec.source, lap_s: k.spec.lap_s, replay_finish_s: r3(k.finish), diff_s: k.finish == null ? null : r3(k.finish - k.spec.lap_s), replay_sector_lines_s: k.secT.map(r3), sectors_s: k.spec.sectors_s })) };
+      mode: st.P.mode || 'replay', cars: st.cars.map((k) => ({ id: k.spec.id, code: k.spec.code || null, pos: k.spec.pos == null ? null : k.spec.pos, kind: k.spec.kind || null, name: k.spec.name, source: k.spec.source, lap_s: k.spec.lap_s, replay_finish_s: r3(k.finish), diff_s: k.finish == null ? null : r3(k.finish - k.spec.lap_s), replay_sector_lines_s: k.secT.map(r3), sectors_s: k.spec.sectors_s })) };
   }
   function finishPost() { const r = result(); api.result = r; post(Object.assign({ type: 'purple:concept-finish' }, r)); console.log('purple:concept-finish ' + JSON.stringify(r)); }
 
   // ---------------------------------------------------------------- HUD (broadcast style; every number names its source)
-  const COL = { concept: '#b26cff', ref: '#3671c6', pole: '#27f4d2' };
+  const COL0 = { concept: '#b26cff', ref: '#3671c6', pole: '#27f4d2' };
+  const COL = new Proxy(COL0, { get: (o, id) => o[id] || ((st.cars.find((k) => k.spec.id === id) || {}).spec || {}).color });
   function el(tag, cls, html, parent) { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; if (parent) parent.appendChild(e); return e; }
   const esc = (x) => String(x == null ? '' : x).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   function buildHud() {
@@ -305,6 +325,10 @@
       '<div class="cr-col" style="min-width:150px" id="crDel"></div>';
     const cond = String(P.conditions_label || '').split(' · ').slice(1).join(' · ');
     U.lbl.innerHTML = '<b>' + esc(P.label) + '</b><br>' + esc(cond) + '<br><span class="cr-mu">the sim\'s own trace, replayed: no game AI, no game lap model · drawn ' + st.map.stats.position_rms_m + ' m RMS from the sim\'s line</span>';
+    if (st.quali) {
+      U.tw.style.display = 'none'; U.lbl.style.top = '14px';
+      U.lbl.innerHTML = '<b>' + esc(P.label) + '</b><br>real laps: ' + esc(P.real_label) + ' · PURPLE / RB22: ' + esc(P.sim_label_short) + '<br><span class="cr-mu">' + esc(P.ghost_line) + '</span>';
+    }
     st.cars.forEach((k) => { k.tag = el('div', 'cr-tag', esc(k.spec.short || k.spec.name), U.tags); k.tag.style.color = COL[k.spec.id] || '#fff'; });
   }
   let hudT = 0;
@@ -313,14 +337,14 @@
     if (!st.race || st.D.race !== st.race) return;
     tags();
     if (now - hudT < 66) return; hudT = now; hud();
-    if (now - st.lastPost > 500) { st.lastPost = now; post({ type: 'purple:concept-state', t: st.t, rate: st.rate, paused: st.paused, cam: st.cam, auto: st.auto, finished: st.finished, d: st.cars.map((k) => k.d) }); }
+    if (now - st.lastPost > (st.quali ? 200 : 500)) { st.lastPost = now; post({ type: 'purple:concept-state', t: st.t, rate: st.rate, paused: st.paused, cam: st.cam, auto: st.auto, finished: st.finished, d: st.cars.map((k) => k.d), fin: st.cars.map((k) => k.finish) }); }
   }
   function tags() {
     const cam = st.D.cameras && st.D.cameras[0]; if (!cam || !root.THREE) return;
     const v = tags.v || (tags.v = new THREE.Vector3()), W = window.innerWidth, Hh = window.innerHeight;
     for (const k of st.cars) {
       const c = k.car; v.set(c.vx != null ? c.vx : c.x, (c.vy != null ? c.vy : c.y) + 1.2, c.vz != null ? c.vz : c.z); const dist = v.distanceTo(cam.position); v.project(cam);
-      const on = v.z < 1 && v.z > -1 && Math.abs(v.x) < 1.05 && Math.abs(v.y) < 1.05 && dist < 260 && !(k.spec.id === 'concept' && st.cam !== 'tv');
+      const on = v.z < 1 && v.z > -1 && Math.abs(v.x) < 1.05 && Math.abs(v.y) < 1.05 && dist < (st.quali && k.spec.kind === 'real' ? 120 : 260) && !(k.spec.id === 'concept' && st.cam !== 'tv');
       k.tag.style.display = on ? '' : 'none'; if (on) { k.tag.style.left = ((v.x + 1) / 2) * W + 'px'; k.tag.style.top = ((1 - v.y) / 2) * Hh + 'px'; }
     }
   }
@@ -342,22 +366,26 @@
     const aero = $('crAero'); aero.textContent = ch.aero === 'straight' ? 'straight mode' : 'corner mode'; aero.className = 'cr-chip' + (ch.aero === 'straight' ? ' cr-on' : '');
     const ers = $('crErs'), E = { deploy: ['ers deploy', ' cr-dep'], harvest: ['ers harvest', ' cr-hv'], superclip: ['superclip', ' cr-sc'] }[ch.ers] || ['ers —', ''];
     ers.textContent = E[0]; ers.className = 'cr-chip' + E[1]; ers.title = P.ers_note || '';
-    const tt = me.finish != null ? me.finish : Math.max(0, t); $('crClk').textContent = fmt(Math.min(tt, me.spec.lap_s));
+    const tt = me.finish != null ? me.finish : Math.max(0, t); $('crClk').textContent = fmt(st.quali ? tt : Math.min(tt, me.spec.lap_s));
     // sectors: the sim's own split for each sector as the car crosses its line (purple = quickest of the three cars)
     const secs = [0, 1, 2].map((j) => {
       const done = j < 2 ? me.secT[j] != null : me.finish != null; if (!done) return '<span class="cr-sec cr-mu">S' + (j + 1) + '</span>';
-      const mine = me.spec.sectors_s[j], best = Math.min.apply(null, st.cars.map((k) => k.spec.sectors_s[j]));
+      const mine = me.spec.sectors_s ? me.spec.sectors_s[j] : null, best = Math.min.apply(null, st.cars.filter((k) => k.spec.sectors_s).map((k) => k.spec.sectors_s[j]));
+      if (mine == null) return '<span class="cr-sec cr-mu">S' + (j + 1) + '</span>';
       return '<span class="sec' + (mine <= best + 1e-9 ? ' pb' : '') + '">' + fmt(mine) + '</span>';
     });
     $('crSecs').innerHTML = secs.join('');
     // live delta to each ghost at the concept car's distance (negative = the concept car is ahead)
     const dm = dIn(me), tm = me.tl.tAtS(dm);
-    $('crDel').innerHTML = '<span class="cr-lb">delta at this point</span>' + st.cars.slice(1).map((k) => {
+    $('crDel').innerHTML = '<span class="cr-lb">delta at this point</span>' + st.cars.slice(1).filter((k) => !st.quali || k.spec.delta).map((k) => {
       const dd = t < 0 ? null : (me.finish != null ? me.spec.lap_s - k.spec.lap_s : tm - k.tl.tAtS(dm));
       return '<div><span style="color:' + (COL[k.spec.id] || '#fff') + '">■</span> <span class="cr-big2 ' + (dd == null ? 'cr-mu' : dd < 0 ? 'cr-pu' : 'cr-rd') + '">' + sgn(dd) + '</span> <span class="cr-lb">' + esc(k.spec.short) + '</span></div>';
     }).join('');
     st.ui.cam.innerHTML = 'camera <b>' + st.cam + '</b>' + (st.auto ? ' · director' : '') + ' · ' + st.rate + '× · ' + (st.paused ? '<span class="cr-am">paused</span>' : 'live') + '<br><span class="cr-mu">C camera · A director · Space pause · R replay · 1 2 4 8 speed</span>';
-    if (!st.finished) st.ui.fin.style.display = 'none';
+    if (st.quali) {   // PURPLE at the line: its measured finish on the replay clock and its place (the full tower is beside the view)
+      if (me.finish == null) st.ui.fin.style.display = 'none';
+      else { st.ui.fin.style.display = ''; st.ui.fin.innerHTML = '<div class="cr-lb" style="margin-bottom:4px">PURPLE · lap complete</div><div style="display:flex;justify-content:space-between;gap:8px"><span class="cr-big2 cr-pu">' + fmt(me.finish) + ' s</span><span class="cr-big2">P' + (me.spec.pos || '—') + '</span></div><div class="cr-mu" style="font-size:10.5px;margin-top:3px">' + esc(me.spec.source) + '</div>'; }
+    } else if (!st.finished) st.ui.fin.style.display = 'none';
     else {
       const r = api.result || result(); st.ui.fin.style.display = '';
       st.ui.fin.innerHTML = '<div class="cr-lb" style="margin-bottom:4px">Lap · physics-sim seconds</div>' + r.cars.map((c) => '<div style="display:flex;justify-content:space-between;gap:8px"><span>' + esc(c.name) + '</span><span>' + fmt(c.lap_s) + '</span></div>').join('') +
