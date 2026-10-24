@@ -34,7 +34,7 @@
   const TNAMES = { 1: "Abbey", 2: "Farm", 3: "Village", 4: "The Loop", 5: "Aintree", 6: "Brooklands", 7: "Luffield", 8: "Woodcote", 9: "Copse", 10: "Maggotts", 11: "Maggotts", 12: "Becketts", 13: "Becketts", 14: "Chapel", 15: "Stowe", 16: "Vale", 17: "Club", 18: "Club" };
   function cornerWindows(tr, trackId) {
     if (tr.line === "telemetry" && tr.corners && tr.corners.length && tr.corners[0].d != null)
-      return tr.corners.map(k => ({ name: (TNAMES[k.n] || "T") + " (T" + k.n + ")", n: k.n, marker_s: k.d, s0: k.d - 70, s1: k.d + 90 }));
+      return tr.corners.map(k => ({ name: ((tr.frame === "f1" ? (tr.corner_names || {})[k.n] : TNAMES[k.n]) || "T") + " (T" + k.n + ")", n: k.n, marker_s: k.d, s0: k.d - 70, s1: k.d + 90 }));
     return CORNERS[trackId] || [];
   }
   function cornerTable(car, trackId, conditions) {
@@ -64,7 +64,7 @@
   function segmentsOf(tr) {
     const K = (tr.corners || []).filter(k => k.d != null).slice().sort((a, b) => a.d - b.d), L = tr.L, out = [];
     if (!K.length) return [{ kind: "lap", name: "lap", s0: 0, s1: L }];
-    const names = S.CORNER_NAMES[tr.id] || {}, nm = k => (names[k.n] || "T") + " (T" + k.n + ")";
+    const names = S.CORNER_NAMES[tr.id] || tr.corner_names || {}, nm = k => (names[k.n] || "T") + " (T" + k.n + ")";
     const zone = K.map((k, i) => {
       const prev = K[(i - 1 + K.length) % K.length].d - (i === 0 ? L : 0), next = K[(i + 1) % K.length].d + (i === K.length - 1 ? L : 0);
       return { kind: "corner", name: nm(k), n: k.n, s0: Math.max(k.d - 100, (prev + k.d) / 2), s1: Math.min(k.d + 100, (k.d + next) / 2) };
@@ -102,7 +102,7 @@
     CIRCUITS: MT ? MT.CIRCUITS : ["silverstone"],
     setupCar: (...a) => need(SU, "setup").setupCar(...a), wingCurve: (...a) => need(SU, "setup").wingCurve(...a), wingFactors: (...a) => need(SU, "setup").wingFactors(...a),
     trackGrip: (...a) => need(SU, "setup").trackGrip(...a), teamSetup: (...a) => need(SU, "setup").teamSetup(...a), fittedTracks: (...a) => need(SU, "setup").fittedTracks(...a),
-    teamCarAt: (...a) => need(MT, "multitrack").teamCarAt(...a), optimalWing: (...a) => need(MT, "multitrack").optimalWing(...a), ourDriver: (...a) => need(MT, "multitrack").ourDriver(...a),
+    teamCarAt: (...a) => need(MT, "multitrack").teamCarAt(...a), teamCarsAt: trackId => F.fitted().teams.map(t => need(MT, "multitrack").teamCarAt(t.team, trackId)), optimalWing: (...a) => need(MT, "multitrack").optimalWing(...a), ourDriver: (...a) => need(MT, "multitrack").ourDriver(...a),
   });
   EI.conceptSim = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;

@@ -18,7 +18,7 @@ const F = require("./features.js");
 // ---------------------------------------------------------------------------------------------------------------------------
 // sims. module paths are relative to this file; `fn` is the export with the sim contract.
 const SIMS = {
-  physics: { module: "../sim/index.js", fn: "simulateLap", circuits: ["silverstone"], centre: "team:redbull", box: "teams", apex: true },
+  physics: { module: "../sim/index.js", fn: "simulateLap", circuits: ["silverstone"], centre: "team:redbull", box: "teams", apex: true },   // --circuits monza,monaco,spa,hungaroring: the multi-track models
   v0: { module: "../bench.js", fn: "simV0", circuits: ["silverstone", "monza"], centre: "concept-baseline", box: "concept", apex: false },
 };
 
@@ -182,17 +182,23 @@ function conceptDesigns(n, seed) {   // uniform random concept designs over the 
   }
   return out;
 }
-function centreCar(spec, simMod) {
+// multi-track (docs/concept/SIM.md "Multi-track"): on a circuit other than Silverstone a sim that exports teamCarsAt(circuit) gives
+// the team cars with their fitted set-up there, and baselineCar(team, circuit) the centre car; Silverstone is unchanged
+function teamCarsFor(simMod, circuit) {
+  if (circuit && circuit !== "silverstone" && typeof simMod.teamCarsAt === "function") return simMod.teamCarsAt(circuit);
+  return typeof simMod.teamCars === "function" ? simMod.teamCars() : [];
+}
+function centreCar(spec, simMod, circuit) {
   if (spec.centre === "concept-baseline") { const phys = require("../physical.js"), design = require("../design.js"); return stripCar(phys.physical(design.baseline())); }
   if (spec.centre === "sim-baseline") return stripCar(simMod.baselineCar());
   const m = /^team:(.+)$/.exec(spec.centre || "");
-  if (m) return stripCar(simMod.baselineCar(m[1]));
+  if (m) return stripCar(circuit && circuit !== "silverstone" && typeof simMod.teamCarsAt === "function" ? simMod.baselineCar(m[1], circuit) : simMod.baselineCar(m[1]));
   throw new Error("train: unknown --centre " + spec.centre);
 }
 function marginOf(name, side, centre) { const m = MARGIN[name][side]; return typeof m === "string" ? (parseFloat(m) / 100) * Math.abs(centre) : m; }
 // box: { lo, hi, centre (raw vector), sources }. mode "concept": range of physical() over random concept designs; "teams": range
 // of the sim's fitted team cars. Either way + MARGIN, inside HARD.
-function buildBox(spec, centre, simMod, seed) {
+function buildBox(spec, centre, simMod, seed, circuit) {
   const c = F.rawVector(centre), d = c.length, lo = Float64Array.from(c), hi = Float64Array.from(c);
   let source;
   if (spec.box === "concept") {
@@ -200,7 +206,7 @@ function buildBox(spec, centre, simMod, seed) {
     for (const dz of ds) { const x = F.rawVector(phys.physical(dz)); for (let j = 0; j < d; j++) { if (x[j] < lo[j]) lo[j] = x[j]; if (x[j] > hi[j]) hi[j] = x[j]; } }
     source = "physical() of 3000 uniform random concept designs over the part domains (concept/parts.js) + MARGIN";
   } else if (spec.box === "teams") {
-    const cars = typeof simMod.teamCars === "function" ? simMod.teamCars() : [];
+    const cars = teamCarsFor(simMod, circuit);
     for (const car of cars) { const x = F.rawVector(car); for (let j = 0; j < d; j++) { if (x[j] < lo[j]) lo[j] = x[j]; if (x[j] > hi[j]) hi[j] = x[j]; } }
     source = "the sim's " + cars.length + " fitted team cars (teamCars()) and the centre car + MARGIN";
   } else throw new Error("train: unknown --box " + spec.box);
@@ -346,8 +352,8 @@ async function train(opts) {
   const classes = opts.classes || ["quadratic", "rbf", "mlp"];
   const local = opts.simFn ? { run: (pc, c) => { const r = opts.simFn(pc, c); return { flat: flatten(r, null), label: r.label }; }, mod: {} } : loadSim(opts.spec);
   const spec = opts.spec || { centre: "given", box: "given" };
-  const centre = opts.centreCar ? stripCar(opts.centreCar) : centreCar(spec, local.mod);
-  const box = opts.box || buildBox(spec, centre, local.mod, seed);
+  const centre = opts.centreCar ? stripCar(opts.centreCar) : centreCar(spec, local.mod, circuit);
+  const box = opts.box || buildBox(spec, centre, local.mod, seed, circuit);
   const rng = seededRng(seed);
   // DOE: one Latin hypercube per tier
   let X = [], left = n; const tierN = [];
@@ -448,7 +454,7 @@ async function checks(opts, model, centre, local, circuit, seed, log) {
   // (b) ranking: 40 parents (random walks from the baseline), 8 children each (σ 0.08, as the default ES)
   const gens = [];
   for (let g = 0; g < 40; g++) { let par = B; const steps = Math.floor(rng() * 6); for (let s = 0; s < steps; s++) par = design.mutate(par, rng, 0.1).design; const kids = []; for (let c = 0; c < 8; c++) kids.push(design.mutate(par, rng, 0.08).design); gens.push({ par, kids }); }
-  const teamCars = typeof local.mod.teamCars === "function" ? local.mod.teamCars().map(stripCar) : [];
+  const teamCars = teamCarsFor(local.mod, circuit).map(stripCar);
   const all = near.concat(far).map(carOf), genCars = []; for (const g of gens) { genCars.push(carOf(g.par)); for (const k of g.kids) genCars.push(carOf(k)); }
   const pool = all.concat(genCars, teamCars);
   const t0 = Date.now();

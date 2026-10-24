@@ -108,6 +108,22 @@ test("performance: under 30 ms a lap after warm-up, mean over the five circuits 
   assert.ok(ms < 30, ms.toFixed(1) + " ms per lap");
 });
 
+test("surrogates per circuit (physics-<circuit>.json): trained on the live sim, centred on the RB22 with its set-up there", () => {
+  const SG = require("../concept/surrogate/surrogate.js");
+  for (const id of FITTED) {
+    const f = path.join(ROOT, "concept", "surrogate", "models", "physics-" + id + ".json");
+    assert.ok(fs.existsSync(f), f);
+    const m = SG.load("physics", id).json, rb = sim.baselineCar("redbull", id), r = sim.simulateLap(rb, id);
+    assert.equal(m.circuit, id);
+    assert.ok(Math.abs(r.lap_s - m.sim_fingerprint.lap_s) < 1e-9, id + ": the sim changed since training: node concept/surrogate/train.js --sim physics --circuits " + id);
+    const p = SG.predict(rb, id, { sim: "physics" });
+    assert.equal(p.ok, true, id + " centre inside the box");
+    assert.ok(Math.abs(p.lap_s - r.lap_s) < 0.05, id + " centre car " + p.lap_s + " vs " + r.lap_s);
+    assert.ok(m.report.test.chosen.lap_s.r2 > 0.98, id + " R² " + m.report.test.chosen.lap_s.r2);
+    assert.equal(m.report.checks.team_cars.n_in_box, 11, id + " all fitted team cars (with their set-ups) inside the box");
+  }
+});
+
 test("driver-gaps-2026.json: real best laps per circuit, teammate gaps, our driver = the RB22 calibration driver", () => {
   const f = path.join(ROOT, "concept", "data", "driver-gaps-2026.json");
   if (!fs.existsSync(f)) return;
