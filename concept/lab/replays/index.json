@@ -1,8 +1,25 @@
 {
  "format": "purple-replay/1",
- "built_at": "2026-10-24T13:34:50.837Z",
+ "built_at": "2026-10-24T13:55:19.854Z",
  "note": "recorded LIVE Mubit runs (real x-middleware-request-id values); replayed in the browser, not re-run; mock runs are never listed",
  "runs": [
+  {
+   "name": "trained-engineer-seed11",
+   "kind": "engineer-v2",
+   "engine": "engine v2 · autonomous engineer: Mubit decides the subspace → surrogate screen → physics confirm → interactions → kept / reverted by the numbers",
+   "recorded_at": "2026-10-24T13:48:56.653Z",
+   "calls": 120,
+   "trained": true,
+   "model": "claude-haiku-4-5-20251001",
+   "decisions": 120,
+   "baseline_lap_s": 88.745,
+   "peak_lap_s": 87.698,
+   "gap_to_pole_s": -0.413,
+   "directed_gain_share": 1,
+   "first_request_id": "mreq_01a16e2bf4f6708299ae6736df2165fb",
+   "last_request_id": "mreq_01a16e3118807d828124d8ba749a5425",
+   "file": "trained-engineer-seed11.json"
+  },
   {
    "name": "trained-engineer-seed7",
    "kind": "engineer-v2",
@@ -21,23 +38,6 @@
    "file": "trained-engineer-seed7.json"
   },
   {
-   "name": "trained-hybrid-seed41",
-   "kind": "hybrid-v1",
-   "engine": "engine v1 · hybrid: Mubit proposes → local search of physics laps → kept by the numbers",
-   "recorded_at": "2026-10-24T10:23:04.370Z",
-   "calls": 35,
-   "trained": true,
-   "model": "claude-haiku-4-5-20251001",
-   "decisions": 45,
-   "baseline_lap_s": 88.763,
-   "peak_lap_s": 87.282,
-   "gap_to_pole_s": -0.829,
-   "directed_gain_share": 0.128,
-   "first_request_id": "mreq_01a16d6f799078c19eb11c6317caaec2",
-   "last_request_id": "mreq_01a16d74d1ae74308535f5838feb7cac",
-   "file": "trained-hybrid-seed41.json"
-  },
-  {
    "name": "trained-hybrid-seed42",
    "kind": "hybrid-v1",
    "engine": "engine v1 · hybrid: Mubit proposes → local search of physics laps → kept by the numbers",
@@ -53,6 +53,23 @@
    "first_request_id": "mreq_01a16deac8447291a29a0de773dfc708",
    "last_request_id": "mreq_01a16decc7d37392aa3ca9efc0533cfa",
    "file": "trained-hybrid-seed42.json"
+  },
+  {
+   "name": "trained-hybrid-seed41",
+   "kind": "hybrid-v1",
+   "engine": "engine v1 · hybrid: Mubit proposes → local search of physics laps → kept by the numbers",
+   "recorded_at": "2026-10-24T10:23:04.370Z",
+   "calls": 35,
+   "trained": true,
+   "model": "claude-haiku-4-5-20251001",
+   "decisions": 45,
+   "baseline_lap_s": 88.763,
+   "peak_lap_s": 87.282,
+   "gap_to_pole_s": -0.829,
+   "directed_gain_share": 0.128,
+   "first_request_id": "mreq_01a16d6f799078c19eb11c6317caaec2",
+   "last_request_id": "mreq_01a16d74d1ae74308535f5838feb7cac",
+   "file": "trained-hybrid-seed41.json"
   },
   {
    "name": "trained-seed29",

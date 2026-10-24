@@ -109,7 +109,7 @@ function build(dirs, out) {
     index.push({ name, kind: r.kind, engine: r.engine, recorded_at: r.recorded_at, calls: r.calls, trained: r.trained, model: r.model, decisions: r.decisions.length, baseline_lap_s: r.baseline && r.baseline.lap_s, peak_lap_s: r.peak && r.peak.lap_s, gap_to_pole_s: r.peak && r.peak.gap_to_pole_s, directed_gain_share: r.stats ? r.stats.directed_gain_share : null, first_request_id: r.request_ids[0] || null, last_request_id: r.request_ids[r.request_ids.length - 1] || null, file: name + ".json" });
   }
   // engine v2 runs first, then the fastest
-  index.sort((a, b) => (a.kind === "engineer-v2" ? 0 : 1) - (b.kind === "engineer-v2" ? 0 : 1) || (a.peak_lap_s || 99) - (b.peak_lap_s || 99));
+  index.sort((a, b) => (a.kind === "engineer-v2" ? 0 : 1) - (b.kind === "engineer-v2" ? 0 : 1) || String(b.recorded_at || "").localeCompare(String(a.recorded_at || "")));
   fs.writeFileSync(path.join(out, "index.json"), JSON.stringify({ format: FORMAT, built_at: new Date().toISOString(), note: "recorded LIVE Mubit runs (real x-middleware-request-id values); replayed in the browser, not re-run; mock runs are never listed", runs: index }, null, 1) + "\n");
   return index;
 }
