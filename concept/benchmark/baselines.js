@@ -35,23 +35,38 @@ function replayLlm(proposals) {
 
 // engine v2 on a physics-lap budget: stops before the first decision that would start at or past `budget` laps (the last decision
 // may overshoot by its own confirm batch; curves are truncated at the budget for the tables)
-async function runEngine({ root, seed, team, budget, workers, llm, maxDecisions, stopAfter, mock }) {
+// corrections (default false): the physics-corrections block in the scenario (concept/engineer/scenario.js). The no-AI and replay
+// runs never read the scenario, so it is off for them (and off is how the recorded runs ran). segments (default false): the
+// per-segment report the steered runs fed into their scenario (not a physics lap, never counted). trained: passed to the llm as
+// meta.trained only; this module never calls Mubit (a live, trained llm is injected by concept/engineer/cli.js).
+async function runEngine({ root, seed, team, budget, workers, llm, maxDecisions, stopAfter, mock, corrections, segments, trained, runId, onEvent, maxCalls }) {
   const engine = mod(root, "engineer/engine.js");
   const t0 = Date.now();
   let laps = 0;
-  const res = await engine.runEngineer({
-    llm, mock: !!mock, seed, team: team || "redbull", trained: false, workers: workers == null ? 4 : workers,
-    maxDecisions: maxDecisions || 100000, maxCalls: 100000, stopAfter: stopAfter || 1e9, patience: 3, variants: 3000, confirm: 24, explore: 4,
-    segments: false,
+  const extra = corrections ? { corrections: true } : { corrections: false };
+  const res = await engine.runEngineer(Object.assign({
+    llm, mock: !!mock, seed, team: team || "redbull", trained: !!trained, workers: workers == null ? 4 : workers,
+    maxDecisions: maxDecisions || 100000, maxCalls: maxCalls || 100000, stopAfter: stopAfter || 1e9, patience: 3, variants: 3000, confirm: 24, explore: 4,
+    segments: !!segments, runId, onEvent,
     shouldStop: ({ decisions }) => { laps = decisions.reduce((s, d) => s + d.physics_laps, 0); return budget != null && laps >= budget ? "physics-lap budget " + budget : null; },
-  });
+  }, extra));
   const points = C.fromEngine({ baseline_s: res.baseline.lap_s, decisions: res.decisions, nodes: res.tree.nodes });
   const by = res.stats.by;
   return {
     seed, baseline_s: res.baseline.lap_s, pole_s: res.pole_s, stopped: res.stopped, runtime_s: +((Date.now() - t0) / 1000).toFixed(1),
     decisions: res.decisions.length, by, kept: res.stats.kept, reverts: res.stats.reverts, forks: res.stats.forks, points,
-    peak_params: res.peak.params,
+    peak_params: res.peak.params, corrections: !!corrections, explore: exploreStats(res.decisions), result: res,
   };
+}
+// how the directions spread over the catalogue: distinct parameters / parts named, the most-named parameter, illegal as proposed
+function exploreStats(decisions) {
+  const P = new Map(), parts = new Set(); let illegal = 0;
+  for (const d of decisions) {
+    for (const c of d.proposal || []) { const k = c.part + "." + c.param; P.set(k, (P.get(k) || 0) + 1); parts.add(c.part); }
+    if (d.as_proposed && d.as_proposed.legal === false) illegal++;
+  }
+  const top = Array.from(P.entries()).sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1))[0] || null;
+  return { decisions: decisions.length, distinct_params: P.size, distinct_parts: parts.size, top_param: top ? top[0] : null, top_param_decisions: top ? top[1] : 0, illegal_as_proposed: illegal };
 }
 
 // CMA-ES: runSeed with a pool that logs every physics batch (one CMA-ES generation) in order
@@ -89,4 +104,4 @@ async function runCma({ root, seed, team, budget, workers, lambda, prescreen, pa
   } finally { await pool.close(); }
 }
 
-module.exports = { noAiLlm, replayLlm, runEngine, runCma };
+module.exports = { noAiLlm, replayLlm, runEngine, runCma, exploreStats };

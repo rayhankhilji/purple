@@ -78,8 +78,11 @@ test("engine (mock LLM): deterministic, scenario ≤ the designer limit, interac
   assert.equal(a.peak.lap_s, b.peak.lap_s);
   assert.equal(a.decisions.length, 3); assert.ok(events.includes("start") && events.includes("decision") && events.includes("done"));
   for (const d of a.decisions) {
-    assert.ok(d.scenario_chars <= dscen.LIMITS.chars, "scenario " + d.scenario_chars + " chars");
+    // corrections are on by default: the four blocks stay within the designer limit, the corrections block within its own
     const sc = JSON.parse(d.scenario); assert.ok(sc.best && sc.tree && sc.tree.peak && Array.isArray(sc.tested) && Array.isArray(sc.near));
+    const c = JSON.stringify(sc.corrections); delete sc.corrections;
+    assert.ok(JSON.stringify(sc).length <= dscen.LIMITS.chars, "scenario " + JSON.stringify(sc).length + " chars without corrections");
+    assert.ok(c.length <= escen.CORRECTIONS.chars, "corrections " + c.length + " chars");
     assert.equal(d.by, "mock"); assert.ok(d.screen.distinct > 50); assert.ok(d.physics_laps >= 2);
     if (d.kept) assert.ok(d.result.lap_s < d.head_lap_s);
     const x = d.interaction;

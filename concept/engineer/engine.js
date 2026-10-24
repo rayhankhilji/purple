@@ -17,6 +17,11 @@
 //      and the next scenario reports it.
 //   A parse error or an LLM error is the ONLY case where the engine picks the direction itself (a seeded design.mutate step, by
 //   "engine", labelled everywhere); its gains are never credited to Mubit.
+//   opts.corrections (default true; false reproduces the recorded runs' scenarios byte for byte): the scenario also carries the
+//   PHYSICS CORRECTIONS block (concept/engineer/scenario.js): every verdict of the run so far, folded per part / parameter, the
+//   illegal-as-proposed parameters with their legal range, and the legal ranges for the head car. It changes only the user message;
+//   the frozen designer task (prompt, model, max_tokens, temperature) is untouched. With it on, an illegal proposal's decision row
+//   also records which proposed parameter was illegal on its own (illegal_params).
 // runEngineer(opts) -> { run_id, tree, decisions, stats, peak, ... }. Deterministic for (seed, llm answers, worker counts any).
 "use strict";
 const design = require("../design.js"), bench = require("../bench.js"), regs = require("../regs.js"), phys = require("../physical.js");
@@ -28,7 +33,7 @@ const { Pool } = require("../campaign/pool.js");
 const CIRCUIT = "silverstone";
 const LABEL = "ENGINE v2 · every lap a physics lap sim lap (quasi-steady-state point mass · Silverstone · calibrated to 2026 British GP qualifying); surrogate = ranking only";
 const KEPT_RULE = "kept = legal (FIA 2026 Section C checks + homologated PU + materials) && physics lap < head lap − 0.1 ms; the model's output has no verdict field";
-const DEFAULTS = { seed: 1, team: "redbull", maxDecisions: 40, maxCalls: 40, patience: 3, stopAfter: 15, variants: 3000, confirm: 24, explore: 4, workers: 0, pace_ms: 0, trained: false, segments: true };
+const DEFAULTS = { seed: 1, team: "redbull", maxDecisions: 40, maxCalls: 40, patience: 3, stopAfter: 15, variants: 3000, confirm: 24, explore: 4, workers: 0, pace_ms: 0, trained: false, segments: true, corrections: true };
 const r3 = v => (typeof v === "number" && isFinite(v) ? Math.round(v * 1000) / 1000 : null);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const now = () => Date.now();
@@ -92,7 +97,7 @@ async function runEngineer(opts) {
     tree.root({ params: start.params, team: start.team || null, legal: true, lap_s: r.lap_s, sectors_s: r.sectors_s, mass_kg: r.mass_kg, front_share: r.front_share });
   }
   const rootNode = tree.nodes[0];
-  emit("start", { resumed: !!opts.resume, decisions_done: k0, seed: opts.seed, trained: !!opts.trained, prompt_version: P.DESIGNER_PROMPT_VERSION, team: opts.team || null, baseline: { lap_s: rootNode.lap_s, sectors_s: rootNode.sectors_s, gap_to_pole_s: r3(rootNode.lap_s - POLE) }, pole_s: POLE, label: LABEL, kept_rule: KEPT_RULE, opts: { variants: opts.variants, confirm: opts.confirm, explore: opts.explore, patience: opts.patience, stopAfter: opts.stopAfter, maxDecisions: opts.maxDecisions, maxCalls: opts.maxCalls, workers: screenPool.n }, tree: tree.compact(), peak: tree.peak, head: tree.head });
+  emit("start", { resumed: !!opts.resume, decisions_done: k0, seed: opts.seed, trained: !!opts.trained, prompt_version: P.DESIGNER_PROMPT_VERSION, team: opts.team || null, baseline: { lap_s: rootNode.lap_s, sectors_s: rootNode.sectors_s, gap_to_pole_s: r3(rootNode.lap_s - POLE) }, pole_s: POLE, label: LABEL, kept_rule: KEPT_RULE, opts: Object.assign({ variants: opts.variants, confirm: opts.confirm, explore: opts.explore, patience: opts.patience, stopAfter: opts.stopAfter, maxDecisions: opts.maxDecisions, maxCalls: opts.maxCalls, workers: screenPool.n }, opts.corrections ? { corrections: true } : {}), tree: tree.compact(), peak: tree.peak, head: tree.head });
 
   let stopped = null, lastPeakAt = k0;
   if (opts.resume) { for (let i = decisions.length - 1; i >= 0; i--) if (decisions[i].new_peak) { lastPeakAt = i + 1; break; } }
@@ -110,7 +115,7 @@ async function runEngineer(opts) {
       const headNode = tree.get(tree.head), head = designOf(tree.head);
       const headSummary = { lap_s: headNode.lap_s, gap_to_pole_s: headNode.lap_s - POLE, mass_kg: headNode.mass_kg, front_share: headNode.front_share };
       const branch = tree.branch, branchDecs = decisions.filter(d => d.branch === branch.id);
-      const sc = scen.fit({ head, headSummary, tree, decisions: branchDecs, limits: opts.scenarioLimits });
+      const sc = scen.fit({ head, headSummary, tree, decisions: branchDecs, limits: opts.scenarioLimits, corrections: opts.corrections ? { decisions, limits: opts.correctionsLimits } : null });
       const dec = { decision: k, branch: branch.id, head: headNode.id, head_lap_s: headNode.lap_s, session_id: sessionId, scenario: sc.text, scenario_chars: sc.chars, scenario_tokens: sc.tokens, trained: !!opts.trained, by: null, t0: now() };
 
       // ---- 1. the designer call (one per decision)
@@ -156,6 +161,7 @@ async function runEngineer(opts) {
       if (asDesign && design.diff(head, asDesign).length) confirmSet.push({ kind: "proposal", changes: design.diff(head, asDesign).map(c => ({ part: c.part, param: c.param, to: c.to })) });
       if (asViol.length) {
         stats.proposal_illegal++;
+        if (opts.corrections) dec.illegal_params = scen.culprits(changes, c => at1(head, c), violations, articlesOf, articlesOf(asViol));
         const pj = project(head, changes);
         if (pj) { stats.projected++; dec.projection = { t: pj.t == null ? null : +pj.t.toFixed(3), dropped: pj.dropped || null, change: dscen.describeChanges(pj.changes.map(c => ({ part: c.part, param: c.param, from: head.params[c.part][c.param], to: c.to }))) }; confirmSet.push({ kind: "projected", changes: pj.changes }); }
       }
@@ -257,7 +263,7 @@ function statsView(s, tree, calls) {
 }
 // the decision as the stream, the UI cards and the replay show it (no designs, no bench internals)
 function compactDecision(d) {
-  return {
+  return Object.assign({
     decision: d.decision, branch: d.branch, head: d.head, head_lap_s: d.head_lap_s, by: d.by, fallback_reason: d.fallback_reason || null,
     mubit_request_id: d.call ? d.call.mubit_request_id : null, trained: d.trained, mock: !!(d.call && d.call.mock), latency_ms: d.call ? d.call.latency_ms : null,
     hypothesis: d.hypothesis || null, expected: d.expected || null, expected_hit: d.expected_hit == null ? null : d.expected_hit,
@@ -266,7 +272,7 @@ function compactDecision(d) {
     result: d.result, best_change: d.best_change, best_d_s: d.best_d_s, interaction: d.interaction, moves: d.moves || null,
     kept: d.kept, new_peak: d.new_peak, d_head_s: d.d_head_s, head_after: d.head_after, peak_after: d.peak_after, reverted: d.reverted || null,
     scenario_chars: d.scenario_chars, scenario_tokens: d.scenario_tokens, ms: d.ms,
-  };
+  }, d.illegal_params ? { illegal_params: d.illegal_params } : {});
 }
 // a resumable state: the tree, the decisions (without their scenario text) and the counters
 function snapshot(res, stats) {

@@ -1,6 +1,10 @@
 #!/usr/bin/env node
 // PURPLE DESIGNER EXAM - three columns on the same held-out questions, graded by the physics sim (no human judgement).
 //   node concept/exam/run.js --build-questions                  (re)build concept/exam/questions.json (deterministic, ≈ 6 min)
+//   node concept/exam/run.js --build-questions --corrections    build concept/exam/questions-corrections.json: the same 30 states
+//                                                                  with the physics-corrections block (TESTS_TO_POLE.md §8)
+//   add --questions concept/exam/questions-corrections.json to a column: results-<column>-corrections.json (never overwrites the
+//   results of questions.json)
 //   node concept/exam/run.js --column none    [--n 30]          A. no AI: a seeded random legal proposal per question
 //   node concept/exam/run.js --column base    [--n 30]          B. Claude Haiku 4.5 + the frozen designer prompt through server/mubit.js,
 //                                                                  UNTRAINED (x-middleware-record: metadata), concurrency ≤ 2;
@@ -27,15 +31,16 @@ const DIR = __dirname;
 const NONE_SEED = 7001, MOCK_SEED = 9001, BASE_CONCURRENCY = 2;
 
 function parseArgs(argv) {
-  const a = { column: null, answers: null, n: null, export: false, build: false, workers: null, questions: null, label: null };
+  const a = { column: null, answers: null, n: null, export: false, build: false, workers: null, questions: null, label: null, corrections: false };
   for (let i = 0; i < argv.length; i++) {
     const k = argv[i], v = argv[i + 1];
     if (k === "--column") { a.column = v; i++; } else if (k === "--answers") { a.answers = v; i++; } else if (k === "--n") { a.n = +v; i++; }
-    else if (k === "--export") a.export = true; else if (k === "--build-questions") a.build = true;
+    else if (k === "--export") a.export = true; else if (k === "--build-questions") a.build = true; else if (k === "--corrections") a.corrections = true;
     else if (k === "--workers") { a.workers = +v; i++; } else if (k === "--questions") { a.questions = v; i++; } else if (k === "--label") { a.label = v; i++; }
     else if (k === "--help" || k === "-h") a.help = true;
     else throw new Error("unknown option " + k);
   }
+  if (a.corrections && !a.build) throw new Error("--corrections goes with --build-questions (to grade them: --questions concept/exam/questions-corrections.json)");
   if (a.help || a.build || a.export) return a;
   if (!["none", "base", "adapter"].includes(a.column)) throw new Error("--column none|base|adapter (or --export / --build-questions)");
   if (a.column === "adapter" && !a.answers) throw new Error("--column adapter needs --answers FILE");
@@ -169,7 +174,15 @@ async function main(argv, io) {
   io = io || { out: s => process.stdout.write(s), err: s => process.stderr.write(s) };
   const a = parseArgs(argv);
   const log = s => io.err(s + "\n");
-  if (a.help) { io.out(fs.readFileSync(__filename, "utf8").split("\n").slice(1, 19).map(l => l.replace(/^\/\/ ?/, "")).join("\n") + "\n"); return 0; }
+  if (a.help) { io.out(fs.readFileSync(__filename, "utf8").split("\n").slice(1, 20).map(l => l.replace(/^\/\/ ?/, "")).join("\n") + "\n"); return 0; }
+  if (a.build && a.corrections) {
+    const doc = await questionsMod.buildCorrections({ workers: a.workers, log });
+    const file = questionsMod.FILE_CORRECTIONS;
+    fs.writeFileSync(file, questionsMod.serialize(doc));
+    const add = doc.questions.map(q => q.corrections_chars);
+    io.out("exam questions with corrections: " + doc.questions.length + " -> " + path.relative(process.cwd(), file) + " (block +" + Math.min(...add) + "..+" + Math.max(...add) + " chars)\n");
+    return 0;
+  }
   if (a.build) {
     const doc = await questionsMod.build({ workers: a.workers, log });
     fs.writeFileSync(a.questions || questionsMod.FILE, questionsMod.serialize(doc));
@@ -179,11 +192,11 @@ async function main(argv, io) {
   const doc = questionsMod.load(a.questions);
   const qs = doc.questions.slice(0, a.n == null ? doc.questions.length : a.n);
   if (a.export) {
-    const e = exportConsole(doc, qs);
-    fs.writeFileSync(path.join(DIR, "for-console.txt"), e.console);
-    fs.writeFileSync(path.join(DIR, "answers-template.txt"), e.template_txt);
-    fs.writeFileSync(path.join(DIR, "answers-template.json"), e.template_json);
-    io.out("exam export: " + qs.length + " questions -> concept/exam/for-console.txt, concept/exam/answers-template.txt, concept/exam/answers-template.json\n");
+    const e = exportConsole(doc, qs), sfx = doc.variant === "corrections" ? "-corrections" : "";
+    fs.writeFileSync(path.join(DIR, "for-console" + sfx + ".txt"), e.console);
+    fs.writeFileSync(path.join(DIR, "answers-template" + sfx + ".txt"), e.template_txt);
+    fs.writeFileSync(path.join(DIR, "answers-template" + sfx + ".json"), e.template_json);
+    io.out("exam export: " + qs.length + " questions -> concept/exam/for-console" + sfx + ".txt, concept/exam/answers-template" + sfx + ".txt, concept/exam/answers-template" + sfx + ".json\n");
     return 0;
   }
   const t0 = Date.now();
@@ -207,11 +220,11 @@ async function main(argv, io) {
   const rows = await gradeAll(qs, texts, { workers: a.workers, log });
   const gradeMs = Date.now() - tg;
   const summary = grader.summarize(rows);
-  const name = a.label || (a.column === "base" && meta.mock ? "base-mock" : a.column);
+  const name = a.label || (a.column === "base" && meta.mock ? "base-mock" : a.column) + (doc.variant === "corrections" ? "-corrections" : "");
   const res = {
     v: 1, kind: "purple-designer-exam-results", column: a.column, label: name,
     what: { none: "A. no AI: seeded random legal proposal (design.mutate at the engine's fallback step size, redrawn until legal)", base: "B. Claude Haiku 4.5 + frozen designer prompt via server/mubit.js, untrained (x-middleware-record: metadata)" + (meta.mock ? " · MOCK RUN: the scripted mock, not a model" : ""), adapter: "C. answers pasted from the Mubit console (Try models)" }[a.column],
-    questions_sha256: questionsMod.sha(JSON.stringify(qs.map(q => q.text_sha256))), n: qs.length, exam_seed: grader.EXAM_SEED,
+    questions_sha256: questionsMod.sha(JSON.stringify(qs.map(q => q.text_sha256))), questions_variant: doc.variant || "plain", n: qs.length, exam_seed: grader.EXAM_SEED,
     graded_by: "concept/engineer/engine.js one decision from the question's head car (physics lap sim · quasi-steady-state point mass · Silverstone · calibrated to 2026 British GP qualifying); kept = legal && lap < head − 0.1 ms",
     meta, summary, grade_ms: gradeMs, grade_ms_per_question: Math.round(gradeMs / qs.length), total_ms: Date.now() - t0, rows,
   };
