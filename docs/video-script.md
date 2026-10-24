@@ -140,7 +140,7 @@ prediction, not a real car. The simulator misses its own accuracy target, and wi
 ### 9 · 2:50–3:00 · First proof and close
 
 **On screen:** 2 s of `/lab/` (the 5-knob research lab: stage rail DESIGN · EVALUATE · RACE · LEARN), then the end card:
-*"PURPLE · github.com/rayhankhilji/purple · FILL: deployed URL · built at Night Shift London with Mubit"*.
+*"PURPLE · github.com/rayhankhilji/purple · purple-wine.vercel.app · built at Night Shift London with Mubit"*.
 Caption on the lab: *"first Mubit task: 99 trained calls · rule-conditioned learning"*.
 
 **Voice-over:** "Our first Mubit task, this five-knob lab, showed Mubit learning from an engineer's rule. PURPLE puts the same
@@ -159,7 +159,7 @@ loop on a whole car."
 | Garage round trip | 180–210 ms | DASHBOARD.md §5 |
 | Mubit designer calls | 331 trained, 16 sessions, 331 request ids; Mubit loop best 88.292 s (seed 29) | `docs/concept/loop-runs/*`, as of 09:53 UTC |
 | Research task | 99 trained calls | TASK_LOG, ledger snapshot |
-| Console numbers | **FILL designer-kept, FILL designer-adapter, FILL provider n/N, FILL adapter n/N, FILL deployed URL** | owner, from the Mubit console / Vercel |
+| Console numbers | **FILL designer-kept, FILL designer-adapter, FILL provider n/N, FILL adapter n/N** | owner, from the Mubit console / Vercel |
 
 ## If something fails during the take
 

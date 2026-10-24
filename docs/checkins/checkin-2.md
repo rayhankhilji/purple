@@ -4,7 +4,7 @@ Before pasting: re-run the counts (`docs/concept/loop-runs/*`; method in the int
 clause, and check the result line against `docs/concept/CAMPAIGN.md` §4.0 (re-runs change it).
 
 ---
-**PURPLE — check-in #2** · repo: https://github.com/rayhankhilji/purple · live: **FILL deployed URL**
+**PURPLE — check-in #2** · repo: https://github.com/rayhankhilji/purple · live: https://purple-wine.vercel.app
 
 **What it is:** an AI race engineer for the 2026 F1 rules. It takes the Red Bull RB22, keeps its Red Bull Ford DM01 power unit, and redesigns the car part by part inside the FIA 2026 technical regulations (Section C Issue 19, a 94-row checklist enforced on every candidate) to beat the real 2026 Silverstone qualifying lap. Every candidate is measured on a physics lap sim of Silverstone in the 2026 British GP qualifying conditions.
 

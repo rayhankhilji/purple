@@ -465,7 +465,7 @@ Speaker notes: We would rather be judged on a small true thing than a large clai
 
 <div class="card" style="margin-top:14px">
 
-Run it: `npm ci` · `server/.env` with `MUBIT_API_KEY` · `npm run dev` → `127.0.0.1:8788/concept/lab/` (Engine) · `/concept/race/` · `/lab/` · deployed: <span class="fill">FILL deployed URL</span> · `github.com/rayhankhilji/purple`
+Run it: `npm ci` · `server/.env` with `MUBIT_API_KEY` · `npm run dev` → `127.0.0.1:8788/concept/lab/` (Engine) · `/concept/race/` · `/lab/` · deployed: `purple-wine.vercel.app` · `github.com/rayhankhilji/purple`
 </div>
 
 <span class="src">counts: docs/concept/loop-runs/ as of 2026-10-24 09:53 UTC · telemetry: OpenF1 (9 circuits, docs/concept/TRACK.md) · identification: docs/concept/IDENTIFY.md</span>

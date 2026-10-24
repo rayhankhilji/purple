@@ -4,7 +4,7 @@
 
 > **Fresh-code disclosure.** PURPLE is built on **Equation I**, our team's pre-existing browser F1 game (`js/`, `css/`, `assets/`, `vendor/`, `tools/`, `index.html`), imported as one commit (`a711399`, Fri 2026-10-23 21:54 UTC). **New this weekend:** everything under `concept/`, `server/`, `lab/`, `test/` and `docs/`, plus opt-in game hooks in 7 game files (+633 / −48 lines): `?lab=1` (race result to the lab), `?concept=1` (concept replay, new `js/conceptrace.js`), aero inputs in `js/car.js`, `js/ai.js`, `js/carmodel.js`, `js/race.js`, one script tag in `index.html` (ARCHITECTURE.md §9). Without the flags the game behaves as before.
 
-Built for Night Shift, London, 2026-10-24. Judges: the Mubit team. Deployed: **FILL: deployed URL**
+Built for Night Shift, London, 2026-10-24. Judges: the Mubit team. Deployed: **https://purple-wine.vercel.app** (live Mubit calls need the team passcode; mock otherwise)
 
 ## Run it
 
