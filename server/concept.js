@@ -81,6 +81,7 @@ function mount(app, o) {
     const tick = () => new Promise(res => setImmediate(res));   // the run starts after this response and yields between laps (SSE keeps flowing)
     r.promise = tick().then(() => loop.runLoop({
       iterations, seed, runId: id, team, trained, llm: r.llm, preview: previewer(designerPrompt), pace_ms: pace, yield: tick,
+      shouldStop: () => (r.stopRequested ? (r.stop_reason = r.stop_reason || "stopped") : null),   // set only by the Vercel adapter (time box); locally never
       onEvent: push, onRow: row => { r.lineage.push(loop.compactRow(row)); },
     })).then(res => {
       r.status = "done"; r.finished_at = now(); r.summary = loop.summaryOf(res);

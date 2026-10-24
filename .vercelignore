@@ -1,0 +1,36 @@
+# PURPLE - what `vercel deploy` uploads (docs/DEPLOY.md). Allowlist: the static site (copied to public/ by
+# `node server/vercel.js build`) and what the API function reads at runtime. Never data/, secrets, tests or tools.
+/*
+!/api
+!/server
+!/lab
+!/concept
+!/js
+!/css
+!/vendor
+!/assets
+!/index.html
+!/package.json
+!/package-lock.json
+!/vercel.json
+!/test
+/test/*
+!/test/mocks
+!/docs
+/docs/*
+!/docs/ledger-snapshot
+!/docs/concept
+/docs/concept/*
+!/docs/concept/COUPLING.md
+!/docs/concept/loop-runs
+# the telemetry archive: only the Silverstone 2026 qualifying laps (the race replay fetches the pole lap)
+/concept/data/telemetry/*/
+# secrets and local state, wherever they are
+.env
+.env.*
+server/.env
+server/.env.*
+.vercel
+.DS_Store
+node_modules
+/public
