@@ -7,3 +7,4 @@ server/.env
 data/*
 !data/.gitkeep
 !data/exam.json
+data-mock/

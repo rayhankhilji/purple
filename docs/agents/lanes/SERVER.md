@@ -1,10 +1,46 @@
 # Lane SERVER
 
-Status: in_progress — PRs #2, #3, #5, #6 merged; collect-dry + seed-mixing PR open (branch `claude/server-p1-dry`, from the integration branch, not stacked). GAME PR #8 payload reviewed (below). Next: T-F04-AC2 with a real post once #7/#8 merge. Owner: agent B (Claude, session_01Tq3p158ophv4wuU2ibcJbj). Branches: `claude/server-p1-race` → `claude/server-p1-guards` → `claude/server-p1-rules` → `claude/server-p1-status` (stacked branches `claude/server-p1-*` follow, one PR per task into `claude/amazing-planck-804i13`).
+Status: in_progress — PRs #2, #3, #5, #6, #10, #13 merged; status deep-merge PR open (branch `claude/server-p2-status-merge`). UI review of `lab/lab.js` written below (02:50 entry). Owner: agent B (Claude, session_01Tq3p158ophv4wuU2ibcJbj). Branches: `claude/server-p1-race` → `claude/server-p1-guards` → `claude/server-p1-rules` → `claude/server-p1-status` (stacked branches `claude/server-p1-*` follow, one PR per task into `claude/amazing-planck-804i13`).
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
 
 ## Sessions
+
+### 2026-10-24 02:50 London — agent B (Claude) — `POST /api/status` deep merge; UI review of `lab/lab.js` (integration head eb16a20)
+- Status: done, PR open into `claude/amazing-planck-804i13` (branch `claude/server-p2-status-merge`, cut from eb16a20). Files changed: `server/app.js` (status route), `test/server.test.js` (+1), this file. `lab/*` untouched (UI lane fixes).
+- `POST /api/status` now merges one level deep: `{ exam: { v1: 4 } }` keeps `exam.provider / total / provider_param`; an explicit `null` clears one field; a scalar replaces an object and vice versa; nothing deeper than one level is merged. Verify: `npm test` → 75/75; the SSE `status` event carries the merged view (test).
+
+## UI review — `lab/lab.js` against the server (every fetch, the envelope, SSE, the race relay, x-client-id)
+Verified against `server/app.js` at eb16a20 and the mock server (preflight `OPTIONS /api/plan` with `x-client-id` → 204, `access-control-allow-headers: content-type,x-client-id`; `/api/stream` carries the CORS origin; `localhost` and `127.0.0.1` both allowed).
+
+**Matches the server (no action):**
+- `api()` envelope handling: `{ ok: true, data }` → data; `{ ok: false, error: { code, message, … } }` → `ApiErr(code, endpoint, message, extra)`; non-JSON → `BAD_RESPONSE`; fetch failure → `NETWORK`. Error extras the UI reads exist on the server: `ILLEGAL_SETUP` → `extra.violations`, `extra.candidate`; `PARSE_ERROR` / `MUBIT_ERROR` → `extra.experiment`, `extra.experiment_id`, `extra.mubit_code`.
+- `POST /api/plan { random?, scenario_overrides? }` + `x-client-id` ✓. `POST /api/promote { experiment_id }` → `{ baseline }` ✓. `POST /api/overrule { experiment_id, verdict, reason }` → `{ rule, experiment }` ✓ (UI reads `rule`). `POST /api/rules/:id { active: boolean }` ✓ (checkbox `checked` is a boolean; the server 400s on anything else). `GET /api/ledger?limit=50`, `GET /api/rules`, `GET/POST /api/state { conditions, td01 }` ✓. `POST /api/race/result { experiment_id, seed, cars }` ✓.
+- SSE: `EventSource(API + "/api/stream")`, handlers for `plan`, `race`, `rule`, `status`, `error`; `ping` (plain text) correctly not parsed. The server's first message is `status` ✓. Overrule emits `rule` then `plan` (status `overruled`); the UI's `plan` handler takes it because the id matches ✓.
+- Race relay: `experiment_id: d.experiment_id || d.exp || S.racing.id` and the integer `seed` fallback cover the two 400 cases I flagged in the P1.T3 entry ✓. Extra keys on the game's cars (`laps[]`, `setup`, `aero`, …) and on the message (`type`, `circuit`, `laps`) are ignored by the validator ✓. `ev.origin === location.origin` ✓ (same static server serves `index.html` and `lab/`).
+
+**Findings for the UI lane (ordered by impact):**
+1. **Retry after `NETWORK` / `BAD_RESPONSE` on `/api/plan` can double-spend a trained call.** `runPlan` mints a new `uuid()` per attempt (`lab.js` ~L355) and `e.retry = () => runPlan(o)` mints another. If the server completed the Mubit call but the response was lost, the retry is a second trained call with a new experiment. Fix: keep the `clientId` for the retry (`e.retry = () => runPlan(o, clientId)`); the server dedupes the same `x-client-id` for 10 s and returns the first result.
+2. **Widget "updated from console" shows `updated_at`** (~L247), which the server bumps on every status write including the exam run and the deep-merge patches. The console read-out time is `last_console_read_at` (stamped only when a console field is posted). Use that field; fall back to `updated_at` only if it is null.
+3. **Widget ignores server-computed fields** the status route provides for F-06: `budget.trained_today_utc` / `untrained_today_utc` (the Saturday budget line), `prompt_hash` (first 8 chars next to `prompt v1`), `last_console_read_at`. All are in `GET /api/status` and every SSE `status` event.
+4. **Race result with an unfinished car**: the relay forwards the game's `cars` as-is; a car with `lap: null`, a `null` sector or `vmax_kmh: null` (never completed a lap) gets a 400 naming the field, and the banner's "Retry" resends the same payload. Suggest: if any car has a null `lap`/`sectors[i]`/`vmax_kmh`/`vmin_becketts_kmh`, show "race incomplete" with "Race again" instead of "Retry".
+5. (optional) `overrule()` rebuilds the experiment locally (`by: "engineer"`, `reason` untrimmed); `r.experiment` is the server row (reason whitespace-collapsed and cut at 160, `rule_id`, `at`) and is identical to the SSE `plan` event. Using it avoids a one-render drift of the LEARN card.
+6. (optional) `saveStatus` sends the whole `exam` object merged client-side with `total: 20`; with the server's deep merge it can send only the changed keys. Works either way.
+7. (optional) The LEARN card can call `GET /api/rules?active=1` for "rules in the next scenario" and `GET /api/rules` for the toggle list; today it filters client-side, which is fine.
+8. (note) `connectStream()` runs before the four boot GETs, so the first SSE `status` can land before `GET /api/status` resolves; the GET then overwrites `S.status` with the same view. Harmless.
+
+- Decisions proposed: D-S15 `POST /api/status` one-level deep merge (ARCH §5 "partial of the above" now means per-key, one level).
+- Blockers / questions for Tanuj: none.
+- Next three actions: (1) respond to review on this PR; (2) re-check `lab/lab.js` after the UI lane's fixes for findings 1, 2, 4; (3) T-F04-AC2 with a real browser post (UI's Race-it URL now carries `exp`).
+
+### 2026-10-24 02:30 London — agent B (Claude) — P3.T6 prep: `server/scripts/snapshot.js` (freeze step); PR #10 closed as merged by hand
+- Status: done, PR open into `claude/amazing-planck-804i13` (branch `claude/server-p3-snapshot`, cut from the integration branch at 103d066). PR #10 was merged by the integrator by hand (9cea07d, keeping both `itemSeed` and the rng warm-up); I closed the GitHub PR and dropped my two later commits on that branch (they would have undone the integrator's resolution). My 02:10 entry below describes a state that never reached the integration branch; D-S12 as logged by the integrator (both fixes) is the truth.
+- Files changed: `server/scripts/snapshot.js` (new), `test/snapshot.test.js` (new, +2), this file. No snapshot directory is committed here: the integrator runs it at the freeze.
+- `node server/scripts/snapshot.js [--label freeze] [--out docs/ledger-snapshot] [--data data]` → `docs/ledger-snapshot/<YYYY-MM-DD_HH-MM-SSZ>[-label]/` with byte-for-byte copies of `ledger.jsonl`, `calls.jsonl`, `rules.json`, `status.json`, `exam.json`, `state.json` (missing ones listed, not an error), `README.md` (files + sha256; experiments deduped by id and by status; raced / with agreement_pct / overruled / parse errors; unique session ids and `mreq_` ids; calls by kind with trained/untrained; rules total/active; exam items; console values from status.json; git commit; prompt hash; evaluator label) and `counts.json` (the same numbers as JSON for the deck). Refuses to overwrite an existing directory; never writes to `data/`; torn ledger lines are skipped and counted.
+- Verify step run + output: `npm test` → 73/73 pass. CLI on a scratch data dir: `snapshot …/2026-10-23_23-49-14Z-demo: 4 files copied (missing: status.json, exam.json); 1 experiments, 1 calls (1 trained), 2 rules, 0 exam items. README.md + counts.json written.` README renders the tables and the counts; a second run into the same stamp → exit 1 `refusing to overwrite`.
+- Decisions proposed: D-S14 snapshot layout as above; proposed `package.json` line: `"snapshot": "node server/scripts/snapshot.js"`. Freeze command for P3.T6: `npm run snapshot -- --label freeze` then commit `docs/ledger-snapshot/`.
+- Blockers / questions for Tanuj: none.
+- Next three actions: (1) review `lab/lab.js` fetches against the envelope and error codes when the UI PR appears (integrator will ping); (2) respond to review on this PR; (3) T-F04-AC2 with a real browser post once UI's Race-it URL carries `exp`.
 
 ### 2026-10-24 01:55 London — agent B (Claude) — collect-dry preview, seed mixing, GAME PR #8 payload review
 - Status: done, PR open into `claude/amazing-planck-804i13` (branch `claude/server-p1-dry`, cut from the integration branch after #6 merged; nothing stacked).

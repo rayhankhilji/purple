@@ -292,7 +292,10 @@ function createApp(opts) {
     const b = await body(c); const patch = {}; for (const k of Object.keys(b)) if (!["budget", "prompt_hash", "model", "prompt_version", "calls_total", "calls_trained", "experiments"].includes(k)) patch[k] = b[k];
     if (b.last_console_read_at != null && (typeof b.last_console_read_at !== "string" || Number.isNaN(Date.parse(b.last_console_read_at)))) throw new ApiError("BAD_INPUT", "last_console_read_at must be an ISO 8601 string");
     if (b.last_console_read_at == null && CONSOLE_FIELDS.some(k => k in b)) patch.last_console_read_at = now();
-    const s = Object.assign(db.readStatus(), patch, { updated_at: now() }); db.writeStatus(s); emit("status", statusView()); return ok(c, statusView());
+    // one-level deep merge: { exam: { v1: 4 } } keeps exam.provider / total / provider_param; a non-object value replaces the key
+    const cur = db.readStatus(); const isObj = v => v && typeof v === "object" && !Array.isArray(v);
+    for (const k of Object.keys(patch)) if (isObj(patch[k]) && isObj(cur[k])) patch[k] = Object.assign({}, cur[k], patch[k]);
+    const s = Object.assign(cur, patch, { updated_at: now() }); db.writeStatus(s); emit("status", statusView()); return ok(c, statusView());
   });
   app.get("/api/state", c => ok(c, state()));
   app.post("/api/state", async c => {   // additive (TASK_LOG decision): conditions, TD-01 and baseline edits for the UI and the directive demo
