@@ -1,8 +1,14 @@
 # Lane EVAL
 
-Status: done through P3.T1 + audit item (newest-3 rules; PR open); idle until v2 trains. Owner: agent C (session `session_01Ma6U13odw1SA1vFhepRj8u`). Branch: `claude/eval-p3-rules`.
+Status: all items merged; README refresh PR open; idle until v2 trains. Owner: agent C (session `session_01Ma6U13odw1SA1vFhepRj8u`). Branch: `claude/eval-p3-expect3`.
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
+
+### 2026-10-24 05:40 London — agent C (EVAL) — README "What to expect" refreshed for the post-fix hardest eight
+- Status: done; `npm test` 82/82. Branch `claude/eval-p3-expect3` (from 1a71b33). Docs only; no Mubit calls.
+- Source: `docs/ledger-snapshot/2026-10-24_02-37-26Z-0530-windcap-exam/status.json` (`npm run exam` re-run after the wind-cap fix: 20/20 · 10/20, identical to the first run). Verified tally on the new sheet (`exam-rw8, 14, 15, 02, 16, 20, 05, 12`): **verdicts 8/8, next steps 2/8** (hits `exam-rw8` and `exam-12`); the 6 misses all have a ride-height truth (provider said `rear_wing_deg decrease` on 5, `brake_bias_pct increase` on `exam-15`). Off-sheet next-step misses: 03, 09, 10, 11. † marks removed (answers now match the current scenario text).
+- Numbers sent to the integrator and DEMO (`session_01UAY6ykh3dQkf9GfJoZ9BTy`).
+- Blockers / questions for Tanuj: none. Idle until v2 trains.
 
 ### 2026-10-24 04:35 London — agent C (EVAL) — guardrail audit item: newest 3 active rules in the scenario (lab/schema.js)
 - Status: done; `npm test` 80/80. Branch `claude/eval-p3-rules` (from the integration branch at 2578d34). No Mubit calls; `lab/prompt.js` untouched (rules are user-message content, not the task key).
