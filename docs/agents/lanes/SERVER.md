@@ -1,10 +1,24 @@
 # Lane SERVER
 
-Status: in_progress — PRs #2, #3, #5, #6, #10, #13, #20, #21 merged; open: #23 (exam details, branch `claude/server-p2-exam-details`). Standing by to re-check the UI fixes.
+Status: in_progress — audit items 1, 4, 5, 6, 9 on PR (branch `claude/server-p3-hardening`); items 2, 3, 7, 8 follow stacked on it (branch `claude/server-p3-budget`). PR #23 (exam details) still open.
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
 
 ## Sessions
+
+### 2026-10-24 04:55 London — agent B (Claude) — security/guardrail audit, part 1 (items 1, 4, 5, 6, 9)
+- Status: done, PR open into `claude/amazing-planck-804i13` (branch `claude/server-p3-hardening`, cut from 2578d34). Part 2 (items 2, 3, 7, 8) is stacked on it.
+- Files changed: `server/app.js`, `server/index.js`, `server/static.js` (rewritten), `server/scripts/smoke.js`, `server/scripts/snapshot.js`, `test/server.test.js` (+3), `test/static.test.js` (new), this file.
+- What changed (contract notes for the UI lane in bold):
+  - **(1) `/api/*` guard:** the `Host` header must be `127.0.0.1`, `localhost` or `[::1]` (any port) → otherwise 400 `BAD_INPUT` naming the host. Every non-GET must carry `content-type: application/json` (charset allowed) → otherwise 400. A cross-site `text/plain` POST therefore never reaches a route, and anything else needs a preflight that the CORS allowlist denies. **The UI already sends the header on every POST**; `EventSource` is a GET.
+  - **(6) body:** empty body → `{}`; malformed JSON or a non-object (array, number, null) → 400 `body must be valid JSON …` / `body must be a JSON object`. No trained call is made on garbage (test).
+  - (4) `MUBIT_MOCK` accepts exactly `"1"` or unset/`""`/`"0"`; anything else makes `createApp` throw, `server/index.js` exit 1, `smoke.js` exit 1. `PURPLE_ALLOW_MOCK_IN_DATA` must be exactly `"1"`. The data-mock guard lives in `resolveDataDir()` (exported) and compares real paths, case-folded (symlink and `server/../data` spellings tested); `smoke.js` uses it. `snapshot.js` ignores an exported `PURPLE_DATA_DIR` and reads `data/` unless `--data` is given.
+  - (5) `static.js`: serves only `index.html`, `lab/`, `js/`, `css/`, `vendor/`, `assets/`, `docs/`; dotfiles and `..` segments → 403 before any fs access; real-path containment under the repo root; malformed percent-escape → 400 (it crashed the process before); non-GET/HEAD → 405; `/lab` → 302 `/lab/` as before. `resolve()` and `serve()` are exported for the test.
+  - (9) `runPlan` refuses a serialised scenario over `schema.LIMITS.scenario_chars` (1,400) with 400 `BAD_INPUT` (`chars`, `rules` in the error) before any Mubit call. **`POST /api/overrule` with text identical to an existing rule (after the usual trimming) returns that rule (`reused: true`) instead of numbering a duplicate, and re-activates it if it was off.**
+- Verify step run + output: `npm test` → 83/83. `static.js` on port 18788: `/lab/` 200, `/server/.env` 403, `/%zz` 400, `/data/exam.json` 403, `/lab` 302, then `/js/ai.js` 200 (process still up).
+- Decisions proposed: D-S18 Host + content-type guard (ARCH §5 "no auth" stays; this is CSRF/rebinding hygiene); D-S19 overrule dedupe re-activates an inactive identical rule; D-S20 `snapshot.js` ignores `PURPLE_DATA_DIR`.
+- Blockers / questions for Tanuj: none.
+- Next three actions: (1) part 2 of the audit (collect.js confirm/cap/budget; untrained parse-error retry; 2-slot semaphore in callMubit; fake-race mock-only); (2) re-check the UI fixes when pinged; (3) respond to review.
 
 ### 2026-10-24 03:40 London — agent B (Claude) — `status.exam.details` from `runExam` (EVAL request via the integrator)
 - Status: done, PR open into `claude/amazing-planck-804i13` (branch `claude/server-p2-exam-details`, cut from df2733f; independent of #21).
