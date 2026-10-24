@@ -126,7 +126,7 @@ Speaker notes: Two identical neutral bots, seed 42, three laps. The model predic
 ![shot bg right:34% fit](shots/try-models-side-by-side.png)
 
 <!--
-Speaker notes: Same unseen scenario to provider, v1 and v2 in Try models, side by side. On these eight the provider gets every verdict and one next step; on all seven misses the truth is ride height and it proposes wings or brake bias. Counts, never percentages; if v2 loses, we show it. Figure: Try models on exam-rw8, version label visible.
+Speaker notes: Same unseen scenario to provider, v1 and v2 in Try models. On these eight the provider gets every verdict and one next step; on all seven misses the truth is ride height and it proposes wings or brake bias. Counts, never percentages; if v2 loses, we show it. Figure: Try models on exam-rw8, version label visible.
 -->
 
 ---
