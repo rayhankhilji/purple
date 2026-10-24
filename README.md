@@ -17,4 +17,4 @@ npm run dev                          # server :8787 + static :8788
 open http://localhost:8788/lab/
 ```
 
-The lap numbers on screen come from a reduced-order lap model, calibrated to 2026 pole laps. Nothing here is CFD or wind-tunnel data.
+The lap numbers on screen come from a reduced-order lap model, calibrated to 2026 pole laps. It is not a high-fidelity aerodynamic simulation.

@@ -8,3 +8,6 @@ data/*
 !data/.gitkeep
 !data/exam.json
 data-mock/
+.env
+.env.*
+server/.env.*
