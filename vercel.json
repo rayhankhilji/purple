@@ -20,7 +20,7 @@
   "redirects": [
     {
       "source": "/",
-      "destination": "/concept/demo/?api=/",
+      "destination": "/concept/lab/?api=/",
       "permanent": false
     },
     {

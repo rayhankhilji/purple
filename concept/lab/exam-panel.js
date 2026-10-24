@@ -262,10 +262,10 @@
   function show(on) {
     S.shown = on;
     document.body.classList.toggle("exam-on", on);
-    const ex = $("#btnViewExam"), a = $("#btnViewEng"), b = $("#btnViewNoAI");
+    const ex = $("#btnViewExam"), a = $("#btnViewEng"), b = $("#btnViewNoAI"), m = $("#btnViewMubit");
     if (ex) { ex.classList.toggle("on", on); ex.setAttribute("aria-pressed", on ? "true" : "false"); }
     if (on) {
-      for (const x of [a, b]) if (x) { x.classList.remove("on"); x.setAttribute("aria-pressed", "false"); }
+      for (const x of [a, b, m]) if (x) { x.classList.remove("on"); x.setAttribute("aria-pressed", "false"); }
       if (EI.engineerPanel && EI.engineerPanel.pause) try { EI.engineerPanel.pause(); } catch (e) { /* not booted */ }
     }
     try { const u = new URL(location.href); if (on) u.searchParams.set("view", "exam"); else if (u.searchParams.get("view") === "exam") u.searchParams.delete("view"); history.replaceState(null, "", u); } catch (e) { /* file:// */ }
@@ -277,7 +277,7 @@
     main.parentNode.insertBefore(root, main);
     const ex = $("#btnViewExam");
     if (ex) ex.addEventListener("click", () => show(true));
-    for (const id of ["#btnViewEng", "#btnViewNoAI"]) { const b = $(id); if (b) b.addEventListener("click", () => { if (S.shown) show(false); }); }
+    for (const id of ["#btnViewEng", "#btnViewNoAI", "#btnViewMubit"]) { const b = $(id); if (b) b.addEventListener("click", () => { if (S.shown) show(false); }); }
     if (qs.get("view") === "exam") show(true);
     try { await load(); } catch (e) { $("#exList").replaceChildren(el("div", { class: "empty warn" }, "could not load the exam files (" + DATA + "questions.json, results-*.json): " + (e.message || e))); return; }
     renderList(); renderBoard();
