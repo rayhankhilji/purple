@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PURPLE · side by side</title>
+<meta name="color-scheme" content="dark">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+<link rel="icon" href="data:,">
+<!-- the research lab's tokens / type roles / buttons (docs/DESIGN_SYSTEM.md), the concept lab's panel heads, then this page -->
+<link rel="stylesheet" href="../../lab/lab.css">
+<link rel="stylesheet" href="../lab/concept-lab.css">
+<link rel="stylesheet" href="compare.css">
+</head>
+<body class="cmp-page">
+<header class="cmp-top">
+  <div class="cmp-brand">
+    <span class="brand">PURPLE</span>
+    <div class="cmp-titles">
+      <h1 class="cmp-h">Three ways to design a faster car, on one clock</h1>
+      <p class="cmp-cap" id="cmpCaption">Same physics simulator, same Silverstone lap, same test budget.</p>
+    </div>
+  </div>
+  <div class="cmp-ctl" id="cmpCtl" role="group" aria-label="playback">
+    <button class="btn primary" id="cmpPlay" type="button">Play</button>
+    <span class="cmp-speed" role="group" aria-label="speed">
+      <button class="btn" data-speed="1" type="button">1×</button>
+      <button class="btn" data-speed="4" type="button">4×</button>
+      <button class="btn" data-speed="16" type="button">16×</button>
+    </span>
+    <button class="btn" id="cmpRestart" type="button">Restart</button>
+    <label class="cmp-seed src">run <select id="cmpSeed" aria-label="which recorded run"></select></label>
+  </div>
+</header>
+
+<section class="cmp-clock" aria-label="test laps used">
+  <div class="cmp-clock-l"><span class="cmp-clock-v" id="cmpLaps">0</span><span class="cmp-clock-of" id="cmpOf">of 3,500 test laps used</span></div>
+  <div class="cmp-bar" aria-hidden="true"><div class="cmp-bar-fill" id="cmpBar"></div><div class="cmp-bar-marks" id="cmpMarks"></div></div>
+  <div class="cmp-clock-r src">one test lap = one car driven once on the <b>physics lap sim · Silverstone · model prediction</b></div>
+</section>
+
+<main class="cmp-lanes" id="cmpLanes" aria-live="off"></main>
+
+<footer class="cmp-foot" id="cmpFoot"></footer>
+
+<!-- the scripts the concept lab loads for the design and the 3D car (ARCHITECTURE §7.3 order); this page never runs the sim or calls Mubit -->
+<script src="../../vendor/three.min.js"></script>
+<script src="../../js/util.js"></script>
+<script src="../regs.js"></script>
+<script src="../materials.js"></script>
+<script src="../parts.js"></script>
+<script src="../aeromap.js"></script>
+<script src="../design.js"></script>
+<script src="../view/view3d.js" onerror="window.__conceptViewMissing = true"></script>
+<script src="compare.js"></script>
+</body>
+</html>

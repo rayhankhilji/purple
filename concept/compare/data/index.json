@@ -1,0 +1,97 @@
+{
+ "v": 1,
+ "default": 12,
+ "seeds": [
+  {
+   "seed": 7,
+   "physics": "pre-redesigns physics and 23-parameter catalogue (commit 5bf4b1c, the code the live seed-7 run used; baseline 88.763 s)",
+   "lanes": [
+    "purple",
+    "cmaes",
+    "random"
+   ]
+  },
+  {
+   "seed": 11,
+   "physics": "redesigns physics and 36-parameter catalogue (this checkout; baseline 88.745 s)",
+   "lanes": [
+    "purple",
+    "cmaes",
+    "random"
+   ]
+  },
+  {
+   "seed": 12,
+   "physics": "redesigns physics and 36-parameter catalogue (this checkout; baseline 88.745 s)",
+   "lanes": [
+    "purple",
+    "random",
+    "cmaes"
+   ]
+  }
+ ],
+ "tests_to_pole": {
+  "source": "docs/concept/TESTS_TO_POLE.md §1 / §4.4 (concept/benchmark/curves.json aggregate), seeds 7, 11, 12",
+  "to_pole_laps": {
+   "steered": {
+    "mean": 781,
+    "sd": 779,
+    "n": 3
+   },
+   "cmaes": {
+    "mean": 1723,
+    "sd": 1471,
+    "n": 3
+   },
+   "engine_noai": {
+    "mean": 216,
+    "sd": 144,
+    "n": 3
+   }
+  },
+  "best_at": {
+   "steered": {
+    "500": {
+     "mean": 88.013,
+     "n": 3
+    },
+    "1000": {
+     "mean": 87.895,
+     "n": 3
+    },
+    "2000": {
+     "mean": 87.814,
+     "n": 2
+    }
+   },
+   "cmaes": {
+    "500": {
+     "mean": 88.378,
+     "n": 3
+    },
+    "1000": {
+     "mean": 88.12,
+     "n": 3
+    },
+    "2000": {
+     "mean": 87.99,
+     "n": 3
+    }
+   },
+   "engine_noai": {
+    "500": {
+     "mean": 87.722,
+     "n": 3
+    },
+    "1000": {
+     "mean": 87.543,
+     "n": 3
+    },
+    "2000": {
+     "mean": 87.47,
+     "n": 3
+    }
+   }
+  }
+ }
+}
