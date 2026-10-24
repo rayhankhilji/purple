@@ -1,14 +1,12 @@
 # Lane CAR3D
 
-Status: P2.T2 merged (PR #12); P3.T2 hero polish part 1 in PR (aspect-adaptive hero), part 2 waits for the UI lane's panel. Owner: agent F (session `session_01DoxHh5Ynx2BDWZsPvLCyDR`). Branch: `claude/car3d-p3-hero`.
+Status: P2.T2 merged (PR #12); P3.T2 part 1 merged (PR #18); P3.T2 part 2 (hero on the real lab page + self-loading livery pipeline) in PR. Owner: agent F (session `session_01DoxHh5Ynx2BDWZsPvLCyDR`). Branch: `claude/car3d-p3-hero2`.
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
 
 ## The `EI.labCar3D` contract (stable; UI lane builds against this)
 
-Load order in `lab/index.html`: the game's scripts in `index.html` order (at least `vendor/three.min.js`, `js/util.js`, `js/data/season2026.js`, `js/ads.js`, `js/teams.js`, `js/liveries.js`, `js/liveries/*.js`, `js/carmodel.js`, `js/carglb.js`), then `<script src="car3d.js"></script>`. Two things the page must do, both seen in `lab/car3d-test.html`:
-- `js/ads.js` resolves brand artwork relative to the page; from `lab/` set `EI.Ads.BRAND_DIR = '../assets/brand/'; EI.Ads.PARTNER_DIR = EI.Ads.BRAND_DIR + 'partners/'` right after the script tag, and call `mount` after `EI.Ads.ready()` resolves (otherwise the livery paints without the logos; no error either way).
-- The container needs a CSS height (the canvas fills it; a `ResizeObserver` follows the container).
+Load order in `lab/index.html`: `vendor/three.min.js`, `js/util.js`, `js/carmodel.js` (what the page has today), then `<script src="car3d.js"></script>`. Since P3.T2 part 2 `car3d.js` loads the livery pipeline itself (season data, ads, teams, liveries, carglb) from the repo root next to `lab/`, resolved from its own script URL, and points `EI.Ads.BRAND_DIR` at `assets/brand/` absolutely; if the page already loaded those scripts (as `lab/car3d-test.html` does) nothing is loaded twice. `mount` returns at once with the studio scene; the car appears when the scripts are in (about 300 ms locally), the container gets a `car3d:ready` event, and `setSetup` / `setBaseline` called before that are applied then (`setSetup` returns `{ ms: 0, pending: true }`). The container needs a CSS height (the canvas fills it; a `ResizeObserver` follows it).
 
 ```js
 EI.labCar3D.mount(document.getElementById('car3d'), opts?)   // opts (all optional): { team: 'lumi', num: 7, driver: null, setup: null, baseline: null, ghost: true, orbit: true, pixelRatioCap: 2, background: 0x0a0a0c, ghostColor: 0xb26cff }
@@ -21,6 +19,20 @@ EI.labCar3D.dispose()                                      // stops the rAF loop
 `setup` is the ARCHITECTURE §4.1 object; missing fields mean the baseline (25 / 20 / 35). The container receives a `car3d:setup` CustomEvent (`detail: { ms, total, setup }`) on every `setSetup`. Idle motion is a slow sway (±0.22 rad over 26 s) about the hero azimuth, so the rear wing never leaves frame; `prefers-reduced-motion` turns it off and makes `hero()` instant. The view renders only while the camera moves or something changed. The shadow map is rendered once per `setSetup`, not per frame.
 
 Game side (`js/carmodel.js`, opt-in): `EI.CarModel.build(car, setup?)`, `EI.CarModel.wingGeometry(setup?, elementsOnly?)`, `EI.CarModel.rebuildWings(modelOrGroup, setup)` (returns ms), `EI.CarModel.SETUP_BASE / SETUP_K`; aliases `EI.carModel(opts, setup)` and `EI.rebuildWings(target, setup)` as ARCHITECTURE §9 names them. `build()` now also returns `wingMesh`, `bodyY0`, `setup`, and the group carries `userData.carModel`. With no setup every geometry is byte-identical to before (hash check below).
+
+### 2026-10-24 02:20 London — agent F (Claude, session `session_01DoxHh5Ynx2BDWZsPvLCyDR`) — P3.T2 (hero shot, part 2: the real lab page)
+- Status: done pending merge; PR from `claude/car3d-p3-hero2` into `claude/amazing-planck-804i13`.
+- Files changed: `lab/car3d.js`, this file, `car3d-screens/lab-page-1440x900.png`. Nothing in the UI lane's files.
+- Found on the merged lab page (`MUBIT_MOCK=1 npm run dev`, http://127.0.0.1:8788/lab/): `lab/index.html` loads only `three`, `util`, track data, `carmodel`, `car`, `ai` and the lab files, so `EI.paintLivery` / `EI.TEAM_BY_ID` / `EI.TYRES` were missing, `mount` threw, `lab.js` swallowed it (its try/catch) and the panel stayed black. Fixed inside my lane: `car3d.js` now lazy-loads the 18 livery scripts itself (sequential `<script>` tags from the repo root derived from `document.currentScript.src`), sets `EI.Ads.BRAND_DIR` absolutely, waits for `EI.Ads.ready()` at most 3.5 s, then builds the car; `setSetup` / `setBaseline` queue until then. No change needed in `lab/index.html` or `lab.js`. (The UI lane may add the game scripts to the page later; `car3d.js` then skips the load.)
+- Hero against the real layout: the look-at point moved below the car (`HERO.target.y −0.05`, elev 0.21) so the car sits in the upper two thirds of the panel, clear of the UI's setup table (bottom-left) and source line (bottom-right); the rear wing stays in frame at the panel's aspect (897×560 → 1.6 and 897×484 → 1.85 at 1440×900).
+- Verify: lab page at 1440×900: mounted, canvas present, car built, `aspect 1.6, radius 7.4`, opens on the hero; mock `Run` → candidate applied through `setSetup` in 18.6 ms (brake-bias candidate, so no ghost, correct). Console: only the page's own `/favicon.ico` 404 (UI lane; not mine). Standalone test page: AC1 rear wing 30 in 9.8 ms, 10× 4.6–11.3 ms, ghost hidden at mount / shown at 30°, reduced motion ok, resize ok; game `index.html` 0 errors. `npm test` 74 pass, 0 fail. Screenshot: `car3d-screens/lab-page-1440x900.png`.
+- For QA, headless rendering flags that work here (Chromium 1243 at `/opt/pw-browsers/chromium`, Playwright): `--use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader` (WebGL2 reports "WebKit WebGL" and renders the view; a black `#car3d` on the integration branch before PR #22 was the missing-livery throw, not GL). Allow ~5 s after load for the lazy livery scripts + first frame before screenshotting.
+- Decisions proposed: D-C5 `lab/car3d.js` owns loading the livery pipeline it needs (self-contained; the lab page stays as the UI lane wrote it). DESIGN_SYSTEM §8 line "opens on the three-quarter rear hero angle with the rear wing in frame": checked on the real page.
+- Blockers / questions for Tanuj: none. Note for UI: a `<link rel="icon" href="data:,">` in `lab/index.html` removes the only console error on the page (DESIGN_SYSTEM §8 asks for none).
+- Next three actions:
+  1. After merge: re-open http://127.0.0.1:8788/lab/, run a random candidate with a rear-wing change and confirm the purple ghost reads well at the panel size (test page shows it does at 1280×800).
+  2. Optional 200 ms ride-height ease.
+  3. QA: GPU timing of `setSetup` on the demo laptop; add to QA.md.
 
 ### 2026-10-24 01:05 London — agent F (Claude, session `session_01DoxHh5Ynx2BDWZsPvLCyDR`) — P3.T2 (hero shot, part 1)
 - Status: in_progress; this part in PR from `claude/car3d-p3-hero`. Part 2 (final framing against the real lab panel) waits for the UI lane (`lab/index.html` does not exist yet; UI.md unclaimed at 01:00).
