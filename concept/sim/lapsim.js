@@ -63,7 +63,7 @@
     opt_soft: 0.25,             // "optimal": width (in log sens) of the soft switch between deploy, neutral and superclip
     opt_refine: 0,              // "optimal": re-derive the value of a joule on the solved lap this many times (0: not self-consistent, it can flip)
     clip_search: 5,             // golden-section evaluations of the superclip amount (phi)
-    clip_search_iters: 13,      // bisection iterations inside that search
+    clip_search_iters: 10,      // bisection iterations inside that search (0.1 m/s on the threshold; the final solve uses lambda_iters)
     // upshift torque cut (s): no drive force for this long after each upshift (assumption: 2026 seamless-shift gearboxes cut very
     // little; capped at the 200 ms upshift the brief allows). Only with PhysicalCar.gearing, default strategy only.
     upshift_cut_s: 0.03, upshift_cut_max_s: 0.2,
@@ -99,7 +99,7 @@
     return {
       id: "prior-2026", label: "generic 2026 prior car (sourced magnitudes, not estimated)",
       mass_kg: 770,              // C4.1 qualifying 726 kg + Nominal Tyre Mass 44 kg; priors 770-780 (Mercedes reported at the minimum)
-      fuel_kg: 5,                // qualifying run fuel (assumption, as concept/data/cars-2026-derived.json)
+      fuel_kg: 8,                // qualifying run fuel (assumption; concept/weekend quali_fuel_kg uses the same 8 kg)
       wheelbase_m: 3.4,          // C2.3.3 maximum
       track_front_m: 1.6, track_rear_m: 1.55, // assumption (1900 mm max car width)
       cog_height_m: 0.30,        // priors 0.27-0.34 m above the ground (central)
@@ -113,7 +113,7 @@
         // the baseline design (35 mm), so physical(baseline) carries the same platform (priors-2026 ride sensitivity 0.3-0.8 %/mm)
         ride_height_mm: 35, ride_sens_per_mm: 0.006, stall_margin_mm: 3.67,
       },
-      pu: { ice_kw: 400, mguk_kw: 350, es_deploy_mj_per_lap: 12.5, es_harvest_mj_per_lap: 8.5 },   // ICE priors 385-430 kW
+      pu: { ice_kw: 400, mguk_kw: 350, es_deploy_mj_per_lap: 12.5, es_harvest_mj_per_lap: 8.5 },   // ICE: the FIA 2026 design figure 400 kW (priors 385-430), not estimated
       tyres: { mu_x: 1.75, mu_y: 1.8, load_sens: 0.086, radius_m: 0.348, compound: "soft" },      // priors mu 1.6-2.0 / 1.5-1.9 at 2 kN; 4.5 %/kN
       brakes: { max_decel_g_mech: 5.0 },
       drivetrain_eff: 0.95,
@@ -270,7 +270,9 @@
     const du = MODEL.du, NU = tab[0].AY.length;
     // linear interpolation in a table at air speed u
     const L = (arr, u) => { let x = u / du; if (x < 0) x = 0; if (x > NU - 1.001) x = NU - 1.001; const i = x | 0, t = x - i; return arr[i] + t * (arr[i + 1] - arr[i]); };
-    const kap = tr.kappa, seg = tr.seg, grade = tr.grade, zone = tr.straightZone;
+    // opts.grade_scale (default 1) scales the track gradient (0 = a flat track; for studies and tests)
+    const gs = opts.grade_scale != null && isFinite(+opts.grade_scale) ? +opts.grade_scale : 1;
+    const kap = tr.kappa, seg = tr.seg, grade = gs === 1 ? tr.grade : tr.grade.map(g => g * gs), zone = tr.straightZone;
     const w = new Float64Array(n);
     if (c.wind_ms) for (let i = 0; i < n; i++) w[i] = headwind(c, tr.heading[i]);
     // crosswind yaw on downforce (estimate; off unless the car has aero.yaw_sens > 0 and there is wind): grip tables are read at
@@ -283,7 +285,8 @@
     // tyre slip drag (v2): cornering at lateral acceleration a_y with slip angle alpha costs F = m a_y tan(alpha), alpha growing
     // with the share r of the lateral limit used (alpha = MODEL.slip_angle_rad at the limit). It is why real 2026 laps lose
     // speed at full throttle through Abbey, Farm, Copse and Maggotts.
-    const slipA = MODEL.slip_angle_rad, slipDrag = (ay, r) => m * ay * Math.tan(slipA * (r < 1 ? r : 1));
+    // tan(alpha) by its 3-term series (alpha <= 0.12 rad: error < 1e-5 relative), cheaper in the hot loops
+    const slipA = MODEL.slip_angle_rad, slipDrag = (ay, r) => { const al = slipA * (r < 1 ? r : 1), a2 = al * al; return m * ay * al * (1 + a2 * (1 / 3 + a2 * 0.13333333)); };
 
     // 1. apex limits: largest v with v^2 |kappa| <= ay_max(v + headwind), Corner Mode
     const vlim = new Float64Array(n), C0 = tab[0];

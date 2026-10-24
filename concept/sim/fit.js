@@ -14,7 +14,8 @@
   const S = EI.conceptSim && EI.conceptSim.simulateLap ? EI.conceptSim : require("./lapsim.js");
 
   const TEAM_FIT = {
-    sigma: { lap_s: 0.10, trap_kmh: 1.0, cla: 0.12, cda: 0.10, pu: 0.03 },          // likelihood widths and prior widths (log scale)
+    sigma: { lap_s: 0.10, trap_kmh: 2.5,   // trap 2.5 km/h: the trap is not a clean car property (tow, deployment state)
+      cla: 0.12, cda: 0.10, pu: 0.03 },          // likelihood widths and prior widths (log scale)
     bounds: { cla: [0.70, 1.15], cda: [0.80, 1.25], pu: [0.92, 1.05] },
     iters: 30, lambda0: 1e-2, fd: 0.02,
   };
@@ -110,9 +111,11 @@
   // CDA_corner x the Straight/Corner ratio range, so both priors hold; load sensitivity is in % per kN of tyre load (the sim's
   // dimensionless load_sens = %/kN / 100 x the mean static tyre load in kN).
   const EST = {
-    iters: 420, step: 0.6, lap_weight: 400, trap_weight: 0, prior_weight: 10,   // km/h^2 per s^2 of lap error / per (km/h)^2 of trap error
+    iters: 420, restarts: 2, step: 0.6, lap_weight: 400, trap_weight: 0, prior_weight: 10,   // km/h^2 per s^2 of lap error / per (km/h)^2 of trap error
     params: [["mu_y", "mu_y_peak_at_2kN"], ["mu_x", "mu_x_peak_at_2kN"], ["cla", "CLA_corner"], ["balance", "aero_balance_front"], ["cda", "CDA_corner"],
-      ["cda_straight", "CDA_straight"], ["cla_straight_ratio", "CLA_straight_over_corner"], ["load_sens_pct_per_kN", "load_sensitivity"], ["ice_kw", "ICE_crank_power"]],
+      ["cda_straight", "CDA_straight"], ["cla_straight_ratio", "CLA_straight_over_corner"], ["load_sens_pct_per_kN", "load_sensitivity"]],
+    // ICE power is NOT estimated: it stays at the FIA's 2026 design figure (400 kW, inside the 385-430 kW prior); with the lap and
+    // trace alone it trades against drag (the derived-car degeneracy, REDBULL-DERIVED.md §2), and the design layer keys on it
     // brake supplier simulation for 2026 Silverstone (priors-2026 peak_decel_high_speed_entry 3.1-3.8 g, central 3.4), at 260 km/h
     brake_peak_kmh: 260,
   };
@@ -140,7 +143,7 @@
     c.aero.straight = Object.assign({}, c.aero.straight, { CLA_front_m2: cs * v.balance, CLA_rear_m2: cs * (1 - v.balance), CDA_m2: v.cda_straight });
     const fz0kN = ((c.mass_kg + c.fuel_kg) * 9.81) / 4 / 1000;
     c.tyres.mu_y = v.mu_y; c.tyres.mu_x = v.mu_x; c.tyres.load_sens = (v.load_sens_pct_per_kN / 100) * fz0kN;
-    c.pu.ice_kw = v.ice_kw;
+    if (v.ice_kw != null) c.pu.ice_kw = v.ice_kw;
     return c;
   }
   // a car's parameters against the prior ranges (for fitted.js / SIM.md): value, lo, central, hi, inside
@@ -198,7 +201,10 @@
       const trapErr = ref.reference.speed_trap_kmh != null ? r.speed_trap_kmh - ref.reference.speed_trap_kmh : 0;
       return { f: rms * rms + EST.lap_weight * (r.lap_s - ref.reference.lap_s) ** 2 + EST.trap_weight * trapErr * trapErr + EST.prior_weight * (pen + dat), rms, r, car, v, z };
     };
-    const best = nelderMead(f, opts.x0 || z0Of(P), EST.step, opts.iters || EST.iters);
+    // Nelder-Mead, then EST.restarts restarts from the best point with a fresh simplex (the lap is only piecewise smooth in the
+    // parameters - energy-strategy switches - so a simplex can stall on a ridge; restarts are deterministic)
+    let best = nelderMead(f, opts.x0 || z0Of(P), EST.step, opts.iters || EST.iters);
+    for (let k = 0; k < EST.restarts; k++) { const b2 = nelderMead(f, best.z, EST.step / 2, Math.round((opts.iters || EST.iters) / 2)); if (b2.f < best.f) best = b2; }
     const c = best.car, r1 = v => Math.round(v * 1e4) / 1e4;
     for (const m of ["corner", "straight"]) for (const k of ["CLA_front_m2", "CLA_rear_m2", "CDA_m2"]) c.aero[m][k] = r1(c.aero[m][k]);
     for (const k of ["mu_x", "mu_y", "load_sens"]) c.tyres[k] = r1(c.tyres[k]);
@@ -206,7 +212,7 @@
     const r = S.simulateLap(c, trackId, cond, { trace: true, cal: ident }), values = {};
     EST.params.forEach(([k]) => { values[k] = r1(best.v[k]); });
     return {
-      method: "MAP (Nelder-Mead, " + (opts.iters || EST.iters) + " iterations) on the pole lap's speed trace + lap time + speed trap; " + EST.params.length + " global parameters (" + EST.params.map(p => p[0]).join(", ") + ") bounded to the concept/data/priors-2026.json ranges with Gaussian priors (range = +-2 sd), plus Gaussian terms for the pole team's telemetry-derived lateral limits and CdA (cars-2026-derived.json) and the brake supplier's 2026 Silverstone peak deceleration",
+      method: "MAP (Nelder-Mead, " + (opts.iters || EST.iters) + " iterations + " + EST.restarts + " restarts) on the pole lap's speed trace + lap time; " + EST.params.length + " global parameters (" + EST.params.map(p => p[0]).join(", ") + ") bounded to the concept/data/priors-2026.json ranges with Gaussian priors (range = +-2 sd), plus Gaussian terms for the pole team's telemetry-derived lateral limits and CdA (cars-2026-derived.json) and the brake supplier's 2026 Silverstone peak deceleration",
       scales: values,
       estimate: { aero: { corner: c.aero.corner, straight: c.aero.straight }, tyres: { mu_x: c.tyres.mu_x, mu_y: c.tyres.mu_y, load_sens: c.tyres.load_sens }, pu: { ice_kw: c.pu.ice_kw }, gearing: prior.gearing || null },
       fit_lap: { driver: ref.reference.driver, lap_real_s: ref.reference.lap_s, lap_sim_s: r.lap_s, sectors_real_s: ref.reference.sectors_s, sectors_sim_s: r.sectors_s, trap_real_kmh: ref.reference.speed_trap_kmh, trap_sim_kmh: r.speed_trap_kmh, trace_rms_kmh: Math.round(traceError(r, ref, tr) * 100) / 100 },
@@ -270,10 +276,9 @@
     const base = opts.car || S.baselineCar(), targets = teamTargets(trackId), sg = TEAM_FIT.sigma, B = teamBounds(base);
     const pus = Array.from(new Set(targets.map(t => t.pu))).sort();
     const nT = targets.length, nP = nT * 2 + pus.length;
-    // traps are fitted RELATIVE to the baseline's own trap error on the pole lap (SIM.md §6): the sim's straight-line speeds carry
-    // a common bias (the corner-grip limit of §7 makes every car too fast at the trap), so a team's trap is matched as
-    // (its real trap + that bias); its absolute residual is still reported
-    const trapBias = opts.trap_bias_kmh != null ? opts.trap_bias_kmh : S.simulateLap(base, trackId, cond, { cal }).speed_trap_kmh - reference(trackId).trap_kmh;
+    // traps are matched in absolute terms (opts.trap_bias_kmh shifts every target, e.g. to fit relative to the baseline's own trap
+    // error; 0 by default: fitting relative made the held-out traces worse, SIM.md §6)
+    const trapBias = opts.trap_bias_kmh != null ? +opts.trap_bias_kmh : 0;
     const idxPU = t => nT * 2 + pus.indexOf(t.pu);
     const lb = [], ub = [];
     for (let i = 0; i < nT; i++) { lb.push(Math.log(B.cla[0]), Math.log(B.cda[0])); ub.push(Math.log(B.cla[1]), Math.log(B.cda[1])); }
