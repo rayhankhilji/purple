@@ -2,7 +2,8 @@
 const path = require("path");
 require("dotenv").config({ path: process.env.PURPLE_ENV_FILE || path.join(__dirname, ".env") });
 const prompt = require("../lab/prompt.js");
-const mock = process.env.MUBIT_MOCK === "1";
+const MM = process.env.MUBIT_MOCK; if (MM != null && MM !== "" && MM !== "0" && MM !== "1") { console.error(`PURPLE: MUBIT_MOCK must be "1" (mock) or unset/"0", got ${JSON.stringify(MM)}. Refusing to start.`); process.exit(1); }
+const mock = MM === "1";
 // the mock planner must never write into the real ledger: without an explicit PURPLE_DATA_DIR it uses data-mock/ (gitignored)
 if (mock && !process.env.PURPLE_DATA_DIR) process.env.PURPLE_DATA_DIR = "./data-mock";
 if (!mock && !process.env.MUBIT_API_KEY) { console.error("PURPLE: MUBIT_API_KEY is not set (server/.env). Refusing to start. Use MUBIT_MOCK=1 for the no-network drill."); process.exit(1); }

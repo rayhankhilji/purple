@@ -16,6 +16,14 @@ function getClient() {
   return client;
 }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+// G-MUBIT-05, process-wide: at most SLOTS calls in flight at once, whoever calls (collect at concurrency 2, a UI click, the exam).
+// withSlot(fn) runs fn once a slot is free; the 429 retry inside callMubit keeps its slot. Exported for the test.
+const SLOTS = 2; let inFlight = 0; const waiting = [];
+function withSlot(fn) {
+  const run = () => { inFlight++; return Promise.resolve().then(fn).finally(() => { inFlight--; const next = waiting.shift(); if (next) next(); }); };
+  if (inFlight < SLOTS) return run();
+  return new Promise((resolve, reject) => waiting.push(() => run().then(resolve, reject)));
+}
 const headerOf = (h, name) => (!h ? null : typeof h.get === "function" ? h.get(name) : h[name] || h[name.toLowerCase()] || null);
 function wrap(e) {
   const body = e && e.error, inner = body && (body.error || body);
@@ -27,7 +35,8 @@ function wrap(e) {
   });
 }
 // { userContent, sessionId, trained, kind } -> { text, kind, session_id, mubit_request_id, model, input_tokens, output_tokens, latency_ms, trained, stop_reason }
-async function callMubit({ userContent, sessionId, trained, kind }) {
+async function callMubit(args) { return withSlot(() => callMubitNow(args)); }
+async function callMubitNow({ userContent, sessionId, trained, kind }) {
   const params = {
     model: prompt.MODEL, max_tokens: prompt.MAX_TOKENS, temperature: prompt.TEMPERATURE,
     system: prompt.SYSTEM_PROMPT,
@@ -56,4 +65,4 @@ async function callMubit({ userContent, sessionId, trained, kind }) {
     latency_ms, trained: !!trained, stop_reason: data.stop_reason,
   };
 }
-module.exports = { callMubit, MubitError, DEFAULT_BASE_URL };
+module.exports = { callMubit, MubitError, DEFAULT_BASE_URL, withSlot, SLOTS, inFlight: () => inFlight };

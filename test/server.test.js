@@ -29,6 +29,9 @@ test("T-F03-AC3 planner returns prose -> one retry, then status parse_error and 
   assert.equal(mock.count(), 2);
   const rows = fs.readFileSync(path.join(dir, "ledger.jsonl"), "utf8").trim().split("\n").map(JSON.parse); assert.equal(rows[0].status, "parse_error"); assert.equal(rows[0].plan, null);
   const calls = fs.readFileSync(path.join(dir, "calls.jsonl"), "utf8").trim().split("\n").map(JSON.parse); assert.equal(calls.length, 2); assert.ok(calls.every(c => c.status === "parse_error"));
+  // audit decision 3: the same-input retry is sent untrained (same session id), so a repeated slip is not a second bad example
+  assert.deepEqual(calls.map(c => [c.attempt, c.trained]), [[0, true], [1, false]]); assert.equal(calls[0].session_id, calls[1].session_id);
+  assert.deepEqual(mock.inputs.map(i => i.trained), [true, false]); assert.equal(mock.inputs[0].sessionId, mock.inputs[1].sessionId);
 });
 test("Mubit failure -> 502 MUBIT_ERROR with the Mubit code; the ledger keeps the row", async () => {
   mock.reset(); const e = new Error("busy"); e.code = "starter_credit_busy"; e.status = 429; mock.queue(e); const { app } = createApp({ dataDir: tmp(), mubit: mock, log: () => {} });
@@ -151,6 +154,106 @@ test("runExam persists status.exam.details (id, truth, answer, verdict_ok, param
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(dir, "status.json"), "utf8")).exam.details, d);   // persisted, not just in the view
   const s2 = (await post(app, "/api/status", { exam: { v1: 4 } })).body.data; assert.deepEqual(s2.exam.details, d); assert.equal(s2.exam.provider, 1); assert.equal(s2.exam.v1, 4);   // the deep merge keeps them
   const calls = fs.readFileSync(path.join(dir, "calls.jsonl"), "utf8").trim().split("\n").map(JSON.parse); assert.ok(calls.filter(c => c.kind === "exam").every(c => c.trained === false));
+});
+test("audit 1/6: non-JSON content-type or a non-loopback Host -> 400 before any work; malformed JSON body -> 400 (no trained call)", async () => {
+  mock.reset(); const { app } = createApp({ dataDir: tmp(), mubit: mock, log: () => {} });
+  const raw = (url, init) => app.request(url, init).then(async r => ({ status: r.status, body: await r.json() }));
+  // a cross-site text/plain POST (no preflight) must not reach the route
+  let r = await raw("/api/collect", { method: "POST", headers: { "content-type": "text/plain", origin: "https://evil.example" }, body: JSON.stringify({ n: 5, confirm: "trained" }) }); assert.equal(r.status, 400); assert.match(r.body.error.message, /content-type must be application\/json/);
+  r = await raw("/api/plan", { method: "POST", body: "{}" }); assert.equal(r.status, 400); assert.match(r.body.error.message, /got text\/plain/);   // fetch's default for a string body
+  r = await raw("/api/plan", { method: "POST" }); assert.equal(r.status, 400); assert.match(r.body.error.message, /got none/);
+  r = await raw("/api/plan", { method: "POST", headers: { "content-type": "multipart/form-data; boundary=x" }, body: "" }); assert.equal(r.status, 400);
+  // DNS rebinding: a Host that is not loopback is refused even for GET
+  r = await raw("/api/status", { headers: { host: "evil.example" } }); assert.equal(r.status, 400); assert.match(r.body.error.message, /Host must be 127\.0\.0\.1 or localhost/);
+  r = await raw("/api/status", { headers: { host: "127.0.0.1.evil.example" } }); assert.equal(r.status, 400);
+  for (const h of ["127.0.0.1:8787", "localhost", "LOCALHOST:8787", "[::1]:8787"]) { r = await raw("/api/status", { headers: { host: h } }); assert.equal(r.status, 200, h); }
+  // application/json with a charset is fine; an empty body is {}; garbage or a non-object is 400
+  r = await raw("/api/state", { method: "POST", headers: { "content-type": "application/json; charset=utf-8" }, body: "" }); assert.equal(r.status, 200);
+  r = await raw("/api/plan", { method: "POST", headers: { "content-type": "application/json" }, body: "{not json" }); assert.equal(r.status, 400); assert.match(r.body.error.message, /body must be valid JSON/);
+  r = await raw("/api/plan", { method: "POST", headers: { "content-type": "application/json" }, body: "[1,2]" }); assert.equal(r.status, 400); assert.match(r.body.error.message, /JSON object/);
+  r = await raw("/api/plan", { method: "POST", headers: { "content-type": "application/json" }, body: "null" }); assert.equal(r.status, 400);
+  assert.equal(mock.count(), 0, "no planner call was made");
+  // the preflight still works (cors answers before the guard)
+  const pre = await app.request("/api/plan", { method: "OPTIONS", headers: { origin: "http://127.0.0.1:8788", "access-control-request-method": "POST", "access-control-request-headers": "content-type, x-client-id" } }); assert.equal(pre.status, 204);
+  const evil = await app.request("/api/plan", { method: "OPTIONS", headers: { origin: "https://evil.example", "access-control-request-method": "POST" } }); assert.equal(evil.headers.get("access-control-allow-origin"), null);
+  r = await raw("/api/plan", { method: "POST", headers: { "content-type": "application/json" }, body: "{}" }); assert.equal(r.status, 200); assert.equal(mock.count(), 1);
+});
+test("audit 4: MUBIT_MOCK accepts only \"1\" or unset/\"0\"; PURPLE_ALLOW_MOCK_IN_DATA must be \"1\"; the data-mock guard compares real, case-folded paths", () => {
+  const { mockMode, resolveDataDir } = require("../server/app.js"); const ROOT = path.join(__dirname, "..");
+  const env0 = { MUBIT_MOCK: process.env.MUBIT_MOCK, PURPLE_ALLOW_MOCK_IN_DATA: process.env.PURPLE_ALLOW_MOCK_IN_DATA, PURPLE_DATA_DIR: process.env.PURPLE_DATA_DIR };
+  try {
+    for (const v of [undefined, "", "0"]) { if (v === undefined) delete process.env.MUBIT_MOCK; else process.env.MUBIT_MOCK = v; assert.equal(mockMode(), false, String(v)); }
+    process.env.MUBIT_MOCK = "1"; assert.equal(mockMode(), true);
+    for (const v of ["true", "yes", " 1", "01", "2"]) { process.env.MUBIT_MOCK = v; assert.throws(() => mockMode(), /MUBIT_MOCK must be "1"/, v); assert.throws(() => createApp({ mubit: mock, log: () => {} }), /MUBIT_MOCK/, v); }
+    process.env.MUBIT_MOCK = "1"; delete process.env.PURPLE_ALLOW_MOCK_IN_DATA;
+    const upper = path.join(ROOT, "DATA"), slashy = path.join(ROOT, "data") + path.sep, viaDots = path.join(ROOT, "server", "..", "data");
+    for (const d of [path.join(ROOT, "data"), "data", "./data", slashy, viaDots, process.platform === "win32" || fs.existsSync(upper) ? upper : path.join(ROOT, "data")]) { const r = resolveDataDir({ dataDir: d, mock: true }); assert.equal(r.dir, path.join(ROOT, "data-mock"), d); assert.equal(r.redirected, true); }
+    assert.equal(resolveDataDir({ dataDir: "data-mock", mock: true }).redirected, false); assert.equal(resolveDataDir({ dataDir: path.join(ROOT, "data"), mock: false }).redirected, false); assert.equal(resolveDataDir({ dataDir: path.join(ROOT, "data"), mock: true, injected: true }).redirected, false);
+    for (const v of ["true", "yes", "0", ""]) { process.env.PURPLE_ALLOW_MOCK_IN_DATA = v; assert.equal(resolveDataDir({ dataDir: "data", mock: true }).redirected, true, "allow=" + v); }
+    process.env.PURPLE_ALLOW_MOCK_IN_DATA = "1"; assert.equal(resolveDataDir({ dataDir: "data", mock: true }).redirected, false);
+    // a symlink to data/ is caught by the realpath comparison
+    const link = path.join(tmp(), "ledger-link"); try { fs.symlinkSync(path.join(ROOT, "data"), link, "dir"); delete process.env.PURPLE_ALLOW_MOCK_IN_DATA; assert.equal(resolveDataDir({ dataDir: link, mock: true }).redirected, true); } catch (e) { if (e.code !== "EPERM" && e.code !== "ENOENT") throw e; }
+  } finally { for (const k of Object.keys(env0)) { if (env0[k] == null) delete process.env[k]; else process.env[k] = env0[k]; } }
+  const r = spawnSync(process.execPath, [path.join(ROOT, "server", "index.js")], { env: Object.assign({}, process.env, { MUBIT_MOCK: "yes", PURPLE_ENV_FILE: "/nonexistent/.env" }), encoding: "utf8", timeout: 15000 }); assert.equal(r.status, 1); assert.match(r.stderr, /MUBIT_MOCK must be "1"/);
+  const sm = spawnSync(process.execPath, [path.join(ROOT, "server", "scripts", "smoke.js")], { env: Object.assign({}, process.env, { MUBIT_MOCK: "true", PURPLE_ENV_FILE: "/nonexistent/.env" }), encoding: "utf8", timeout: 15000 }); assert.notEqual(sm.status, 0); assert.match(sm.stderr, /MUBIT_MOCK must be "1"/);
+  // snapshot.js ignores an exported PURPLE_DATA_DIR unless --data is given
+  const { snapshot } = require("../server/scripts/snapshot.js"); const envDir = tmp(); fs.writeFileSync(path.join(envDir, "rules.json"), "[]"); const out = tmp();
+  const saved = process.env.PURPLE_DATA_DIR; process.env.PURPLE_DATA_DIR = envDir; try { const snap = snapshot({ out, label: "env", at: new Date(0) }); assert.ok(snap.files.some(f => f.name === "exam.json"), "read the real data/ (exam.json is committed there), not $PURPLE_DATA_DIR"); } finally { if (saved == null) delete process.env.PURPLE_DATA_DIR; else process.env.PURPLE_DATA_DIR = saved; }
+  const explicit = snapshot({ out, label: "explicit", data: envDir, at: new Date(1000) }); assert.deepEqual(explicit.files.map(f => f.name), ["rules.json"]);
+});
+test("audit 9: a scenario over 1,400 chars -> 400 BAD_INPUT before any Mubit call; identical overrule text reuses the rule (and re-activates it)", async () => {
+  mock.reset(); const { app, EI, db } = createApp({ dataDir: tmp(), mubit: mock, log: () => {} });
+  const real = EI.schema.serializeScenario; EI.schema.serializeScenario = s => real(s) + " ".repeat(1400);
+  try { const r = await post(app, "/api/plan", { scenario_overrides: { seed: 9 } }); assert.equal(r.status, 400); assert.equal(r.body.error.code, "BAD_INPUT"); assert.match(r.body.error.message, /over the 1400-char cap/); assert.ok(r.body.error.chars > 1400); assert.equal(mock.count(), 0); assert.equal((await json(app, "/api/ledger")).body.data.length, 0); }
+  finally { EI.schema.serializeScenario = real; }
+  const x = (await post(app, "/api/plan", { scenario_overrides: { seed: 9 } })).body.data; assert.equal(mock.count(), 1);
+  const a = (await post(app, "/api/overrule", { experiment_id: x.id, verdict: "reject", reason: "Judge on the full lap." })).body.data; assert.equal(a.rule.id, "R-01"); assert.equal(a.reused, false);
+  const b = (await post(app, "/api/overrule", { experiment_id: x.id, verdict: "retest", reason: "  Judge   on the\nfull lap. " })).body.data; assert.equal(b.rule.id, "R-01"); assert.equal(b.reused, true); assert.equal(b.experiment.overrule.rule_id, "R-01"); assert.equal(b.experiment.overrule.verdict, "retest");
+  assert.equal(db.readRules().length, 1);
+  await post(app, "/api/rules/R-01", { active: false }); const c = (await post(app, "/api/overrule", { experiment_id: x.id, verdict: "reject", reason: "Judge on the full lap." })).body.data; assert.equal(c.rule.id, "R-01"); assert.equal(c.rule.active, true); assert.equal(db.readRules()[0].active, true);
+  const d = (await post(app, "/api/overrule", { experiment_id: x.id, verdict: "reject", reason: "Judge on the full lap" })).body.data; assert.equal(d.rule.id, "R-02");   // a different text (no full stop) is a new rule
+});
+test("audit 2: npm run collect requires --confirm-trained, caps --n at 60, prints the remaining trained budget and refuses to exceed it", () => {
+  const ROOT = path.join(__dirname, ".."), script = path.join(ROOT, "server", "scripts", "collect.js");
+  const run = (a, extraEnv) => spawnSync(process.execPath, [script, ...a], { env: Object.assign({}, process.env, { MUBIT_MOCK: "1", PURPLE_ENV_FILE: "/nonexistent/.env" }, extraEnv || {}), encoding: "utf8", timeout: 30000 });
+  const dir = tmp();
+  let r = run(["--n", "2", "--data", dir]); assert.equal(r.status, 1); assert.match(r.stderr, /Re-run with --confirm-trained/); assert.equal(fs.existsSync(path.join(dir, "calls.jsonl")), false);
+  r = run(["--n", "61", "--data", dir, "--confirm-trained"]); assert.equal(r.status, 1); assert.match(r.stderr, /between 1 and 60/);
+  r = run(["--n", "0", "--data", dir, "--confirm-trained"]); assert.equal(r.status, 1);
+  // 248 trained rows already: budget 250 -> 2 remaining; n=3 refused, n=2 runs
+  fs.writeFileSync(path.join(dir, "calls.jsonl"), Array.from({ length: 248 }, (_, i) => JSON.stringify({ id: "c" + i, kind: "plan", trained: true, created_at: "2026-10-23T23:00:00Z" })).join("\n") + "\n" + JSON.stringify({ id: "s", kind: "smoke", trained: false }) + "\n");
+  r = run(["--n", "3", "--data", dir, "--confirm-trained", "--seed", "1"]); assert.equal(r.status, 3); assert.match(r.stdout, /trained budget 2 of 250 remaining \(248 trained rows/); assert.match(r.stderr, /exceed the remaining trained budget of 2/);
+  assert.equal(fs.readFileSync(path.join(dir, "calls.jsonl"), "utf8").trim().split("\n").length, 249, "nothing sent");
+  r = run(["--n", "2", "--data", dir, "--confirm-trained", "--seed", "1"]); assert.equal(r.status, 0, r.stderr); assert.match(r.stdout, /trained budget 2 of 250 remaining/); assert.match(r.stdout, /collect done/);
+  assert.equal(fs.readFileSync(path.join(dir, "calls.jsonl"), "utf8").trim().split("\n").length, 251);
+  r = run(["--n", "1", "--data", dir, "--confirm-trained"], { PURPLE_TRAINED_BUDGET: "300" }); assert.equal(r.status, 0, r.stderr); assert.match(r.stdout, /trained budget 50 of 300 remaining/);
+});
+test("audit 7: callMubit runs at most 2 calls at once, process-wide (withSlot)", async () => {
+  const { withSlot, SLOTS, inFlight } = require("../server/mubit.js"); assert.equal(SLOTS, 2);
+  let now = 0, peak = 0; const order = [];
+  const job = i => withSlot(async () => { now++; peak = Math.max(peak, now); order.push("start " + i); await new Promise(r => setTimeout(r, 15)); now--; order.push("end " + i); if (i === 3) throw new Error("boom " + i); return i; });
+  const results = await Promise.allSettled([0, 1, 2, 3, 4].map(job));
+  assert.equal(peak, 2); assert.equal(inFlight(), 0); assert.deepEqual(results.map(r => r.status), ["fulfilled", "fulfilled", "fulfilled", "rejected", "fulfilled"]); assert.equal(results[4].value, 4);
+  assert.deepEqual(order.slice(0, 2), ["start 0", "start 1"]); assert.ok(order.indexOf("start 2") > order.indexOf("end 0") || order.indexOf("start 2") > order.indexOf("end 1"));
+  // a slot survives a throwing job: the queue keeps draining
+  assert.equal(await withSlot(async () => "after"), "after"); assert.equal(inFlight(), 0);
+});
+test("audit 8: fake-race refuses against a real planner (health mock:false) unless --synthetic, which labels the row synthetic", async () => {
+  mock.reset(); const real = { callMubit: mock.callMubit };   // same behaviour, but no CANNED marker -> /api/health reports mock:false
+  const { app } = createApp({ dataDir: tmp(), mubit: real, log: () => {} }); assert.equal((await json(app, "/api/health")).body.data.mock, false);
+  const x = (await post(app, "/api/plan", { scenario_overrides: { seed: 9 } })).body.data;
+  const { serve } = require("@hono/node-server"); const srv = await new Promise(r => { const s = serve({ fetch: app.fetch, port: 0, hostname: "127.0.0.1" }, () => r(s)); });
+  try {
+    const port = srv.address().port, script = path.join(__dirname, "..", "server", "scripts", "fake-race.js");
+    const run = a => new Promise(res => { const k = require("child_process").spawn(process.execPath, [script, "--port", String(port), ...a], { timeout: 15000 }); let stdout = "", stderr = ""; k.stdout.on("data", d => stdout += d); k.stderr.on("data", d => stderr += d); k.on("close", status => res({ status, stdout, stderr })); });
+    const no = await run(["--seed", "7"]); assert.equal(no.status, 3); assert.match(no.stderr, /refusing.*mock:false/); assert.equal((await json(app, "/api/experiments/" + x.id)).body.data.measured, undefined);
+    const yes = await run(["--seed", "7", "--synthetic"]); assert.equal(yes.status, 0, yes.stderr);
+    const row = (await json(app, "/api/experiments/" + x.id)).body.data; assert.equal(row.measured.synthetic, true); assert.equal(row.measured.label, "synthetic (fake-race), seed 7"); assert.equal(row.status, "raced");
+  } finally { srv.close(); }
+  // the flag is validated on the route and absent by default
+  const { app: app2 } = createApp({ dataDir: tmp(), mubit: mock, log: () => {} }); const y = (await post(app2, "/api/plan", { scenario_overrides: { seed: 9 } })).body.data;
+  const bad = await post(app2, "/api/race/result", { experiment_id: y.id, seed: 1, synthetic: "yes", cars: raceCars(y) }); assert.equal(bad.status, 400); assert.match(bad.body.error.message, /synthetic must be a boolean/);
+  const okr = (await post(app2, "/api/race/result", { experiment_id: y.id, seed: 1, cars: raceCars(y) })).body.data; assert.equal(okr.measured.synthetic, false); assert.equal(okr.measured.label, "measured in race, seed 1");
 });
 test("POST /api/evaluate: pure, illegal -> 422 ILLEGAL_SETUP, bad input -> 400", async () => {
   mock.reset(); const { app, EI } = createApp({ dataDir: tmp(), mubit: mock });
@@ -328,10 +431,10 @@ test("POST /api/collect accepts promote_bias (0..1) and rejects others; npm run 
   const led = (await json(app, "/api/ledger")).body.data; assert.ok(led.every(x => x.candidate_source === "random-biased"));
   const bad = await post(app, "/api/collect", { n: 1, confirm: "trained", promote_bias: 2 }); assert.equal(bad.status, 400); assert.match(bad.body.error.message, /promote_bias/);
   const dir = tmp(), env = Object.assign({}, process.env, { MUBIT_MOCK: "1", PURPLE_DATA_DIR: dir, PURPLE_ENV_FILE: "/nonexistent/.env" }); delete env.MUBIT_API_KEY;
-  const cli = spawnSync(process.execPath, [path.join(__dirname, "..", "server", "scripts", "collect.js"), "--n", "4", "--seed", "3", "--promote-bias", "0.5"], { env, encoding: "utf8", timeout: 30000 });
+  const cli = spawnSync(process.execPath, [path.join(__dirname, "..", "server", "scripts", "collect.js"), "--n", "4", "--seed", "3", "--promote-bias", "0.5", "--confirm-trained"], { env, encoding: "utf8", timeout: 30000 });
   assert.equal(cli.status, 0, cli.stderr); assert.match(cli.stdout, /collect: n=4 seed=3 circuit=silverstone with_rules=false promote_bias=0.5 concurrency=2/); assert.match(cli.stdout, /\[MUBIT_MOCK\]/); assert.match(cli.stdout, /promote-biased \d+/);
   const rows = fs.readFileSync(path.join(dir, "ledger.jsonl"), "utf8").trim().split("\n").map(JSON.parse); assert.equal(rows.length, 4); assert.ok(rows.every(x => ["random", "random-biased"].includes(x.candidate_source)));
-  const badCli = spawnSync(process.execPath, [path.join(__dirname, "..", "server", "scripts", "collect.js"), "--n", "1", "--promote-bias", "3"], { env, encoding: "utf8", timeout: 30000 }); assert.equal(badCli.status, 1); assert.match(badCli.stderr, /--promote-bias must be/);
+  const badCli = spawnSync(process.execPath, [path.join(__dirname, "..", "server", "scripts", "collect.js"), "--n", "1", "--promote-bias", "3", "--confirm-trained"], { env, encoding: "utf8", timeout: 30000 }); assert.equal(badCli.status, 1); assert.match(badCli.stderr, /--promote-bias must be/);
 });
 test("MUBIT_MOCK=1 without PURPLE_DATA_DIR -> data-mock/ (never the real ledger): createApp default, server startup line, scripts' --data flag", async () => {
   const ROOT = path.join(__dirname, ".."); const env0 = { PURPLE_DATA_DIR: process.env.PURPLE_DATA_DIR, MUBIT_MOCK: process.env.MUBIT_MOCK };
@@ -346,7 +449,7 @@ test("MUBIT_MOCK=1 without PURPLE_DATA_DIR -> data-mock/ (never the real ledger)
   await new Promise((res, rej) => { const t = setTimeout(() => rej(new Error("no startup line: " + out)), 15000); k.stdout.on("data", d => { out += d; if (/PURPLE server http/.test(out)) { clearTimeout(t); res(); } }); k.on("exit", c => rej(new Error("exited " + c + ": " + out))); });
   k.kill(); assert.match(out, new RegExp("data " + path.join(ROOT, "data-mock").replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s"));
   // --data on the CLIs wins over PURPLE_DATA_DIR
-  const dir = tmp(), other = tmp(); const cli = spawnSync(process.execPath, [path.join(ROOT, "server", "scripts", "collect.js"), "--n", "1", "--seed", "1", "--data", dir], { env: Object.assign({}, env, { PURPLE_DATA_DIR: other }), encoding: "utf8", timeout: 30000 });
+  const dir = tmp(), other = tmp(); const cli = spawnSync(process.execPath, [path.join(ROOT, "server", "scripts", "collect.js"), "--n", "1", "--seed", "1", "--data", dir, "--confirm-trained"], { env: Object.assign({}, env, { PURPLE_DATA_DIR: other }), encoding: "utf8", timeout: 30000 });
   assert.equal(cli.status, 0, cli.stderr); assert.match(cli.stdout, new RegExp("data=" + dir.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))); assert.ok(fs.existsSync(path.join(dir, "ledger.jsonl"))); assert.equal(fs.existsSync(path.join(other, "ledger.jsonl")), false);
   const dry = spawnSync(process.execPath, [path.join(ROOT, "server", "scripts", "collect-dry.js"), "--n", "1", "--data", other], { env, encoding: "utf8", timeout: 30000 }); assert.equal(dry.status, 0, dry.stderr); assert.match(dry.stdout, new RegExp("nothing written to " + other.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 });

@@ -1,6 +1,6 @@
 // PURPLE - the Hono app: routes from ARCHITECTURE §5, the experiment flow from §6, envelope { ok, data } | { ok, error }.
 // createApp({ dataDir, mubit, heartbeatMs }) so tests run it in-process (app.request) with the mock planner.
-const path = require("path");
+const path = require("path"), fs = require("fs");
 const { Hono } = require("hono");
 const { streamSSE } = require("hono/streaming");
 const { cors } = require("hono/cors");
@@ -18,20 +18,34 @@ const now = () => new Date().toISOString();
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 
+// ---- environment guards (security audit, 2026-10-24 04:30)
+// MUBIT_MOCK: exactly "1" (mock planner) or unset / "" / "0" (real Mubit). Anything else is a typo that could point a real key at the mock
+// path or the other way round, so it throws (server/index.js turns that into exit 1).
+function mockMode() { const v = process.env.MUBIT_MOCK; if (v == null || v === "" || v === "0") return false; if (v === "1") return true; throw new Error('PURPLE: MUBIT_MOCK must be "1" (mock) or unset/"0", got ' + JSON.stringify(v)); }
+// real path, case-folded, so a symlink or a differently-cased spelling of data/ cannot dodge the guard below
+const realLower = p => { let r; try { r = fs.realpathSync.native(p); } catch (e) { r = path.resolve(p); } return r.toLowerCase(); };
+// where a process writes: opts.dataDir > PURPLE_DATA_DIR > data-mock/ (mock) | data/ (real). The mock planner never lands in <repo>/data
+// unless PURPLE_ALLOW_MOCK_IN_DATA === "1" (an injected planner, i.e. a test, is exempt). Shared with smoke.js, which opens the store itself.
+function resolveDataDir(o) {
+  o = o || {}; const mock = o.mock != null ? !!o.mock : mockMode();
+  const chosen = o.dataDir || process.env.PURPLE_DATA_DIR || path.join(headless.ROOT, mock ? "data-mock" : "data");
+  let dir = path.isAbsolute(chosen) ? chosen : path.join(headless.ROOT, chosen), redirected = false;
+  if (mock && !o.injected && realLower(dir) === realLower(path.join(headless.ROOT, "data")) && process.env.PURPLE_ALLOW_MOCK_IN_DATA !== "1") { dir = path.join(headless.ROOT, "data-mock"); redirected = true; }
+  return { dir, redirected, mock };
+}
 function createApp(opts) {
   opts = opts || {};
   const EI = headless.load();
   const { aero, schema, evaluator, U } = EI;
   // the mock planner must never write into the real ledger (integrator rule): without an explicit dataDir / PURPLE_DATA_DIR,
   // MUBIT_MOCK=1 uses data-mock/ (gitignored). Every createApp() caller (server, collect, exam, collect-dry) inherits this.
-  const dataDir = opts.dataDir || process.env.PURPLE_DATA_DIR || path.join(headless.ROOT, process.env.MUBIT_MOCK === "1" ? "data-mock" : "data");
-  let dataDirAbs = path.isAbsolute(dataDir) ? dataDir : path.join(headless.ROOT, dataDir);
-  // the mock planner never writes into the real ledger, even when .env points PURPLE_DATA_DIR at ./data (PURPLE_ALLOW_MOCK_IN_DATA=1 overrides)
-  if (process.env.MUBIT_MOCK === "1" && !opts.mubit && path.resolve(dataDirAbs) === path.resolve(headless.ROOT, "data") && !process.env.PURPLE_ALLOW_MOCK_IN_DATA) { dataDirAbs = path.join(headless.ROOT, "data-mock"); console.error("PURPLE: MUBIT_MOCK=1 with the real data/ -> using data-mock/ instead"); }
-  const db = store.open(dataDirAbs);
+  const mock = mockMode();   // throws on a malformed MUBIT_MOCK
+  const resolved = resolveDataDir({ dataDir: opts.dataDir, mock, injected: !!opts.mubit });
+  if (resolved.redirected) console.error("PURPLE: MUBIT_MOCK=1 with the real data/ -> using data-mock/ instead (PURPLE_ALLOW_MOCK_IN_DATA=1 overrides)");
+  const db = store.open(resolved.dir);
   // G-MUBIT-02 invariant: only real plan calls may train. Any other calls.jsonl row must say trained: false; a bug here would cost task integrity, so it throws.
   const rawAppendCall = db.appendCall; db.appendCall = row => { if (row.kind !== "plan" && row.trained !== false) throw new Error("G-MUBIT-02: calls.jsonl row kind " + row.kind + " must have trained: false"); return rawAppendCall(row); };
-  const mubit = opts.mubit || (process.env.MUBIT_MOCK === "1" ? require("../test/mocks/mubit.js") : require("./mubit.js"));
+  const mubit = opts.mubit || (mock ? require("../test/mocks/mubit.js") : require("./mubit.js"));
   const heartbeatMs = opts.heartbeatMs || 15000;
   const log = opts.log || ((...a) => console.log(...a));
   const app = new Hono();
@@ -41,7 +55,23 @@ function createApp(opts) {
   const fail = (c, code, message, extra) => c.json({ ok: false, error: Object.assign({ code, message }, extra || {}) }, STATUS[code] || 500);
   app.onError((e, c) => { if (e instanceof ApiError) return fail(c, e.code, e.message, e.extra); console.error("unhandled", e); return fail(c, "INTERNAL", String(e && e.message || e)); });
   app.notFound(c => fail(c, "NOT_FOUND", "no such route: " + c.req.path));
-  const body = async c => { try { return (await c.req.json()) || {}; } catch (e) { return {}; } };
+  // CSRF / DNS-rebinding guard (audit): the API answers only for a loopback Host, and every non-GET must say application/json, which a
+  // cross-site form or text/plain fetch cannot without a preflight (which the CORS allowlist above denies). Hono itself parses JSON
+  // regardless of content-type, so without this a text/plain POST from any origin reached /api/collect.
+  const HOST_OK = /^(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/i;
+  app.use("/api/*", async (c, next) => {
+    const host = c.req.header("host") || new URL(c.req.url).host;
+    if (!HOST_OK.test(host)) return fail(c, "BAD_INPUT", "Host must be 127.0.0.1 or localhost (DNS-rebinding guard), got " + JSON.stringify(host));
+    const m = c.req.method;
+    if (m !== "GET" && m !== "HEAD" && m !== "OPTIONS") { const ct = (c.req.header("content-type") || "").split(";")[0].trim().toLowerCase(); if (ct !== "application/json") return fail(c, "BAD_INPUT", "content-type must be application/json for " + m + " (got " + (ct || "none") + ")"); }
+    await next();
+  });
+  // the JSON body: empty -> {}; malformed or not an object -> 400 (a plan on garbage used to spend a trained call)
+  const body = async c => {
+    const t = await c.req.text(); if (!t.trim()) return {};
+    let v; try { v = JSON.parse(t); } catch (e) { throw new ApiError("BAD_INPUT", "body must be valid JSON (" + String(e.message).slice(0, 60) + ")"); }
+    if (v === null || typeof v !== "object" || Array.isArray(v)) throw new ApiError("BAD_INPUT", "body must be a JSON object"); return v;
+  };
 
   // ---- SSE (ARCHITECTURE §5 /api/stream): events plan, rule, race, status, error; payload is the full object
   const clients = new Set();
@@ -99,16 +129,19 @@ function createApp(opts) {
     const history = db.readLedger().filter(x => x.circuit === circuit && x.evaluation && x.evaluation.lap != null && x.status !== "parse_error").slice(0, 3).reverse().map(x => ({ change: x.change, delta_lap: x.evaluation.delta_lap }));
     const scenario = schema.buildScenario({ circuit, conditions, baseline, baselineEval: evaluation.baseline, candidate, evaluation, rules, history });
     const userContent = schema.serializeScenario(scenario);
+    if (userContent.length > schema.LIMITS.scenario_chars) throw new ApiError("BAD_INPUT", "scenario is " + userContent.length + " chars, over the " + schema.LIMITS.scenario_chars + "-char cap (G-MUBIT-04): fewer or shorter active rules", { chars: userContent.length, rules: rules.length });
     const id = ulid(), session_id = "exp-" + id;
     let plan = null, parse = null, mubitErr = null, latency_ms = 0, mubit_request_id = null;
+    // attempt 0 trains; the parse-error retry (attempt 1) is sent UNTRAINED with the same session id (audit decision 3): at temperature 0
+    // the same input repeats the same slip, and 8 of the first 99 trained calls were such duplicate bad examples
     for (let attempt = 0; attempt < 2 && !plan; attempt++) {
-      let r;
-      try { r = await mubit.callMubit({ userContent, sessionId: session_id, trained: true, kind: "plan" }); }
-      catch (e) { mubitErr = e; db.appendCall({ id: ulid(), created_at: now(), kind: "plan", session_id, mubit_request_id: e.requestId || null, model: prompt.MODEL, latency_ms: 0, status: "error", mubit_code: e.code || null, http_status: e.status || null, trained: true, attempt }); log(`plan ${session_id} ${e.requestId || "-"} error ${e.code || e.message}`); break; }
+      let r; const trained = attempt === 0;
+      try { r = await mubit.callMubit({ userContent, sessionId: session_id, trained, kind: "plan" }); }
+      catch (e) { mubitErr = e; db.appendCall({ id: ulid(), created_at: now(), kind: "plan", session_id, mubit_request_id: e.requestId || null, model: prompt.MODEL, latency_ms: 0, status: "error", mubit_code: e.code || null, http_status: e.status || null, trained, attempt }); log(`plan ${session_id} ${e.requestId || "-"} error ${e.code || e.message}`); break; }
       const v = schema.validatePlanOutput(r.text);
       latency_ms += r.latency_ms; mubit_request_id = r.mubit_request_id;
-      db.appendCall({ id: ulid(), created_at: now(), kind: "plan", session_id, mubit_request_id: r.mubit_request_id, model: r.model, input_tokens: r.input_tokens, output_tokens: r.output_tokens, latency_ms: r.latency_ms, status: v.ok ? "ok" : "parse_error", trained: true, attempt, seed });
-      log(`plan ${session_id} ${r.mubit_request_id} ${r.latency_ms}ms ${v.ok ? v.value.verdict : "parse_error(" + v.field + ")"}`);
+      db.appendCall({ id: ulid(), created_at: now(), kind: "plan", session_id, mubit_request_id: r.mubit_request_id, model: r.model, input_tokens: r.input_tokens, output_tokens: r.output_tokens, latency_ms: r.latency_ms, status: v.ok ? "ok" : "parse_error", trained, attempt, seed });
+      log(`plan ${session_id} ${r.mubit_request_id} ${r.latency_ms}ms ${v.ok ? v.value.verdict : "parse_error(" + v.field + ")"}${trained ? "" : " untrained-retry"}`);
       if (v.ok) plan = v.value; else parse = v;
     }
     const experiment = {
@@ -234,10 +267,13 @@ function createApp(opts) {
     const x = db.findExperiment(b.experiment_id); if (!x) throw new ApiError("NOT_FOUND", "no experiment " + b.experiment_id);
     if (!["promote", "reject", "retest"].includes(b.verdict)) throw new ApiError("BAD_INPUT", "verdict must be promote|reject|retest");
     const reason = ruleText(b.reason); if (!reason) throw new ApiError("BAD_INPUT", "reason is required (non-empty text, becomes the rule)");
-    const rules = db.readRules(); const rule = { id: nextRuleId(rules), text: reason, created_at: now(), from_experiment: x.id, active: true }; rules.push(rule); db.writeRules(rules);
+    // identical rule text (after trimming) reuses the existing rule instead of numbering a duplicate; an inactive one is switched back on
+    const rules = db.readRules(); let rule = rules.find(r => r.text === reason); const reused = !!rule;
+    if (rule) { if (!rule.active) { rule.active = true; rule.updated_at = now(); } db.writeRules(rules); }
+    else { rule = { id: nextRuleId(rules), text: reason, created_at: now(), from_experiment: x.id, active: true }; rules.push(rule); db.writeRules(rules); }
     const overrule = { verdict: b.verdict, reason, rule_id: rule.id, by: ruleText(b.by) || "engineer", at: now() };
     const row = Object.assign({}, x, { status: "overruled", overrule }); db.appendLedger(row); setState({ last_plan: null });
-    emit("rule", rule); emit("plan", row); return ok(c, { rule, experiment: row });
+    emit("rule", rule); emit("plan", row); return ok(c, { rule, experiment: row, reused });
   });
   // ---- F-04 race result (ARCHITECTURE §4.7 measured block, §5). Posted by the lab page from the game's purple:result message.
   // Payload: { experiment_id, seed, cars: [{ role: "baseline"|"candidate", lap, sectors: [s1,s2,s3], vmax_kmh, vmin_becketts_kmh }] }.
@@ -247,6 +283,7 @@ function createApp(opts) {
     const bad = m => { throw new ApiError("BAD_INPUT", m); };
     if (typeof b.experiment_id !== "string" || !b.experiment_id) bad("experiment_id must be a non-empty string");
     if (!Number.isInteger(b.seed)) bad("seed must be an integer");
+    if (b.synthetic !== undefined && typeof b.synthetic !== "boolean") bad("synthetic must be a boolean when present");
     if (!Array.isArray(b.cars)) bad("cars must be an array of 2 cars (baseline, candidate)");
     if (b.cars.length !== 2) bad("cars must hold exactly 2 cars, got " + b.cars.length);
     const out = {};
@@ -275,7 +312,8 @@ function createApp(opts) {
       baseline: cars.baseline, candidate: cars.candidate,
       measured_delta: measuredDelta, predicted_delta: predicted, agreement_pct: agreementPct(measuredDelta, predicted),
       measured_sector_deltas: cars.candidate.sectors.map((s, i) => +(s - cars.baseline.sectors[i]).toFixed(3)),
-      seed: b.seed, at: now(), label: "measured in race, seed " + b.seed, supersedes: x.measured ? x.measured.at : null,
+      seed: b.seed, at: now(), supersedes: x.measured ? x.measured.at : null,
+      synthetic: b.synthetic === true, label: (b.synthetic === true ? "synthetic (fake-race), seed " : "measured in race, seed ") + b.seed,   // a fake-race row must never read as a measurement
     };
     const status = x.status === "overruled" || x.status === "promoted" ? x.status : "raced";   // the engineer's verdict outranks the race
     const row = Object.assign({}, x, { status, measured }); db.appendLedger(row); emit("race", row); return ok(c, row);
@@ -324,4 +362,4 @@ function createApp(opts) {
   });
   return { app, emit, db, state, setState, runPlan, collect, dryCollect, runExam, statusView, EI };
 }
-module.exports = { createApp, ApiError, STATUS, seededRng };
+module.exports = { createApp, ApiError, STATUS, seededRng, mockMode, resolveDataDir };
