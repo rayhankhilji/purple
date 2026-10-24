@@ -17,6 +17,7 @@ window.EI = window.EI || {};
   const NOSE = 2.7, LOOP = 20, HYST = 1.0, OT_GAP = 1.0, OT_ENERGY = 0.5, OFF_W = 1.1, TL_DEBOUNCE = 0.12, TL_REJOIN = 0.35, GIVE_BACK_T = 15, MANDATORY_LAPS = 3;
   const LAB_GAP = 10;   // PURPLE (F-04): grid slots between the lab cars (10 x 8 m = 80 m, beyond the tow)
   const LAB_NEUTRAL = Object.freeze({ df: 1, cd: 1, a0: 1, b0: 1 });   // PURPLE (F-10): the grid-mode field's aero (x1)
+  const LAB_GRACE = 60;   // PURPLE (F-04): race mode ends this many seconds after the first lab car finishes if the other never crosses
 
   class Race {
     constructor(track, cfg) {
@@ -243,7 +244,13 @@ window.EI = window.EI || {};
       if (this.labFinishers().every(p => p.finished)) {   // PURPLE: no players in the lab: both bots (race mode) or the candidate car (grid mode) end the race
         if (!this.over) { this.over = true; this.overT = 0; this.emit('over'); }
       }
-      if (this.over) { this.overT += dt; if (!this.classified && (this.cars.every(c => c.finished) || this.overT > 20)) { this.classified = true; this.emit('classified'); } }
+      // PURPLE (race mode): a lab car that never crosses the line (stuck, spun) must not hold the result for ever: LAB_GRACE s after the first
+      // lab car finished the race is over and classified at once, flagged incomplete (main.js posts null numbers for the unfinished car)
+      if (this.lab && !this.labCar && !this.over) {
+        const first = this.cars.find(c => c.finished);
+        if (first && this.time - first.raceTime > LAB_GRACE) { this.over = true; this.overT = 0; this.labIncomplete = true; this.emit('over'); }
+      }
+      if (this.over) { this.overT += dt; if (!this.classified && (this.cars.every(c => c.finished) || this.overT > 20 || this.labIncomplete)) { this.classified = true; this.emit('classified'); } }
       if (EI.Pit) EI.Pit.update(this, dt);
     }
 
