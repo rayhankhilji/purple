@@ -1,0 +1,14 @@
+const path = require("path"), R = "/home/user/purple/";
+const design = require(R + "concept/design.js"), bench = require(R + "concept/bench.js"), U = require(R + "concept/campaign/uncertainty.js");
+const run = require(R + "docs/concept/loop-runs/" + (process.argv[2] || "trained-hybrid-seed41") + "/run.json");
+const runjs = require("fs").readFileSync(R + "concept/campaign/run.js", "utf8");
+const team = "redbull", base = design.baseline({ team });
+const best = JSON.parse(JSON.stringify(base)); best.params = run.final.best_params; best.id = "hybrid-seed41-best";
+const condMod = (() => { try { return require(R + "concept/campaign/run.js"); } catch (e) { return null; } })();
+const conditions = condMod && condMod.conditionsFor ? condMod.conditionsFor() : undefined;
+const benchOpts = { circuit: "silverstone", sim: "physics", objective: "quali", conditions, cache: false };
+const Rb = bench.bench(best, benchOpts), Bb = bench.bench(base, benchOpts);
+const c = Rb.circuits.silverstone, b = Bb.circuits.silverstone;
+const noise = U.measureNoise(bench.guardEnergy(Rb.physical), conditions);
+const band = U.band({ lap_s: c.lap_s, sectors_s: c.sectors_s }, { lap_s: b.lap_s, sectors_s: b.sectors_s }, team, { noise_s: noise.sigma_s, noise });
+console.log(JSON.stringify({ legal: Rb.legal, lap_s: c.lap_s, base_s: b.lap_s, run_reported: run.final.summary.lap_best_s, band, verdict_pole: U.verdict ? U.verdict(band, 88.111) : null }, null, 1).slice(0, 2500));
