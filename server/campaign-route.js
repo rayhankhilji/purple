@@ -32,9 +32,9 @@ const loop = require("../concept/designer/loop.js"), scenario = require("../conc
 const conceptRoutes = require("./concept.js");
 
 const CIRCUIT = "silverstone";
-const BUDGET_TOTAL = 2500;           // EVAL_GUARDRAILS §4: trained calls, the whole project (research agent + designer); owner raised 250 → 2,500 on 2026-10-24 (own Anthropic key inside Mubit)
-const TRAINED_RUN_CAP = 200;         // hard cap of trained calls in ONE engine run (= LIMITS.calls max)
-const LIMITS = { evals: [20, 200000], seeds: 8, refine_evals: [0, 20000], combo_evals: [0, 2000], lambda: [4, 64], prescreen: [1, 8], iterations: [1, 500], patience: [1, 200], search_budget: [0, 3000], calls: [1, 200], pace_ms: [0, 3000] };
+const BUDGET_TOTAL = 100000;         // EVAL_GUARDRAILS §4: trained calls, the whole project (research agent + designer); owner raised 250 → 2,500 → 100,000 on 2026-10-24 (own Anthropic key inside Mubit)
+const TRAINED_RUN_CAP = 2000;        // hard cap of trained calls in ONE engine run (= LIMITS.calls max)
+const LIMITS = { evals: [20, 200000], seeds: 8, refine_evals: [0, 20000], combo_evals: [0, 2000], lambda: [4, 64], prescreen: [1, 8], iterations: [1, 500], patience: [1, 200], search_budget: [0, 3000], calls: [1, 2000], pace_ms: [0, 3000] };
 const SIM_LABEL = sim.LABEL + " · Silverstone · 2026 British GP qualifying conditions";
 const REAL_LABEL = "real 2026 British GP qualifying · OpenF1 / formula1.com (js/data/racepace2026.js)";
 const r3 = v => (typeof v === "number" && isFinite(v) ? Math.round(v * 1000) / 1000 : null);

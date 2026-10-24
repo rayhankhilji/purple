@@ -85,7 +85,7 @@ stdin (`printf %s "$VALUE" | npx vercel@65.2.0 env add NAME production --sensiti
 | one concept loop and one engine run at a time | per instance | as locally ("already running") |
 
 The counters live **in memory, per instance**. Fluid compute reuses instances, but a cold start or a second instance starts at 0,
-so the real ceiling can be a small multiple of these numbers. The trained-call budget (2,500, per-run cap 200) is enforced by the
+so the real ceiling can be a small multiple of these numbers. The trained-call budget (100,000, per-run cap 2,000) is enforced by the
 engine as locally, but on Vercel it counts only the call files in the bundle and in `/tmp`: the research agent's `data/calls.jsonl`
 is not deployed, and trained calls made here vanish with the instance. **Reconcile trained calls made on Vercel from the Mubit
 console**; prefer trained runs locally.

@@ -35,7 +35,7 @@ A task is done when its verify step in `TESTING_GUIDE.md` passes and `TASK_LOG.m
 | Item | Budget |
 |---|---|
 | Tokens per plan call | ≤ 350 in, ≤ 250 out |
-| Trained calls total | ≤ 2,500 (owner decision 2026-10-24: their own Anthropic key is the provider key inside Mubit; was 250). `npm run collect` keeps a 250 default for the research task (`PURPLE_TRAINED_BUDGET` overrides) |
+| Trained calls total | ≤ 100,000 (owner decisions 2026-10-24: 250 → 2,500 → 100,000; their own Anthropic key is the provider key inside Mubit). Per engine run ≤ 2,000. `npm run collect` keeps a 250 default for the research task (`PURPLE_TRAINED_BUDGET` overrides) |
 | Try models calls | ≤ 20 for the exam and rehearsal, 4 reserved for the live demo (daily cap per org; resets 01:00 London) |
 | Adapter starts | 3 per UTC day: 1 rehearsal Sunday morning, 1 live, 1 spare |
 
