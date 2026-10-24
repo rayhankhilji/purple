@@ -12,11 +12,20 @@
 // to reported 2026 car weights (parts sum 767.9 kg against the 770 kg qualifying minimum). Never quote these as measured.
 // Domain bounds are what the parametric model can represent; they are deliberately WIDER than the regulations, so legality is a
 // separate, visible check (concept/regs.js) and the optimiser has real limits to discover.
+// Materials (coupling v1): MATERIAL_PARTS may carry params.<part>.material (concept/materials.js, docs/concept/MATERIALS.md); the
+// material-able share of the part's mass scales by the material's mass factor, the saving or excess flows through the automatic
+// ballast (never below the C4.1 minimum), and the ballast's own material sets its slab thickness (CoG height). massSheet also
+// returns `exact` (unrounded) totals for concept/physical.js, and unsprung mass per axle. A browser page that uses materials must
+// load concept/materials.js before this file is used; without it a design naming a material throws.
 // Dual browser / Node: window.EI.concept.parts and module.exports.
 (function () {
   const root = typeof window !== "undefined" ? window : globalThis;
   const EI = (root.EI = root.EI || {}); const C = (EI.concept = EI.concept || {});
   const regs = C.regs || (typeof require === "function" ? require("./regs.js") : null);
+  // concept/materials.js (optional in the browser: a design that names a material needs it loaded before this file is used)
+  let matsReq = null;
+  if (!C.materials && typeof require === "function") { try { matsReq = require("./materials.js"); } catch (e) { matsReq = null; } }
+  const mats = () => C.materials || matsReq;
   const MASS_LABEL = "concept part masses v1 · researched · regulation floors where they exist, otherwise reported or engineering estimates reconciled to reported 2026 car weights · not measured";
   const MASS_SOURCE = "concept/data/parts-mass-2026.json, docs/concept/MASS.md (concept part masses v1, 2026-10-24)";
 
@@ -28,6 +37,8 @@
   // unsprung parts: tyre radius 353 mm (≈ 705 mm OD; PhysicalCar tyres.radius_m), 8 mm static deflection (estimate) -> wheel
   // centres 345 mm above the ground, Z ≈ 300 at the baseline (10 mm plank + 35 mm ride height below Z=0)
   const WHEEL = { tyre_radius_mm: 353, deflection_mm: 8 };
+  // unsprung share of each suspension group (uprights, hubs and about half of the links move with the wheel; estimate)
+  const UNSPRUNG = { susp_frac: 0.4 };
   // C5.5.1 / C5.18.7 MGU-K Mechanical Transmission option of the concept PU: fixed at "a" (all of the speed ratio in RV-PU-ERS:
   // ICE group ≥ 130 kg, MGU-K ≥ 20 kg; MASS.md §6). Every option's pair sums to 150 kg, so the choice only moves mass between the
   // two groups; it is a fixed design decision, not an optimiser parameter. The ICE "PU Mass group" is ICE + TC + Powerbox
@@ -90,6 +101,10 @@
       kind: REGK, sources: ["FIA-C-ISS20"], basis: "automatic: whatever brings the car to the Minimum Mass (C4.1), plus extra_kg; low in the floor (C4.3.1)" },
   ];
   const BY_ID = Object.create(null); for (const p of CATALOGUE) BY_ID[p.id] = p;
+  // parts with an optional `params.material` (a string id from concept/data/materials-2026.json; absent = the part's baseline
+  // material, concept/materials.js PARTS). Not in PARAMS: PARAMS stays the numeric shape parameters the optimiser mutates.
+  const MATERIAL_PARTS = ["survival_cell", "nose", "rear_impact", "front_wing", "rear_wing", "floor", "diffuser", "sidepods", "engine_cover", "gearbox", "front_suspension", "rear_suspension", "ballast"];
+  const materialSpec = id => { const M = mats(); return M && M.supports(id) ? Object.assign({ part: id, param: "material", base: M.baseOf(id) }, M.PARTS[id]) : null; };
   // every optimisable parameter, flattened: [{ part, param, ...spec }]
   const PARAMS = []; for (const p of CATALOGUE) for (const k of Object.keys(p.params)) PARAMS.push(Object.assign({ part: p.id, param: k }, p.params[k]));
 
@@ -109,32 +124,65 @@
   const plankWear = rh => Math.max(0, PLANK.free_mm - rh) * PLANK.wear_per_mm;
 
   // the mass sheet: every part's mass (kg), x/z/|y| (mm), and the totals the regulations and the lap model need
+  // material factor of a part's material-able mass share (concept/materials.js; exactly 1 for the baseline material and when the
+  // design names no material). A design that names a material when materials.js is not loaded fails loudly, never silently.
+  function matFactor(params, id) {
+    const named = params[id] && typeof params[id].material === "string";
+    const M = mats();
+    if (!M) { if (named) throw new Error("concept parts: " + id + ".material needs concept/materials.js (load it before parts.js)"); return 1; }
+    if (!M.supports(id)) { if (named) throw new Error("concept parts: " + M.problem(id, params[id].material)); return 1; }
+    if (!named) return 1;
+    const why = M.problem(id, params[id].material); if (why) throw new Error("concept parts: " + why);
+    return M.effect(id, params[id].material).mass_factor;
+  }
+  // a part's mass with `frac` of it (materials.PARTS[id].frac) scaled by its material factor; `fixed` is mass that never scales
+  function withMat(params, id, kg, fixed) {
+    const k = matFactor(params, id); if (k === 1) return kg + (fixed || 0);
+    const frac = mats().PARTS[id].frac;
+    return kg * (1 - frac) + kg * frac * k + (fixed || 0);
+  }
+  // free-ballast CoG height: the slab sits on the floor (Z 30 for the reference tungsten slab of the same mass); a less dense
+  // material is a thicker slab, so its centre rises by half the extra thickness
+  function ballastZ(params, kg) {
+    const M = mats(), id = params.ballast && typeof params.ballast.material === "string" ? params.ballast.material : null;
+    if (!id) return 30;
+    if (!M) throw new Error("concept parts: ballast.material needs concept/materials.js (load it before parts.js)");
+    const why = M.problem("ballast", id); if (why) throw new Error("concept parts: " + why);
+    return 30 + 0.5 * (M.slabMm(kg, id) - M.slabMm(kg, M.baseOf("ballast")));
+  }
+
   function massSheet(params, opts) {
     const g = geometry(params), ntm = regs.NOMINAL_TYRE_MASS.value, ov = (opts && opts.overrides) || {};
     const fw = params.front_wing, rw = params.rear_wing, fl = params.floor, sp = params.sidepods;
     const fwS = (fw.span_mm * fw.chord_mm) / (1300 * 580), rwS = (rw.span_mm * rw.chord_mm) / (1100 * 420);
     const floorArea = (g.floor_len_mm * fl.width_mm) / (3100 * 1450), floorLen = g.floor_len_mm / 3100;
     const ground = PLANK.thickness_mm + fl.ride_height_mm, zWheel = WHEEL.tyre_radius_mm - WHEEL.deflection_mm - ground;   // unsprung centres in the Z frame
+    const W = (id, kg, fixed) => withMat(params, id, kg, fixed);
+    // a material named on a part that takes none is an error, never silently ignored
+    for (const id of Object.keys(params)) if (params[id] && typeof params[id] === "object" && "material" in params[id] && MATERIAL_PARTS.indexOf(id) < 0) matFactor(params, id);
     const rows = [
-      ["survival_cell", 71.7 * (0.6 + 0.4 * g.tub_len_mm / 2310), g.XA + 0.5 * g.tub_len_mm, 330, 0],
-      ["nose", 7.2, g.XA - 500, 300, 0],
+      ["survival_cell", W("survival_cell", 71.7 * (0.6 + 0.4 * g.tub_len_mm / 2310)), g.XA + 0.5 * g.tub_len_mm, 330, 0],
+      ["nose", W("nose", 7.2), g.XA - 500, 300, 0],
       ["halo", 9.9, g.XC - 500, 720, 0],
-      ["rear_impact", 5.7, g.XR + 450, 250, 0],
-      ["front_wing", 8.0 * fwS * (1 + 0.12 * (fw.elements - 3)) + 2.0 + (fw.sm_delta_deg > 0 ? 0.8 : 0), -860, 160, 0],
-      ["rear_wing", 7.6 * rwS * (1 + 0.15 * (rw.elements - 2)) + 2.9 * (rw.endplate_top_mm / 860) + 1.0 + (rw.sm_delta_deg > 0 ? 1.0 : 0), g.XR + 400, rw.endplate_top_mm - 80, 0],
-      ["floor", 24.4 * floorArea + 7 * floorLen, 0.5 * g.XR + 200, 40, 0],
-      ["diffuser", 5 * (1 + 0.02 * (params.diffuser.expansion_deg - 14)), g.XR - 150, 120, 0],
-      ["sidepods", 8.6 * (0.7 + 0.3 * sp.inlet_cm2 / 650) * (1 - 0.001 * (sp.undercut_mm - 100)), g.XC + 250, 380, 550],
-      ["engine_cover", 8.6, g.XPU + 350, 650, 0],
+      ["rear_impact", W("rear_impact", 5.7), g.XR + 450, 250, 0],
+      // wings: profiles + endplates (+ pylon) scale with the material; the straight-mode actuator does not
+      ["front_wing", W("front_wing", 8.0 * fwS * (1 + 0.12 * (fw.elements - 3)) + 2.0, fw.sm_delta_deg > 0 ? 0.8 : 0), -860, 160, 0],
+      ["rear_wing", W("rear_wing", 7.6 * rwS * (1 + 0.15 * (rw.elements - 2)) + 2.9 * (rw.endplate_top_mm / 860) + 1.0, rw.sm_delta_deg > 0 ? 1.0 : 0), g.XR + 400, rw.endplate_top_mm - 80, 0],
+      // floor body scales with the material; the plank assembly (regulated specific gravity, C3.6.2) does not
+      ["floor", W("floor", 24.4 * floorArea, 7 * floorLen), 0.5 * g.XR + 200, 40, 0],
+      ["diffuser", W("diffuser", 5 * (1 + 0.02 * (params.diffuser.expansion_deg - 14))), g.XR - 150, 120, 0],
+      ["sidepods", W("sidepods", 8.6 * (0.7 + 0.3 * sp.inlet_cm2 / 650) * (1 - 0.001 * (sp.undercut_mm - 100))), g.XC + 250, 380, 550],
+      ["engine_cover", W("engine_cover", 8.6), g.XPU + 350, 650, 0],
       ["pu_ice", 118.5, g.XPU + 310, 230, 0],
       ["pu_turbo", 12, g.XPU + 600, 430, 0],
       ["pu_mguk", 20, g.XPU + 150, 180, 120],
       ["pu_es", 35, g.XC + 120, 150, 0],
       ["pu_electronics", 5.7, g.XC + 250, 250, 150],
-      // gearbox body anchored to the rear axle (final drive at XR, C9.5.1); the spacer sits between the ICE and the bell housing
-      (() => { const ms = PACK.spacer_kg_per_mm * g.spacer_mm, xs = g.XPU + PACK.ice_len_mm + 0.5 * g.spacer_mm; return ["gearbox", 48.6 + ms, (48.6 * (g.XR - 230) + ms * xs) / (48.6 + ms), 270, 0]; })(),
-      ["front_suspension", 30.7, 0, 280, 500],
-      ["rear_suspension", 27.2, g.XR, 300, 500],
+      // gearbox body anchored to the rear axle (final drive at XR, C9.5.1); the spacer sits between the ICE and the bell housing;
+      // the casing share of both scales with the gearbox material
+      (() => { const k = matFactor(params, "gearbox"), fr = k === 1 ? 0 : mats().PARTS.gearbox.frac, sc = 1 - fr + fr * k; const mb = 48.6 * sc, ms = PACK.spacer_kg_per_mm * g.spacer_mm * k, xs = g.XPU + PACK.ice_len_mm + 0.5 * g.spacer_mm; return ["gearbox", mb + ms, (mb * (g.XR - 230) + ms * xs) / (mb + ms), 270, 0]; })(),
+      ["front_suspension", W("front_suspension", 30.7), 0, 280, 500],
+      ["rear_suspension", W("rear_suspension", 27.2), g.XR, 300, 500],
       ["wheels_front", 2 * 10.0 + 0.455 * ntm, 0, zWheel, 790],
       ["wheels_rear", 2 * 11.4 + 0.545 * ntm, g.XR, zWheel, 760],
       ["brakes_front", 11.9, 0, zWheel, 700],
@@ -155,7 +203,7 @@
     const partsKg = rows.reduce((s, r) => s + r.mass_kg, 0);
     const min = regs.minMass(opts && opts.session);
     const ballastKg = Math.max(0, min.kg - partsKg) + params.ballast.extra_kg;
-    rows.push({ id: "ballast", group: "ballast", mass_kg: ballastKg, x_mm: params.ballast.x_frac * g.XR, z_mm: 30, y_mm: 0 });
+    rows.push({ id: "ballast", group: "ballast", mass_kg: ballastKg, x_mm: params.ballast.x_frac * g.XR, z_mm: ballastZ(params, ballastKg), y_mm: 0 });
     const M = rows.reduce((s, r) => s + r.mass_kg, 0);
     const xcg = rows.reduce((s, r) => s + r.mass_kg * r.x_mm, 0) / M, zcg = rows.reduce((s, r) => s + r.mass_kg * r.z_mm, 0) / M;
     const izz = rows.reduce((s, r) => s + r.mass_kg * (Math.pow((r.x_mm - xcg) / 1000, 2) + Math.pow(r.y_mm / 1000, 2)), 0);
@@ -163,19 +211,29 @@
     const kg = id => rows.filter(r => r.id === id).reduce((s, r) => s + r.mass_kg, 0);
     const pu = ["pu_ice", "pu_turbo"].map(id => rows.find(r => r.id === id));
     const r2 = v => Math.round(v * 100) / 100;
+    // unsprung mass per axle: wheels + brakes + UNSPRUNG.susp_frac of the suspension (uprights, hubs, half the links; estimate)
+    const usF = kg("wheels_front") + kg("brakes_front") + UNSPRUNG.susp_frac * kg("front_suspension"), usR = kg("wheels_rear") + kg("brakes_rear") + UNSPRUNG.susp_frac * kg("rear_suspension");
+    const zUs = (usF + usR) * (WHEEL.tyre_radius_mm - WHEEL.deflection_mm);   // unsprung centres at the loaded radius above the ground (kg·mm)
+    const sprungCog = ((zcg + ground) * M - zUs) / (M - usF - usR);
+    const Mt = mats(), matSummary = Mt ? Mt.summary(params) : {};
     return {
       parts: rows.map(r => ({ id: r.id, group: r.group, kind: BY_ID[r.id].kind, sources: BY_ID[r.id].sources.slice(), mass_kg: r2(r.mass_kg), x_mm: Math.round(r.x_mm), z_mm: Math.round(r.z_mm) })),
       parts_kg: r2(partsKg), ballast_kg: r2(ballastKg), total_kg: r2(M), min_kg: min.kg, session: min.session,
       front_kg: r2(front), rear_kg: r2(rear), front_share: Math.round((front / M) * 10000) / 10000,
-      cog_x_mm: Math.round(xcg), cog_z_mm: Math.round(zcg), cog_height_mm: Math.round(zcg + ground), ground_z_mm: -ground, izz_kgm2: r2(izz),
+      cog_x_mm: r2(xcg), cog_z_mm: r2(zcg), cog_height_mm: r2(zcg + ground), ground_z_mm: -ground, izz_kgm2: r2(izz),
       driver_kg: r2(kg("driver") + kg("driver_ballast")), pu_kg: r2(kg("pu_ice") + kg("pu_turbo") + kg("pu_mguk") + kg("pu_es") + kg("pu_electronics")),
       ice_kg: kg("pu_ice"), tc_kg: kg("pu_turbo"), ice_group_kg: r2(kg("pu_ice") + kg("pu_turbo")), mguk_kg: kg("pu_mguk"), mguk_transmission: PU.mguk_transmission, es_kg: kg("pu_es"), driveline_kg: r2(kg("gearbox")),
       pu_cog_z_mm: Math.round((pu[0].mass_kg * pu[0].z_mm + pu[1].mass_kg * pu[1].z_mm) / (pu[0].mass_kg + pu[1].mass_kg)),
+      unsprung_front_kg: r2(usF), unsprung_rear_kg: r2(usR), sprung_cog_height_mm: Math.round(sprungCog),
+      materials: Object.keys(matSummary).reduce((o, id) => { const e = matSummary[id]; o[id] = { material: e.material, base: e.base, mass_factor: +e.mass_factor.toFixed(4), stiffness_ratio: +e.stiffness_ratio.toFixed(4), strength_ratio: +e.strength_ratio.toFixed(4), bound: e.bound }; return o; }, {}),
+      // unrounded values for concept/physical.js (the rounded ones above are for display and the legality checks): rounding the
+      // front share to 1e-4 and the CoG height to 1 mm turned small design changes into a staircase on the lap sim
+      exact: { total_kg: M, parts_kg: partsKg, ballast_kg: ballastKg, front_share: front / M, cog_x_mm: xcg, cog_z_mm: zcg, cog_height_mm: zcg + ground, izz_kgm2: izz, unsprung_front_kg: usF, unsprung_rear_kg: usR, sprung_cog_height_mm: sprungCog },
       label: MASS_LABEL,
     };
   }
 
-  const api = { MASS_LABEL, MASS_SOURCE, PACK, PLANK, WHEEL, PU, CATALOGUE, BY_ID, PARAMS, geometry, plankWear, massSheet };
+  const api = { MASS_LABEL, MASS_SOURCE, PACK, PLANK, WHEEL, UNSPRUNG, PU, CATALOGUE, MATERIAL_PARTS, materialSpec, matFactor, BY_ID, PARAMS, geometry, plankWear, massSheet };
   C.parts = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();

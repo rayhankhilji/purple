@@ -66,7 +66,7 @@ test("scenario: tested rows map lineage (lap delta = -delta_score, kept, illegal
   assert.equal(sc.tested.length, 3); assert.equal(sc.tested[1].change, "front_wing.span_mm 1300->1400");
   assert.deepEqual(sc.refused, [{ change: "b", why: "illegal C2.3.1" }]);
 });
-test("scenario: measured worst case (3 illegal 3-change rows with every article, 3-change refused, 6 near lines) fits ≤ 350 tokens", () => {
+test("scenario: measured worst case (3 illegal 3-change rows with every article, 3-change refused, 6 near lines) fits ≤ 400 tokens (LIMITS.chars 1,600 since the closed loop, LOOP.md)", () => {
   const d = design.baseline(); for (const s of parts.PARAMS) d.params[s.part][s.param] = s.max - s.step;   // everything past or near a limit
   d.params.ballast.x_frac = 0.37; d.params.floor.ride_height_mm = 24.5;
   const longest = parts.PARAMS.slice().sort((a, b) => (b.part + b.param).length - (a.part + a.param).length).slice(0, 3);
@@ -76,13 +76,13 @@ test("scenario: measured worst case (3 illegal 3-change rows with every article,
   const o = { design: d, summary: { lap_s: 87.12345, gap_to_pole_s: -0.98765, mass_kg: 770.25, front_share: 0.44567 }, history: [row, row, row], refused: [{ change: S.describeChanges(ch), why: "illegal " + every.map(id => regs.BY_ID[id].article).join(" ") }] };
   const raw = S.fit(Object.assign({}, o, { limits: { chars: 1e9 } }));
   const f = S.fit(o);
-  assert.ok(f.chars <= S.LIMITS.chars && f.tokens <= 350, "worst case " + f.tokens + " tokens (" + f.chars + " chars; untrimmed " + raw.tokens + ")");
+  assert.ok(f.chars <= S.LIMITS.chars && f.tokens <= 400, "worst case " + f.tokens + " tokens (" + f.chars + " chars; untrimmed " + raw.tokens + ")");
   assert.equal(JSON.parse(f.text).tested.length >= 1, true, "the latest tested row survives");
   assert.equal(JSON.parse(f.text).refused.length, 1, "the refused entry survives");
   assert.ok(JSON.parse(raw.text).tested.every(t => t.illegal.length <= S.LIMITS.articles + 1), "articles capped");
   // an even more absurd input still fits (fit trims until it does)
   const absurd = S.fit(Object.assign({}, o, { history: Array(10).fill(row) }));
-  assert.ok(absurd.tokens <= 350);
+  assert.ok(absurd.tokens <= 400);
 });
 
 // ---------------------------------------------------------------- schema
@@ -171,7 +171,7 @@ test("the verdict is numeric only: kept === legal && score_after > score_before,
 });
 
 // ---------------------------------------------------------------- mock loop, determinism, CLI
-test("mock LLM loop: same seed -> identical lineage; the mock exercises parse, illegal and duplicate guards; scenarios stay ≤ 350 tokens", async () => {
+test("mock LLM loop: same seed -> identical lineage; the mock exercises parse, illegal and duplicate guards; scenarios stay ≤ 400 tokens", async () => {
   const run = seed => designer.runDesigner({ gens: 30, seed, designer: { llm: cli.mockLlm(seed), runId: "t" + seed } });
   const a = await run(1), b = await run(1), c = await run(2);
   assert.equal(JSON.stringify(a.lineage), JSON.stringify(b.lineage)); assert.equal(JSON.stringify(a.calls), JSON.stringify(b.calls));
@@ -182,7 +182,7 @@ test("mock LLM loop: same seed -> identical lineage; the mock exercises parse, i
   for (const k of ["parse", "illegal", "duplicate"]) assert.ok(reasons[k], "mock never triggered " + k);
   for (const r of [a, c]) {
     assert.ok(r.best_result.legal && r.best_result.score > r.baseline_result.score, "the loop improves on the baseline");
-    assert.ok(r.calls.every(x => x.scenario_tokens <= 350 && x.trained === false));
+    assert.ok(r.calls.every(x => x.scenario_tokens <= 400 && x.trained === false));
     const designs = replayDesigns(r.lineage); assert.equal(new Set(designs).size, designs.length, "no tested design is measured twice");
     assert.ok(r.lineage.every(x => ["llm", "fallback"].includes(x.proposer)));
   }

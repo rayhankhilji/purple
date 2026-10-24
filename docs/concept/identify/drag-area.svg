@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 406" width="720" height="406" font-family="system-ui, sans-serif" font-size="12">
+<style>.bg{fill:#fcfcfb}.t1{fill:#0b0b0b}.t2{fill:#52514e}.grid{stroke:#e4e3df}.zero{stroke:#8a8984}.s0{fill:#2a78d6;stroke:#2a78d6}.s1{fill:#eb6834;stroke:#eb6834}.ring{stroke:#fcfcfb}
+@media (prefers-color-scheme: dark){.bg{fill:#1a1a19}.t1{fill:#f0efec}.t2{fill:#c3c2b7}.grid{stroke:#383835}.zero{stroke:#8a8984}.s0{fill:#3987e5;stroke:#3987e5}.s1{fill:#d95926;stroke:#d95926}.ring{stroke:#1a1a19}}</style>
+<rect class="bg" width="720" height="406"/>
+<text class="t1" x="16" y="24" font-size="15" font-weight="600">Drag area by car (estimate, conditional on the 350 kW anchor)</text>
+<text class="t2" x="16" y="42">CdA, Corner Mode, mean trim · bars: bootstrap 5-95 % (includes ICE-power prior spread)</text>
+<circle class="s0 ring" cx="156" cy="58" r="5" stroke-width="2"/><text class="t2" x="166" y="62">CdA</text>
+<line class="grid" x1="166.25308980281187" x2="166.25308980281187" y1="66" y2="356"/><text class="t2" x="166.25308980281187" y="372" text-anchor="middle">0.8</text>
+<line class="grid" x1="266.9163488317469" x2="266.9163488317469" y1="66" y2="356"/><text class="t2" x="266.9163488317469" y="372" text-anchor="middle">1</text>
+<line class="grid" x1="367.579607860682" x2="367.579607860682" y1="66" y2="356"/><text class="t2" x="367.579607860682" y="372" text-anchor="middle">1.2</text>
+<line class="grid" x1="468.24286688961706" x2="468.24286688961706" y1="66" y2="356"/><text class="t2" x="468.24286688961706" y="372" text-anchor="middle">1.4</text>
+<line class="grid" x1="568.9061259185521" x2="568.9061259185521" y1="66" y2="356"/><text class="t2" x="568.9061259185521" y="372" text-anchor="middle">1.6</text>
+<line class="grid" x1="669.5693849474873" x2="669.5693849474873" y1="66" y2="356"/><text class="t2" x="669.5693849474873" y="372" text-anchor="middle">1.8</text>
+<text class="t1" x="140" y="87" text-anchor="end">Mercedes</text>
+<line class="s0" x1="298.8266019439193" x2="478.25886116299614" y1="83" y2="83" stroke-width="2"/>
+<circle class="s0 ring" cx="383.6857293053116" cy="83" r="4.5" stroke-width="2"><title>Mercedes · CdA: 1.232 (1.063 to 1.42)</title></circle>
+<text class="t1" x="140" y="113" text-anchor="end">Ferrari</text>
+<line class="s0" x1="292.7868064021832" x2="518.7758229221425" y1="109" y2="109" stroke-width="2"/>
+<circle class="s0 ring" cx="403.26473318643946" cy="109" r="4.5" stroke-width="2"><title>Ferrari · CdA: 1.271 (1.051 to 1.5)</title></circle>
+<text class="t1" x="140" y="139" text-anchor="end">McLaren</text>
+<line class="s0" x1="322.8851208518348" x2="502.8206963660563" y1="135" y2="135" stroke-width="2"/>
+<circle class="s0 ring" cx="409.05287058060327" cy="135" r="4.5" stroke-width="2"><title>McLaren · CdA: 1.282 (1.111 to 1.469)</title></circle>
+<text class="t1" x="140" y="165" text-anchor="end">Red Bull</text>
+<line class="s0" x1="270.03690986164395" x2="542.3310255349134" y1="161" y2="161" stroke-width="2"/>
+<circle class="s0 ring" cx="399.8421823794557" cy="161" r="4.5" stroke-width="2"><title>Red Bull · CdA: 1.264 (1.006 to 1.547)</title></circle>
+<text class="t1" x="140" y="191" text-anchor="end">Racing Bulls</text>
+<line class="s0" x1="287.703311821222" x2="532.4660261500778" y1="187" y2="187" stroke-width="2"/>
+<circle class="s0 ring" cx="406.33496258682203" cy="187" r="4.5" stroke-width="2"><title>Racing Bulls · CdA: 1.277 (1.041 to 1.528)</title></circle>
+<text class="t1" x="140" y="217" text-anchor="end">Alpine</text>
+<line class="s0" x1="261.78252262127126" x2="485.3052892950216" y1="213" y2="213" stroke-width="2"/>
+<circle class="s0 ring" cx="372.6127708121288" cy="213" r="4.5" stroke-width="2"><title>Alpine · CdA: 1.21 (0.99 to 1.434)</title></circle>
+<text class="t1" x="140" y="243" text-anchor="end">Haas</text>
+<line class="s0" x1="246.58237050790206" x2="464.4679946760321" y1="239" y2="239" stroke-width="2"/>
+<circle class="s0 ring" cx="351.7251445636248" cy="239" r="4.5" stroke-width="2"><title>Haas · CdA: 1.169 (0.96 to 1.393)</title></circle>
+<text class="t1" x="140" y="269" text-anchor="end">Audi</text>
+<line class="s0" x1="187.2413793103448" x2="527.130873421544" y1="265" y2="265" stroke-width="2"/>
+<circle class="s0 ring" cx="347.39662442538054" cy="265" r="4.5" stroke-width="2"><title>Audi · CdA: 1.16 (0.842 to 1.517)</title></circle>
+<text class="t1" x="140" y="295" text-anchor="end">Williams</text>
+<line class="s0" x1="230.87890209938817" x2="480.4231212321182" y1="291" y2="291" stroke-width="2"/>
+<circle class="s0 ring" cx="344.07473687742566" cy="291" r="4.5" stroke-width="2"><title>Williams · CdA: 1.153 (0.928 to 1.424)</title></circle>
+<text class="t1" x="140" y="321" text-anchor="end">Aston Martin</text>
+<line class="s0" x1="345.68534902188867" x2="652.7586206896551" y1="317" y2="317" stroke-width="2"/>
+<circle class="s0 ring" cx="500.70676792644866" cy="317" r="4.5" stroke-width="2"><title>Aston Martin · CdA: 1.465 (1.157 to 1.767)</title></circle>
+<text class="t1" x="140" y="347" text-anchor="end">Cadillac</text>
+<line class="s0" x1="218.09466820271342" x2="477.50388672027924" y1="343" y2="343" stroke-width="2"/>
+<circle class="s0 ring" cx="348.201930497612" cy="343" r="4.5" stroke-width="2"><title>Cadillac · CdA: 1.162 (0.903 to 1.418)</title></circle>
+<text class="t2" x="420" y="394" text-anchor="middle">CdA (m²)</text>
+</svg>

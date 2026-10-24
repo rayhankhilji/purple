@@ -169,7 +169,7 @@ const STYLE = `
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:var(--bg);color:var(--text);overflow:hidden;font-family:Inter,"DejaVu Sans",system-ui,sans-serif}
 .num{font-variant-numeric:tabular-nums}
 `;
-const SCRIPTS = `<script src="/vendor/three.min.js"></script><script src="/concept/regs.js"></script><script src="/concept/parts.js"></script><script src="/concept/aeromap.js"></script><script src="/concept/design.js"></script><script src="/concept/view/view3d.js"></script>`;
+const SCRIPTS = `<script src="/vendor/three.min.js"></script><script src="/concept/regs.js"></script><script src="/concept/materials.js"></script><script src="/concept/parts.js"></script><script src="/concept/aeromap.js"></script><script src="/concept/design.js"></script><script src="/concept/view/view3d.js"></script>`;
 function stagePage(a, meta) {
   return `<!doctype html><html><head><meta charset="utf-8"><title>PURPLE concept film</title><style>${STYLE}
 #car{position:absolute;inset:0}
@@ -206,7 +206,8 @@ window.__ready = false;
 window.setup = function (base) {
   window.BASE = base; window.cv = EI.conceptView.mount(document.getElementById("car"), { design: base, baseline: base, orbit: false, label: false, legend: false, view: "hero" });
   EI.conceptView.VIEWS.film = { azim: 2.7, elev: 0.29, radius: 7.7, target: [0.05, 0.12, 0] };
-  window.cv.setAero("corner"); window.__hl = ""; window.__ready = true; return window.cv.state().layout ? true : true;
+  window.cv.setAero("corner"); window.__hl = ""; window.__ready = true;
+  return window.cv.ready().then(() => true);   // view v2 loads the GLB + livery asynchronously; page.evaluate awaits this
 };
 const $ = id => document.getElementById(id), fmt = (v, d) => v.toFixed(d).replace("-", "\\u2212");
 window.frame = function (s) {
@@ -254,8 +255,10 @@ window.setup = function (base, best, view, hl, chg) {
   const W = EI.conceptView.VIEWS, V = W[view]; W.poster = { azim: V.azim, elev: V.elev, radius: V.radius * 0.95, target: V.target.slice() };   // one shared camera, a little closer than the app's view
   const L = EI.conceptView.mount(document.getElementById("cL"), { design: base, baseline: null, orbit: false, label: false, legend: false, view: "poster" });
   const R = EI.conceptView.mount(document.getElementById("cR"), { design: best, baseline: base, orbit: false, label: false, legend: false, view: "poster" });
-  for (const v of [L, R]) { v.setAero("corner"); v.setView("poster", { animate: false }); }
-  R.setHighlight(hl); L.render(); R.render(); document.getElementById("chg").textContent = chg; window.cvs = [L, R]; return true;
+  return Promise.all([L.ready(), R.ready()]).then(() => {   // view v2: wait for both cars (GLB + livery) before the first frame
+    for (const v of [L, R]) { v.setAero("corner"); v.setView("poster", { animate: false }); }
+    R.setHighlight(hl); L.render(); R.render(); document.getElementById("chg").textContent = chg; window.cvs = [L, R]; return true;
+  });
 };
 window.again = () => { for (const v of window.cvs) v.render(); return true; };
 </script></body></html>`;

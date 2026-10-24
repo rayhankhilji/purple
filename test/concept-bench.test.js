@@ -51,7 +51,7 @@ test("bench v0: the baseline concept car laps the lab evaluator's baseline exact
   }
   assert.equal(r.circuits.silverstone.lap_s, 88.111);
   assert.deepEqual([r.weekend.grid_position, r.weekend.gap_to_pole_s, r.score], [1, 0, 0]);
-  assert.match(r.label, /reduced-order lap model · calibrated to 2026 pole laps · concept aero map v0/);
+  assert.match(r.label, /reduced-order lap model · calibrated to 2026 pole laps · concept aero map v1/);
   assert.match(r.circuits.silverstone.label, /sim v0/); assert.match(r.weekend.label, /RACEPACE/); assert.match(r.mass.label, /estimates/);
 });
 
