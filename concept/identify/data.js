@@ -93,6 +93,34 @@ function auditFlags(file) {
   return fl;
 }
 
+// exclusion policy for the joint fit (docs/concept/IDENTIFY.md, "Data and exclusions"). Only audit FAILs act here; WARN-level
+// problems are handled by the per-point masks (null-safe kinematics, the +1.8/-6.5 g plausibility mask, the 7 g corner limit).
+//   C1, C2, C5, C6 FAIL           -> lap excluded (lap time, distance axis or identity cannot be trusted)
+//   C3 FAIL raw brake 104         -> brake channel excluded (no brake zones from this lap)
+//   C3 FAIL null run > 200 m      -> lap kept; the null stretch +-100 m excluded from every feature
+//   C3 FAIL anything else         -> lap excluded
+//   C4 FAIL > 10 accel violations -> longitudinal channel (dv/dt) excluded: no power-anchor and no brake-zone features
+//   C4 FAIL >= 5 speed jumps      -> lap excluded (the speed channel itself is broken)
+const NULL_MARGIN_M = 100;
+function lapPolicy(file) {
+  const r = audit()[file];
+  const p = { file, status: r ? r.overall : "n/a", exclude: false, actions: [], use: { corners: true, power: true, brakes: true }, null_margin_m: 0 };
+  if (!r) { p.exclude = true; p.actions.push("not in the telemetry audit: excluded"); p.use = { corners: false, power: false, brakes: false }; return p; }
+  for (const c of ["C1", "C2", "C5", "C6"]) if (r[c] === "FAIL") { p.exclude = true; p.actions.push(`${c} FAIL: lap excluded`); }
+  if (r.C3 === "FAIL") {
+    let handled = false;
+    if (+r.raw_brake_bad > 0) { p.use.brakes = false; handled = true; p.actions.push("C3 FAIL raw brake 104: brake channel excluded"); }
+    if (+r.longest_null_m > 200) { p.null_margin_m = NULL_MARGIN_M; handled = true; p.actions.push(`C3 FAIL null run ${(+r.longest_null_m).toFixed(0)} m: null stretch +-${NULL_MARGIN_M} m excluded`); }
+    if (!handled || /speed outside|throttle outside|brake not boolean|gear not integer|rpm outside|raw throttle/.test(r.reasons || "")) { p.exclude = true; p.actions.push("C3 FAIL (channel range): lap excluded"); }
+  }
+  if (r.C4 === "FAIL") {
+    if (+r.speed_jumps_25 >= 5) { p.exclude = true; p.actions.push(`C4 FAIL ${r.speed_jumps_25} speed jumps: lap excluded`); }
+    if (+r.accel_viol_total > 10) { p.use.power = false; p.use.brakes = false; p.actions.push(`C4 FAIL ${r.accel_viol_total} accel violations: longitudinal channel excluded`); }
+  }
+  if (p.exclude) p.use = { corners: false, power: false, brakes: false };
+  return p;
+}
+
 // ================================================================ air density (weather samples around the lap)
 function airDensity(W, utcIso, durS) {
   const t0 = Date.parse(utcIso), t1 = t0 + durS * 1000, idx = [];
@@ -161,8 +189,11 @@ function loadLap(cid, code) {
   L.s = ch.distance_m; L.t = ch.time_s; L.x = ch.x_m; L.y = ch.y_m;
   L.vraw = ch.speed_kmh.map(x => (x == null ? null : x / 3.6)); L.thr = ch.throttle_pct; L.gear = ch.gear; L.rpm = ch.rpm;
   // brake: unknown (null) where the channel is null, and everywhere on a file whose raw brake carried the 104 error code
+  L.policy = lapPolicy(file);
+  if (!L.policy.use.brakes) fl.brake_unknown = true;
   L.brk = ch.brake.map(b => (b == null || fl.brake_unknown ? null : !!b));
   L.ok = L.vraw.map((v, i) => v != null && L.thr[i] != null && L.rpm[i] != null && L.gear[i] != null);
+  L.masked = maskLap(L, L.policy.null_margin_m);
   const vIn = L.ok.map((o, i) => (o ? L.vraw[i] : null));
   const k1 = kinematics(L.t, vIn, 0.45); L.vs = k1.v; L.a = k1.a; L.aok = k1.aok;
   // plausibility mask on the smoothed acceleration (audit C4: > 1.8 g forward or < −6.5 g is not a car)
@@ -182,6 +213,29 @@ function loadLap(cid, code) {
   straightZones(L, C, CS);
   CACHE.set(key, L);
   return L;
+}
+// point masks applied before any derivative: (1) a frozen speed feed (the same speed, throttle and rpm held for >= 1.0 s above
+// 50 km/h: the raw feed repeated one sample; the track model's "frozen speed" rule, docs/concept/TRACK.md) and (2) a margin around
+// null runs longer than 200 m (audit C3 FAIL). Masked points get ok = false, so the speed fit treats them as a gap.
+function maskLap(L, marginM) {
+  const n = L.n, bad = new Array(n).fill(false); let frozen = 0, margin = 0;
+  for (let i = 0; i < n;) {
+    let j = i + 1;
+    if (L.vraw[i] != null && L.vraw[i] * 3.6 >= 50) while (j < n && L.vraw[j] === L.vraw[i] && L.thr[j] === L.thr[i] && L.rpm[j] === L.rpm[i]) j++;
+    if (j - i > 1 && L.t[j - 1] - L.t[i] >= 1.0) { for (let k = i; k < j; k++) bad[k] = true; frozen += j - i; }
+    i = j;
+  }
+  if (marginM > 0) {
+    const nul = L.vraw.map(v => v == null);
+    for (let i = 0; i < n;) {
+      if (!nul[i]) { i++; continue; }
+      let j = i; while (j < n && nul[j]) j++;
+      if (L.s[j - 1] - L.s[i] > 200) { const lo = L.s[i] - marginM, hi = L.s[j - 1] + marginM; for (let k = 0; k < n; k++) if (L.s[k] >= lo && L.s[k] <= hi && !nul[k]) { bad[k] = true; margin++; } }
+      i = j;
+    }
+  }
+  for (let i = 0; i < n; i++) if (bad[i]) L.ok[i] = false;
+  return { frozen_points: frozen, null_margin_points: margin };
 }
 // Straight Mode zones. Silverstone: FIA activation points (derive-car). Elsewhere: racing-line radius > 900 m for >= 250 m, opened
 // 30 m after the run starts (concept/sim/track.js heuristic). zoneGeom = geometric flags for the simulator; zone = flags for the
@@ -220,7 +274,7 @@ function straightZones(L, C, CS) {
 // (the simulator's corner limit uses the same quantity). Only where every point of the ±40 m window has valid car data and the
 // distance axis agrees with X/Y.
 function cornerPoints(L) {
-  const pts = [], n = L.n;
+  const pts = [], n = L.n; if (!L.policy.use.corners) return pts;
   for (let i = 8; i < n - 8; i++) {
     let ok = true, isMin = true;
     for (let j = i - 8; j <= i + 8; j++) { if (L.vs[j] == null || !L.dsok[j]) { ok = false; break; } if (L.vs[j] < L.vs[i] - 1e-9) isMin = false; }
@@ -237,7 +291,7 @@ function cornerPoints(L) {
 }
 // brake zones (entry > 140 km/h, > 50 km/h speed drop): fit window from brake onset + 0.25 s until 70 % of the drop
 function brakeZones(L) {
-  const zs = [], n = L.n; if (L.audit.brake_unknown) return zs;
+  const zs = [], n = L.n; if (L.audit.brake_unknown || !L.policy.use.brakes) return zs;
   let i = 0;
   while (i < n) {
     if (L.brk[i] !== true) { i++; continue; }
@@ -260,7 +314,7 @@ function brakeZones(L) {
 // full-throttle runs for the deployment anchor: throttle >= 99 %, no brake, valid and plausible derivative, no lift/brake/dropout
 // within the next 0.45 s (the ±0.45 s speed fit would reach into it). Runs are split at any gap.
 function fullThrottleRuns(L, r_eff) {
-  const n = L.n, runs = []; let cur = null;
+  const n = L.n, runs = []; let cur = null; if (!L.policy.use.power) return runs;
   for (let i = 0; i < n; i++) {
     let good = i > 6 && i < n - 6 && L.ok[i] && L.aok[i] && L.thr[i] >= 99 && L.brk[i] !== true && L.dsok[i] && L.ay[i] != null;
     if (good) for (let j = i + 1; j < n && L.t[j] - L.t[i] <= 0.45; j++) if (!L.ok[j] || L.thr[j] < 99 || L.brk[j] === true) { good = false; break; }
@@ -284,4 +338,4 @@ function gearSamples(L) {
 }
 
 module.exports = { ROOT, TEL, G0, CIRCUITS, CIRCUIT_IDS, TEAMS, TEAM_IDS, TEAM_BY_NAME, PU_IDS, PU_NAMES, ASSUME, readJSON, mean, sd, quantile, median, mad, rnd,
-  audit, auditFlags, lapFiles, loadLap, circuitStatic, cornerPoints, brakeZones, fullThrottleRuns, gearSamples, kinematics, curvature, airDensity };
+  audit, auditFlags, lapPolicy, lapFiles, loadLap, circuitStatic, cornerPoints, brakeZones, fullThrottleRuns, gearSamples, kinematics, curvature, airDensity };
