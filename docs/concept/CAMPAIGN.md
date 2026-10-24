@@ -185,6 +185,11 @@ with no published direction, so the scored laps use still air (as the sim's fit 
 
 ## 4. Results
 
+### 4.0a Mubit-directed hybrid run, live trained (seed 41) — uncertainty band added 2026-10-24 12:45Z
+
+`docs/concept/loop-runs/trained-hybrid-seed41/` (engine "auto": Mubit proposes → up to 600 legal physics laps of local search → kept only by the numbers → result in the next call; stopped by the owner): **88.763 → 87.282 s, 45 iterations, 35 live trained Mubit calls, 25,856 physics laps**. Re-scored with the campaign's band (`node concept/campaign/band-run.js trained-hybrid-seed41`, output `band.json`): **87.282 ± 0.148 s (95 % 86.992–87.572 s)**, Δ real pole (ANT 88.111) −0.829 s, Δ real HAD (88.746) −1.464 s; the whole 95 % band is faster than pole. Model prediction ± band (physics lap sim v3 · Silverstone · 2026 British GP qualifying conditions), not a claim about a real car.
+**Who found the gains:** of the 17 kept changes, **7 came from Mubit's proposals and 10 from the engine's seeded fallback step** (used when the proposal was illegal ×14, a duplicate ×3, or the model was paused after failures ×10). Say "Mubit-directed loop", not "Mubit found 1.48 s". The CMA-ES best below (87.235 ± 0.154) is the optimiser's, not Mubit's.
+
 ### 4.0 Re-run on physics lap sim v3 + FIA geometry fixes (current numbers; 673.9 s wall time)
 
 Source of every lap: **physics lap sim · quasi-steady-state point mass · Silverstone OSM centreline · calibrated to 2026 British GP qualifying** · Silverstone · 2026 British GP qualifying conditions · concept campaign v1 · CMA-ES + surrogate pre-screen · every number re-scored on the physics lap sim.
