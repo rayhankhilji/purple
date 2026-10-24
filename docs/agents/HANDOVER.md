@@ -16,10 +16,10 @@ Living document. Owned by the **integrator** (whoever merges lane branches). Lan
 
 | Lane | Session | Status / next |
 |---|---|---|
-| GAME | `session_019VA5sAvTHuQ3bGbWV5CX4M` | P1.T1/T2 + P3.T3 merged. Next: browser-run numbers (lane-file PR), filming notes, review UI's Race-it iframe |
-| SERVER | `session_01Tq3p158ophv4wuU2ibcJbj` | all routes done. Next: `server/scripts/snapshot.js` (ledger freeze), review `lab/lab.js` fetches when UI's PR lands |
+| GAME | `session_019VA5sAvTHuQ3bGbWV5CX4M` | everything merged incl. PR #27 (60 s grace, audio). Idle; its long browser lap may still post numbers to GAME.md |
+| SERVER | `session_01Tq3p158ophv4wuU2ibcJbj` | everything merged (#2 #3 #5 #6 #10 #13 #20 #21 #23). Standing by to re-check UI's fixes |
 | EVAL | `session_01Ma6U13odw1SA1vFhepRj8u` | exam, sheet, rng done. Next: `--score` for hand-entered Try-models answers, `docs/try-models/README.md` |
-| UI | `session_01LerQvr7T9YvRQxL76EErVH` | **P2.T1 + P2.T6 merged (PR #16/#17).** Lab page at http://127.0.0.1:8788/lab/ with `npm run dev`. Next: re-verify in a real browser against the merged CORS/CAR3D/GAME, then P3.T2 polish. Decisions D-U1..D-U4 in its lane file still to copy into TASK_LOG; SERVER to review lab.js fetches |
+| UI | `session_01LerQvr7T9YvRQxL76EErVH` | P2.T1 + P2.T6 merged. **Owes the fix PR**: SERVER findings 1/2/4 (reuse x-client-id on retry; last_console_read_at; race-incomplete state), GAME findings (keep the broadcast after the flag; still-air note when wind_ms > 0; source check; grid-mode branch), favicon, allow="autoplay"; then a real-browser re-verify. Last code item before P2 exit |
 | CAR3D | `session_01DoxHh5Ynx2BDWZsPvLCyDR` | P2.T2 + P3.T2 done (self-loading liveries fixed the black panel). Idle |
 | DEMO | `session_01UAY6ykh3dQkf9GfJoZ9BTy` | script v2.1, docs/deck/slides.md + README (Marp → PDF), shot-list.md all merged. Owed numbers (v1/v2 results, Try-models scores) listed in its lane file |
 
