@@ -10,7 +10,7 @@
    "concept/data/silverstone-2026-weekend.json",
    "concept/data/grid-2026.json"
   ],
-  "telemetry_dir": "external copy of concept/data/telemetry (22 qualifying laps, telemetry commit bae7a51)",
+  "telemetry_dir": "concept/data/telemetry",
   "laps_used": [
    "ALB",
    "ALO",
@@ -54,8 +54,8 @@
   "mass_kg": 779.5,
   "fuel_kg": 5,
   "wheelbase_m": 3.4,
-  "track_front_m": 1.58,
-  "track_rear_m": 1.52,
+  "track_front_m": 1.54,
+  "track_rear_m": 1.47,
   "cog_height_m": 0.28,
   "weight_dist_front": 0.45,
   "aero": {

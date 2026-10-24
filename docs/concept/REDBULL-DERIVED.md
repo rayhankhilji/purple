@@ -4,6 +4,7 @@ This is the Red Bull baseline car for PURPLE's physics lap simulator at Silverst
 
 The rule from the owner is that **lap speeds must come out of the physics**. Telemetry is used only for two jobs: measuring what is not public (drag and downforce areas, tyre friction, gearing, how the MGU-K is deployed) and holding laps out for checks.
 
+- **Consolidated sheet**: [RB22_SHEET.md](RB22_SHEET.md) carries this page's values next to the sim's and identify's, and re-measures gearing, shift points, braking, acceleration and cornering on all 25 Red Bull laps (9 circuits). Its all-lap gear table supersedes the HAD/VER table in §1 (4th gear 15.64 km/h per 1000 rpm, not 15.89; the median upshift is 12,045 rpm, of which 11,480 here is the last-sample lower bound).
 - **Tool**: `concept/tools/derive-car.js` (Node, no dependencies). Run `node concept/tools/derive-car.js --write` to regenerate everything for Red Bull. `--all --write` does every team (see "All 11 teams" below). Add `--tel <dir>` to read lap files from another copy of the telemetry folder.
 - **Output**: `concept/data/redbull-2026-derived.json` contains a full `PhysicalCar` (current contract, including `session`, `aero.floor_stalled` and `aero.stall_margin_mm`). Every field carries a kind (`regulation`, `derived-from-telemetry` with sd, or `assumption`). The file also holds `gearing`, `pu_curve`, the residuals, the sensitivity runs and the held-out checks.
 - **Plots**: in `docs/concept/redbull-derived/` (SVG, light and dark).
@@ -236,6 +237,6 @@ A resample of 8 corners can be ill-conditioned, so the table below gives the cen
 - **Straight Mode drag reduction** comes essentially from one zone (A3) and assumes the PU holds its output across the flap opening. The feed carries no active-aero flag.
 - **Wind** (0.3 to 4.9 m/s, variable direction), **elevation and grade** (no channel) and **kerb use** are not modelled. A 1 % grade is worth ~6 kW at 80 m/s.
 - **Tyre rolling radius** is an assumption: 18 in rim from C10.7.2, with the 2026 tyre diameter taken from unverified press figures. It scales every gear ratio 1:1. The km/h per 1000 rpm values are measured and do not depend on it.
-- **Fixed assumptions.** Mass, fuel, rotating inertia, η_dt, η_K, C_rr, slip angle, aero balance, CoG height (0.28 m above the ground, including plank and ride height), wheelbase (3.4 m regulation maximum) and track widths are assumptions with stated values. The ones that matter are varied in the sensitivity runs.
+- **Fixed assumptions.** Mass, fuel, rotating inertia, η_dt, η_K, C_rr, slip angle, aero balance, CoG height (0.28 m above the ground, including plank and ride height), wheelbase (3.4 m regulation maximum) and track widths (1.540 / 1.470 m, the C10.10.1 maxima; 1.58 / 1.52 m before, outside the rule) are assumptions with stated values. The ones that matter are varied in the sensitivity runs.
 - **μ values** are effective values for a fresh soft tyre at 38 to 44 °C track temperature on this lap, with no load sensitivity.
 - **Race laps.** The race laps added to the telemetry folder (HAD and VER) are not used: they differ in fuel, tyres and recharge limit (8 MJ, Overtake).

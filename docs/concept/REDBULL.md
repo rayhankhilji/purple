@@ -2,6 +2,8 @@
 
 Baseline team for the PURPLE Silverstone lap simulator. Researched 2026-10-24 (every source accessed that day); season context runs through 2026-10-18 (17 rounds). Data, sources, articles and quotes: `concept/data/redbull-2026.json`. Regulation text: FIA 2026 Section C [Technical] **Issue 19** (25 June 2026, in force at Silverstone). Every article cited below was also checked word for word in Issue 21 (19 Oct 2026); only C5.2.8 iii and C5.2.10 ii differ (see `DATA.md`).
 
+**The consolidated numbers are in [RB22_SHEET.md](RB22_SHEET.md)** (`concept/data/rb22-sheet.json`): one entry per quantity with value, uncertainty, kind, sources and the files that use it, telemetry from all 25 Red Bull laps at 9 circuits, and a check of the physics sim's RB22 against it. Every item this page lists as unknown has a sourced estimate with a range there.
+
 Kinds: **regulation** (read in the FIA PDF), **official** (FIA, F1, Red Bull, Ford), **reported** (press), **measured** (OpenF1 timing/telemetry in this repo), **derived** (arithmetic, method stated), **unknown** (not public).
 
 ## 1. Power unit: Red Bull Ford DM01
