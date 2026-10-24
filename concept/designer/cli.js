@@ -14,12 +14,12 @@ const prompt = require("./prompt.js");
 // ---- the mock LLM: (scenarioText, { sessionId, trained }) -> text, seeded, deterministic for a given call sequence
 // heuristic playbook (the mock's "taste"; directions only, the bench decides): [key, target]
 const PLAYBOOK = [
-  ["rear_wing.sm_delta_deg", 30], ["front_wing.sm_delta_deg", 20], ["floor.ride_height_mm", 30], ["floor.width_mm", 1900],
+  ["rear_wing.sm_delta_deg", 30], ["front_wing.sm_delta_deg", 20], ["floor.ride_height_mm", 30], ["floor.width_mm", 1540],
   ["rear_wing.chord_mm", 300], ["diffuser.expansion_deg", 17], ["sidepods.inlet_cm2", 570], ["sidepods.undercut_mm", 155],
   ["front_wing.span_mm", 1350], ["rear_wing.span_mm", 1150], ["rear_wing.endplate_top_mm", 880], ["floor.throat_mm", 80],
   ["rear_wing.aoa_deg", 22], ["front_wing.chord_mm", 520], ["front_wing.aoa_deg", 29],
 ];
-const ILLEGAL = [["front_wing.span_mm", 1400], ["rear_wing.elements", 4], ["floor.width_mm", 2000], ["rear_wing.endplate_top_mm", 920], ["layout.wheelbase_mm", 3500]];
+const ILLEGAL = [["front_wing.span_mm", 1400], ["rear_wing.elements", 4], ["floor.width_mm", 1600], ["rear_wing.endplate_top_mm", 920], ["layout.wheelbase_mm", 3500]];
 function mockLlm(seed, rates) {
   const R = Object.assign({ prose: 0.06, broken: 0.06, duplicate: 0.08, illegal: 0.08, clamp: 0.05, unknown: 0.03 }, rates || {});
   const rng = designMod.seededRng(((seed | 0) * 7919 + 17) >>> 0);

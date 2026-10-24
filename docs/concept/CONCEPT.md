@@ -8,7 +8,7 @@ Version 0 · 2026-10-24 · branch `claude/concept-core` · owner Tanuj · label 
 The lab tunes five setup numbers on a fixed car. The concept module lets an optimiser change the **car itself**, part by part:
 wing spans, chords, settings and element counts, the 2026 straight-mode flap angles, floor width, venturi throat, ride height,
 diffuser, sidepod inlets and undercut, wheelbase and chassis packaging, ballast. Every candidate is checked against a
-machine-readable subset of the **FIA 2026 Formula 1 Technical Regulations** (Section C, Issue 17, 28/04/2026), weighed part by
+machine-readable subset of the **FIA 2026 Formula 1 Technical Regulations** (Section C, Issue 19, 25/06/2026, in force at Silverstone), weighed part by
 part, turned into SI physical quantities (`PhysicalCar`) and lapped on a **lap-model bench**. The bench is a reduced-order lap
 model, not a flow solver: v0 is the game's own calibrated lap model (`js/ai.js` `buildSpeedProfile` through `lab/evaluator.js`,
 both called read-only), driven by how this car's physical numbers differ from the baseline concept car. The score is a

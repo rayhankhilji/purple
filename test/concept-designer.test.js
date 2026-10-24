@@ -91,11 +91,11 @@ test("schema accepts plain JSON and one ```json fence; clamps out-of-domain valu
   assert.equal(ok.ok, true); assert.deepEqual(ok.value.changes, [{ part: "floor", param: "ride_height_mm", to: 33, clamped: false }]);
   assert.equal(schema.validate(fenced(answer([{ part: "floor", param: "ride_height_mm", to: 33 }]))).ok, true);
   assert.equal(schema.validate("```\n" + answer([{ part: "floor", param: "ride_height_mm", to: 33 }]) + "\n```").ok, true);
-  const cl = schema.validate(answer([{ part: "rear_wing", param: "sm_delta_deg", to: 45 }, { part: "floor", param: "width_mm", to: 1203 }]));
+  const cl = schema.validate(answer([{ part: "rear_wing", param: "sm_delta_deg", to: 45 }, { part: "floor", param: "width_mm", to: 1103 }]));
   assert.equal(cl.ok, true); assert.deepEqual(cl.clamped, ["rear_wing.sm_delta_deg", "floor.width_mm"]);
-  assert.equal(cl.value.changes[0].to, 30); assert.equal(cl.value.changes[1].to, 1500); assert.equal(cl.value.changes[0].clamped, true);
-  const q = schema.validate(answer([{ part: "front_wing", param: "elements", to: 2.4 }, { part: "floor", param: "width_mm", to: 1834 }]));
-  assert.equal(q.value.changes[0].to, 2); assert.equal(q.value.changes[1].to, 1830); assert.equal(q.clamped, undefined);
+  assert.equal(cl.value.changes[0].to, 30); assert.equal(cl.value.changes[1].to, 1200); assert.equal(cl.value.changes[0].clamped, true);
+  const q = schema.validate(answer([{ part: "front_wing", param: "elements", to: 2.4 }, { part: "floor", param: "width_mm", to: 1534 }]));
+  assert.equal(q.value.changes[0].to, 2); assert.equal(q.value.changes[1].to, 1530); assert.equal(q.clamped, undefined);
   const long = schema.validate(answer([{ part: "floor", param: "throat_mm", to: 90 }], { hypothesis: "x".repeat(300) }));
   assert.equal(long.ok, true); assert.equal(long.value.hypothesis.length, 160); assert.deepEqual(long.trimmed, ["hypothesis"]);
   const n = schema.validate(answer([{ part: "floor", param: "throat_mm", to: 90 }], { expected: { lap_delta_s: -0.04, sector: 3 } }));
@@ -176,7 +176,9 @@ test("mock LLM loop: same seed -> identical lineage; the mock exercises parse, i
   const a = await run(1), b = await run(1), c = await run(2);
   assert.equal(JSON.stringify(a.lineage), JSON.stringify(b.lineage)); assert.equal(JSON.stringify(a.calls), JSON.stringify(b.calls));
   assert.notEqual(JSON.stringify(a.lineage), JSON.stringify(c.lineage));
-  const reasons = {}; for (const r of [a, c]) for (const k of Object.keys(r.designer.reasons)) reasons[k] = 1;
+  // a third run with a higher duplicate rate, so the duplicate guard is exercised whatever the seeded path of a / c is
+  const dup = await designer.runDesigner({ gens: 30, seed: 3, designer: { llm: cli.mockLlm(3, { duplicate: 0.3 }), runId: "t3" } });
+  const reasons = {}; for (const r of [a, c, dup]) for (const k of Object.keys(r.designer.reasons)) reasons[k] = 1;
   for (const k of ["parse", "illegal", "duplicate"]) assert.ok(reasons[k], "mock never triggered " + k);
   for (const r of [a, c]) {
     assert.ok(r.best_result.legal && r.best_result.score > r.baseline_result.score, "the loop improves on the baseline");
