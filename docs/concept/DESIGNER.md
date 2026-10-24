@@ -2,6 +2,9 @@
 
 Version 0-draft · 2026-10-24 · branch `claude/concept-designer` · owner Tanuj (approved an LLM steering the shape) · status:
 **built and tested with a mock LLM only; no Mubit or Anthropic call has been made; the prompt is a DRAFT and is not frozen.**
+**Update 2026-10-24 (branch `claude/mubit-loop`): the closed loop with Mubit is built on top of this module — see
+[LOOP.md](LOOP.md). The `server/mubit.js` change of §5 is now made; the scenario carries measured sector deltas and lap segments
+(cap 1,600 chars ≈ 400 tokens); the prompt text was revised for that (997 chars, still DRAFT).**
 Label on every number: **"concept · reduced-order lap model · calibrated to 2026 pole laps · concept aero map v0"**.
 
 ## 1. What it is
@@ -103,13 +106,14 @@ expected, measured: { lap_delta_sign, sector }, expected_hit: { sign, sector }, 
 | `concept/designer/proposer.js` | `llmProposer({ llm, trained, maxCalls, ... })`, `runDesigner(opts)` (optimizeAsync, one proposal per generation, annotates rows) |
 | `concept/designer/cli.js` | `node concept/designer/cli.js --mock --gens 30 --seed 1 --out DIR`; seeded mock LLM (`mockLlm`) that also returns prose, broken JSON, duplicates, illegal, out-of-domain and unknown parameters |
 | `test/concept-designer.test.js` | 15 tests (§8) |
+| `concept/designer/loop.js`, `segments.js`, `loop-cli.js`, `server/concept.js` | the closed loop with Mubit, one session per run (LOOP.md); `test/concept-loop.test.js` |
 
 The CLI writes `lineage.jsonl`, `calls.jsonl` and `best.json` to `--out` and refuses `data/` and `data-mock/`. Without `--mock` it
 exits with an error: there is no live path yet. Mock runs, 30 generations (≈ 0.5 s each): seed 1 −0.821 s (18 kept: 16 llm, 2
 fallback), seed 2 −1.145 s, seed 3 −0.833 s, seed 4 −1.013 s vs the baseline 88.111 s. These numbers measure the mock's
 scripted taste, not an LLM.
 
-## 5. The server/mubit.js change needed (not made here)
+## 5. The server/mubit.js change (made on `claude/mubit-loop`; `buildRequest` / `captureRequest` added for the dry run, LOOP.md)
 
 `callMubitNow` hard-codes `prompt.SYSTEM_PROMPT / MODEL / MAX_TOKENS / TEMPERATURE` from `lab/prompt.js`, and G-MUBIT-06 says
 Mubit is called only from `server/mubit.js`. Minimal change: an optional `task` argument. Without it the request is byte-identical
