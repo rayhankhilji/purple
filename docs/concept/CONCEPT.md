@@ -72,8 +72,8 @@ sim, PU locked to the homologated DM01 (`bench.checkPU` + regs.js `PKG-PU-FIXED`
 
 | Baseline | Baseline lap | Campaign best ± 1σ (95 % band) | Δ pole 88.111 | Δ HAD 88.746 | Grid | Aero-map gains halved |
 |---|---|---|---|---|---|---|
-| RB22 / Red Bull Ford DM01 | 88.752 | **87.334 ± 0.149** (87.043–87.625) | −0.777 | −1.412 | P1 | 88.023 |
-| generic 2026 / 400 kW PU | 88.115 | 86.824 ± 0.159 (86.513–87.135) | −1.287 | −1.922 | P1 | 87.411 |
+| RB22 / Red Bull Ford DM01 (sim v3) | 88.763 | **87.235 ± 0.154** (86.933–87.537) | −0.876 | −1.511 | P1 | 87.893 |
+| generic 2026 / 400 kW PU (sim v3) | 88.107 | 86.595 ± 0.189 | −1.516 | −2.151 | P1 | 87.286 |
 
 The band is the sim's own held-out error on lap-time changes, fit residuals and noise; it does not cover the concept aero map's
 coefficients (with its gains halved, pole falls inside the band). `REG-C-FLOOR-ROOF` (floor throat) and `REG-C-SUSP-WIDTH` are not
