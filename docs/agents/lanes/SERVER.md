@@ -1,10 +1,23 @@
 # Lane SERVER
 
-Status: in_progress — audit items 1, 4, 5, 6, 9 on PR (branch `claude/server-p3-hardening`); items 2, 3, 7, 8 follow stacked on it (branch `claude/server-p3-budget`). PR #23 (exam details) still open.
+Status: in_progress — audit part 1 PR #34 (branch `claude/server-p3-hardening`) and part 2 stacked on it (branch `claude/server-p3-budget`) open; PR #23 (exam details) open. Merge order: #23 any time, #34, then part 2.
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
 
 ## Sessions
+
+### 2026-10-24 05:20 London — agent B (Claude) — security/guardrail audit, part 2 (items 2, 3, 7, 8)
+- Status: done, PR open into `claude/amazing-planck-804i13` (branch `claude/server-p3-budget`, stacked on `claude/server-p3-hardening` = PR #34; merge #34 first).
+- Files changed: `server/app.js` (runPlan retry flag, race-result `synthetic`), `server/mubit.js` (semaphore only; model/system/max_tokens/temperature/metadata/headers untouched), `server/scripts/collect.js`, `server/scripts/fake-race.js`, `test/server.test.js` (+3, T-F03-AC3 extended), this file.
+- What changed:
+  - (2) `npm run collect -- --n N --confirm-trained …`: refuses without the flag (exit 1); `1 ≤ n ≤ 60` per run; before sending it prints `trained budget R of 250 remaining (T trained rows in <dir>/calls.jsonl)` and exits 3 if `n > R`. `PURPLE_TRAINED_BUDGET` overrides 250 (log a decision first). The integrator's documented v2 command therefore becomes `npm run collect -- --n 40 --with-rules --promote-bias 0.3 --confirm-trained`.
+  - (3) `runPlan`: attempt 0 trains; the parse-error retry (attempt 1) goes out with `x-middleware-record: metadata` and the same `exp-…` session id, and its `calls.jsonl` row has `trained: false, attempt: 1`. `status.calls_trained` / `budget.trained_today_utc` therefore no longer count retries. **Decision for TASK_LOG (D-S21):** a parse-error retry is untrained.
+  - (7) `server/mubit.js`: `withSlot(fn)`, a process-wide 2-slot semaphore around `callMubit` (the 429 retry keeps its slot); exported with `SLOTS` and `inFlight()` for the test. Nothing about the request changed.
+  - (8) `fake-race.js` calls `GET /api/health` first and refuses (exit 3) when `mock` is false, unless `--synthetic`; then the payload carries `synthetic: true` and the server writes `measured.synthetic: true` with the label **`synthetic (fake-race), seed N`** (never "measured"). `POST /api/race/result` validates `synthetic` as an optional boolean; **UI lane: show that label verbatim and treat `measured.synthetic` rows as demo-only.** Default rows keep `synthetic: false` and the old label.
+- Verify step run + output: `npm test` → 86/86 (collect CLI: no flag → exit 1, `--n 61` → exit 1, 248 trained rows + `--n 3` → exit 3 with `trained budget 2 of 250 remaining`, `--n 2` → runs; semaphore peak 2 with a throwing job; fake-race against a non-mock planner → exit 3, with `--synthetic` → labelled row; T-F03-AC3 now asserts `[attempt 0, trained true], [attempt 1, trained false]` with one session id).
+- Decisions proposed: D-S21 untrained parse-error retry; D-S22 trained budget constant 250 in `collect.js` (env override); D-S23 `measured.synthetic` + label.
+- Blockers / questions for Tanuj: none.
+- Next three actions: (1) respond to review on #23, #34 and this PR; (2) re-check the UI fixes when pinged (also finding: show the synthetic label); (3) T-F04-AC2 with a real browser post.
 
 ### 2026-10-24 04:55 London — agent B (Claude) — security/guardrail audit, part 1 (items 1, 4, 5, 6, 9)
 - Status: done, PR open into `claude/amazing-planck-804i13` (branch `claude/server-p3-hardening`, cut from 2578d34). Part 2 (items 2, 3, 7, 8) is stacked on it.
