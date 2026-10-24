@@ -223,15 +223,15 @@
     hero: { azim: 2.36, elev: 0.22, radius: 8.4, target: [0.3, 0.32, 0], fov: 28 },
     front34: { azim: 2.2, elev: 0.12, radius: 8.2, target: [0.4, 0.32, 0], fov: 28 },
     rear34: { azim: 0.72, elev: 0.2, radius: 8.2, target: [-0.2, 0.38, 0], fov: 28 },
-    rearwing: { azim: 0.55, elev: 0.3, radius: 3.4, target: [-2.05, 0.7, 0], fov: 28 },
+    rearwing: { azim: 0.6, elev: 0.42, radius: 3.5, target: [-2.05, 0.66, 0], fov: 28 },
     frontwing: { azim: 2.35, elev: 0.34, radius: 3.4, target: [2.5, 0.16, 0], fov: 28 },
     side: { azim: Math.PI / 2, elev: 0.02, radius: 9.6, target: [0.2, 0.45, 0], fov: 26 },
     top: { azim: Math.PI / 2, elev: 1.53, radius: 9.8, target: [0.2, 0.2, 0], fov: 26 },
     front: { azim: Math.PI, elev: 0.08, radius: 6.8, target: [0, 0.4, 0], fov: 28 },
     rear: { azim: 0, elev: 0.12, radius: 6.8, target: [0, 0.42, 0], fov: 28 },
-    floor: { azim: 2.75, elev: -0.12, radius: 7.2, target: [0.1, 0.12, 0], fov: 28 },
+    floor: { azim: 2.45, elev: -0.34, radius: 6.0, target: [0.15, 0.12, 0], fov: 28 },
     sidepod: { azim: 2.05, elev: 0.16, radius: 3.4, target: [0.35, 0.42, 0.45], fov: 28 },
-    diffuser: { azim: 0.35, elev: 0.06, radius: 3.4, target: [-1.85, 0.22, 0], fov: 28 },
+    diffuser: { azim: 0.32, elev: 0.03, radius: 2.9, target: [-1.95, 0.24, 0], fov: 28 },
     cockpit: { azim: 1.95, elev: 0.5, radius: 2.8, target: [0.45, 0.68, 0], fov: 28 },
     wheel: { azim: 2.0, elev: 0.08, radius: 2.3, target: [1.75, 0.35, 0.8], fov: 28 },
   };
@@ -463,7 +463,7 @@
       const ce = Math.cos(s.elev), t = s.target;
       camera.position.set(t.x - s.radius * ce * Math.cos(s.azim), t.y + s.radius * Math.sin(s.elev), t.z + s.radius * ce * Math.sin(s.azim));
       camera.lookAt(t); s.dirty = true;
-      under.intensity = s.elev < 0 ? 2.6 : 0;   // light the floor from below when the camera is under the car
+      under.intensity = s.elev < 0 ? 3.2 : 0;   // light the floor from below when the camera is under the car
       ground.visible = pool.visible = contact.visible = shadowPlane.visible = s.elev >= -0.01;
       mirror.visible = !!o.reflection && s.mode !== "xray-mass" && s.elev >= -0.01;
     }

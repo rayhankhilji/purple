@@ -347,7 +347,7 @@
       }
       m3.loft(Mfe, rs, { wrap: true, capA: true, capB: true, solid: true });
     }
-    items.push(withMirror(item("floor_fences", "floor", "carbon", Mfe)));
+    items.push(withMirror(item("floor_fences", "floor", "carbon", Mfe, { carbon: "matte" })));
     // wheel-wake control boards ahead of the sidepods (2026; RV-FLOOR-BOARD region XF 650-1350, |Y| ≤ 890): two thin cambered vanes
     // turning outward, rolled top edges, on a foot plate at the floor edge
     {
@@ -409,7 +409,7 @@
       }
       m3.loft(Mst, rs, { wrap: true, capA: true, capB: true, solid: true });
     }
-    items.push(withMirror(item("diffuser_strakes", "diffuser", "carbon", Mst)));
+    items.push(withMirror(item("diffuser_strakes", "diffuser", "carbon", Mst, { carbon: "matte" })));
     // exit gurney along the ramp's trailing edge
     const Mg = m3.mesh(), xe = F.xExit, re = floorRoof(S, xe), ye = floorHalfW(S, xe);
     const rs = []; for (let k = 0; k <= 20; k++) { const y = lerp(-ye + 4, ye - 4, k / 20); rs.push([[xe - 26, re + 4], [xe - 2, re + 4], [xe + 2, re - 14], [xe - 6, re - 16]].map(([x, z]) => W(S, x, y, z))); }
@@ -458,7 +458,15 @@
     // lowest point of the section 2 mm above the envelope floor
     let zmin = Infinity; for (const p of sectionPolys(els, 0, 0, 0)) for (const q of p.pts) zmin = Math.min(zmin, q[1]);
     const z0 = fwZbot(ay) + 2 - zmin;
-    const pivot = els.length > 1 ? [x0 + els[1].le[0], z0 + els[1].le[1]] : null;
+    // straight-mode axis: on the flap group's chord line (through the last flap's TE at the setting angle), level with the first
+    // flap's LE: within (n - 2) slot gaps (≤ 20 mm) of that LE (C3.10.10(d)(ii) allows 25 mm), and the rotation then lengthens the
+    // X extent exactly as concept/regs.js fwStraightExtent models it
+    let pivot = null;
+    if (els.length > 1) {
+      const f = els[1], l = els[els.length - 1], d = [Math.cos(l.a), Math.sin(l.a)], te = [l.le[0] + l.c * d[0], l.le[1] + l.c * d[1]];
+      const D = (te[0] - f.le[0]) * d[0] + (te[1] - f.le[1]) * d[1];
+      pivot = [x0 + te[0] - D * d[0], z0 + te[1] - D * d[1]];
+    }
     return { y, c, els, x0, z0, pivot };
   }
   function rwStation(S, y) {
@@ -539,6 +547,12 @@
       m3.loft(Md, rs, { wrap: true, capA: true, capB: true, solid: true });
       items.push(...pair(item("fw_diveplane", "front_wing", "carbon", Md)));
     }
+    // tip vortex generators on the endplate's outer face (inside RV-FWEP-DIVEPLANE's cuboid): two small curved vanes
+    {
+      const Mv = m3.mesh(), fo = m3.foil(0.06, 0.4, 0.1, 10, 0.03);
+      for (const [x0, z0, c] of [[-1010, 300, 120], [-870, 330, 100]]) { const rs = []; for (let k = 0; k <= 4; k++) { const y = h + 12 + 34 * k / 4, cc = c * (1 - 0.3 * k / 4); rs.push(m3.placeFoil(fo.ring, [x0 + 0.3 * (c - cc), z0 - 6 * k / 4], cc, rad(-16), 0, null).map(([x, z]) => W(S, x, y, Math.min(z, topZ(x) - 6)))); } m3.loft(Mv, rs, { wrap: true, capA: true, capB: true, solid: true }); }
+      items.push(...pair(item("fw_vortex_gens", "front_wing", "carbon", Mv)));
+    }
     // under-wing strakes (RV-FW-STRAKE: |Y| 450-555, Z 75-200)
     {
       const Ms = m3.mesh();
@@ -610,8 +624,8 @@
     {
       const s0 = rwStation(S, DIM.rw.pylonY), main = sectionPolys(s0.els, s0.x0, s0.z0, 0, s0.pivot)[0];
       const lowAt = (x) => { let best = Infinity; for (const p of main.pts) if (Math.abs(p[0] - x) < 25) best = Math.min(best, p[1]); return isFinite(best) ? best : 790; };
-      const xa = S.XR + 200, xb = S.XR + 430;
-      const ol = m3.roundPoly([[S.XR + 10, 330, 20], [S.XR + 10, 450, 60], [xa, lowAt(xa) + 6, 10], [xb, lowAt(xb) + 6, 10], [S.XR + 410, 330, 30]], 4);
+      const zb0 = bodyAt(S, S.XR + 120).zt - 24, xa = S.XR + 250, xb = S.XR + 420;
+      const ol = m3.roundPoly([[S.XR + 40, zb0, 16], [S.XR + 240, zb0 - 6, 30], [xb, lowAt(xb) + 6, 12], [xa, lowAt(xa) + 6, 12]], 4);
       const Mp = m3.mesh(); m3.loft(Mp, [-1, -0.6, 0.6, 1].map(s => ol.map(([x, z]) => W(S, x, DIM.rw.pylonY + 5 * s - (Math.abs(s) < 1 ? 0 : 0), z + (Math.abs(s) < 1 ? 0 : 0)))), { wrap: true, capA: true, capB: true, solid: true });
       items.push(...pair(item("rw_pylon", "rear_wing", "carbon", Mp)));
       // straight-mode actuator pod on the main plane's centre, its link to the flap
@@ -809,8 +823,8 @@
       items.push(item("driver_body", "driver", "suit", Ms));
       // headrest pads around the helmet (dark foam)
       const Mp = m3.mesh(), cwR = (x) => cockpitAt(S, x).cw;
-      for (const s of [-1, 1]) { const pr = []; for (let k = 0; k <= 10; k++) { const x = lerp(XC - 420, XC - 70, k / 10), y = s * (Math.max(130, cwR(x) - 30)); pr.push([x, y, bodyAt(S, x).zt + 18]); }
-        m3.sweep(Mp, pr.map(Wp), () => m3.superellipse(0.03, 0.045, 3, 14), { up: [0, 1, 0] }); }
+      for (const s of [-1, 1]) { const pr = []; for (let k = 0; k <= 10; k++) { const x = lerp(XC - 400, XC - 80, k / 10), y = s * (Math.max(120, cwR(x) - 34)); pr.push([x, y, bodyAt(S, x).zt - 14 + 10 * Math.sin(Math.PI * k / 10)]); }
+        m3.sweep(Mp, pr.map(Wp), (t) => m3.superellipse(0.026 * (0.7 + 0.3 * Math.sin(Math.PI * t)), 0.03, 3, 14), { up: [0, 1, 0] }); }
       m3.loft(Mp, ellRings([XC - 140, XC - 125, XC - 70, XC - 55], (x) => ({ cy: 0, cz: bodyAt(S, XC - 100).zt + 4, a: 150 * (x > XC - 130 && x < XC - 60 ? 1 : 0.85), b: 60, n: 3 }), 20).map(r => r.map(Wp)), { wrap: true, capA: true, capB: true, solid: true });
       items.push(item("headrest", "seat_safety", "interior", Mp, { soft: true }));
       // steering wheel (flat, grips, display)
@@ -828,6 +842,14 @@
       items.push(item("nose_cameras", "electronics", "carbon", Mc));
       const Mn = m3.mesh(), ax = XA + 380; m3.tube(Mn, [[ax, 0, bodyAt(S, ax).zt - 4], [ax + 10, 0, bodyAt(S, ax).zt + 70], [ax + 30, 0, bodyAt(S, ax).zt + 130]].map(Wp), 0.004, 0.004, 8);
       items.push(item("antenna", "electronics", "metal", Mn, { look: "steel_17_4ph" }));
+    }
+    // engine-cover cooling exit above the gearbox (dark), framed by a lip
+    {
+      const ox = S.XR - 40, ob = bodyAt(S, ox), Mo = m3.mesh(), Ml2 = m3.mesh();
+      const ring = (g, dz, k) => m3.superellipse((ob.ys + 34) * k + g, 46 * k + g, 2.4, 28).map(([y, z]) => Wp([ox + 6 - dz, y, ob.zt - 34 + z + dz * 0.4]));
+      m3.loft(Mo, [ring(0, 0, 1), ring(0, 70, 0.8)], { wrap: true, capB: true, inside: Wp([ox - 200, 0, ob.zt - 40]), flip: true });
+      m3.loft(Ml2, [ring(10, -6, 1), ring(4, -2, 1), ring(0, 2, 1)], { wrap: true, inside: Wp([ox - 200, 0, ob.zt - 40]) });
+      items.push(item("cooling_exit", "engine_cover", "interior", Mo), item("cooling_exit_lip", "engine_cover", "paint", Ml2, { role: "body", proj: "main" }));
     }
     // rear: rain light on the crash structure's end, exhaust tailpipe above it (C3.9)
     {

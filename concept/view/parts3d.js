@@ -100,7 +100,7 @@
     opts = opts || {};
     const isWeave = !!L.weave, matte = !!opts.matte;
     // metals at 0.82: a dark studio reflects almost nothing into a pure metal, so a little diffuse keeps titanium reading grey
-    const m = new THREE.MeshPhysicalMaterial({ color: new THREE.Color(L.col).convertSRGBToLinear(), metalness: L.metal > 0.5 ? 0.82 : L.metal, roughness: matte ? Math.max(0.6, L.rough + 0.3) : L.rough, clearcoat: matte ? 0 : L.coat, clearcoatRoughness: 0.08, envMapIntensity: matte ? 0.18 : isWeave ? 0.55 : 1, side: THREE.DoubleSide });
+    const m = new THREE.MeshPhysicalMaterial({ color: new THREE.Color(L.col).convertSRGBToLinear(), metalness: L.metal > 0.5 ? 0.82 : L.metal, roughness: matte ? 0.78 : L.rough, reflectivity: matte ? 0.2 : 0.5, clearcoat: matte ? 0 : L.coat, clearcoatRoughness: 0.08, envMapIntensity: matte ? 0.3 : isWeave ? 0.55 : 1, side: THREE.DoubleSide });
     const kind = L.weave === "twill" ? 0 : L.weave === "plain" ? 1 : L.weave === "spread" ? 2 : 3;
     m.userData.u = { wKind: { value: kind }, wTow: { value: L.tow || (L.brushed ? 0.0004 : 0.002) }, wAmt: { value: isWeave ? 1 : L.brushed ? 0.25 : L.speckle ? 0.35 : 0 } };
     m.extensions = { derivatives: true };
@@ -231,7 +231,7 @@
       radiator: () => new THREE.MeshStandardMaterial({ color: lin("#2b2d31"), roughness: 0.55, metalness: 0.7, side: THREE.DoubleSide }),
       plank: () => new THREE.MeshStandardMaterial({ color: lin("#5a4632"), roughness: 0.72, metalness: 0, side: THREE.DoubleSide }),
       black: () => new THREE.MeshStandardMaterial({ color: lin("#060606"), roughness: 0.6, metalness: 0, side: THREE.DoubleSide }),
-      led: () => new THREE.MeshStandardMaterial({ color: lin("#3a0606"), emissive: lin("#ff2a1c"), emissiveIntensity: 1.6, roughness: 0.3 }),
+      led: () => new THREE.MeshStandardMaterial({ color: lin("#2a0303"), emissive: lin("#ff0a0a"), emissiveIntensity: 0.9, roughness: 0.3 }),
       caliper: () => new THREE.MeshPhysicalMaterial({ color: lin(team.id === "ferrari" ? "#d4a017" : "#b0141e"), roughness: 0.35, metalness: 0.1, clearcoat: 0.8, clearcoatRoughness: 0.1 }),
       visor: () => new THREE.MeshPhysicalMaterial({ color: lin("#0c0d12"), roughness: 0.05, metalness: 0.6, clearcoat: 1, clearcoatRoughness: 0.02, envMapIntensity: 1.6, side: THREE.DoubleSide }),
       mirror: () => new THREE.MeshStandardMaterial({ color: lin("#c8d2dc"), roughness: 0.04, metalness: 1, envMapIntensity: 1.4 }),

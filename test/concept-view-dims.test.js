@@ -14,7 +14,12 @@ const all = (G) => Object.values(G).flatMap(g => g.items);
 const byName = (G, re) => all(G).filter(it => re.test(it.name));
 function verts(items, fn) { for (const it of items) { const P = it.geo.pos; for (let i = 0; i < P.length; i += 3) fn(P[i], P[i + 1], P[i + 2], it); } }
 function bbox(items) { const lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity]; verts(items, (x, y, z) => { const v = [x, y, z]; for (let a = 0; a < 3; a++) { lo[a] = Math.min(lo[a], v[a]); hi[a] = Math.max(hi[a], v[a]); } }); return { lo, hi }; }
-const near = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: measured ${(+a).toFixed(3)}, expected ${(+b).toFixed(3)} (±${tol})`);
+// the worst deviation per measured quantity, over every design (reported by the last test)
+const DEV = {};
+const near = (a, b, tol, msg) => {
+  const k = msg.replace(/^\S+ /, ""), d = Math.abs(a - b); if (!DEV[k] || d > DEV[k].d) DEV[k] = { d, tol };
+  assert.ok(d <= tol, `${msg}: measured ${(+a).toFixed(3)}, expected ${(+b).toFixed(3)} (±${tol})`);
+};
 const Zof = (S, y) => y * 1000 - 10 - S.rh;          // world y -> FIA Z (sprung frame)
 
 // designs: baseline (generic and RB22), fixed extremes inside the domain, and seeded mutations
@@ -67,7 +72,6 @@ test("survival cell anchors: cockpit opening relative to XC, body sections at XA
     const body = byName(G, /^body$/), at = (X) => { let w = 0; verts(body, (x, y, z) => { if (Math.abs(mmX(x) - X) < 0.01) w = Math.max(w, Math.abs(z) * 1000); }); return w; };
     near(at(S.XA), car3d.bodyAt(S, S.XA).yw, TOL, label + " body half width at the cell front XA");
     near(at(S.XPU), car3d.bodyAt(S, S.XPU).yw, TOL, label + " body half width at the ICE face XPU");
-    near(S.XC - S.XA, S.XC - S.XA, 0, label);   // cockpit length = XC - XA by the two measurements above
   }
 });
 
@@ -104,18 +108,13 @@ test("front wing: span, element count, local chords (mean = chord), flap and mai
   }
 });
 function chordAngle(top, bot) {
-  // ring layout: top = upper surface TE..LE (le+1 points per ring), bot = LE..lower TE; the middle ring is the centre station
-  const nT = top.geo.count, nB = bot.geo.count;
-  // ring sizes: the top strip has (le+1) points per ring, the bottom strip (le+1) too (plus its two end caps after the strip)
-  const le1 = 29, rings = nT / le1;   // FOIL.main / FOIL.flap rings have N+1 points per side; find the ring size from the data
-  const P = top.geo.pos, Q = bot.geo.pos;
-  // detect ring size: consecutive vertices of one ring share z
-  let rs = 1; while (rs < nT && Math.abs(P[rs * 3 + 2] - P[2]) < 1e-9) rs++;
-  const r = Math.floor((nT / rs) / 2), iTE = r * rs, iLE = r * rs + rs - 1;
-  const jLE = r * rs, jTE = r * rs + rs - 1;   // the bottom strip has the same ring size
-  const te = [(P[iTE * 3] + Q[jTE * 3]) / 2, (P[iTE * 3 + 1] + Q[jTE * 3 + 1]) / 2], lePt = [P[iLE * 3], P[iLE * 3 + 1]];
-  void nB; void le1; void rings;
-  return Math.atan2(te[1] - lePt[1], lePt[0] - te[0]) * 180 / Math.PI;
+  // ring layout: the top strip runs upper TE -> LE (rs points per station ring), the bottom strip LE -> lower TE (same ring size);
+  // the chord line joins the LE to the midpoint of the two TE points; the middle ring is the centre station
+  const P = top.geo.pos, Q = bot.geo.pos, n = top.geo.count;
+  let rs = 1; while (rs < n && Math.abs(P[rs * 3 + 2] - P[2]) < 1e-9) rs++;   // consecutive vertices of one ring share z
+  const r = Math.floor((n / rs) / 2), iTE = r * rs, iLE = r * rs + rs - 1, jTE = r * rs + rs - 1;
+  const te = [(P[iTE * 3] + Q[jTE * 3]) / 2, (P[iTE * 3 + 1] + Q[jTE * 3 + 1]) / 2], le = [P[iLE * 3], P[iLE * 3 + 1]];
+  return Math.atan2(te[1] - le[1], le[0] - te[0]) * 180 / Math.PI;
 }
 
 test("rear wing: span, chord at every station, element count, flap angle, endplate top, RV-RW-PROFILES for legal designs", () => {
@@ -124,9 +123,8 @@ test("rear wing: span, chord at every station, element count, flap angle, endpla
     assert.equal(new Set(els.map(i => i.name.match(/^rw_el(\d+)/)[1])).size, n, label + " rear wing element count");
     const b = bbox(els); near(b.hi[2] * 1000, rw.span_mm / 2, TOL, label + " rear wing half span");
     const st = new Map(); verts(els, (x, y, z) => { const k = z.toFixed(6), e = st.get(k) || [Infinity, -Infinity]; e[0] = Math.min(e[0], x); e[1] = Math.max(e[1], x); st.set(k, e); });
-    let worst = 0; for (const [, e] of st) if (Math.abs(z0(e)) > 0) worst = Math.max(worst, Math.abs((e[1] - e[0]) * 1000 - rw.chord_mm));
-    function z0() { return 1; }
-    assert.ok(worst <= TOL, label + " rear wing chord at every station (worst " + worst.toFixed(2) + " mm)");
+    let worst = 0; for (const [, e] of st) worst = Math.max(worst, Math.abs((e[1] - e[0]) * 1000 - rw.chord_mm));
+    near(worst, 0, TOL, label + " rear wing chord at every station (worst station)");
     near(mmX(b.hi[0]), S.XR + 165, TOL, label + " rear wing leading edge at XR+165");
     for (let ei = 0; ei < n; ei++) { const top = byName(G, new RegExp("^rw_el" + ei + "_top$"))[0], bot = byName(G, new RegExp("^rw_el" + ei + "_bot$"))[0]; near(chordAngle(top, bot), ei === 0 ? (n >= 2 ? rw.aoa_deg / 5 : rw.aoa_deg / 2) : rw.aoa_deg, 0.3, label + " RW element " + ei + " angle"); }
     const ep = bbox(byName(G, /^rw_endplate_R$/)); near(Zof(S, ep.hi[1]), rw.endplate_top_mm, TOL, label + " rear endplate top (Z)");
@@ -185,4 +183,10 @@ test("every vertex finite; builds are fast enough in Node (generous bound; brows
     for (const it of all(G)) for (const v of it.geo.pos) assert.ok(Number.isFinite(v), label + " " + it.name + " has a non-finite vertex");
     assert.ok(ms < 3000, label + " full build " + ms + " ms");
   }
+});
+
+test("report: worst deviation per measured quantity over " + CASES.length + " designs", (t) => {
+  const rows = Object.keys(DEV).sort().map(k => k + ": " + DEV[k].d.toFixed(3) + " (tol " + DEV[k].tol + ")");
+  for (const r of rows) t.diagnostic(r);
+  assert.ok(rows.length >= 20, "measured " + rows.length + " quantities");
 });
