@@ -127,7 +127,7 @@ test("status widget: GET /api/status carries prompt_hash, last_console_read_at a
   const day = s0.budget.day_utc, yday = new Date(Date.parse(day + "T00:00:00Z") - 1000).toISOString();
   const row = (kind, trained, created_at) => db.appendCall({ id: kind + created_at, created_at, kind, trained, session_id: null, mubit_request_id: trained || kind === "illegal" ? null : "mreq_x", model: null, latency_ms: 0, status: "ok" });
   row("plan", true, yday); row("smoke", false, yday); row("plan", true, day + "T00:00:00.000Z"); row("plan", true, new Date().toISOString()); row("exam", false, new Date().toISOString()); row("smoke", false, day + "T12:00:00Z"); row("illegal", false, new Date().toISOString());
-  const s1 = (await json(app, "/api/status")).body.data; assert.equal(s1.budget.trained_today_utc, 2); assert.equal(s1.budget.untrained_today_utc, 2); assert.equal(s1.calls_total, 7); assert.equal(s1.calls_trained, 3);
+  const s1 = (await json(app, "/api/status")).body.data; assert.equal(s1.budget.trained_today_utc, 2); assert.equal(s1.budget.untrained_today_utc, 2); assert.equal(s1.calls_total, 6); assert.equal(s1.calls_trained, 3);
   await post(app, "/api/plan", { scenario_overrides: { seed: 9 } }); assert.equal((await json(app, "/api/status")).body.data.budget.trained_today_utc, 3);
   // a console read-out stamps last_console_read_at; a non-console patch does not; an explicit value wins; garbage is rejected
   const t0 = Date.now(); const s2 = (await post(app, "/api/status", { task_name: "Research engineer of F1", kept_examples: 43, adapter_version: "v1" })).body.data;
@@ -323,14 +323,25 @@ test("correctness g: a bad or illegal baseline is a 400/422, never a 500 (runPla
 });
 test("QA S2: a status SSE event follows every calls.jsonl append (plan, illegal, exam, smoke paths) with fresh counters", async () => {
   mock.reset(); const dir = tmp(); const { app, db, runExam } = createApp({ dataDir: dir, mubit: mock, log: () => {}, heartbeatMs: 50 });
-  const sse = await sseUntil(app, /"calls_total":4/, 40);
+  const sse = await sseUntil(app, /"calls_total":3/, 40);
   const x = (await post(app, "/api/plan", { scenario_overrides: { seed: 9 } })).body.data;
   await post(app, "/api/state", { td01: true }); await post(app, "/api/plan", { scenario_overrides: { candidate: Object.assign({}, x.candidate, { rear_wing_deg: 25 }) } });
   db.writeExam([{ id: "ex-1", scenario: x.scenario, truth: { verdict: "reject", next_parameter: "rear_wing_deg", direction: "decrease" } }]); await runExam();
   db.appendCall({ id: "s1", created_at: new Date().toISOString(), kind: "smoke", trained: false });
   const evs = sseEvent(await sse.read(), "status"); const totals = evs.map(e => e.calls_total);
-  assert.ok(totals.includes(1) && totals.includes(2) && totals.includes(3) && totals.includes(4), JSON.stringify(totals)); assert.equal(Math.max(...totals), 4);
+  // plan 1 · illegal still 1 (QA3 S-3: a 422 never reached Mubit, so it is not a call) · exam 2 · smoke 3
+  assert.ok(totals.includes(1) && totals.includes(2) && totals.includes(3), JSON.stringify(totals)); assert.equal(Math.max(...totals), 3);
   assert.equal(evs[evs.length - 1].budget.trained_today_utc, 1); assert.equal(evs[evs.length - 1].budget.untrained_today_utc, 2);   // exam + smoke; the illegal row is not a call
+});
+test("QA3 S-3: the widget's calls_total counts only calls that reached Mubit (illegal TD-01 422 rows excluded), matching the budget line", async () => {
+  mock.reset(); const dir = tmp(); const { app } = createApp({ dataDir: dir, mubit: mock, log: () => {} });
+  const x = (await post(app, "/api/plan", { scenario_overrides: { seed: 9 } })).body.data;
+  await post(app, "/api/state", { td01: true });
+  const r = await post(app, "/api/plan", { scenario_overrides: { candidate: Object.assign({}, x.candidate, { rear_wing_deg: 25 }) } }); assert.equal(r.status, 422);
+  const calls = fs.readFileSync(path.join(dir, "calls.jsonl"), "utf8").trim().split("\n").map(JSON.parse); assert.deepEqual(calls.map(c => c.kind), ["plan", "illegal"]);   // the row is still logged
+  const s = (await json(app, "/api/status")).body.data;
+  assert.equal(s.calls_total, 1); assert.equal(s.calls_trained, 1); assert.equal(mock.count(), 1);
+  assert.equal(s.calls_total, s.budget.trained_today_utc + s.budget.untrained_today_utc);
 });
 test("POST /api/evaluate: pure, illegal -> 422 ILLEGAL_SETUP, bad input -> 400", async () => {
   mock.reset(); const { app, EI } = createApp({ dataDir: tmp(), mubit: mock });
