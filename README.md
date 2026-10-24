@@ -63,7 +63,7 @@ All lap times come from our physics lap sim of Silverstone. They are model predi
 | Version | Trained on | Mubit's own test | Status |
 |---|---|---|---|
 | v1 | 98 examples | 5/19, not passed | Mubit kept Claude answering |
-| v2 | the 751 physics-approved examples | — | training |
+| v2 | the 751 physics-approved examples | — | examples sent; waiting for Mubit to train |
 
 Source: Mubit console, 24 October.
 
