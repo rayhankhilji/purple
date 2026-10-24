@@ -11,3 +11,7 @@ data-mock/
 .env
 .env.*
 server/.env.*
+
+# Vercel (server/vercel.js): build output and the local project link
+/public/
+.vercel/

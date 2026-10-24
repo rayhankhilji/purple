@@ -31,7 +31,9 @@
     "sim:line": "node concept/sim/build-line.js",
     "sim:fit": "node concept/sim/build-fit.js",
     "sim:fit:check": "node concept/sim/build-fit.js --check",
-    "sim:plot": "node concept/sim/plot-trace.js ANT HAD SAI"
+    "sim:plot": "node concept/sim/plot-trace.js ANT HAD SAI",
+    "deploy": "node server/vercel.js deploy",
+    "vercel:build": "node server/vercel.js build"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.137.0",

@@ -58,7 +58,7 @@ function createApp(opts) {
   // CSRF / DNS-rebinding guard (audit): the API answers only for a loopback Host, and every non-GET must say application/json, which a
   // cross-site form or text/plain fetch cannot without a preflight (which the CORS allowlist above denies). Hono itself parses JSON
   // regardless of content-type, so without this a text/plain POST from any origin reached /api/collect.
-  const HOST_OK = /^(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/i;
+  const HOST_OK = opts.hostOk || /^(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/i;   // opts.hostOk: the Vercel adapter (server/vercel.js) allows its own domain
   app.use("/api/*", async (c, next) => {
     const host = c.req.header("host") || new URL(c.req.url).host;
     if (!HOST_OK.test(host)) return fail(c, "BAD_INPUT", "Host must be 127.0.0.1 or localhost (DNS-rebinding guard), got " + JSON.stringify(host));
