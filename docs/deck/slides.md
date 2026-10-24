@@ -80,7 +80,7 @@ Speaker notes: Equation I is ours and predates the weekend; everything under lab
 <span class="src">reduced-order lap model · calibrated to 2026 pole laps · aero map v1</span>
 
 <!--
-Speaker notes: Each stage is a card in the lab and a line in the ledger. The evaluator is the game's own speed-profile lap model with an aero map on top; we label it exactly that, never more. The race measures what the model predicted. Figure: this table, or the lab page with all four cards lit.
+Speaker notes: Each stage is a card in the lab and a line in the ledger. The evaluator is the game's own speed-profile lap model with an aero map on top; we label it exactly that, never more. The race measures what the model predicted. Figure: this table, or the lab page with all four cards lit (reference frame docs/agents/integrator-screens/lab-1440-0505-merged.png; re-shoot on the real ledger so the widget is not zeros).
 -->
 
 ---
