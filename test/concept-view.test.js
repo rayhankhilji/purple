@@ -84,7 +84,7 @@ test("materials: every material in concept/materials.js has a look; fixed (regul
   for (const m of materials.MATERIALS) assert.ok(p3.LOOKS[m.id], "look for " + m.id);
   for (const id of ["halo", "wheels_front", "wheels_rear", "brakes_front", "brakes_rear"]) assert.ok(p3.LOOKS[p3.FIXED_LOOK[id]], id);
   // a design naming a material builds (the v2 morph interpolated every key and broke on the string)
-  const d = design.applyChanges(design.baseline(), [{ part: "front_wing", param: "material", to: "ti64" }]).design;
-  const S = car3d.spec(d.params); assert.equal(S.materials.front_wing, "ti64");
-  assert.ok(car3d.buildGroup("front_wing", S, {}).items.length > 10);
+  const d = design.applyChanges(design.baseline(), [{ part: "rear_wing", param: "material", to: "ti64" }]).design;
+  const S = car3d.spec(d.params); assert.equal(S.materials.rear_wing, "ti64");
+  assert.ok(car3d.buildGroup("rear_wing", S, {}).items.length > 10);
 });
