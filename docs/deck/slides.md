@@ -80,7 +80,7 @@ Speaker notes: Equation I is ours and predates the weekend; everything under lab
 <span class="src">reduced-order lap model · calibrated to 2026 pole laps · aero map v1</span>
 
 <!--
-Speaker notes: Each stage is a card in the lab and a line in the ledger. The evaluator is the game's own speed-profile lap model with an aero map on top; we label it exactly that, never more. The race measures what the model predicted. Figure: this table, or the lab page with all four cards lit (reference frame docs/agents/integrator-screens/lab-1440-0505-merged.png; re-shoot on the real ledger so the widget is not zeros).
+Speaker notes: Each stage is a card in the lab and a line in the ledger. The evaluator is the game's own lap model with an aero map on top; we label it exactly that, never more. The race measures what the model predicted. Figure: this table, or the lab page with four cards lit (integrator-screens/lab-1440-0505-merged.png, re-shot on real data).
 -->
 
 ---
@@ -126,7 +126,7 @@ Speaker notes: Two identical neutral bots, seed 42, three laps. The model predic
 ![shot bg right:34% fit](shots/try-models-side-by-side.png)
 
 <!--
-Speaker notes: Same unseen scenario to provider, v1 and v2 in Try models, side by side. On these eight the provider gets every verdict and one next step (the demo premise); on all seven misses the truth is a ride-height change and it proposes wings or brake bias instead. Counts, never percentages. If v2 does not beat v1 we show the number anyway. Figure: Try models on exam-rw8, the demo premise, with the version label visible.
+Speaker notes: Same unseen scenario to provider, v1 and v2 in Try models. On these eight the provider gets every verdict and one next step; on all seven misses the truth is ride height and it proposes wings or brake bias. Counts, never percentages; if v2 loses, we show it. Figure: Try models on exam-rw8, version label visible.
 -->
 
 ---
