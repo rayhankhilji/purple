@@ -356,7 +356,7 @@
       examLine("v1", ex.v1, ex.v1_param, "Try models, hand-scored"), examLine("v2", ex.v2, ex.v2_param, "Try models, hand-scored"),
       el("div", { class: "src upd" },
         el("span", { text: (s.last_console_read_at ? "updated from console " + hhmm(s.last_console_read_at) : s.updated_at ? "status written " + hhmm(s.updated_at) + " · console not read yet" : "not yet read from the console") + " · " + (s.model || "") + (s.prompt_version ? " · prompt v" + s.prompt_version : "") + (s.prompt_hash ? " " + String(s.prompt_hash).slice(0, 8) : "") }),
-        b ? el("span", { class: "budget", title: "Mubit daily budget: calls today by UTC day; resets " + (b.resets_at ? hhmm(b.resets_at) + " local (" + (b.boundary || "00:00 UTC") + ")" : "00:00 UTC"), text: "budget today (UTC) · trained " + (b.trained_today_utc ?? "—") + " · untrained " + (b.untrained_today_utc ?? "—") + (b.resets_at ? " · resets " + hhmm(b.resets_at) : "") }) : null)].filter(Boolean));
+        b ? el("span", { class: "budget", title: "Mubit calls counted by UTC day (a counter, not a cap)", text: "calls today (UTC) · trained " + (b.trained_today_utc ?? "—") + " · untrained " + (b.untrained_today_utc ?? "—") }) : null)].filter(Boolean));
   }
   async function saveStatus(fd) {
     const patch = {}, exam = {}, cur = (S.status && S.status.exam) || {};

@@ -5,7 +5,8 @@ Production: **https://purple-wine.vercel.app** · Vercel project `purple` (`prj_
 
 | Page | URL |
 |---|---|
-| The game | `/` |
+| Concept lab (the product; the site root redirects here) | `/` → `/concept/lab/?api=/` |
+| The game (Equation I, pre-existing) | `/index.html` |
 | Research lab | `/lab/` (redirects to `/lab/?api=/` so the page talks to this site's API, not 127.0.0.1:8787) |
 | Concept lab (Mubit loop drawer, Engine dashboard) | `/concept/lab/` (same redirect; `?engine=1` etc. are kept) |
 | 3D viewer | `/concept/view/` |
