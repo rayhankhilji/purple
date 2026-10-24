@@ -52,7 +52,7 @@ function buildRequest({ userContent, sessionId, trained, task }) {
   const headers = trained ? {} : { "x-middleware-record": "metadata" };
   return { params, headers };
 }
-// { userContent, sessionId, trained, kind, task? } -> { text, kind, session_id, mubit_request_id, model, input_tokens, output_tokens, latency_ms, trained, stop_reason }
+// { userContent, sessionId, trained, kind, task? } -> { text, kind, session_id, mubit_request_id, served_by, model, input_tokens, output_tokens, latency_ms, trained, stop_reason }
 async function callMubit(args) { return withSlot(() => callMubitNow(args)); }
 async function callMubitNow({ userContent, sessionId, trained, kind, task }) {
   const { params, headers } = buildRequest({ userContent, sessionId, trained, task });
@@ -71,8 +71,10 @@ async function callMubitNow({ userContent, sessionId, trained, kind, task }) {
   const latency_ms = Date.now() - t0;
   const mubit_request_id = headerOf(response && response.headers, "x-middleware-request-id") || data._request_id || null;
   const text = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("");
+  // who answered: a provider reply carries Anthropic's own headers / ids; with a Mubit rollout running, a reply without them is the adapter's
+  const served_by = headerOf(response && response.headers, "anthropic-organization-id") || /^msg_/.test(data.id || "") ? "provider" : "adapter";
   return {
-    text, kind, session_id: sessionId, mubit_request_id, model: data.model || (task || prompt).MODEL,
+    text, kind, session_id: sessionId, mubit_request_id, served_by, model: data.model || (task || prompt).MODEL,
     input_tokens: data.usage && data.usage.input_tokens, output_tokens: data.usage && data.usage.output_tokens,
     latency_ms, trained: !!trained, stop_reason: data.stop_reason,
   };

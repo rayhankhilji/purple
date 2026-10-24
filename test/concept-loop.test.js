@@ -126,7 +126,7 @@ test("(d) research-task requests are byte-identical to before the server/mubit.j
       assert.equal(s.headers["x-api-key"], process.env.MUBIT_API_KEY);
     }
     assert.equal(lb.seen[1].headers["x-middleware-record"], "metadata"); assert.equal(lb.seen[0].headers["x-middleware-record"], undefined);
-    assert.deepEqual(Object.keys(a).sort(), ["input_tokens", "kind", "latency_ms", "model", "mubit_request_id", "output_tokens", "session_id", "stop_reason", "text", "trained"]);
+    assert.deepEqual(Object.keys(a).sort(), ["input_tokens", "kind", "latency_ms", "model", "mubit_request_id", "output_tokens", "served_by", "session_id", "stop_reason", "text", "trained"]);
     assert.equal(a.mubit_request_id, "mreq_" + "1".padStart(32, "0")); assert.equal(b.trained, false);
     // the pure builder without a task is the frozen research task, field for field and in order
     const q = mubit.buildRequest({ userContent: user, sessionId: "s", trained: false });

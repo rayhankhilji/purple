@@ -123,7 +123,7 @@ async function runEngineer(opts) {
       try {
         const res = await opts.llm(sc.text, { sessionId, trained: !!opts.trained, gen: k });
         const o = typeof res === "string" ? { text: res } : res;
-        dec.call = { mubit_request_id: o.mubit_request_id || null, model: o.model || null, input_tokens: o.input_tokens == null ? null : o.input_tokens, output_tokens: o.output_tokens == null ? null : o.output_tokens, latency_ms: o.latency_ms == null ? now() - tc : o.latency_ms, trained: !!opts.trained, mock: !!o.mock };
+        dec.call = { mubit_request_id: o.mubit_request_id || null, served_by: o.served_by || null, model: o.model || null, input_tokens: o.input_tokens == null ? null : o.input_tokens, output_tokens: o.output_tokens == null ? null : o.output_tokens, latency_ms: o.latency_ms == null ? now() - tc : o.latency_ms, trained: !!opts.trained, mock: !!o.mock };
         dec.response_text = String(o.text).slice(0, 600);
         const v = schema.validate(o.text);
         if (v.ok) { proposal = v.value; if (v.clamped) dec.clamped = v.clamped; }
