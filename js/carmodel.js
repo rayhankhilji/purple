@@ -111,12 +111,13 @@ window.EI = window.EI || {};
     return { dRear: rw == null ? 0 : SETUP_K.rearAoaPerDeg * (rw - SETUP_BASE.rear_wing_deg), kFront: fw == null ? 1 : 1 + SETUP_K.frontAoaPerDeg * (fw - SETUP_BASE.front_wing_deg), dRide: rh == null ? 0 : SETUP_K.rideM_PerMm * (rh - SETUP_BASE.ride_height_mm) };
   }
   // front wing: 4 elements with upward-curved tips + rear wing main plane, beam wing, swan necks, rear endplates - one painted mesh.
-  // elementsOnly: just the parts the setup moves (the four front elements and the rear main plane), for the lab's baseline ghost
+  // elementsOnly: just the parts the setup moves (the four front elements and the rear main plane), for the lab's baseline ghost;
+  // pass { front, rear } to pick one of them. Without it the full wing mesh is built in its original order (unchanged geometry).
   function wingGeometry(setup, elementsOnly) {
-    const d = setupDeltas(setup);
+    const d = setupDeltas(setup); const sel = elementsOnly && typeof elementsOnly === 'object' ? elementsOnly : { front: true, rear: true };
     const fw = (chord, x, y, aoa, t, flapGapAtNose) => wing(-1.0, 1.0, (z) => { const a = Math.abs(z); const lift = 0.1 * a * a; const nose = flapGapAtNose && a < 0.22 ? 0.06 : 0; return { x, y: y + lift + nose, chord: chord * (1 - 0.15 * a), aoa: aoa * d.kFront * (1 - 0.3 * a), t: t }; }, 32);
-    const wings = [fw(0.42, 3.15, 0.09, 0.08, 0.035, false), fw(0.3, 2.82, 0.17, 0.26, 0.03, true), fw(0.22, 2.6, 0.26, 0.42, 0.025, true), fw(0.16, 2.43, 0.33, 0.55, 0.02, true)];
-    wings.push(wing(-0.5, 0.5, (z) => ({ x: -2.3, y: 0.72, chord: 0.4, aoa: 0.16 + d.dRear, t: 0.04 }), 16));   // rear main plane
+    const wings = sel.front ? [fw(0.42, 3.15, 0.09, 0.08, 0.035, false), fw(0.3, 2.82, 0.17, 0.26, 0.03, true), fw(0.22, 2.6, 0.26, 0.42, 0.025, true), fw(0.16, 2.43, 0.33, 0.55, 0.02, true)] : [];
+    if (sel.rear) wings.push(wing(-0.5, 0.5, (z) => ({ x: -2.3, y: 0.72, chord: 0.4, aoa: 0.16 + d.dRear, t: 0.04 }), 16));   // rear main plane
     if (elementsOnly) return merge(wings);
     wings.push(wing(-0.5, 0.5, (z) => ({ x: -2.25, y: 0.4, chord: 0.2, aoa: 0.25, t: 0.025 }), 12)); wings.push(wing(-0.5, 0.5, (z) => ({ x: -2.4, y: 0.33, chord: 0.18, aoa: 0.2, t: 0.02 }), 12));
     for (const s of [1, -1]) wings.push(strut([-1.75, 0.55, s * 0.08], [-2.35, 0.8, s * 0.08], 0.05, 0.03)); // swan necks

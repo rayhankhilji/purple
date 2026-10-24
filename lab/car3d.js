@@ -6,7 +6,8 @@
 // Contract (kept stable for the UI lane; documented in docs/agents/lanes/CAR3D.md):
 //   EI.labCar3D.mount(containerEl, opts?)      -> the view (also returned by EI.labCar3D.view()); opts: see DEFAULTS
 //   EI.labCar3D.setSetup(setup, { animate }?)  -> { ms } wing-swap time; animate !== false eases the camera to the hero angle
-//   EI.labCar3D.setBaseline(setup | null)      -> ghost the baseline wings when the current setup differs from it
+//   EI.labCar3D.setBaseline(setup | null)      -> ghost the baseline wing(s) whose value differs from the current setup
+//   Display gain: opts.exaggerate (default 3) scales the wing-angle / ride-height deltas in the mesh only; the label in the view says so.
 //   EI.labCar3D.hero()                         -> 600 ms ease to the three-quarter rear view (instant under prefers-reduced-motion)
 //   EI.labCar3D.dispose()                      -> stop rendering, free GL resources, empty the container
 // Loads after the game's scripts: needs THREE, EI.U (js/util.js) and EI.CarModel (js/carmodel.js) at mount time. The livery pipeline
@@ -25,6 +26,8 @@ window.EI = window.EI || {};
     pixelRatioCap: 2,
     background: 0x0a0a0c,         // DESIGN_SYSTEM --bg
     ghostColor: 0xb26cff,         // DESIGN_SYSTEM --purple
+    exaggerate: 3,                // display gain on the setup deltas (wing angles, ride height); stated in the view's label (G-HON-01). 1 = true geometry
+    label: true,                  // the honesty label inside the container (top-right)
   };
   // the hero: a three-quarter rear view with the rear wing in frame (DESIGN_SYSTEM §8). Camera on a sphere around TARGET:
   // azim 0 = straight behind the car, positive = towards the car's right (z); elev above the ground plane
@@ -32,6 +35,13 @@ window.EI = window.EI || {};
   const SWAY = { amp: 0.22, period: 26 };             // idle sway of azim (rad, s): the rear wing never leaves the frame
   const HERO_MS = 600, HERO_EASE = (t) => 1 - Math.pow(1 - t, 3);   // DESIGN_SYSTEM §5 "Wing rebuild"
   const WING_KEYS = ['front_wing_deg', 'rear_wing_deg', 'ride_height_mm'];
+  // the setup the geometry is built from: baseline + gain x (setup - baseline) on the three geometric fields. The numbers on
+  // screen stay the real setup; only the mesh is exaggerated, and the label says by how much.
+  function displaySetup(setup, gain) {
+    const B = EI.CarModel.SETUP_BASE; if (!setup) return null; if (!(gain > 0) || gain === 1) return setup;
+    const out = Object.assign({}, setup); for (const k of WING_KEYS) if (typeof setup[k] === 'number') out[k] = B[k] + gain * (setup[k] - B[k]); return out;
+  }
+  const labelText = (gain) => (gain > 0 && gain !== 1 ? 'wing angles and ride height exaggerated ×' + gain + ' for visibility · geometry from the setup, not a measurement' : 'wing angles and ride height from the setup · geometry, not a measurement');
 
   // the repo root, from this script's own URL (lab/car3d.js), so the lab page's location does not matter
   const ROOT = (() => { const cs = document.currentScript; const u = (cs && cs.src) || location.href; return u.replace(/lab\/[^/]*(\?.*)?$/, ''); })();
@@ -104,6 +114,13 @@ window.EI = window.EI || {};
     renderer.domElement.style.display = 'block'; renderer.domElement.style.width = '100%'; renderer.domElement.style.height = '100%';
     renderer.domElement.setAttribute('aria-label', 'Car setup: 3D view'); renderer.domElement.setAttribute('role', 'img');
     container.appendChild(renderer.domElement);
+    let label = null;
+    if (o.label) {
+      label = document.createElement('div'); label.className = 'car3d-label'; label.textContent = labelText(o.exaggerate);
+      label.style.cssText = 'position:absolute;top:10px;right:12px;max-width:46%;text-align:right;font:11px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#8a8a94;pointer-events:none;';
+      if (getComputedStyle(container).position === 'static') container.style.position = 'relative';
+      container.appendChild(label);
+    }
 
     const scene = new THREE.Scene(); scene.background = new THREE.Color(o.background);
     scene.environment = studioEnv(renderer);
@@ -127,10 +144,10 @@ window.EI = window.EI || {};
 
     // baseline ghost: edge lines of the baseline wings, in a sibling group so its own ride height holds
     const ghostGroup = new THREE.Group(); ghostGroup.visible = false; scene.add(ghostGroup);
-    const ghostMat = new THREE.LineBasicMaterial({ color: srgb(o.ghostColor), transparent: true, opacity: 0.6, depthTest: false });
+    const ghostMat = new THREE.LineBasicMaterial({ color: srgb(o.ghostColor), transparent: true, opacity: 0.85 });   // depth-tested: the ghost never draws through the bodywork
 
     const state = {
-      container, renderer, scene, camera, model: null, floor, ghostGroup, ghostMat, opts: o, rm,
+      container, renderer, scene, camera, model: null, floor, ghostGroup, ghostMat, label, opts: o, rm,
       setup: o.setup || null, baseline: o.baseline || null, ghostGeo: null,
       azim: HERO.azim, elev: HERO.elev, radius: HERO.radius, t0: now(), raf: 0, hero: null, disposed: false, lastMs: null,
     };
@@ -153,7 +170,7 @@ window.EI = window.EI || {};
   function buildCar(s) {
     const o = s.opts; const team = EI.TEAM_BY_ID[o.team] || EI.TEAM_BY_ID.lumi || EI.TEAMS[0];
     const carLike = { team, num: o.num, name: null, isPlayer: false, driver: o.driver || undefined, tyre: EI.TYRES.medium };
-    const model = EI.CarModel.build(carLike, s.setup || undefined);
+    const model = EI.CarModel.build(carLike, displaySetup(s.setup, o.exaggerate) || undefined);
     model.group.traverse((obj) => { if (obj.isMesh) obj.receiveShadow = false; });
     s.scene.add(model.group); s.model = model; s.renderer.shadowMap.needsUpdate = true; s.dirty = true;
     if (s.baseline) setBaseline(s.baseline);
@@ -201,7 +218,7 @@ window.EI = window.EI || {};
     const s = view; if (!s) throw new Error('labCar3D.setSetup: mount first');
     const t0 = now();
     if (!s.model) { s.setup = setup || null; if (!(o && o.animate === false)) hero(); return { ms: 0, total: now() - t0, pending: true }; }   // applied by buildCar
-    const ms = EI.rebuildWings(s.model, setup || null);
+    const ms = EI.rebuildWings(s.model, displaySetup(setup, s.opts.exaggerate) || null);
     s.renderer.shadowMap.needsUpdate = true;
     s.setup = setup || null; s.lastMs = ms;
     updateGhost();
@@ -217,19 +234,30 @@ window.EI = window.EI || {};
     s.baseline = setup || null;
     if (s.ghostGeo) { s.ghostGeo.dispose(); s.ghostGeo = null; }
     while (s.ghostGroup.children.length) s.ghostGroup.remove(s.ghostGroup.children[0]);
-    if (s.baseline && s.opts.ghost && s.model) {
-      const wingGeo = EI.CarModel.wingGeometry(s.baseline, true);   // only the elements the setup moves
-      s.ghostGeo = new THREE.EdgesGeometry(wingGeo, 18); wingGeo.dispose();
-      const lines = new THREE.LineSegments(s.ghostGeo, s.ghostMat); lines.renderOrder = 10; s.ghostGroup.add(lines);
-      const K = EI.CarModel.SETUP_K, B = EI.CarModel.SETUP_BASE; const rh = s.baseline.ride_height_mm;
-      s.ghostGroup.position.y = s.model.bodyY0 + (typeof rh === 'number' ? K.rideM_PerMm * (rh - B.ride_height_mm) : 0);
-    }
     updateGhost();
   }
+  // which wings differ from the baseline (ride height moves both, so it ghosts both)
+  function diffWings(a, b) {
+    const B = EI.CarModel.SETUP_BASE, v = (x, k) => (x && typeof x[k] === 'number' ? x[k] : B[k]);
+    const rh = v(a, 'ride_height_mm') !== v(b, 'ride_height_mm');
+    return { front: rh || v(a, 'front_wing_deg') !== v(b, 'front_wing_deg'), rear: rh || v(a, 'rear_wing_deg') !== v(b, 'rear_wing_deg') };
+  }
+  // rebuild the ghost for the current setup / baseline pair: only the wing(s) whose value differs, at the displayed baseline angles
   function updateGhost() {
     const s = view; if (!s) return;
-    s.ghostGroup.visible = !!(s.baseline && s.opts.ghost && s.ghostGeo && !sameWings(s.setup, s.baseline));
-    s.dirty = true;
+    if (s.ghostGeo) { s.ghostGeo.dispose(); s.ghostGeo = null; }
+    while (s.ghostGroup.children.length) s.ghostGroup.remove(s.ghostGroup.children[0]);
+    const sel = s.baseline ? diffWings(s.setup, s.baseline) : null;
+    const show = !!(s.baseline && s.opts.ghost && s.model && sel && (sel.front || sel.rear));
+    if (show) {
+      const disp = displaySetup(s.baseline, s.opts.exaggerate);
+      const wingGeo = EI.CarModel.wingGeometry(disp, sel);
+      s.ghostGeo = new THREE.EdgesGeometry(wingGeo, 18); wingGeo.dispose();
+      const lines = new THREE.LineSegments(s.ghostGeo, s.ghostMat); lines.renderOrder = 10; s.ghostGroup.add(lines);
+      const K = EI.CarModel.SETUP_K, B = EI.CarModel.SETUP_BASE; const rh = disp.ride_height_mm;
+      s.ghostGroup.position.y = s.model.bodyY0 + (typeof rh === 'number' ? K.rideM_PerMm * (rh - B.ride_height_mm) : 0);
+    }
+    s.ghostGroup.visible = show; s.dirty = true;
   }
 
   function dispose() {
@@ -238,7 +266,7 @@ window.EI = window.EI || {};
     if (s.ro) s.ro.disconnect(); if (s.onResize) window.removeEventListener('resize', s.onResize); document.removeEventListener('visibilitychange', s.onVis);
     s.scene.traverse((obj) => { if (obj.geometry) obj.geometry.dispose(); const m = obj.material; if (m) (Array.isArray(m) ? m : [m]).forEach((x) => { for (const k in x) if (x[k] && x[k].isTexture) x[k].dispose(); x.dispose(); }); });
     if (s.scene.environment) s.scene.environment.dispose();
-    s.renderer.dispose(); if (s.renderer.domElement.parentNode === s.container) s.container.removeChild(s.renderer.domElement);
+    s.renderer.dispose(); if (s.renderer.domElement.parentNode === s.container) s.container.removeChild(s.renderer.domElement); if (s.label && s.label.parentNode) s.label.parentNode.removeChild(s.label);
     view = null;
   }
 
@@ -247,7 +275,8 @@ window.EI = window.EI || {};
     view: () => view, HERO, SWAY, DEFAULTS, ROOT,
     ready: () => !!(view && view.model),
     // test hooks: the current rear main plane angle of attack (rad) and the last measured swap time
-    rearAoa: () => { const s = view; const d = s && s.setup && typeof s.setup.rear_wing_deg === 'number' ? EI.CarModel.SETUP_K.rearAoaPerDeg * (s.setup.rear_wing_deg - EI.CarModel.SETUP_BASE.rear_wing_deg) : 0; return 0.16 + d; },
+    rearAoa: () => { const s = view; const d = s && s.setup && typeof s.setup.rear_wing_deg === 'number' ? EI.CarModel.SETUP_K.rearAoaPerDeg * (s.setup.rear_wing_deg - EI.CarModel.SETUP_BASE.rear_wing_deg) * (s.opts.exaggerate > 0 ? s.opts.exaggerate : 1) : 0; return 0.16 + d; },   // as displayed (with the gain)
+    displaySetup: (setup) => displaySetup(setup, view ? view.opts.exaggerate : DEFAULTS.exaggerate), labelText: () => labelText(view ? view.opts.exaggerate : DEFAULTS.exaggerate),
     lastMs: () => (view ? view.lastMs : null),
     reducedMotion,
   };
