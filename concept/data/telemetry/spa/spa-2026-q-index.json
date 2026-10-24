@@ -1,0 +1,791 @@
+{
+ "source": "OpenF1 API (api.openf1.org/v1)",
+ "accessed": "2026-10-24",
+ "circuit": "spa",
+ "session_key": 11330,
+ "meeting_key": 1290,
+ "session": "Qualifying",
+ "year": 2026,
+ "event": "Spa-Francorchamps",
+ "circuit_short_name": "Spa-Francorchamps",
+ "circuit_key": 7,
+ "date_start_utc": "2026-07-18T14:00:00+00:00",
+ "date_end_utc": "2026-07-18T15:00:00+00:00",
+ "note": "best laps exclude lap times deleted by race control (OpenF1 race_control)",
+ "deleted_lap_times": [],
+ "race_control_deleted_messages": [],
+ "drivers_in_session": 22,
+ "drivers_without_valid_lap": [],
+ "telemetry_laps": [
+  {
+   "file": "spa-2026-q-ant.json",
+   "code": "ANT",
+   "team": "Mercedes",
+   "lap_number": 14,
+   "lap_time_s": 104.361,
+   "compound": "SOFT",
+   "pole": true,
+   "team_best": true,
+   "raw_samples_included": false,
+   "bytes": 71945,
+   "dropouts": []
+  },
+  {
+   "file": "spa-2026-q-ver.json",
+   "code": "VER",
+   "team": "Red Bull Racing",
+   "lap_number": 11,
+   "lap_time_s": 104.678,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": true,
+   "raw_samples_included": false,
+   "bytes": 72037,
+   "dropouts": []
+  },
+  {
+   "file": "spa-2026-q-nor.json",
+   "code": "NOR",
+   "team": "McLaren",
+   "lap_number": 8,
+   "lap_time_s": 104.801,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": true,
+   "raw_samples_included": false,
+   "bytes": 71872,
+   "dropouts": []
+  },
+  {
+   "file": "spa-2026-q-rus.json",
+   "code": "RUS",
+   "team": "Mercedes",
+   "lap_number": 17,
+   "lap_time_s": 104.869,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": false,
+   "raw_samples_included": false,
+   "bytes": 71935,
+   "dropouts": []
+  },
+  {
+   "file": "spa-2026-q-lec.json",
+   "code": "LEC",
+   "team": "Ferrari",
+   "lap_number": 14,
+   "lap_time_s": 104.893,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": true,
+   "raw_samples_included": false,
+   "bytes": 72331,
+   "dropouts": [
+    {
+     "t_start_s": 73.238,
+     "t_end_s": 74.957,
+     "distance_start_m": 4866.3,
+     "distance_end_m": 4966.5
+    }
+   ]
+  },
+  {
+   "file": "spa-2026-q-ham.json",
+   "code": "HAM",
+   "team": "Ferrari",
+   "lap_number": 14,
+   "lap_time_s": 104.895,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": false,
+   "raw_samples_included": false,
+   "bytes": 72005,
+   "dropouts": []
+  },
+  {
+   "file": "spa-2026-q-pia.json",
+   "code": "PIA",
+   "team": "McLaren",
+   "lap_number": 16,
+   "lap_time_s": 105.016,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": false,
+   "raw_samples_included": false,
+   "bytes": 70772,
+   "dropouts": []
+  },
+  {
+   "file": "spa-2026-q-lin.json",
+   "code": "LIN",
+   "team": "Racing Bulls",
+   "lap_number": 17,
+   "lap_time_s": 105.143,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": true,
+   "raw_samples_included": false,
+   "bytes": 71928,
+   "dropouts": []
+  },
+  {
+   "file": "spa-2026-q-bor.json",
+   "code": "BOR",
+   "team": "Audi",
+   "lap_number": 17,
+   "lap_time_s": 105.628,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": true,
+   "raw_samples_included": false,
+   "bytes": 72000,
+   "dropouts": []
+  },
+  {
+   "file": "spa-2026-q-had.json",
+   "code": "HAD",
+   "team": "Red Bull Racing",
+   "lap_number": 8,
+   "lap_time_s": 105.823,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": false,
+   "raw_samples_included": false,
+   "bytes": 71958,
+   "dropouts": []
+  },
+  {
+   "file": "spa-2026-q-law.json",
+   "code": "LAW",
+   "team": "Racing Bulls",
+   "lap_number": 11,
+   "lap_time_s": 106.12,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": false,
+   "raw_samples_included": false,
+   "bytes": 71854,
+   "dropouts": []
+  },
+  {
+   "file": "spa-2026-q-gas.json",
+   "code": "GAS",
+   "team": "Alpine",
+   "lap_number": 11,
+   "lap_time_s": 106.331,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": true,
+   "raw_samples_included": false,
+   "bytes": 71911,
+   "dropouts": []
+  },
+  {
+   "file": "spa-2026-q-col.json",
+   "code": "COL",
+   "team": "Alpine",
+   "lap_number": 11,
+   "lap_time_s": 106.392,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": false,
+   "raw_samples_included": false,
+   "bytes": 71900,
+   "dropouts": [
+    {
+     "t_start_s": 13.008,
+     "t_end_s": 15.287,
+     "distance_start_m": 724.2,
+     "distance_end_m": 913.7
+    }
+   ]
+  },
+  {
+   "file": "spa-2026-q-hul.json",
+   "code": "HUL",
+   "team": "Audi",
+   "lap_number": 11,
+   "lap_time_s": 106.671,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": false,
+   "raw_samples_included": false,
+   "bytes": 72072,
+   "dropouts": [
+    {
+     "t_start_s": 28.677,
+     "t_end_s": 29.637,
+     "distance_start_m": 2061.4,
+     "distance_end_m": 2135.7
+    }
+   ]
+  },
+  {
+   "file": "spa-2026-q-sai.json",
+   "code": "SAI",
+   "team": "Williams",
+   "lap_number": 11,
+   "lap_time_s": 106.777,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": true,
+   "raw_samples_included": false,
+   "bytes": 71849,
+   "dropouts": [
+    {
+     "t_start_s": 13.553,
+     "t_end_s": 14.752,
+     "distance_start_m": 747.6,
+     "distance_end_m": 845.5
+    }
+   ]
+  },
+  {
+   "file": "spa-2026-q-bea.json",
+   "code": "BEA",
+   "team": "Haas F1 Team",
+   "lap_number": 11,
+   "lap_time_s": 106.779,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": true,
+   "raw_samples_included": false,
+   "bytes": 71932,
+   "dropouts": []
+  },
+  {
+   "file": "spa-2026-q-alb.json",
+   "code": "ALB",
+   "team": "Williams",
+   "lap_number": 5,
+   "lap_time_s": 107.12,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": false,
+   "raw_samples_included": false,
+   "bytes": 71854,
+   "dropouts": [
+    {
+     "t_start_s": 13.228,
+     "t_end_s": 14.547,
+     "distance_start_m": 727.6,
+     "distance_end_m": 838.3
+    }
+   ]
+  },
+  {
+   "file": "spa-2026-q-oco.json",
+   "code": "OCO",
+   "team": "Haas F1 Team",
+   "lap_number": 5,
+   "lap_time_s": 107.801,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": false,
+   "raw_samples_included": false,
+   "bytes": 71996,
+   "dropouts": [
+    {
+     "t_start_s": 38.474,
+     "t_end_s": 39.714,
+     "distance_start_m": 2638.0,
+     "distance_end_m": 2703.2
+    },
+    {
+     "t_start_s": 83.754,
+     "t_end_s": 84.874,
+     "distance_start_m": 5409.0,
+     "distance_end_m": 5496.3
+    }
+   ]
+  },
+  {
+   "file": "spa-2026-q-bot.json",
+   "code": "BOT",
+   "team": "Cadillac",
+   "lap_number": 7,
+   "lap_time_s": 107.823,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": true,
+   "raw_samples_included": false,
+   "bytes": 71908,
+   "dropouts": []
+  },
+  {
+   "file": "spa-2026-q-per.json",
+   "code": "PER",
+   "team": "Cadillac",
+   "lap_number": 7,
+   "lap_time_s": 107.971,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": false,
+   "raw_samples_included": false,
+   "bytes": 71968,
+   "dropouts": []
+  },
+  {
+   "file": "spa-2026-q-alo.json",
+   "code": "ALO",
+   "team": "Aston Martin",
+   "lap_number": 5,
+   "lap_time_s": 110.002,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": true,
+   "raw_samples_included": false,
+   "bytes": 71740,
+   "dropouts": [
+    {
+     "t_start_s": 13.212,
+     "t_end_s": 14.412,
+     "distance_start_m": 694.0,
+     "distance_end_m": 789.9
+    },
+    {
+     "t_start_s": 23.211,
+     "t_end_s": 24.091,
+     "distance_start_m": 1537.6,
+     "distance_end_m": 1584.2
+    },
+    {
+     "t_start_s": 28.412,
+     "t_end_s": 29.331,
+     "distance_start_m": 1962.1,
+     "distance_end_m": 2040.6
+    }
+   ]
+  },
+  {
+   "file": "spa-2026-q-str.json",
+   "code": "STR",
+   "team": "Aston Martin",
+   "lap_number": 7,
+   "lap_time_s": 110.177,
+   "compound": "SOFT",
+   "pole": false,
+   "team_best": false,
+   "raw_samples_included": false,
+   "bytes": 72250,
+   "dropouts": [
+    {
+     "t_start_s": 28.289,
+     "t_end_s": 29.489,
+     "distance_start_m": 1981.5,
+     "distance_end_m": 2082.8
+    },
+    {
+     "t_start_s": 89.809,
+     "t_end_s": 90.969,
+     "distance_start_m": 5773.2,
+     "distance_end_m": 5882.0
+    }
+   ]
+  }
+ ],
+ "best_lap_per_driver": [
+  {
+   "code": "ANT",
+   "team": "Mercedes",
+   "lap_number": 14,
+   "lap_time_s": 104.361,
+   "sector_s": [
+    30.16,
+    46.059,
+    28.142
+   ],
+   "i1_speed_kmh": 311,
+   "i2_speed_kmh": 220,
+   "speed_trap_kmh": 309,
+   "compound": "SOFT"
+  },
+  {
+   "code": "VER",
+   "team": "Red Bull Racing",
+   "lap_number": 11,
+   "lap_time_s": 104.678,
+   "sector_s": [
+    30.443,
+    46.05,
+    28.185
+   ],
+   "i1_speed_kmh": 303,
+   "i2_speed_kmh": 222,
+   "speed_trap_kmh": 297,
+   "compound": "SOFT"
+  },
+  {
+   "code": "NOR",
+   "team": "McLaren",
+   "lap_number": 8,
+   "lap_time_s": 104.801,
+   "sector_s": [
+    30.314,
+    46.1,
+    28.387
+   ],
+   "i1_speed_kmh": 301,
+   "i2_speed_kmh": 213,
+   "speed_trap_kmh": 310,
+   "compound": "SOFT"
+  },
+  {
+   "code": "RUS",
+   "team": "Mercedes",
+   "lap_number": 17,
+   "lap_time_s": 104.869,
+   "sector_s": [
+    30.136,
+    46.224,
+    28.509
+   ],
+   "i1_speed_kmh": 311,
+   "i2_speed_kmh": 219,
+   "speed_trap_kmh": 311,
+   "compound": "SOFT"
+  },
+  {
+   "code": "LEC",
+   "team": "Ferrari",
+   "lap_number": 14,
+   "lap_time_s": 104.893,
+   "sector_s": [
+    30.294,
+    46.217,
+    28.382
+   ],
+   "i1_speed_kmh": 301,
+   "i2_speed_kmh": 220,
+   "speed_trap_kmh": 307,
+   "compound": "SOFT"
+  },
+  {
+   "code": "HAM",
+   "team": "Ferrari",
+   "lap_number": 14,
+   "lap_time_s": 104.895,
+   "sector_s": [
+    30.197,
+    46.14,
+    28.558
+   ],
+   "i1_speed_kmh": 308,
+   "i2_speed_kmh": 222,
+   "speed_trap_kmh": 308,
+   "compound": "SOFT"
+  },
+  {
+   "code": "PIA",
+   "team": "McLaren",
+   "lap_number": 16,
+   "lap_time_s": 105.016,
+   "sector_s": [
+    30.287,
+    46.127,
+    28.602
+   ],
+   "i1_speed_kmh": 302,
+   "i2_speed_kmh": 215,
+   "speed_trap_kmh": 312,
+   "compound": "SOFT"
+  },
+  {
+   "code": "LIN",
+   "team": "Racing Bulls",
+   "lap_number": 17,
+   "lap_time_s": 105.143,
+   "sector_s": [
+    30.13,
+    46.602,
+    28.411
+   ],
+   "i1_speed_kmh": 306,
+   "i2_speed_kmh": 218,
+   "speed_trap_kmh": 315,
+   "compound": "SOFT"
+  },
+  {
+   "code": "BOR",
+   "team": "Audi",
+   "lap_number": 17,
+   "lap_time_s": 105.628,
+   "sector_s": [
+    30.49,
+    46.599,
+    28.539
+   ],
+   "i1_speed_kmh": 305,
+   "i2_speed_kmh": 215,
+   "speed_trap_kmh": 309,
+   "compound": "SOFT"
+  },
+  {
+   "code": "HAD",
+   "team": "Red Bull Racing",
+   "lap_number": 8,
+   "lap_time_s": 105.823,
+   "sector_s": [
+    30.632,
+    46.6,
+    28.591
+   ],
+   "i1_speed_kmh": 302,
+   "i2_speed_kmh": 220,
+   "speed_trap_kmh": 295,
+   "compound": "SOFT"
+  },
+  {
+   "code": "LAW",
+   "team": "Racing Bulls",
+   "lap_number": 11,
+   "lap_time_s": 106.12,
+   "sector_s": [
+    30.59,
+    46.876,
+    28.654
+   ],
+   "i1_speed_kmh": 304,
+   "i2_speed_kmh": 217,
+   "speed_trap_kmh": 313,
+   "compound": "SOFT"
+  },
+  {
+   "code": "GAS",
+   "team": "Alpine",
+   "lap_number": 11,
+   "lap_time_s": 106.331,
+   "sector_s": [
+    30.467,
+    47.311,
+    28.553
+   ],
+   "i1_speed_kmh": 314,
+   "i2_speed_kmh": 216,
+   "speed_trap_kmh": 303,
+   "compound": "SOFT"
+  },
+  {
+   "code": "COL",
+   "team": "Alpine",
+   "lap_number": 11,
+   "lap_time_s": 106.392,
+   "sector_s": [
+    30.41,
+    47.352,
+    28.63
+   ],
+   "i1_speed_kmh": 315,
+   "i2_speed_kmh": 214,
+   "speed_trap_kmh": 306,
+   "compound": "SOFT"
+  },
+  {
+   "code": "HUL",
+   "team": "Audi",
+   "lap_number": 11,
+   "lap_time_s": 106.671,
+   "sector_s": [
+    30.778,
+    47.017,
+    28.876
+   ],
+   "i1_speed_kmh": 306,
+   "i2_speed_kmh": 213,
+   "speed_trap_kmh": 309,
+   "compound": "SOFT"
+  },
+  {
+   "code": "SAI",
+   "team": "Williams",
+   "lap_number": 11,
+   "lap_time_s": 106.777,
+   "sector_s": [
+    30.586,
+    47.534,
+    28.657
+   ],
+   "i1_speed_kmh": 314,
+   "i2_speed_kmh": 210,
+   "speed_trap_kmh": 307,
+   "compound": "SOFT"
+  },
+  {
+   "code": "BEA",
+   "team": "Haas F1 Team",
+   "lap_number": 11,
+   "lap_time_s": 106.779,
+   "sector_s": [
+    30.713,
+    47.395,
+    28.671
+   ],
+   "i1_speed_kmh": 302,
+   "i2_speed_kmh": 214,
+   "speed_trap_kmh": 304,
+   "compound": "SOFT"
+  },
+  {
+   "code": "ALB",
+   "team": "Williams",
+   "lap_number": 5,
+   "lap_time_s": 107.12,
+   "sector_s": [
+    30.603,
+    47.747,
+    28.77
+   ],
+   "i1_speed_kmh": 312,
+   "i2_speed_kmh": 213,
+   "speed_trap_kmh": 304,
+   "compound": "SOFT"
+  },
+  {
+   "code": "OCO",
+   "team": "Haas F1 Team",
+   "lap_number": 5,
+   "lap_time_s": 107.801,
+   "sector_s": [
+    30.912,
+    47.963,
+    28.926
+   ],
+   "i1_speed_kmh": 298,
+   "i2_speed_kmh": 216,
+   "speed_trap_kmh": 303,
+   "compound": "SOFT"
+  },
+  {
+   "code": "BOT",
+   "team": "Cadillac",
+   "lap_number": 7,
+   "lap_time_s": 107.823,
+   "sector_s": [
+    30.711,
+    48.149,
+    28.963
+   ],
+   "i1_speed_kmh": 309,
+   "i2_speed_kmh": 211,
+   "speed_trap_kmh": 307,
+   "compound": "SOFT"
+  },
+  {
+   "code": "PER",
+   "team": "Cadillac",
+   "lap_number": 7,
+   "lap_time_s": 107.971,
+   "sector_s": [
+    30.764,
+    48.154,
+    29.053
+   ],
+   "i1_speed_kmh": 309,
+   "i2_speed_kmh": 211,
+   "speed_trap_kmh": 304,
+   "compound": "SOFT"
+  },
+  {
+   "code": "ALO",
+   "team": "Aston Martin",
+   "lap_number": 5,
+   "lap_time_s": 110.002,
+   "sector_s": [
+    31.226,
+    49.299,
+    29.477
+   ],
+   "i1_speed_kmh": 296,
+   "i2_speed_kmh": 210,
+   "speed_trap_kmh": 301,
+   "compound": "SOFT"
+  },
+  {
+   "code": "STR",
+   "team": "Aston Martin",
+   "lap_number": 7,
+   "lap_time_s": 110.177,
+   "sector_s": [
+    31.369,
+    49.199,
+    29.609
+   ],
+   "i1_speed_kmh": 297,
+   "i2_speed_kmh": 208,
+   "speed_trap_kmh": 298,
+   "compound": "SOFT"
+  }
+ ],
+ "max_speed_trap_kmh_session": {
+  "STR": 298,
+  "BOT": 307,
+  "PER": 305,
+  "GAS": 305,
+  "COL": 306,
+  "VER": 297,
+  "ANT": 310,
+  "RUS": 311,
+  "OCO": 303,
+  "ALO": 301,
+  "BEA": 304,
+  "LIN": 315,
+  "SAI": 307,
+  "ALB": 307,
+  "LAW": 314,
+  "LEC": 308,
+  "BOR": 309,
+  "HUL": 310,
+  "HAM": 308,
+  "HAD": 297,
+  "PIA": 312,
+  "NOR": 311
+ },
+ "max_i1_kmh_session": {
+  "STR": 297,
+  "BOT": 310,
+  "PER": 314,
+  "GAS": 315,
+  "COL": 318,
+  "VER": 305,
+  "ANT": 328,
+  "RUS": 311,
+  "OCO": 298,
+  "ALO": 296,
+  "BEA": 302,
+  "LIN": 309,
+  "SAI": 314,
+  "ALB": 313,
+  "LAW": 305,
+  "LEC": 301,
+  "BOR": 308,
+  "HUL": 312,
+  "HAM": 308,
+  "HAD": 303,
+  "PIA": 304,
+  "NOR": 302
+ },
+ "max_i2_kmh_session": {
+  "STR": 208,
+  "BOT": 211,
+  "PER": 211,
+  "GAS": 216,
+  "COL": 216,
+  "VER": 223,
+  "ANT": 220,
+  "RUS": 219,
+  "OCO": 216,
+  "ALO": 210,
+  "BEA": 216,
+  "LIN": 222,
+  "SAI": 210,
+  "ALB": 213,
+  "LAW": 220,
+  "LEC": 220,
+  "BOR": 215,
+  "HUL": 217,
+  "HAM": 222,
+  "HAD": 220,
+  "PIA": 217,
+  "NOR": 217
+ }
+}
