@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PURPLE · concept car view</title>
+<link rel="icon" href="data:,">
+<style>
+  :root { --bg: #0a0a0c; --panel: #121216; --line: #26262c; --text: #e8e8ec; --muted: #8a8a94; --purple: #b26cff; --purple-dim: #3a2460; --green: #4ade80; --amber: #fbbf24; --red: #f0506e; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 12px/1.4 "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  body { display: grid; grid-template-columns: 340px 1fr; grid-template-rows: auto 1fr auto; height: 100vh; }
+  header { grid-column: 1 / 3; display: flex; gap: 6px; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--panel); flex-wrap: wrap; }
+  header h1 { font: 700 13px/1 Inter, system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; margin: 0 10px 0 0; }
+  header .grp { display: flex; gap: 4px; align-items: center; padding-right: 8px; margin-right: 4px; border-right: 1px solid var(--line); }
+  header .grp:last-child { border-right: 0; }
+  header .grp > span { color: var(--muted); font: 11px Inter, system-ui, sans-serif; text-transform: uppercase; letter-spacing: .08em; margin-right: 2px; }
+  button, .file { background: #1a1a20; color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 5px 9px; font: inherit; cursor: pointer; }
+  button:hover, .file:hover { border-color: var(--purple); } button[aria-pressed="true"] { border-color: var(--purple); background: var(--purple-dim); }
+  button:disabled { opacity: .45; cursor: default; border-color: var(--line); }
+  button:focus-visible, input:focus-visible, .file:focus-within { outline: 2px solid var(--purple); outline-offset: 1px; }
+  .file input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  aside { grid-row: 2 / 4; overflow: auto; border-right: 1px solid var(--line); background: var(--panel); padding: 8px 12px 16px; }
+  aside h2 { font: 600 11px Inter, system-ui, sans-serif; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 14px 0 4px; }
+  .row { display: grid; grid-template-columns: 1fr auto; gap: 0 6px; padding: 3px 0; }
+  .row label { color: var(--muted); }
+  .row .val { text-align: right; color: var(--text); }
+  .row .val .d { color: var(--purple); margin-left: 4px; }
+  .row input[type=range] { grid-column: 1 / 3; width: 100%; accent-color: var(--purple); margin: 2px 0 0; }
+  .row .ticks { grid-column: 1 / 3; position: relative; height: 4px; }
+  .row .ticks i { position: absolute; top: 0; width: 2px; height: 4px; background: var(--purple); transform: translateX(-1px); }
+  #car { position: relative; min-height: 0; min-width: 0; }
+  footer { padding: 6px 12px; border-top: 1px solid var(--line); background: var(--panel); color: var(--muted); max-height: 24vh; overflow: auto; }
+  footer .bad { color: var(--red); } footer .ok { color: var(--green); }
+  #gen { width: 220px; accent-color: var(--purple); }
+  .muted { color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>PURPLE · concept car</h1>
+  <div class="grp"><span>view</span>
+    <button data-view="hero" aria-pressed="true">hero</button><button data-view="front34">front ¾</button><button data-view="rear34">rear ¾</button><button data-view="side">side</button><button data-view="top">top</button><button data-view="front">front</button><button data-view="rear">rear</button><button data-view="frontwing">front wing</button><button data-view="rearwing">rear wing</button>
+  </div>
+  <div class="grp"><span>mode</span><button data-mode="solid" aria-pressed="true">solid</button><button data-mode="xray-mass">x-ray mass</button></div>
+  <div class="grp"><span>aero</span><button data-aero="cycle" aria-pressed="true">cycle</button><button data-aero="corner">corner</button><button data-aero="straight">straight</button></div>
+  <div class="grp"><span>baseline</span><button id="b-ghost" aria-pressed="true" title="ghost the baseline's differing parts in purple">ghost</button><button id="b-ab" aria-pressed="false" title="show the baseline car instead of the current design">show baseline</button><button id="b-reset">reset to baseline</button></div>
+  <div class="grp"><span>lineage</span>
+    <label class="file">load best.json / lineage.jsonl<input id="file" type="file" accept=".json,.jsonl,application/json"></label>
+    <button id="b-best" disabled>best</button>
+    <input id="gen" type="range" min="0" max="0" value="0" disabled aria-label="replay generation">
+    <span id="genlbl" class="muted"></span>
+  </div>
+</header>
+<aside id="sliders" aria-label="Shape parameters"></aside>
+<main id="car"></main>
+<footer id="status" aria-live="polite"></footer>
+
+<script src="../../vendor/three.min.js"></script>
+<script src="../regs.js"></script>
+<script src="../parts.js"></script>
+<script src="../aeromap.js"></script>
+<script src="../design.js"></script>
+<script src="view3d.js"></script>
+<script>
+(function () {
+  const C = EI.concept, P = C.parts, D = C.design, $ = s => document.querySelector(s);
+  const BASE = D.baseline();
+  let current = D.clone(BASE), showBaseline = false, ghost = true, lineage = null, best = null;
+  const view = EI.conceptView.mount($("#car"), { design: current, baseline: BASE });
+  window.cv = view;   // dev / test hook
+
+  // ---- sliders for every shape parameter, grouped by part, within the model domain; a purple tick marks the baseline value
+  const inputs = {};
+  const fmt = (v, s) => (s.int ? String(v) : (+v).toFixed(s.step < 0.1 ? 2 : s.step < 1 ? 1 : 0)) + (s.unit ? (s.unit === "°" ? "°" : " " + s.unit) : "");
+  let lastPart = null;
+  for (const part of P.CATALOGUE) {
+    const keys = Object.keys(part.params); if (!keys.length) continue;
+    const h = document.createElement("h2"); h.textContent = part.name.split(" (")[0]; $("#sliders").appendChild(h);
+    for (const k of keys) {
+      const s = part.params[k], id = "p-" + part.id + "-" + k, row = document.createElement("div"); row.className = "row";
+      row.innerHTML = '<label for="' + id + '">' + s.label + '</label><span class="val"></span><input type="range" id="' + id + '" min="' + s.min + '" max="' + s.max + '" step="' + s.step + '"><div class="ticks"><i></i></div>';
+      row.querySelector(".ticks i").style.left = ((s.base - s.min) / (s.max - s.min) * 100) + "%";
+      const inp = row.querySelector("input");
+      inp.addEventListener("input", () => {
+        current = D.applyChanges(current, [{ part: part.id, param: k, to: +inp.value }]).design; current.id = "edited"; current.label = "edited";
+        lastPart = part.id; showBaseline = false; $("#b-ab").setAttribute("aria-pressed", "false"); apply(false, [part.id]);
+      });
+      inputs[part.id + "." + k] = { inp, val: row.querySelector(".val"), s };
+      $("#sliders").appendChild(row);
+    }
+  }
+  function syncSliders() {
+    for (const key of Object.keys(inputs)) {
+      const [part, k] = key.split("."), { inp, val, s } = inputs[key], v = current.params[part][k], b = BASE.params[part][k];
+      inp.value = v; const dv = v - b;
+      val.innerHTML = fmt(v, s) + (Math.abs(dv) > 1e-9 ? '<span class="d">' + (dv > 0 ? "+" : "−") + fmt(Math.abs(dv), s) + "</span>" : "");
+    }
+  }
+  function apply(animate, highlight) {
+    const shown = showBaseline ? BASE : current;
+    const r = view.setDesign(shown, { baseline: ghost && !showBaseline ? BASE : null, animate: !!animate });
+    if (highlight) view.setHighlight(highlight);
+    syncSliders(); status(r);
+  }
+  function status(r) {
+    const shown = showBaseline ? BASE : current, viol = C.regs.check(shown), diff = D.diff(BASE, shown);
+    const m = P.massSheet(shown.params);
+    const lines = [];
+    lines.push((showBaseline ? "showing the BASELINE car" : "showing " + (shown.label || shown.id)) + " · " + diff.length + " parameter(s) differ from the baseline · mass " + m.total_kg + " kg (ballast " + m.ballast_kg + ") · front " + (m.front_share * 100).toFixed(1) + " %" + (r && r.ms != null ? " · rebuilt in " + r.ms.toFixed(1) + " ms" : ""));
+    lines.push(viol.length ? '<span class="bad">' + viol.length + " violation(s): " + viol.map(v => v.message).join(" · ") + "</span>" : '<span class="ok">legal under the concept’s FIA 2026 rule subset (concept/regs.js)</span>');
+    $("#status").innerHTML = lines.map(l => "<div>" + l + "</div>").join("");
+  }
+  $("#car").addEventListener("conceptview:design", e => status({ ms: e.detail.ms }));
+
+  // ---- toolbar
+  const press = (sel, el) => document.querySelectorAll(sel).forEach(b => b.setAttribute("aria-pressed", String(b === el)));
+  document.querySelectorAll("[data-view]").forEach(b => b.addEventListener("click", () => { view.setView(b.dataset.view); press("[data-view]", b); }));
+  document.querySelectorAll("[data-mode]").forEach(b => b.addEventListener("click", () => { view.setMode(b.dataset.mode); press("[data-mode]", b); }));
+  document.querySelectorAll("[data-aero]").forEach(b => b.addEventListener("click", () => { view.setAero(b.dataset.aero); press("[data-aero]", b); }));
+  $("#b-ghost").addEventListener("click", () => { ghost = !ghost; $("#b-ghost").setAttribute("aria-pressed", String(ghost)); apply(false); });
+  $("#b-ab").addEventListener("click", () => { showBaseline = !showBaseline; $("#b-ab").setAttribute("aria-pressed", String(showBaseline)); apply(true, []); });
+  $("#b-reset").addEventListener("click", () => { current = D.clone(BASE); showBaseline = false; $("#b-ab").setAttribute("aria-pressed", "false"); apply(true, []); });
+
+  // ---- lineage: best.json (its best design) or lineage.jsonl (replayed: the kept generations' changes applied in order from the baseline)
+  function parseFile(text) {
+    const t = text.trim();
+    if (t[0] === "{" && t.indexOf("\n{") < 0) {
+      const j = JSON.parse(t);
+      if (j.best && j.best.params) return { best: j.best, rows: null, label: "best.json · seed " + j.seed + " · " + j.generations + " generations" };
+      if (j.params) return { best: j, rows: null, label: "design file" };
+      throw new Error("no design in this file (expected best.json from node concept/cli.js)");
+    }
+    const rows = t.split(/\r?\n/).filter(Boolean).map(l => JSON.parse(l));
+    if (!rows.length || rows[0].gen == null) throw new Error("not a lineage.jsonl file");
+    const steps = [{ gen: 0, design: D.clone(BASE), changes: [] }];
+    let d = D.clone(BASE);
+    for (const r of rows) if (r.kept && r.legal !== false) { d = D.applyChanges(d, r.changes.map(c => ({ part: c.part, param: c.param, to: c.to })), { id: r.id, label: "generation " + r.gen + " (" + r.id + ")" }).design; steps.push({ gen: r.gen, design: d, changes: r.changes, score: r.score_after }); }
+    return { best: d, rows: steps, label: "lineage.jsonl · " + rows.length + " generations · " + (steps.length - 1) + " kept" };
+  }
+  $("#file").addEventListener("change", async e => {
+    const f = e.target.files && e.target.files[0]; if (!f) return;
+    try {
+      const r = parseFile(await f.text()); best = r.best; lineage = r.rows;
+      const v = D.validate(best); if (!v.ok) throw new Error(v.errors.join("; "));
+      $("#b-best").disabled = false; $("#genlbl").textContent = r.label;
+      const g = $("#gen"); g.disabled = !lineage; if (lineage) { g.max = lineage.length - 1; g.value = lineage.length - 1; }
+      loadBest();
+    } catch (err) { $("#status").innerHTML = '<div class="bad">could not read ' + f.name + ": " + String(err.message || err).replace(/</g, "&lt;") + "</div>"; }
+  });
+  function loadBest() { if (!best) return; current = D.clone(best); current.label = current.label || "best"; showBaseline = false; $("#b-ab").setAttribute("aria-pressed", "false"); apply(true, []); }
+  $("#b-best").addEventListener("click", loadBest);
+  $("#gen").addEventListener("input", () => {
+    const st = lineage && lineage[+$("#gen").value]; if (!st) return;
+    current = D.clone(st.design); showBaseline = false;
+    $("#genlbl").textContent = "generation " + st.gen + (st.score != null ? " · score " + st.score.toFixed(3) + " s" : "") + " · step " + $("#gen").value + "/" + (lineage.length - 1);
+    apply(true, Array.from(new Set(st.changes.map(c => c.part))));
+  });
+
+  syncSliders(); status({ ms: view.stats().ms });
+})();
+</script>
+</body>
+</html>
