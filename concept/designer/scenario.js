@@ -37,17 +37,18 @@
   function regBounds(params) {
     const B = regs.BY_ID, g = parts.geometry(params);
     const plankMin = parts.PLANK.free_mm - B["REG-C-PLANK"].value / parts.PLANK.wear_per_mm;
+    const fwZ = regs.fwProfilesChordLimit(params.front_wing);   // FIA checklist: the front wing's X+Z envelope caps the chord for this span/setting/volumes
     return {
       "layout.wheelbase_mm": { max: [B["REG-C-WB"].value, art("REG-C-WB")], min: [g.wheelbase_min_mm, "PKG-WB"] },
       "survival_cell.front_axle_offset_mm": { min: [B["REG-C-FRONT-AXLE"].min, art("REG-C-FRONT-AXLE")], max: [B["REG-C-FRONT-AXLE"].max, art("REG-C-FRONT-AXLE")] },
       "survival_cell.cockpit_len_mm": { min: [B["REG-C-COCKPIT"].min, art("REG-C-COCKPIT")], max: [B["REG-C-COCKPIT"].max, art("REG-C-COCKPIT")] },
       "survival_cell.bulkhead_gap_mm": { min: [B["REG-C-BULKHEAD"].value, art("REG-C-BULKHEAD")] },
       "front_wing.span_mm": { max: [B["REG-C-FW-SPAN"].value, art("REG-C-FW-SPAN")] },
-      "front_wing.chord_mm": { max: [B["REG-C-FW-CHORD"].value, art("REG-C-FW-CHORD")] },
-      "front_wing.elements": { max: [B["REG-C-FW-ELEMENTS"].value, art("REG-C-FW-ELEMENTS")] },
+      "front_wing.chord_mm": { max: fwZ < B["REG-C-FW-CHORD"].value ? [Math.floor(fwZ), art("REG-C-FW-PROFILES-Z")] : [B["REG-C-FW-CHORD"].value, art("REG-C-FW-CHORD")] },
+      "front_wing.elements": { min: [1, art("REG-C-ELEMENTS-MIN")], max: [B["REG-C-FW-ELEMENTS"].value, art("REG-C-FW-ELEMENTS")] },
       "rear_wing.span_mm": { max: [B["REG-C-RW-SPAN"].value, art("REG-C-RW-SPAN")] },
       "rear_wing.chord_mm": { max: [B["REG-C-RW-CHORD"].value, art("REG-C-RW-CHORD")] },
-      "rear_wing.elements": { max: [B["REG-C-RW-ELEMENTS"].value, art("REG-C-RW-ELEMENTS")] },
+      "rear_wing.elements": { min: [2, art("REG-C-ELEMENTS-MIN")], max: [B["REG-C-RW-ELEMENTS"].value, art("REG-C-RW-ELEMENTS")] },
       "rear_wing.endplate_top_mm": { max: [B["REG-C-RW-ENDPLATE"].value, art("REG-C-RW-ENDPLATE")] },
       "floor.width_mm": { max: [2 * B["REG-C-WIDTH"].value, art("REG-C-WIDTH")] },
       "floor.ride_height_mm": { min: [plankMin, art("REG-C-PLANK")] },
