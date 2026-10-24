@@ -41,7 +41,7 @@ function wrap(e) {
   });
 }
 // { userContent, sessionId, trained, task? } -> { params (the JSON body), headers (the extra request headers; the SDK adds the key
-// and its own headers) }. task = { SYSTEM_PROMPT, MODEL, MAX_TOKENS, TEMPERATURE, DRAFT? } (default: lab/prompt.js, the research task)
+// and its own headers) }. task = { SYSTEM_PROMPT, MODEL, MAX_TOKENS, TEMPERATURE (null: not sent), DRAFT? } (default: lab/prompt.js, the research task)
 function buildRequest({ userContent, sessionId, trained, task }) {
   const t = task || prompt;
   if (trained && t.DRAFT) throw new MubitError("trained call refused: the task prompt is a DRAFT", { code: "draft_prompt", status: 0 });
@@ -51,6 +51,9 @@ function buildRequest({ userContent, sessionId, trained, task }) {
     messages: [{ role: "user", content: userContent }],
     metadata: { user_id: sessionId },
   };
+  // a model that does not accept a temperature setting (the exam's model comparison: concept/exam/models.json temperature null):
+  // TEMPERATURE null leaves the field out. Every frozen task sets a number, so its bytes are unchanged.
+  if (t.TEMPERATURE === null) delete params.temperature;
   const headers = trained ? {} : { "x-middleware-record": "metadata" };
   return { params, headers };
 }
