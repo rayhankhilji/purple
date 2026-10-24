@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+<link rel="icon" href="data:,">
 <link rel="stylesheet" href="lab.css">
 </head>
 <body>
@@ -43,7 +44,7 @@
     <div class="panel main" id="main">
       <div id="car3d"></div>
       <div class="main-empty" id="mainEmpty"><div class="inner"><div class="h">3D car view</div>The candidate's wing angles and ride height render here from Equation I's procedural car (lab/car3d.js, CAR3D lane). The setup table below carries the numbers meanwhile.</div></div>
-      <iframe id="game" title="Equation I broadcast race" hidden></iframe>
+      <iframe id="game" title="Equation I broadcast race" allow="autoplay" hidden></iframe>
       <div class="corner" id="mainCorner"></div>
       <div class="overlay"><div id="setupBox"></div><div class="src" id="mainSrc"></div></div>
     </div>
@@ -56,7 +57,7 @@
       <div class="lines" id="traceLines" aria-live="polite" aria-relevant="additions"></div>
     </section>
     <section class="panel ledger" id="ledger" aria-label="experiment ledger">
-      <div class="head"><span class="label">Ledger</span><span class="src" id="ledgerMeta"></span></div>
+      <div class="head"><span class="label">Ledger</span><span class="src" id="ledgerMeta"></span><span class="src srcline" id="ledgerSrc"></span></div>
       <div class="wrap" id="ledgerWrap"></div>
     </section>
   </aside>
@@ -67,28 +68,8 @@
 <script src="../js/util.js"></script>
 <script src="../js/data/silverstone.js"></script>
 <script src="../js/data/monza.js"></script>
-<script src="../js/data/season2026.js"></script>
-<script src="../js/ads.js"></script>
-<script>// the game resolves its brand artwork relative to the page; from lab/ that is one level up (as lab/car3d-test.html does)
-  if (window.EI && EI.Ads) { EI.Ads.BRAND_DIR = '../assets/brand/'; EI.Ads.PARTNER_DIR = EI.Ads.BRAND_DIR + 'partners/'; }</script>
-<script src="../js/teams.js"></script>
-<script src="../js/liveries.js"></script>
-<script src="../js/liveries/mercedes.js"></script>
-<script src="../js/liveries/ferrari.js"></script>
-<script src="../js/liveries/mclaren.js"></script>
-<script src="../js/liveries/redbull.js"></script>
-<script src="../js/liveries/racingbulls.js"></script>
-<script src="../js/liveries/alpine.js"></script>
-<script src="../js/liveries/haas.js"></script>
-<script src="../js/liveries/audi.js"></script>
-<script src="../js/liveries/williams.js"></script>
-<script src="../js/liveries/astonmartin.js"></script>
-<script src="../js/liveries/cadillac.js"></script>
-<script src="../js/liveries/lumi.js"></script>
-<script src="../js/liveries/intake.js"></script>
 <script src="../js/track.js"></script>
 <script src="../js/carmodel.js"></script>
-<script src="../js/carglb.js"></script>
 <script src="../js/car.js"></script>
 <script src="../js/ai.js"></script>
 <script src="aero.js"></script>
