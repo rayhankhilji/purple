@@ -537,7 +537,7 @@ test("server without MUBIT_API_KEY refuses to start (exit 1) when MUBIT_MOCK is 
   assert.equal(r.status, 1); assert.match(r.stderr, /MUBIT_API_KEY/);
 });
 test("G-MUBIT-06 only server/mubit.js names the gateway host", () => {
-  const { execSync } = require("child_process"); const out = execSync("grep -rl 'api." + "mubit.ai' --include=*.js --exclude-dir=node_modules . || true", { cwd: path.join(__dirname, ".."), encoding: "utf8" }).trim().split("\n").filter(Boolean);
+  const { execSync } = require("child_process"); const out = execSync("grep -rl 'api." + "mubit.ai' --include=*.js --exclude-dir=node_modules --exclude-dir=.claude . || true", { cwd: path.join(__dirname, ".."), encoding: "utf8" }).trim().split("\n").filter(Boolean);
   assert.deepEqual(out, ["./server/mubit.js"]);
 });
 test("CORS: the lab page on 127.0.0.1:8788 may call the API on :8787 (preflight + header); other origins get nothing", async () => {
