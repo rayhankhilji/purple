@@ -12,6 +12,11 @@
 //     flap (front 4°, rear 15°) gives the anchor's Straight Mode exactly, no flap gives Corner Mode, flaps opened past the reference
 //     gain only through the concept map's own flap model (a conservative extrapolation)
 //   mass, CoG height, front weight share = anchor + (design − reference design)    ICE kW = anchor × cooling power factor
+//     (from the UNROUNDED mass sheet, parts.massSheet().exact, so a 1 mm part move is a smooth change, not a staircase)
+//   materials (params.<part>.material, concept/materials.js) reach the car through the mass sheet (part mass → ballast, CoG,
+//     axle split) and the aero map (wing wash-out, floor flex); coupling v1 additive fields: yaw_inertia_kgm2, cog_x_m,
+//     unsprung_kg, sprung_cog_height_m, aero.balance_corner / front_wing_ground_effect / material_flex, materials
+//     (docs/concept/COUPLING.md)
 //   tyres (μ, load sensitivity), brakes, track widths, drivetrain, gearing: the anchor's (no design parameter moves them)
 //   energy (regulation semantics, FIA 2026 Section C): es_harvest = 8.5 MJ/lap recharge cap (C5.2.10; the session limit, 6.5 MJ in
 //     Silverstone qualifying, comes in through the sim's conditions), es_deploy = 4 MJ SoC window (C5.2.9) + 8.5 = 12.5 MJ/lap
@@ -44,6 +49,10 @@
     tyres: { verified: false, basis: "the anchor's tyre friction and load sensitivity, estimated by the physics sim on the pole lap (μx 1.84, μy 1.95, load sensitivity 0.106)" },
     brakes: { verified: false, basis: "the anchor's mechanical deceleration cap (physics sim assumption 5 g); braking is tyre-limited below it" },
     drivetrain_eff: { verified: false, basis: "0.95: physics sim assumption for gearbox and driveline efficiency" },
+    yaw_inertia_kgm2: { verified: false, basis: "the design's mass sheet: Σ m·((x − x_cog)² + y²) over the part point masses (no part's own inertia; concept part masses v1, estimates). Absolute, not anchored (no anchor car carries one); the physics sim does not read it yet" },
+    unsprung_kg: { verified: false, basis: "wheels + brakes + 40 % of each suspension group (uprights, hubs, half the links; estimate) from the mass sheet; the physics sim does not read it yet" },
+    cog_x_m: { verified: false, basis: "mass-sheet CoG behind the front axle (absolute; weight_dist_front is the anchored quantity the sim reads)" },
+    materials: { verified: false, basis: "concept materials v1 (concept/materials.js, concept/data/materials-2026.json): a non-baseline material re-gauges the part's walls to keep its baseline stiffness and strength (within gauge limits; estimates), so it changes part mass (→ ballast, CoG, axle split) and, through the stiffness ratio, wing wash-out and floor flex" },
     gearing: { verified: false, basis: "the anchor's gearing: measured rpm per km/h on the pole lap (generic) or HAD's Q lap (concept/data/redbull-2026.json; Node only, the browser uses the generic ratios: 0.001 s on the RB22 lap)" },
   };
   const DEFAULT_CALIBRATION = Object.freeze({ cla_scale: 1, cda_scale: 1, power_scale: 1, mu_scale: 1 });
@@ -108,7 +117,7 @@
     const f = design.facts(d, opts), m = f.mass, a = f.aero, p = d.params;
     const A = opts.anchor || anchor(team);
     const R = reference(team, m.session);
-    const ra = R.facts.aero, rm = R.facts.mass;
+    const ra = R.facts.aero, rm = R.facts.mass, mx = m.exact, rmx = rm.exact;
     // anchor coefficients: the sim's car, or the uncalibrated v0 levels when the sim is not loaded
     const V = REF_V0, Q = A
       ? { cla: A.aero.corner.CLA_front_m2 + A.aero.corner.CLA_rear_m2, claS: A.aero.straight.CLA_front_m2 + A.aero.straight.CLA_rear_m2, cda: A.aero.corner.CDA_m2, cdaS: A.aero.straight.CDA_m2, bal: A.aero.corner.CLA_front_m2 / (A.aero.corner.CLA_front_m2 + A.aero.corner.CLA_rear_m2), balS: A.aero.straight.CLA_front_m2 / Math.max(1e-9, A.aero.straight.CLA_front_m2 + A.aero.straight.CLA_rear_m2) }
@@ -133,20 +142,32 @@
       team: team || null,
       anchor: A ? { id: A.id, label: A.label } : null,
       session: m.session,
-      mass_kg: r4(base.mass_kg + (m.total_kg - rm.total_kg)),
+      // deltas from the UNROUNDED mass sheet (m.exact): the rounded front share (1e-4) and CoG height (1 mm) made a staircase
+      mass_kg: r6(base.mass_kg + (mx.total_kg - rmx.total_kg)),
       fuel_kg: base.fuel_kg,
       wheelbase_m: r4(p.layout.wheelbase_mm / 1000),
       track_front_m: base.tf,
       track_rear_m: base.tr,
-      cog_height_m: r4(base.cog + (m.cog_height_mm - rm.cog_height_mm) / 1000),
-      weight_dist_front: r6(base.wdf + (m.front_share - rm.front_share)),
+      cog_height_m: r6(base.cog + (mx.cog_height_mm - rmx.cog_height_mm) / 1000),
+      weight_dist_front: r6(base.wdf + (mx.front_share - rmx.front_share)),
+      // additive (coupling v1, for a sim with yaw / pitch / heave dynamics; the current sim ignores them): the design's own mass
+      // sheet values (no anchor carries them): yaw inertia about the CoG, the CoG's x behind the front axle, unsprung mass per axle
+      // (wheels, brakes, 40 % of the suspension: estimate) and the sprung mass's CoG height above the ground
+      yaw_inertia_kgm2: r4(mx.izz_kgm2),
+      cog_x_m: r6(mx.cog_x_mm / 1000),
+      unsprung_kg: { front: r4(mx.unsprung_front_kg), rear: r4(mx.unsprung_rear_kg) },
+      sprung_cog_height_m: r6(base.cog + (mx.sprung_cog_height_mm - rmx.cog_height_mm) / 1000),
       aero: {
         corner, straight,
         ride_height_mm: p.floor.ride_height_mm,
         ride_sens_per_mm: r4(aeromap.rideSensitivity(p)),
         floor_stalled: a.floor_stalled,
         stall_margin_mm: r4(a.stall_margin_mm),
+        // additive (coupling v1): the lever-rule front share of the corner downforce and its change from the reference design, the
+        // front wing's ground-effect factor, and the material flex terms (docs/concept/COUPLING.md)
+        balance_corner: r6(bal), front_wing_ground_effect: r6(a.front_wing_ground_effect), material_flex: a.material_flex,
       },
+      materials: m.materials,
       pu: { ice_kw: r4(iceKw), mguk_kw: Math.min(ENERGY.mguk_max_kw, parts.BY_ID.pu_mguk.power_kw) * cal.power_scale, es_deploy_mj_per_lap: ENERGY.deploy_mj, es_harvest_mj_per_lap: ENERGY.recharge_max_mj, es_soc_window_mj: ENERGY.soc_window_mj },
       tyres: { mu_x: r4(base.mu_x * cal.mu_scale), mu_y: r4(base.mu_y * cal.mu_scale), load_sens: base.ls, radius_m: base.radius, compound: "soft" },
       brakes: { max_decel_g_mech: base.decel },

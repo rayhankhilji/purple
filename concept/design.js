@@ -1,6 +1,7 @@
 // PURPLE CONCEPT - a Design: the baseline 2026-style concept car plus per-part shape parameters. validate / clone / mutate / diff /
 // describe, and facts() (geometry + mass sheet + legality inputs) for concept/regs.js. Pure, deterministic, no game needed.
-// Design = { id, label, params: { <part id>: { <param>: number } }, overrides?: { <part id>: { mass_kg?, x_mm?, z_mm? } }, parent? }
+// Design = { id, label, params: { <part id>: { <param>: number, material?: "<material id>" } }, overrides?: { <part id>: { mass_kg?, x_mm?, z_mm? } }, parent? }
+// params.<part>.material (optional; concept/materials.js, docs/concept/MATERIALS.md): absent = the part's baseline material.
 // Dual browser / Node: window.EI.concept.design and module.exports.
 (function () {
   const root = typeof window !== "undefined" ? window : globalThis;
@@ -25,6 +26,17 @@
   const own = (o, k) => o != null && typeof k === "string" && Object.prototype.hasOwnProperty.call(o, k);
   const spec = (part, param) => { const p = own(parts.BY_ID, part) ? parts.BY_ID[part] : null; return p && own(p.params, param) ? Object.assign({ part, param }, p.params[param]) : null; };
   const quant = (s, v) => { const q = Math.round((v - s.min) / s.step) * s.step + s.min; return +Math.min(s.max, Math.max(s.min, q)).toFixed(6); };
+  // materials (concept/materials.js): params.<part>.material is an optional material id; absent = the part's baseline material
+  let matsReq = null;
+  if (!C.materials && typeof require === "function") { try { matsReq = require("./materials.js"); } catch (e) { matsReq = null; } }
+  const mats = () => C.materials || matsReq;
+  function materialProblem(part, id) {
+    const M = mats();
+    if (typeof id !== "string") return part + ".material: must be a material id string";
+    if (!M) return part + ".material: concept/materials.js is not loaded";
+    return M.problem(part, id);
+  }
+  const materialOf = (d, part) => { const M = mats(); return M ? M.materialOf(d.params, part) : null; };
 
   // the baselines. Every 2026 car runs active aero (C3.10.10, C3.11.6), so the baseline carries a REFERENCE straight-mode flap
   // setting (front 4°, rear 15°): the setting concept/physical.js maps onto the lap sim's estimated Straight Mode coefficients.
@@ -64,6 +76,7 @@
       const ps = d.params[part];
       if (!ps || typeof ps !== "object") { errors.push(part + ": not an object"); continue; }
       for (const k of Object.getOwnPropertyNames(ps)) {
+        if (k === "material") { const why = materialProblem(part, ps[k]); if (why) errors.push(why); continue; }
         if (!own(parts.BY_ID[part].params, k)) errors.push("unknown parameter " + part + "." + k);
         else if (typeof ps[k] !== "number" || !isFinite(ps[k])) { const e = part + "." + k + ": not a number"; if (!errors.includes(e)) errors.push(e); }
       }
@@ -77,6 +90,14 @@
     if (changes != null && !Array.isArray(changes)) throw new Error("concept: changes must be an array");
     for (const c of changes || []) {
       if (!c || typeof c !== "object") throw new Error("concept: a change must be an object { part, param, to }");
+      if (c.param === "material" && typeof c.part === "string") {   // a material swap: { part, param: "material", to: "<id>" }
+        const why = materialProblem(c.part, c.to); if (why) throw new Error("concept: " + why);
+        const from = materialOf(out, c.part); if (c.to === from) continue;
+        if (!own(out.params, c.part)) out.params[c.part] = {};
+        if (c.to === mats().baseOf(c.part)) delete out.params[c.part].material; else out.params[c.part].material = c.to;
+        applied.push({ part: c.part, param: "material", from, to: c.to, clamped: false });
+        continue;
+      }
       const s = spec(c.part, c.param); if (!s) throw new Error("concept: unknown parameter " + String(c.part) + "." + String(c.param));
       const num = typeof c.to === "number" ? c.to : typeof c.to === "string" && c.to.trim() !== "" ? Number(c.to) : NaN;
       if (!Number.isFinite(num)) throw new Error("concept: non-finite value for " + c.part + "." + c.param + ": " + String(c.to));
@@ -96,31 +117,49 @@
     const pool = parts.PARAMS.filter(s => !(opts.locked || []).includes(s.part + "." + s.param));
     const n = opts.n || 1 + Math.floor(rng() * 3), picked = [];
     for (let i = 0; i < n && pool.length; i++) picked.push(pool.splice(Math.floor(rng() * pool.length) % pool.length, 1)[0]);
-    const changes = picked.map(s => {
+    // opts.materials (off by default, so seeded lineages are unchanged): with probability opts.material_p (0.15) one change is a
+    // material swap on a random material-able part, to a random material of an allowed form
+    const M = mats();
+    if (opts.materials && M && rng() < (opts.material_p == null ? 0.15 : opts.material_p)) {
+      const ps = parts.MATERIAL_PARTS.filter(id => !(opts.locked || []).includes(id + ".material"));
+      if (ps.length) {
+        const part = ps[Math.floor(rng() * ps.length) % ps.length], cur = M.materialOf(d.params, part);
+        const pool = M.MATERIALS.filter(m => m.id !== cur && !M.problem(part, m.id));
+        if (pool.length) { picked.pop(); const extra = applyChanges(d, [{ part, param: "material", to: pool[Math.floor(rng() * pool.length) % pool.length].id }]); return picked.length ? (r => ({ design: r.design, changes: extra.changes.concat(r.changes) }))(applyChanges(extra.design, numeric(picked))) : extra; }
+      }
+    }
+    return applyChanges(d, numeric(picked));
+    function numeric(list) { return list.map(s => {
       const cur = d.params[s.part][s.param], width = s.max - s.min;
       let to = quant(s, cur + gauss(rng) * step * width);
       if (to === cur) to = quant(s, cur + (rng() < 0.5 ? -s.step : s.step) * (s.int ? 1 : Math.max(1, Math.round(step * width / s.step))));
       if (to === cur) to = quant(s, cur === s.max ? cur - s.step : cur + s.step);
       return { part: s.part, param: s.param, to };
-    });
-    return applyChanges(d, changes);
+    }); }
   }
 
-  // diff(a, b): every parameter that differs, b relative to a
+  // diff(a, b): every parameter that differs, b relative to a (material swaps carry delta null)
   function diff(a, b) {
     const out = [];
     for (const s of parts.PARAMS) {
       const x = a.params[s.part][s.param], y = b.params[s.part][s.param];
       if (Math.abs(x - y) > 1e-9) out.push({ part: s.part, param: s.param, from: x, to: y, delta: +(y - x).toFixed(4), unit: s.unit, domain_frac: +((y - x) / (s.max - s.min)).toFixed(4) });
     }
+    if (mats()) for (const id of parts.MATERIAL_PARTS) { const x = materialOf(a, id), y = materialOf(b, id); if (x !== y) out.push({ part: id, param: "material", from: x, to: y, delta: null, unit: "", domain_frac: null }); }
     return out;
   }
   const fmt = (v, u) => (Math.round(v * 100) / 100) + (u ? (u === "°" ? "°" : " " + u) : "");
-  function describeChange(c) { const s = spec(c.part, c.param); return parts.BY_ID[c.part].name.split(" (")[0] + " · " + s.label + " " + fmt(c.from, s.unit) + " → " + fmt(c.to, s.unit); }
+  const matName = id => { const m = mats() && mats().get(id); return m ? m.name : String(id); };
+  function describeChange(c) {
+    const part = parts.BY_ID[c.part].name.split(" (")[0];
+    if (c.param === "material") return part + " · material " + matName(c.from) + " → " + matName(c.to);
+    const s = spec(c.part, c.param); return part + " · " + s.label + " " + fmt(c.from, s.unit) + " → " + fmt(c.to, s.unit);
+  }
   // describe(design): short human lines per part with parameters, plus the headline numbers
   function describe(d) {
     const f = facts(d), lines = [];
     for (const p of parts.CATALOGUE) { const ks = Object.keys(p.params); if (!ks.length) continue; lines.push(p.name.split(" (")[0] + ": " + ks.map(k => p.params[k].label.toLowerCase() + " " + fmt(d.params[p.id][k], p.params[k].unit)).join(", ")); }
+    const ms = f.mass.materials || {}; for (const id of Object.keys(ms)) lines.push(parts.BY_ID[id].name.split(" (")[0] + ": material " + matName(ms[id].material) + " (mass ×" + ms[id].mass_factor.toFixed(3) + " of its material share, stiffness ×" + ms[id].stiffness_ratio.toFixed(2) + ")");
     lines.push("Mass " + f.mass.total_kg + " kg (parts " + f.mass.parts_kg + ", ballast " + f.mass.ballast_kg + "), front " + (f.mass.front_share * 100).toFixed(1) + " %, CoG height " + f.mass.cog_height_mm + " mm above the ground, Izz " + f.mass.izz_kgm2 + " kg·m²");
     lines.push("Aero (" + aeromap.VERSION + "): downforce ×" + f.aero.df.toFixed(3) + ", drag ×" + f.aero.cd.toFixed(3) + " (straight mode ×" + f.aero.cd_sm.toFixed(3) + "), balance " + (f.aero.balance * 100).toFixed(1) + " % front");
     return lines;
