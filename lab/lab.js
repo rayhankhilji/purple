@@ -71,19 +71,27 @@
   // ---- error banner (F-06.AC3): names the failed endpoint; dismissable
   function banner(err) {
     const b = $("#banner");
-    b.replaceChildren(el("span", { class: "label", text: "error" }), el("code", { text: err.endpoint }), el("span", { text: (err.code ? err.code + " · " : "") + (err.message || "") }),
+    // QA S6: the banner sits in the 40 px header (in place of the subtitle), so it never moves the layout; the full text is in the title
+    const msg = (err.code ? err.code + " · " : "") + (err.message || "");
+    b.title = err.endpoint + " · " + msg;
+    b.replaceChildren(el("span", { class: "label", text: "error" }), el("code", { text: err.endpoint }), el("span", { class: "msg", text: msg }),
       el("button", { class: "x", type: "button", "aria-label": "dismiss", onclick: clearBanner, text: "dismiss" }));
     b.hidden = false; document.body.classList.add("has-banner");
   }
   function clearBanner() { $("#banner").hidden = true; document.body.classList.remove("has-banner"); }
   function toast(text) { const t = el("div", { class: "toast", role: "status", text }); document.body.appendChild(t); setTimeout(() => t.remove(), 1200); }
 
-  // ---- StageCard { state: empty|loading|error|success, body, foot }; a 2 px progress bar under the card while loading
+  // ---- StageCard { state: empty|loading|error|success, body, src, foot }; a 2 px progress bar under the card while loading.
+  // QA B1: the source label (G-HON-01) renders in .srcbar, a fixed row above the buttons, never inside the scrolling body.
   function card(stage, o) {
     const c = $("#card-" + stage);
     c.className = "card is-" + o.state + (S.active === stage ? " is-active" : "");
     $(".state", c).textContent = o.stateLabel || o.state;
+    const head = $(".head", c), oldFlag = $(".flag", head);   // optional badge beside the state label (RACE: "still air"), always in view
+    if (oldFlag) oldFlag.remove();
+    if (o.flag) { o.flag.classList.add("flag"); head.insertBefore(o.flag, $(".state", c)); }
     $(".body", c).replaceChildren(...[o.body].flat(Infinity).filter(Boolean));
+    $(".srcbar", c).replaceChildren(...[o.src].flat(Infinity).filter(Boolean).map(s => (typeof s === "string" ? el("div", { class: "src", text: s }) : s)));
     $(".foot", c).replaceChildren(...(o.foot || []).flat(Infinity).filter(Boolean));
     const p = $(".progress", c);
     if (o.state === "loading") { if (!p) c.appendChild(el("div", { class: "progress", "aria-hidden": "true" })); } else if (p) p.remove();
@@ -94,15 +102,18 @@
   const windNote = x => (windy(x) ? el("div", { class: "row" }, el("span", { class: "badge amber", text: "still air" }), el("span", { class: "sans muted", text: "raced in still air (the game has no wind); evaluator numbers include the wind, " + x.conditions.wind_ms + " m/s from " + (x.conditions.wind_from_deg || 0) + "°" })) : null);
   const btn = (label, onclick, o) => el("button", Object.assign({ class: "btn" + (o && o.cls ? " " + o.cls : ""), type: "button", onclick, disabled: !!(o && o.disabled), title: o && o.title }, {}), label);
   const delta = (d, cls) => el("span", { class: "delta " + deltaClass(d) + (cls ? " " + cls : ""), text: fmtD(d) });
-  const verdictPill = v => el("span", { class: "verdict " + v, text: v });
-  const kv = pairs => el("div", { class: "kv" }, pairs.filter(Boolean).map(([k, v]) => [el("span", { class: "k", text: k }), el("span", {}, v)]));
+  const verdictPill = (v, cls) => el("span", { class: "verdict " + v + (cls ? " " + cls : ""), text: v });
+  const illegalViolations = () => {
+    const e = S.err.design, v = e && e.extra && Array.isArray(e.extra.violations) ? e.extra.violations : null;
+    return v || (EI.aero && S.illegalCandidate ? EI.aero.violations(S.illegalCandidate, { td01: !!(S.state && S.state.td01) }) : []);
+  };
 
   // ---- DESIGN: the research agent's plan (verdict, next experiment, hypothesis, reject_if)
   function renderDesign() {
     const x = S.current, e = S.err.design;
     const runBtn = (label, o) => btn(label, () => runPlan(o), { cls: "primary", disabled: !!S.busy.plan });
     const randomBtn = btn("Run random", () => runPlan({ random: true }), { cls: "small", disabled: !!S.busy.plan, title: "random legal candidate instead of the agent's next step" });
-    if (S.busy.plan) return card("design", { state: "loading", stateLabel: "asking the agent", body: [el("p", { text: "POST /api/plan · evaluating the candidate, then the research agent decides through Mubit." }), el("div", { class: "src", text: agentLabel() })], foot: [runBtn("Run")] });
+    if (S.busy.plan) return card("design", { state: "loading", stateLabel: "asking the agent", body: [el("p", { text: "POST /api/plan · evaluating the candidate, then the research agent decides through Mubit." })], src: agentLabel(), foot: [runBtn("Run")] });
     if (e) {
       const viol = e.extra && Array.isArray(e.extra.violations) ? e.extra.violations : null;
       const extra = viol ? el("div", {}, viol.map(id => el("div", { class: "row" }, el("span", { class: "badge " + (id === "TD-01" ? "td" : "red"), text: id }), el("span", { class: "sans muted", text: EI.aero && EI.aero.describeViolation ? EI.aero.describeViolation(id) : id })))) : null;
@@ -111,24 +122,35 @@
     if (!x) return card("design", { state: "empty", body: [el("p", { text: "No plan yet. Run asks the research agent for a verdict on a candidate setup and the single next experiment." })], foot: [runBtn("Run")] });
     const p = x.plan;
     const body = [];
-    body.push(el("div", { class: "row", title: "experiment " + x.id + " · seed " + x.seed }, p ? verdictPill(p.verdict) : el("span", { class: "verdict reject", text: x.error ? x.error.code : "parse_error" }),
-      el("span", { class: "sans", text: "candidate · " + (x.change || "no change") })));
-    if (x.status === "overruled" && x.overrule) body.push(el("div", { class: "row" }, el("span", { class: "sans muted", text: "overruled → " }), verdictPill(x.overrule.verdict), el("span", { class: "chip rule", text: x.overrule.rule_id })));
-    if (x.status === "promoted") body.push(el("div", { class: "row" }, el("span", { class: "badge purple", text: "promoted · new baseline" })));
+    // line 1: the agent's verdict, then (when it happened) the engineer's overrule or the promotion, on the same line
+    const sm = x.overrule ? "sm" : null;   // agent verdict → engineer verdict + rule chip on one line; "promoted" is the state label (and LEARN's, and the ledger status)
+    body.push(el("div", { class: "row", title: "experiment " + x.id + " · seed " + x.seed + (x.status === "promoted" ? " · promoted: the candidate is the new baseline" : "") }, p ? verdictPill(p.verdict, sm) : el("span", { class: "verdict reject", text: x.error ? x.error.code : "parse_error" }),
+      x.overrule ? [el("span", { class: "sans muted", text: "→" }), verdictPill(x.overrule.verdict, sm), el("span", { class: "chip rule", title: x.overrule.reason, text: x.overrule.rule_id })] : null));
+    body.push(el("div", { class: "one sans", title: "candidate · " + (x.change || "no change"), text: "candidate · " + (x.change || "no change") }));
     if (p) {
-      body.push(el("div", { class: "row" }, el("span", { class: "k sans muted", text: "next" }), el("span", {}, el("b", { text: pname(p.next_parameter) }), " " + p.direction + " by " + fmtSetupV(p.next_parameter, p.magnitude) + punit(p.next_parameter))));
-      body.push(el("div", { class: "row" }, el("span", { class: "k sans muted", text: "expect" }), p.expected_sector_effect.map((d, i) => el("span", {}, el("span", { class: "muted", text: "S" + (i + 1) + " " }), delta(d)))));
+      const sign = p.direction === "decrease" ? "−" : "+";
+      body.push(el("div", { class: "kvl", title: "next: " + pname(p.next_parameter) + " " + p.direction + " by " + fmtSetupV(p.next_parameter, p.magnitude) + punit(p.next_parameter) }, el("span", { class: "k", text: "next" }),
+        el("span", { class: "one" }, el("b", { text: pname(p.next_parameter) }), " " + sign + fmtSetupV(p.next_parameter, p.magnitude) + punit(p.next_parameter))));
+      body.push(el("div", { class: "kvl", title: "expected sector effect, seconds" }, el("span", { class: "k", text: "expect" }),
+        el("span", { class: "xs" }, p.expected_sector_effect.map((d, i) => el("span", {}, el("span", { class: "muted", text: "S" + (i + 1) + " " }), delta(d))))));
       body.push(el("div", { class: "hyp", title: p.hypothesis, text: p.hypothesis }));
       body.push(el("div", { class: "muted one", title: "reject_if: " + p.reject_if, text: "reject if " + p.reject_if }));
-    } else if (x.error) body.push(el("p", { text: x.error.message }));
-    body.push(el("div", { class: "src", text: agentLabel() + " · " + short(x.mubit_request_id, 10) + " · " + (x.latency_ms || 0) + " ms" }));
-    card("design", { state: "success", body, foot: [runBtn(x.plan ? "Run next" : "Run"), randomBtn] });
+    } else if (x.error) body.push(el("p", { class: "one", title: x.error.message, text: x.error.message }));
+    card("design", { state: "success", stateLabel: x.status === "promoted" ? "promoted" : x.status === "overruled" ? "overruled" : "success", body, src: agentLabel() + " · " + short(x.mubit_request_id, 10) + " · " + (x.latency_ms || 0) + " ms", foot: [runBtn(x.plan ? "Run next" : "Run"), randomBtn] });
   }
 
   // ---- EVALUATE: lap, sectors, deltas, vmax/vmin, legality — every number labelled with evaluation.model
   function renderEvaluate() {
     const x = S.current, ev = x && x.evaluation;
     if (S.busy.plan) return card("evaluate", { state: "loading", stateLabel: "evaluating", body: [el("p", { text: "Candidate and baseline under the same conditions." })] });
+    // QA S4: an illegal candidate (422 ILLEGAL_SETUP) is never evaluated; say so instead of showing the previous experiment's numbers
+    if (S.illegalCandidate) {
+      const viol = illegalViolations();
+      return card("evaluate", { state: "error", stateLabel: "illegal", body: [
+        el("div", { class: "row" }, el("span", { class: "badge red", text: "illegal · " + (viol.join(", ") || "setup") + " · no lap time" })),
+        viol.map(id => el("p", { text: EI.aero && EI.aero.describeViolation ? EI.aero.describeViolation(id) : id }))],
+        src: "POST /api/plan · 422 ILLEGAL_SETUP · not evaluated, not raced, not sent to the agent" });
+    }
     if (!ev || !isNum(ev.lap)) return card("evaluate", { state: "empty", body: [el("p", { text: "Numbers arrive with the first plan: lap, three sectors, top speed and the fast-complex minimum, candidate minus baseline." })], foot: [btn("Run", () => runPlan(), { cls: "primary", disabled: !!S.busy.plan })] });
     const fresh = S.rendered.evalId !== x.id; S.rendered.evalId = x.id;
     const settle = fresh && !reduced() ? "settle" : "";
@@ -136,60 +158,70 @@
     const circuit = x.circuit || (x.conditions && x.conditions.circuit) || "silverstone";
     const vminName = EI.aero && EI.aero.REF_CORNER && EI.aero.REF_CORNER[circuit] ? EI.aero.REF_CORNER[circuit].name : "fast complex";
     const body = [
-      el("div", { class: "row" }, delta(ev.delta_lap, "big " + settle), el("span", { class: "label", text: "lap Δ" }),
-        el("span", { class: "num " + settle, text: fmtT(ev.lap) }), el("span", { class: "muted", text: "vs " + fmtT(base.lap) })),
+      el("div", { class: "row nw" }, delta(ev.delta_lap, "big " + settle), el("span", { class: "label", text: "lap Δ" })),
+      el("div", { class: "row nw" }, el("span", { class: "num " + settle, text: fmtT(ev.lap) }), el("span", { class: "muted", text: "vs " + fmtT(base.lap) }),
+        el("span", { class: "badge sm " + (ev.legal ? "green" : "red"), text: ev.legal ? "legal" : (ev.violations || []).join(", ") })),
       el("div", { class: "sectors" }, (ev.sectors || []).map((s, i) => {
         const d = ev.delta_sectors ? ev.delta_sectors[i] : null;
         return el("div", { class: "cell" }, el("span", { class: "label", text: "S" + (i + 1) }), el("span", { class: "t num " + settle, text: fmtT(s) }), delta(d, fresh && deltaClass(d) === "faster" && !reduced() ? "flash" : ""));
       })),
-      el("div", { class: "row" },
-        el("span", { title: "top speed, candidate vs baseline" }, el("span", { class: "muted", text: "vmax " }), el("span", { class: "num " + settle, text: Math.round(ev.vmax_kmh) }), el("span", { class: "muted", text: " vs " + Math.round(base.vmax_kmh) + " km/h" })),
-        el("span", { title: "minimum speed through " + vminName + ", candidate vs baseline" }, el("span", { class: "muted", text: "vmin " }), el("span", { class: "num " + settle, text: Math.round(ev.vmin_kmh) }), el("span", { class: "muted", text: " vs " + Math.round(base.vmin_kmh) + " km/h" })),
-        el("span", { class: "badge " + (ev.legal ? "green" : "red"), text: ev.legal ? "legal" : (ev.violations || []).join(", ") })),
-      el("div", { class: "src", text: (ev.model || "reduced-order lap model") + " · vmin at " + vminName }),
+      el("div", { class: "one", title: "top speed, candidate vs baseline" }, el("span", { class: "muted", text: "vmax " }), el("span", { class: "num " + settle, text: Math.round(ev.vmax_kmh) }), el("span", { class: "muted", text: " vs " + Math.round(base.vmax_kmh) + " km/h" })),
+      el("div", { class: "one", title: "minimum speed through " + vminName + ", candidate vs baseline" }, el("span", { class: "muted", text: "vmin " }), el("span", { class: "num " + settle, text: Math.round(ev.vmin_kmh) }), el("span", { class: "muted", text: " vs " + Math.round(base.vmin_kmh) + " km/h" })),
     ];
-    card("evaluate", { state: "success", body, foot: [btn("Race it", raceIt, { cls: "primary", disabled: !!S.racing }), btn("Promote", promote, { disabled: !!S.busy.learn || x.status === "promoted" })] });
+    card("evaluate", { state: "success", body, src: (ev.model || "reduced-order lap model") + " · vmin at " + vminName, foot: [btn("Race it", raceIt, { cls: "primary", disabled: !!S.racing }), btn("Promote", promote, { disabled: !!S.busy.learn || x.status === "promoted" })] });
   }
 
   // ---- RACE: baseline vs candidate in the game iframe; measured deltas and agreement_pct from POST /api/race/result
   function renderRace() {
-    const x = S.current, e = S.err.race, m = x && x.measured;
-    if (S.busy.raceResult) return card("race", { state: "loading", stateLabel: "posting result", body: [el("p", { text: "POST /api/race/result" })] });
+    const illegal = !!S.illegalCandidate && !S.racing;   // QA S4: an illegal candidate has nothing to race; the previous result is not its result
+    const x = illegal ? null : S.current, e = S.err.race, m = x && x.measured;
+    // G-HON-01: a windy experiment races in still air; the badge sits in the card head so it is never scrolled away (the full note is its title; the empty and racing bodies also spell it out)
+    const wx = S.racing ? S.current : x;
+    const rc = o => card("race", Object.assign({ flag: windy(wx) ? el("span", { class: "badge amber sm", title: "raced in still air (the game has no wind); evaluator numbers include the wind, " + wx.conditions.wind_ms + " m/s from " + (wx.conditions.wind_from_deg || 0) + "°", text: "still air" }) : null }, o));
+    if (S.busy.raceResult) return rc({ state: "loading", stateLabel: "posting result", body: [el("p", { text: "POST /api/race/result" })] });
     const back = S.showGame ? btn("Back to 3D view", cancelRace, { cls: "small" }) : null;
     const canRace = !!(x && x.evaluation && isNum(x.evaluation.lap));
-    if (e) return card("race", { state: "error", body: errBody(e), foot: [e.again ? btn("Race again", raceIt, { cls: "primary" }) : btn("Retry", e.retry, { cls: "primary" }), back || btn("Dismiss", () => { delete S.err.race; renderAll(); }, { cls: "small" })] });
-    if (S.racing && S.racing.mode === "grid") return card("race", { state: "loading", stateLabel: "grid race", body: [
-      el("div", { class: "row" }, el("span", { class: "big num", id: "raceClock", text: fmtClock(Date.now() - S.racing.started) }), el("span", { class: "label", text: "elapsed" }), el("span", { class: "badge amber", text: "CINEMATIC · mixes car and driver" })),
-      el("p", { text: "The candidate car with " + (S.racing.driverName || S.racing.driver) + " on the 2026 grid · " + GRID_LAPS + " laps · seed " + S.racing.seed + ". Not a measurement; nothing is written to the ledger." }), windNote(x)], foot: [btn("Cancel", cancelRace, { cls: "small" })] });
-    if (S.racing) return card("race", { state: "loading", stateLabel: "racing", body: [
-      el("div", { class: "row" }, el("span", { class: "big num", id: "raceClock", text: fmtClock(Date.now() - S.racing.started) }), el("span", { class: "label", text: "elapsed" }), el("span", { class: "muted sans", text: "a " + LAPS + "-lap race takes about 4½ minutes; no result after " + Math.round(RACE_TIMEOUT_MS / 60000) + " shows an error" })),
-      el("p", { text: "Waiting for result · baseline vs candidate · same neutral driver · " + LAPS + " laps · seed " + S.racing.seed + "." }), windNote(x),
-      el("div", { class: "src", text: "the game posts purple:result when the chequered flag falls" })], foot: [btn("Cancel", cancelRace, { cls: "small" })] });
+    if (e) return rc({ state: "error", body: errBody(e), foot: [e.again ? btn("Race again", raceIt, { cls: "primary" }) : btn("Retry", e.retry, { cls: "primary" }), back || btn("Dismiss", () => { delete S.err.race; renderAll(); }, { cls: "small" })] });
+    if (S.racing && S.racing.mode === "grid") return rc({ state: "loading", stateLabel: "grid race", body: [
+      el("div", { class: "row nw" }, el("span", { class: "big num", id: "raceClock", text: fmtClock(Date.now() - S.racing.started) }), el("span", { class: "label", text: "elapsed" })),
+      el("div", { class: "row" }, el("span", { class: "badge amber", text: "CINEMATIC · mixes car and driver" })),
+      el("p", { text: "The candidate car with " + (S.racing.driverName || S.racing.driver) + " on the 2026 grid · " + GRID_LAPS + " laps · seed " + S.racing.seed + ". Not a measurement; nothing is written to the ledger." }), windNote(S.current)], foot: [btn("Cancel", cancelRace, { cls: "small" })] });
+    if (S.racing) return rc({ state: "loading", stateLabel: "racing", body: [
+      el("div", { class: "row nw" }, el("span", { class: "big num", id: "raceClock", text: fmtClock(Date.now() - S.racing.started) }), el("span", { class: "label", text: "elapsed" })),
+      el("p", { text: "Baseline vs candidate · same neutral driver · " + LAPS + " laps · seed " + S.racing.seed + ". About 4½ minutes; no result after " + Math.round(RACE_TIMEOUT_MS / 60000) + " min shows an error." }), windNote(S.current)],
+      src: "the game posts purple:result when the chequered flag falls", foot: [btn("Cancel", cancelRace, { cls: "small" })] });
     const g = S.grid && x && S.grid.experiment_id === x.id ? S.grid : null;
-    const gridBlock = g ? el("div", { class: "grid-res" }, el("div", { class: "row" }, el("span", { class: "badge amber", text: "CINEMATIC · mixes car and driver" }),
-      el("span", {}, el("b", { text: g.position != null ? "P" + g.position : "DNF" }), el("span", { class: "muted", text: g.field ? " of " + g.field : "" })), el("span", { class: "num", text: g.best_lap != null ? fmtT(g.best_lap) : "—" }), el("span", { class: "muted sans", text: g.driver ? g.driver.name + " · " + (g.driver.team || "") : "" })),
-      el("div", { class: "src", text: (g.label || "cinematic — mixes car and driver") + " · " + (g.laps || GRID_LAPS) + " laps · seed " + g.seed + " · not in the ledger" })) : null;
-    if (!m) return card("race", { state: g ? "success" : "empty", stateLabel: g ? "grid raced" : "empty", body: [gridBlock, el("p", { text: "Race the candidate against the baseline in the game: same neutral driver, same seed, broadcast camera." }), windNote(x)], foot: [btn("Race it", raceIt, { cls: "primary", disabled: !canRace }), gridControls(x), back] });
+    const gridLabel = g ? (g.label || "cinematic — mixes car and driver") + " · " + (g.laps || GRID_LAPS) + " laps · seed " + g.seed + " · not in the ledger" : null;
+    const gridRow = g ? el("div", { class: "row" }, el("span", { class: "badge amber", text: "CINEMATIC · mixes car and driver" }),
+      el("span", {}, el("b", { text: g.position != null ? "P" + g.position : "DNF" }), el("span", { class: "muted", text: g.field ? " of " + g.field : "" })), el("span", { class: "num", text: g.best_lap != null ? fmtT(g.best_lap) : "—" }), el("span", { class: "muted sans", text: g.driver ? g.driver.name + " · " + (g.driver.team || "") : "" })) : null;
+    if (!m) return rc({ state: g ? "success" : "empty", stateLabel: g ? "grid raced" : "empty",
+      body: [gridRow, el("p", { text: illegal ? "Nothing to race: the candidate is illegal and was never evaluated." : "Race the candidate against the baseline in the game: same neutral driver, same seed, broadcast camera." }), windNote(x)],
+      src: gridLabel, foot: [btn("Race it", raceIt, { cls: "primary", disabled: !canRace }), gridControls(x), back] });
+    const spd = v => (isNum(v) ? Math.round(v) : "—");
     const body = [
-      el("div", { class: "row" }, delta(m.measured_delta, "big"), el("span", { class: "label", text: "measured Δ" }), el("span", { class: "muted", text: "predicted " }), delta(m.predicted_delta),
-        el("span", { class: "badge " + (isNum(m.agreement_pct) ? (m.agreement_pct <= 25 ? "green" : "amber") : ""), text: "agreement " + fmtPct(m.agreement_pct) })),
+      el("div", { class: "row nw" }, delta(m.measured_delta, "big"), el("span", { class: "label tight", text: "measured Δ" })),
+      el("div", { class: "row" }, el("span", { class: "nw", title: "predicted Δ, evaluator" }, el("span", { class: "muted sans", text: "pred Δ " }), delta(m.predicted_delta)),
+        el("span", { class: "agr nw " + (isNum(m.agreement_pct) ? (m.agreement_pct <= 25 ? "green" : "amber") : "muted"), text: "agreement " + fmtPct(m.agreement_pct) })),
       el("div", { class: "sectors" }, (m.measured_sector_deltas || []).map((d, i) => el("div", { class: "cell" }, el("span", { class: "label", text: "S" + (i + 1) + " Δ" }), delta(d)))),
-      kv([["baseline", "lap · vmax / vmin"]].map(([k, v]) => [k, el("span", { class: "muted sans", text: v })]).concat(["baseline", "candidate"].map(role => {
-        const c = m[role] || {}; return [role, el("span", { title: role + ": best lap · top speed / minimum through the fast complex" }, el("span", { class: "num", text: fmtT(c.lap) }), el("span", { class: "muted", text: " · " + (isNum(c.vmax_kmh) ? Math.round(c.vmax_kmh) : "—") + " / " + (isNum(c.vmin_becketts_kmh) ? Math.round(c.vmin_becketts_kmh) : "—") + " km/h" }))];
-      }))),
-      windNote(x),
-      el("div", { class: "src", text: (m.label || "measured in race") + " · agreement = 100·|measured Δ − predicted Δ| / |predicted Δ|" }),
-      gridBlock,
+      // QA N4: one header row with a blank key, then one line per car (best lap · top speed / minimum through the fast complex)
+      el("div", { class: "cars", title: "best lap · top speed / minimum through the fast complex, km/h" },
+        el("span"), el("span", { class: "h", text: "lap · vmax / vmin km/h" }),
+        ["baseline", "candidate"].map(role => { const c = m[role] || {}; return [el("span", { class: "k", text: role }), el("span", { class: "one" }, el("span", { class: "num", text: fmtT(c.lap) }), el("span", { class: "muted", text: " · " + spd(c.vmax_kmh) + " / " + spd(c.vmin_becketts_kmh) }))]; })),
+      // windy: the "still air" flag in the card head carries the note here (no room for the sentence under the numbers)
+      g ? el("div", { class: "grid-res" }, gridRow, el("div", { class: "src", text: gridLabel })) : null,
     ];
-    card("race", { state: "success", body, foot: [btn("Race again", raceIt, { cls: "small" }), gridControls(x), S.showGame && !S.racing ? null : back] });
+    // "Race it" stays on the EVALUATE card next door; the RACE foot keeps one row for the grid race (QA B1)
+    rc({ state: "success", body, src: (m.label || "measured in race") + " · agreement = 100·|measured Δ − predicted Δ| / |predicted Δ|", foot: [gridControls(x), S.showGame && !S.racing ? null : back] });
   }
   // P3.T3 UI side (F-10): the candidate car with a real 2026 driver on the full grid; cinematic, never a measurement (G-HON-05)
   const GRID_LAPS = 2;
   function gridControls(x) {
     if (!x || !x.evaluation || !isNum(x.evaluation.lap) || S.racing) return null;
     const drivers = (EI.SEASON && Array.isArray(EI.SEASON.drivers) ? EI.SEASON.drivers : []).filter(d => !d.reserve);
-    const sel = drivers.length ? el("select", { "aria-label": "driver for the grid race", class: "small" }, drivers.map(d => el("option", { value: d.code, selected: d.code === (S.gridDriver || "VER"), title: d.name }, d.code + " · " + (d.last || d.name)))) : el("input", { type: "text", "aria-label": "driver code for the grid race", value: S.gridDriver || "VER", maxlength: "3", size: "4", class: "small" });
-    sel.addEventListener("change", ev => { S.gridDriver = ev.target.value; });
+    const sel = drivers.length ? el("select", { "aria-label": "driver for the grid race", class: "small" }, drivers.map(d => el("option", { value: d.code, selected: d.code === (S.gridDriver || "VER"), title: d.name }, d.code))) : el("input", { type: "text", "aria-label": "driver code for the grid race", value: S.gridDriver || "VER", maxlength: "3", size: "4", class: "small" });
+    const nameOf = code => { const d = drivers.find(k => k.code === code); return d ? d.name : code; };   // codes only on the card (QA B1: one foot row); the name is the tooltip
+    sel.title = "driver for the grid race: " + nameOf(sel.value);
+    sel.addEventListener("change", ev => { S.gridDriver = ev.target.value; sel.title = "driver for the grid race: " + nameOf(ev.target.value); });
     return el("span", { class: "row", title: "cinematic: the candidate car with a real 2026 driver profile on the 2026 grid, " + GRID_LAPS + " laps" }, sel, btn("Grid race", () => gridRace(sel.value), { cls: "small" }));
   }
   function gridRace(code) {
@@ -204,24 +236,26 @@
 
   // ---- LEARN: Promote / Overrule (native form) → pit-wall rule; rules list with toggles
   function renderLearn() {
-    const x = S.current, e = S.err.learn;
+    const x = S.illegalCandidate ? null : S.current, e = S.err.learn;   // QA S4: nothing to overrule or promote for an illegal candidate
     if (S.busy.learn) return card("learn", { state: "loading", stateLabel: S.busy.learn, body: [el("p", { text: "Writing the correction." })] });
     if (e) return card("learn", { state: "error", body: errBody(e), foot: [btn("Retry", e.retry, { cls: "primary" }), btn("Dismiss", () => { delete S.err.learn; renderAll(); }, { cls: "small" })] });
     const rulesList = S.rules.length ? el("div", { class: "rules" }, S.rules.map(r => el("div", { class: "r" + (r.active ? "" : " off") },
       el("label", { class: "switch", title: (r.active ? "active" : "inactive") + " · created " + hhmm(r.created_at) }, el("input", { type: "checkbox", checked: r.active, "aria-label": "rule " + r.id + " active", onchange: ev => toggleRule(r.id, ev.target.checked) }), el("span", { class: "tk" })),
       el("span", { class: "chip" + (r.active ? " rule" : " off"), text: r.id }), el("span", { class: "txt", title: r.text, text: r.text })))) : null;
     if (!x) return card("learn", { state: S.rules.length ? "success" : "empty", stateLabel: S.rules.length ? S.rules.length + " rule" + (S.rules.length > 1 ? "s" : "") : "empty",
-      body: [el("p", { text: "Overrule a decision to teach the agent a pit-wall rule; every active rule enters each later scenario." }), rulesList], foot: [btn("Overrule", null, { disabled: true, title: "run a plan first" })] });
+      body: [el("p", { text: "Overrule a decision to teach the agent a pit-wall rule; every active rule enters each later scenario." }), rulesList], foot: [btn("Overrule", null, { disabled: true, title: S.illegalCandidate ? "the candidate is illegal: nothing to overrule" : "run a plan first" })] });
     const sel = el("select", { id: "ovVerdict", name: "verdict", required: true }, ["promote", "reject", "retest"].map(v => el("option", { value: v, selected: x.plan && x.plan.verdict !== v && v === (x.plan.verdict === "reject" ? "promote" : "reject") }, v)));
     const inp = el("input", { id: "ovReason", name: "reason", type: "text", required: true, maxlength: "160", placeholder: "e.g. Weigh straight-line drag against corner gain; judge on full-lap delta." });
-    const form = el("form", { class: "ov", onsubmit: ev => { ev.preventDefault(); overrule(sel.value, inp.value); } },
-      el("label", { for: "ovVerdict", text: "verdict" }), sel, el("label", { for: "ovReason", text: "reason" }), inp,
-      el("div", { class: "acts" }, el("button", { class: "btn primary small", type: "submit" }, "Overrule"), btn("Promote", promote, { cls: "small", disabled: x.status === "promoted" }), el("span", { class: "src", text: "→ POST /api/overrule · rule = reason, ≤ 160 chars" })));
+    // the buttons live in the card's fixed foot (form="ovForm"), so a long rules list can never push them out of view
+    const form = el("form", { class: "ov", id: "ovForm", onsubmit: ev => { ev.preventDefault(); overrule(sel.value, inp.value); } },
+      el("label", { for: "ovVerdict", text: "verdict" }), sel, el("label", { for: "ovReason", text: "reason" }), inp);
     const body = [];
-    if (x.status === "overruled" && x.overrule) body.push(el("div", { class: "row" }, el("span", { class: "chip rule", text: x.overrule.rule_id }), el("span", { class: "sans", text: x.overrule.reason }), el("span", { class: "muted", text: "by " + (x.overrule.by || "engineer") })));
-    if (x.status === "promoted") body.push(el("div", { class: "row" }, el("span", { class: "badge purple", text: "promoted" }), el("span", { class: "sans muted", text: "the candidate is the new baseline" })));
+    if (x.overrule) body.push(el("div", { class: "row nw", title: x.overrule.reason + " · by " + (x.overrule.by || "engineer") }, el("span", { class: "chip rule", text: x.overrule.rule_id }), el("span", { class: "sans one", text: x.overrule.reason })));
+    if (x.status === "promoted") body.push(el("div", { class: "row nw" }, el("span", { class: "badge purple", text: "promoted" }), el("span", { class: "sans muted one", text: "the candidate is the new baseline" })));
     body.push(form, rulesList);
-    card("learn", { state: x.status === "overruled" || x.status === "promoted" || S.rules.length ? "success" : "empty", stateLabel: x.status === "overruled" ? "overruled" : x.status === "promoted" ? "promoted" : S.rules.length ? S.rules.length + " rule" + (S.rules.length > 1 ? "s" : "") : "ready", body });
+    card("learn", { state: x.status === "overruled" || x.status === "promoted" || S.rules.length ? "success" : "empty", stateLabel: x.status === "overruled" ? "overruled" : x.status === "promoted" ? "promoted" : S.rules.length ? S.rules.length + " rule" + (S.rules.length > 1 ? "s" : "") : "ready", body,
+      src: "→ POST /api/overrule · rule = reason, ≤ 160 chars",
+      foot: [el("button", { class: "btn primary small", type: "submit", form: "ovForm" }, "Overrule"), btn("Promote", promote, { cls: "small", disabled: x.status === "promoted" })] });
   }
 
   // ---- main area: 3D car (lab/car3d.js, CAR3D lane) or the game iframe while racing; setup table as the always-on numbers
@@ -231,20 +265,27 @@
     game.hidden = !racing; car.hidden = racing;
     if (!racing && game.getAttribute("src")) game.removeAttribute("src");
     const corner = $("#mainCorner"); corner.classList.toggle("racing", racing);
-    corner.replaceChildren(...(racing ? (S.racing ? [] : [btn("Back to 3D view", cancelRace, { cls: "small" })]) : [el("span", { class: "badge", text: x ? "candidate · " + (x.change || "no change") : "baseline" })]));
-    const setup = x ? x.candidate : (S.illegalCandidate || (S.state && S.state.baseline));
+    // QA S4: an illegal candidate (422) wins over the previous experiment in the badge and the 3D view, as it already does in the setup table
+    const ill = S.illegalCandidate, base = (S.state && S.state.baseline) || null;
+    const illBadge = () => { const v = illegalViolations(), ch = EI.aero ? EI.aero.KEYS.filter(k => base && Math.abs(ill[k] - base[k]) > 1e-9).map(k => pname(k) + " " + fmtSetupV(k, ill[k]) + punit(k)) : [];
+      return el("span", { class: "badge red", text: "illegal candidate · " + (ch.join(", ") || "setup") + " · " + (v.join(", ") || "ILLEGAL_SETUP") }); };
+    corner.replaceChildren(...(racing ? (S.racing ? [] : [btn("Back to 3D view", cancelRace, { cls: "small" })]) : [ill ? illBadge() : el("span", { class: "badge", text: x ? "candidate · " + (x.change || "no change") : "baseline" })]));
+    const setup = ill || (x ? x.candidate : base);
+    const ghost = ill ? base : x ? x.baseline : null;
     if (EI.labCar3D && !racing) {
       try {
         if (!S.car3dMounted) { EI.labCar3D.mount(car); S.car3dMounted = true; }
-        const key = JSON.stringify(setup || null);
-        if (setup && key !== S.car3dSetupKey) { S.car3dSetupKey = key; if (EI.labCar3D.setBaseline) EI.labCar3D.setBaseline(x ? x.baseline : null); EI.labCar3D.setSetup(setup); }
+        const key = JSON.stringify([setup || null, ghost]);
+        if (setup && key !== S.car3dSetupKey) { S.car3dSetupKey = key; if (EI.labCar3D.setBaseline) EI.labCar3D.setBaseline(ghost); EI.labCar3D.setSetup(setup); }
       } catch (e) {   // the 3D view is decorative; the numbers below are the product. Say why it is missing rather than hide it.
         S.car3dError = String(e && e.message || e);
         $("#mainEmpty .inner").replaceChildren(el("div", { class: "h", text: "3D car view unavailable" }), el("span", { text: S.car3dError }));
       }
       empty.hidden = S.car3dMounted && !S.car3dError;
     } else empty.hidden = racing;
-    $("#mainSrc").textContent = racing ? "" : S.car3dMounted ? "procedural car · wing angles and ride height from the setup · aero map v1" : "aero map v1 · regulation subset ranges";
+    // QA N-D: the same words as the in-view label (lab/car3d.js labelText(), which names the display gain); the setup table carries the real values
+    const carLabel = EI.labCar3D && typeof EI.labCar3D.labelText === "function" ? EI.labCar3D.labelText() : "wing angles and ride height from the setup · geometry, not a measurement";
+    $("#mainSrc").textContent = racing ? "" : S.car3dMounted ? "procedural car · " + carLabel : "aero map v1 · regulation subset ranges";
     $("#setupBox").replaceChildren(racing ? el("span") : setupTable());   // while racing the game's HUD owns the frame
   }
   function setupTable() {
@@ -266,7 +307,9 @@
   // ---- MubitWidget: GET /api/status; edit form POSTs partial values (the console is the source, this is the copy)
   function renderWidget(editing) {
     const w = $("#widget"), s = S.status || {}, ex = s.exam || {}, total = ex.total || 20, b = s.budget;
-    const examLine = (who, v, p, when) => (isNum(v) || isNum(p) ? el("div", { class: "exam" }, el("b", { text: who }), " " + (isNum(v) ? v + "/" + total + " verdicts" : "—") + (isNum(p) ? " · " + p + "/" + total + " next-step" : ""), when ? el("span", { class: "src", text: " · " + when }) : null) : null);
+    // G-HON-06: v1 / v2 are scored on the Try models sheet (n/8, exam.v1_total from `scenarios.js --score`), not out of the 20-item exam
+    const outOf = who => (isNum(ex[who + "_total"]) ? ex[who + "_total"] : total);
+    const examLine = (who, v, p, when) => (isNum(v) || isNum(p) ? el("div", { class: "exam" }, el("b", { text: who }), " " + (isNum(v) ? v + "/" + outOf(who) + " verdicts" : "—") + (isNum(p) ? " · " + p + "/" + outOf(who) + " next-step" : ""), when ? el("span", { class: "src", text: " · " + when }) : null) : null);
     const head = el("div", { class: "head" }, el("span", { class: "label", text: "Mubit · task" }), el("button", { class: "btn icon", type: "button", "aria-label": editing ? "cancel editing" : "edit status (values from the console)", title: "edit values copied from the console", onclick: () => renderWidget(!editing) }, editing ? "✕" : "✎"));
     if (editing) {
       const f = (name, label, value, type) => el("label", {}, label, el("input", { name, type: type || "text", value: value == null ? "" : value, step: type === "number" ? "1" : null }));
@@ -311,18 +354,20 @@
     const total = S.ledgerTotal || L.length;
     const rows = L.map((x, i) => {
       const m = x.measured || {}, v = x.plan ? x.plan.verdict : (x.error ? x.error.code : "parse_error");
-      const ruleCell = x.overrule ? el("span", { class: "chip rule", title: x.overrule.reason, text: x.overrule.rule_id }) : (x.rules_applied && x.rules_applied.length ? x.rules_applied.map(id => el("span", { class: "chip", title: "rule in the agent's input", text: id })) : el("span", { class: "muted", text: "—" }));
+      // QA N3: one chip per cell (more rules collapse to "+n", all in the tooltip) so nothing spills into the status column
+      const ra = x.rules_applied || [];
+      const ruleCell = x.overrule ? el("span", { class: "chip rule", title: x.overrule.reason, text: x.overrule.rule_id }) : (ra.length ? el("span", { class: "chip", title: "rules in the agent's input: " + ra.join(", "), text: ra[0] + (ra.length > 1 ? " +" + (ra.length - 1) : "") }) : el("span", { class: "muted", text: "—" }));
       return el("tr", { class: "row-x" + (S.current && S.current.id === x.id ? " current" : ""), tabindex: "0", title: x.id, onclick: () => select(x), onkeydown: ev => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); select(x); } } },
         el("td", { class: "num muted", text: total - i }), el("td", { class: "change", title: x.change, text: x.change || "—" }),
         el("td", {}, delta(x.evaluation && x.evaluation.delta_lap)), el("td", {}, delta(m.measured_delta)), el("td", { class: "num", text: x.measured ? fmtPct(m.agreement_pct) : "—" }),
-        el("td", { title: x.overrule ? "agent " + v + " → engineer " + x.overrule.verdict : v }, el("span", { class: "vd " + (x.plan ? v : "err"), text: v }), x.overrule ? el("span", { class: "muted", text: " → " + x.overrule.verdict }) : null),
+        el("td", { class: x.overrule ? "vd2" : null, title: x.overrule ? "agent " + v + " → engineer " + x.overrule.verdict : v }, el("span", { class: "vd " + (x.plan ? v : "err"), text: v }), x.overrule ? el("span", { class: "ovd", text: "→ " + x.overrule.verdict }) : null),
         el("td", {}, ruleCell), el("td", { title: x.status }, el("span", { class: "st " + x.status, text: x.status })));
     });
     const cols = ["c-n", "c-change", "c-d", "c-d", "c-agr", "c-v", "c-rule", "c-st"].map(c => el("col", { class: c }));
     const heads = [["#", "#"], ["change", "change"], ["pred Δ", "predicted Δ, evaluator"], ["meas Δ", "measured Δ, race"], ["agree", "agreement_pct"], ["verdict", "verdict"], ["rule", "rule"], ["status", "status"]];
     wrap.replaceChildren(el("table", {}, el("colgroup", {}, cols), el("thead", {}, el("tr", {}, heads.map(([h, t]) => el("th", { text: h, title: t })))), el("tbody", {}, rows)));
   }
-  function select(x) { S.current = x; S.illegalCandidate = null; delete S.err.design; renderAll(); }
+  function select(x) { S.current = x; S.illegalCandidate = null; delete S.err.design; clearBanner(); renderAll(); }   // QA N-C: the old ILLEGAL_SETUP banner goes too
 
   // ---- TraceStream: one TraceLine per SSE event; the pending line pulses at 1 Hz while /api/plan is in flight
   function trace(t) {
@@ -330,12 +375,12 @@
     if (t.key) { if (S.traceSeen.has(t.key)) return null; S.traceSeen.add(t.key); }
     const atBottom = lines.scrollHeight - lines.scrollTop - lines.clientHeight < 40;
     const m = el("div", { class: "m" });
-    if (t.session) m.append(el("span", { class: "sess", title: t.session, text: short(t.session, 12) }));
+    if (t.session) m.append(el("span", { class: "sess", title: t.session, text: short(t.session, 10) }));
     if (t.requestId) m.append(el("span", { class: "mreq", role: "button", tabindex: "0", title: t.requestId + " · click to copy", text: short(t.requestId, 10), onclick: () => copy(t.requestId), onkeydown: ev => { if (ev.key === "Enter") copy(t.requestId); } }));
     if (isNum(t.latencyMs)) m.append(el("span", { class: "lat", text: t.latencyMs + " ms" }));
     if (t.verdict) m.append(el("span", { class: "vd " + (["promote", "reject", "retest"].includes(t.verdict) ? t.verdict : t.error ? "err" : ""), text: t.verdict }));
     if (t.error) m.append(el("span", { class: "vd err", text: t.error }));
-    if (t.note) m.append(el("span", { class: "muted sans", text: t.note }));
+    if (t.note) m.append(el("span", { class: "muted sans note", title: t.note, text: t.note }));
     if (t.pending) m.append(el("span", { class: "pulse", "aria-label": "in flight" }));
     const line = el("div", { class: "tl " + t.kind + (t.trained === false ? " untrained" : "") + (t.pending ? " pending" : "") }, el("span", { class: "t", text: hhmmss(t.at) }), el("span", { class: "k", text: t.kind }), m);
     lines.appendChild(line);
@@ -344,9 +389,16 @@
     return line;
   }
   function copy(text) { (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(() => toast("copied " + text), () => toast(text)); }
+  // QA S1: one PLAN line per Mubit call (keyed on the experiment, not its status). An overrule or a promotion is the engineer's act,
+  // not a call: each gets its own kind and carries no request id or latency.
   function traceExperiment(x, note) {
-    return trace({ kind: "plan", key: "plan:" + x.id + ":" + x.status + (x.measured ? ":m" : ""), at: x.promoted_at || (x.overrule && x.overrule.at) || x.created_at, session: x.session_id, requestId: x.mubit_request_id, latencyMs: x.latency_ms,
-      verdict: x.plan ? x.plan.verdict : null, error: x.plan ? null : (x.error ? (x.error.mubit_code ? x.error.code + " · " + x.error.mubit_code : x.error.code) : x.status), trained: x.trained, note: note || (x.status === "overruled" ? "overruled → " + x.overrule.verdict + " · " + x.overrule.rule_id : x.status === "promoted" ? "promoted" : null) });
+    const v = x.plan ? x.plan.verdict : null;
+    const line = trace({ kind: "plan", key: "plan:" + x.id, at: x.created_at, session: x.session_id, requestId: x.mubit_request_id, latencyMs: x.latency_ms,
+      verdict: v, error: x.plan ? null : (x.error ? (x.error.mubit_code ? x.error.code + " · " + x.error.mubit_code : x.error.code) : x.status), trained: x.trained, note: note || null });
+    if (x.overrule) trace({ kind: "overrule", key: "overrule:" + x.id + ":" + x.overrule.rule_id, at: x.overrule.at, session: x.session_id,
+      note: "agent " + (v || "—") + " → engineer " + x.overrule.verdict + " · " + x.overrule.rule_id });
+    if (x.status === "promoted") trace({ kind: "promote", key: "promote:" + x.id, at: x.promoted_at, session: x.session_id, note: "candidate → new baseline · " + (x.change || "no change") });
+    return line;
   }
 
   // ---- SSE: EventSource on /api/stream; every event refreshes the ledger
