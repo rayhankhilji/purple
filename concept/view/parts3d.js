@@ -423,6 +423,7 @@
 
     // ---- ghost (baseline)
     const GTOL = 0.004, ss = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+    const ghostCache = new Map();   // the baseline's group builds (the baseline rarely changes; its builds are pure data)
     function clearGhost() { for (const id of Object.keys(S.ghost)) { for (const m of S.ghost[id].meshes) m.parent && m.parent.remove(m); for (const g of S.ghost[id].geos) g.dispose(); } S.ghost = {}; }
     function setGhost(BL) {
       clearGhost();
@@ -430,7 +431,8 @@
       const bs = C3.spec(BL.params), ids = new Set();
       for (const id of Object.keys(C3.GROUPS)) {
         const cur = S.groups[id]; if (cur && cur.key === C3.groupKey(id, bs)) continue;
-        const b = C3.buildGroup(id, bs, { flap: 0 }), meshes = [], geos = [];
+        const gk = id + ":" + C3.groupKey(id, bs), b = ghostCache.get(gk) || C3.buildGroup(id, bs, { flap: 0 }), meshes = [], geos = [];
+        ghostCache.set(gk, b); if (ghostCache.size > 24) ghostCache.delete(ghostCache.keys().next().value);
         b.items.forEach((it, k) => {
           const ci = cur && cur.items[k], same = ci && ci.it.name === it.name && ci.it.geo.count === it.geo.count, a = same ? (ci.p0 || ci.it.geo.pos) : null, P = it.geo.pos, n = it.geo.count, w = new Float32Array(n);
           let any = false; for (let i = 0; i < n; i++) { const d = a ? Math.hypot(a[i * 3] - P[i * 3], a[i * 3 + 1] - P[i * 3 + 1], a[i * 3 + 2] - P[i * 3 + 2]) : 1; w[i] = ss(GTOL, 2.5 * GTOL, d); if (w[i] > 0.5) any = true; }
@@ -472,7 +474,7 @@
     function dispose() {
       for (const id of Object.keys(S.groups)) unmountGroup(S.groups[id]); S.groups = {};
       clearGhost();
-      for (const m of xrMats.values()) m.dispose(); xrMats.clear();
+      for (const m of xrMats.values()) m.dispose(); xrMats.clear(); ghostCache.clear();
       atlas.tex.cvGone = true; for (const x of disposables) x && x.dispose && x.dispose();
     }
     return {
