@@ -1,8 +1,17 @@
 # Lane DEMO
 
-Status: in_progress P3.T4 + P3.T5 (script v2.1, deck sources, shot list on `claude/demo-p3-deck`, PR into the integration branch). Owner: agent G (Claude, session `session_01UAY6ykh3dQkf9GfJoZ9BTy`). Branch: `claude/demo-p3-deck` (from the integration branch after the script merge).
+Status: in_progress P3.T5 (deck + script + shot list merged via PR #24; provider 1/8 · 8/8 filled on `claude/demo-p3-numbers`; v1/v2 cells, kept count and adapter results still owed). Owner: agent G (Claude, session `session_01UAY6ykh3dQkf9GfJoZ9BTy`). Branch: `claude/demo-p3-numbers`.
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
+
+### 2026-10-24 03:35 London — agent G (DEMO) — P3.T5 provider Try-models score filled in
+- Status: done (small PR). PR #24 (script v2.1, deck, shot list) was merged by the integrator at 847128b.
+- Files changed: `docs/deck/slides.md` (slide 5 table: provider next experiment **1/8**, verdict **8/8**; speaker note), `docs/demo-script.md` (facts table, 2:10 beat), `docs/deck/shot-list.md` (shot 11 widget line; shot 1 reference frame), `docs/deck/README.md` (reference frames in the repo), this file.
+- Verify step run + output: read `docs/ledger-snapshot/2026-10-24_02-14-07Z-0350-exam-details/status.json` on the integration branch: `exam.details` has 20 rows, `verdict_ok` true on all 20, `param_ok` true on 10 (exam-rw8, -04, -06, -07, -08, -12, -13, -17, -18, -19); of the 8 sheet items (exam-rw8, -03, -02, -14, -15, -16, -20, -05) only exam-rw8 has `param_ok` → **1/8 next step, 8/8 verdicts**, matching the integrator's message. On 6 of the 7 misses the truth parameter is ride_height_mm and the provider answered rear_wing_deg (5), front_wing_deg (1) or brake_bias_pct (1). Honesty grep still clean.
+- Numbers owed: unchanged except the provider n/8 cells, now measured. Still owed: kept count after v2, adapter v1 / v2 results, v1 / v2 next-step and verdict n/8 (hand-entered Saturday via `docs/try-models/sheet.md` + `npm run exam:score`), screenshots.
+- Decisions proposed: none new.
+- Blockers / questions for Tanuj: the four batched questions in the 03:20 entry stand.
+- Next three actions: (1) integrator merges this PR; (2) DEMO fills v1/v2 cells and adapter results when they exist, exports `docs/deck/purple-deck.pdf`; (3) P3.T6 snapshot after `/submit`.
 
 ### 2026-10-24 03:20 London — agent G (DEMO) — P3.T5 deck sources + P3.T4 shot list + script v2.1 (after the PRNG correction)
 - Status: **done** on `claude/demo-p3-deck`, one PR into `claude/amazing-planck-804i13` with three commits (P3.T4 script fix, P3.T5 deck, P3.T4 shot list). No code, no Mubit calls, `lab/prompt.js` untouched. `npm test` on the branch base: 74/74.
