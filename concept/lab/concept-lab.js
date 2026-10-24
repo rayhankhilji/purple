@@ -575,6 +575,11 @@
     $("#btnRun").addEventListener("click", () => (S.status === "running" ? pause() : run()));
     $("#btnStep").addEventListener("click", step);
     $("#btnReset").addEventListener("click", reset);
+    // "watch on Silverstone": the current best car's lap replayed on the game's 3D track (concept/race, docs/concept/RACE.md)
+    $("#raceLink").addEventListener("click", ev => {
+      const R = window.EI && EI.concept && EI.concept.race; if (!R || !S.best) return;   // plain link to the baseline replay
+      ev.currentTarget.href = R.url(S.best, { base: "../race/", ref: S.team || "redbull" });
+    });
     const fast = () => $("#feedLines").classList.toggle("fast", !S.delay || reduced());
     $("#speed").addEventListener("change", () => { S.delay = +$("#speed").value || 0; fast(); });
     document.addEventListener("keydown", e => { if (e.target.closest && e.target.closest("input,select,textarea")) return; if (e.key === " ") { e.preventDefault(); $("#btnRun").click(); } else if (e.key === "s") step(); });
