@@ -432,3 +432,8 @@ Exit criteria: **all true at 23:58 London** (six verifies, task named from the p
 
 ### 2026-10-24 09:23Z — integrator — beat-pole campaign re-run on sim v3 + FIA fixes
 - `node concept/campaign/run.js --seeds 1,2,3,4 --evals 5000 --baselines redbull,generic --refine-evals 3000 --combo-evals 240` (673.9 s). **RB22/DM01 best legal car 87.235 ± 0.154 s** (95 % 86.933–87.537; pole 88.111 → −0.876, HAD 88.746 → −1.511; P1 across the band); generic 86.595 ± 0.189. Aero gains halved: 87.893 s (still below pole). Throat 66.5 mm (≤ 75 roof), floor 1540, RW span 1150 / endplate 880 / FW span 1350 at FIA limits; PU identical (ICE 396.08 kW, MGU-K 350). Biggest gains: Brooklands −0.215, Luffield −0.197, Village −0.163, The Loop −0.115. CAMPAIGN.md §4.0 + Answer note; CONCEPT.md table.
+
+### 2026-10-24 09:31Z — integrator — owner decisions: new Mubit key, trained-call cap 2,500, Vercel deploy
+- **New Mubit key** in `server/.env` (gitignored); smoke call OK (untrained). Its app id differs from the first key's (`mw-app_9527…` vs `mw-app_0855…`): **owner to confirm it is the same Mubit app/project**, else the research task's 99 and the designer's 60 trained examples are not visible under it.
+- Owner added their own Anthropic key **inside the Mubit console** as the provider key (calls still route through Mubit; cost on their Anthropic account). **Trained-call budget raised 250 → 2,500 (owner).** Adapter starts / Try-models daily caps unchanged (Mubit limits).
+- Vercel account token received (stored outside the repo); deploy helper `claude/vercel-deploy` launched: static site + Hono API on Vercel functions, Mubit key as an encrypted Vercel env var, live calls behind a passcode + rate limit, untrained by default.
