@@ -1,0 +1,378 @@
+{
+  "ledger_rows": 93,
+  "ledger_torn_lines": 0,
+  "experiments": 91,
+  "by_status": {
+    "planned": 82,
+    "parse_error": 8,
+    "overruled": 1
+  },
+  "raced": 1,
+  "with_agreement_pct": 1,
+  "overruled": 1,
+  "parse_error": 8,
+  "unique_session_ids": 91,
+  "mubit_request_ids": 91,
+  "calls": {
+    "total": 140,
+    "trained": 99,
+    "untrained": 41,
+    "by_kind": {
+      "smoke": {
+        "total": 1,
+        "trained": 0,
+        "untrained": 1
+      },
+      "plan": {
+        "total": 99,
+        "trained": 99,
+        "untrained": 0
+      },
+      "exam": {
+        "total": 40,
+        "trained": 0,
+        "untrained": 40
+      }
+    }
+  },
+  "rules": {
+    "total": 1,
+    "active": 1
+  },
+  "exam_items": 20,
+  "status": {
+    "task_name": "Research engineer of F1",
+    "kept_examples": 43,
+    "adapter_version": null,
+    "test_result": "training v1",
+    "exam": {
+      "provider": 20,
+      "total": 20,
+      "provider_param": 10,
+      "ran_at": "2026-10-24T02:13:37.626Z",
+      "details": [
+        {
+          "id": "exam-02",
+          "truth": {
+            "verdict": "retest",
+            "next_parameter": "ride_height_mm",
+            "direction": "decrease"
+          },
+          "answer": {
+            "verdict": "retest",
+            "next_parameter": "rear_wing_deg",
+            "direction": "decrease"
+          },
+          "verdict_ok": true,
+          "param_ok": false,
+          "mubit_request_id": "mreq_01a16baf147e7bf0a4642f45fae58495"
+        },
+        {
+          "id": "exam-rw8",
+          "truth": {
+            "verdict": "reject",
+            "next_parameter": "rear_wing_deg",
+            "direction": "decrease"
+          },
+          "answer": {
+            "verdict": "reject",
+            "next_parameter": "rear_wing_deg",
+            "direction": "decrease"
+          },
+          "verdict_ok": true,
+          "param_ok": true,
+          "mubit_request_id": "mreq_01a16baf13d97b43a6129116c55f59d0"
+        },
+        {
+          "id": "exam-03",
+          "truth": {
+            "verdict": "reject",
+            "next_parameter": "ride_height_mm",
+            "direction": "decrease"
+          },
+          "answer": {
+            "verdict": "reject",
+            "next_parameter": "front_wing_deg",
+            "direction": "increase"
+          },
+          "verdict_ok": true,
+          "param_ok": false,
+          "mubit_request_id": "mreq_01a16baf1c5775e1880bb2b9819f9807"
+        },
+        {
+          "id": "exam-04",
+          "truth": {
+            "verdict": "reject",
+            "next_parameter": "rear_wing_deg",
+            "direction": "decrease"
+          },
+          "answer": {
+            "verdict": "reject",
+            "next_parameter": "rear_wing_deg",
+            "direction": "decrease"
+          },
+          "verdict_ok": true,
+          "param_ok": true,
+          "mubit_request_id": "mreq_01a16baf1c5b792193908f7a29ec27f2"
+        },
+        {
+          "id": "exam-05",
+          "truth": {
+            "verdict": "reject",
+            "next_parameter": "ride_height_mm",
+            "direction": "increase"
+          },
+          "answer": {
+            "verdict": "reject",
+            "next_parameter": "rear_wing_deg",
+            "direction": "decrease"
+          },
+          "verdict_ok": true,
+          "param_ok": false,
+          "mubit_request_id": "mreq_01a16baf23ba71f1a13da500258efc81"
+        },
+        {
+          "id": "exam-06",
+          "truth": {
+            "verdict": "reject",
+            "next_parameter": "rear_wing_deg",
+            "direction": "increase"
+          },
+          "answer": {
+            "verdict": "reject",
+            "next_parameter": "rear_wing_deg",
+            "direction": "increase"
+          },
+          "verdict_ok": true,
+          "param_ok": true,
+          "mubit_request_id": "mreq_01a16baf23f679e19fafae98c3846ae2"
+        },
+        {
+          "id": "exam-07",
+          "truth": {
+            "verdict": "promote",
+            "next_parameter": "rear_wing_deg",
+            "direction": "decrease"
+          },
+          "answer": {
+            "verdict": "promote",
+            "next_parameter": "rear_wing_deg",
+            "direction": "decrease"
+          },
+          "verdict_ok": true,
+          "param_ok": true,
+          "mubit_request_id": "mreq_01a16baf2b5b7423b39013f67151cc18"
+        },
+        {
+          "id": "exam-08",
+          "truth": {
+            "verdict": "reject",
+            "next_parameter": "rear_wing_deg",
+            "direction": "decrease"
+          },
+          "answer": {
+            "verdict": "reject",
+            "next_parameter": "rear_wing_deg",
+            "direction": "decrease"
+          },
+          "verdict_ok": true,
+          "param_ok": true,
+          "mubit_request_id": "mreq_01a16baf2b5f77b3827ff6612248fe22"
+        },
+        {
+          "id": "exam-09",
+          "truth": {
+            "verdict": "reject",
+            "next_parameter": "ride_height_mm",
+            "direction": "increase"
+          },
+          "answer": {
+            "verdict": "reject",
+            "next_parameter": "rear_wing_deg",
+            "direction": "increase"
+          },
+          "verdict_ok": true,
+          "param_ok": false,
+          "mubit_request_id": "mreq_01a16baf326d7a33949ac2351fdeefc5"
+        },
+        {
+          "id": "exam-10",
+          "truth": {
+            "verdict": "reject",
+            "next_parameter": "ride_height_mm",
+            "direction": "decrease"
+          },
+          "answer": {
+            "verdict": "reject",
+            "next_parameter": "front_wing_deg",
+            "direction": "decrease"
+          },
+          "verdict_ok": true,
+          "param_ok": false,
+          "mubit_request_id": "mreq_01a16baf330279d28e328e4a50a5e2bb"
+        },
+        {
+          "id": "exam-11",
+          "truth": {
+            "verdict": "promote",
+            "next_parameter": "ride_height_mm",
+            "direction": "decrease"
+          },
+          "answer": {
+            "verdict": "promote",
+            "next_parameter": "rear_wing_deg",
+            "direction": "decrease"
+          },
+          "verdict_ok": true,
+          "param_ok": false,
+          "mubit_request_id": "mreq_01a16baf399a7aa1a71d0c00ddfef5aa"
+        },
+        {
+          "id": "exam-12",
+          "truth": {
+            "verdict": "promote",
+            "next_parameter": "ride_height_mm",
+            "direction": "decrease"
+          },
+          "answer": {
+            "verdict": "promote",
+            "next_parameter": "ride_height_mm",
+            "direction": "decrease"
+          },
+          "verdict_ok": true,
+          "param_ok": true,
+          "mubit_request_id": "mreq_01a16baf3a6971a0ac809f96bba30838"
+        },
+        {
+          "id": "exam-13",
+          "truth": {
+            "verdict": "promote",
+            "next_parameter": "ride_height_mm",
+            "direction": "decrease"
+          },
+          "answer": {
+            "verdict": "promote",
+            "next_parameter": "ride_height_mm",
+            "direction": "decrease"
+          },
+          "verdict_ok": true,
+          "param_ok": true,
+          "mubit_request_id": "mreq_01a16baf402e77f38d42ebe2811aac39"
+        },
+        {
+          "id": "exam-14",
+          "truth": {
+            "verdict": "retest",
+            "next_parameter": "ride_height_mm",
+            "direction": "decrease"
+          },
+          "answer": {
+            "verdict": "retest",
+            "next_parameter": "rear_wing_deg",
+            "direction": "decrease"
+          },
+          "verdict_ok": true,
+          "param_ok": false,
+          "mubit_request_id": "mreq_01a16baf412b74c39030675cf7d98706"
+        },
+        {
+          "id": "exam-15",
+          "truth": {
+            "verdict": "retest",
+            "next_parameter": "ride_height_mm",
+            "direction": "decrease"
+          },
+          "answer": {
+            "verdict": "retest",
+            "next_parameter": "brake_bias_pct",
+            "direction": "increase"
+          },
+          "verdict_ok": true,
+          "param_ok": false,
+          "mubit_request_id": "mreq_01a16baf46fe755092d3278fa69358dc"
+        },
+        {
+          "id": "exam-16",
+          "truth": {
+            "verdict": "retest",
+            "next_parameter": "ride_height_mm",
+            "direction": "decrease"
+          },
+          "answer": {
+            "verdict": "retest",
+            "next_parameter": "rear_wing_deg",
+            "direction": "decrease"
+          },
+          "verdict_ok": true,
+          "param_ok": false,
+          "mubit_request_id": "mreq_01a16baf48787cd08a13bfe7b71156ff"
+        },
+        {
+          "id": "exam-17",
+          "truth": {
+            "verdict": "reject",
+            "next_parameter": "ride_height_mm",
+            "direction": "decrease"
+          },
+          "answer": {
+            "verdict": "reject",
+            "next_parameter": "ride_height_mm",
+            "direction": "decrease"
+          },
+          "verdict_ok": true,
+          "param_ok": true,
+          "mubit_request_id": "mreq_01a16baf4f5e7ef1a1c56cd897e7a027"
+        },
+        {
+          "id": "exam-18",
+          "truth": {
+            "verdict": "reject",
+            "next_parameter": "ride_height_mm",
+            "direction": "decrease"
+          },
+          "answer": {
+            "verdict": "reject",
+            "next_parameter": "ride_height_mm",
+            "direction": "decrease"
+          },
+          "verdict_ok": true,
+          "param_ok": true,
+          "mubit_request_id": "mreq_01a16baf50987513a663adc30bed07dc"
+        },
+        {
+          "id": "exam-19",
+          "truth": {
+            "verdict": "reject",
+            "next_parameter": "rear_wing_deg",
+            "direction": "decrease"
+          },
+          "answer": {
+            "verdict": "reject",
+            "next_parameter": "rear_wing_deg",
+            "direction": "decrease"
+          },
+          "verdict_ok": true,
+          "param_ok": true,
+          "mubit_request_id": "mreq_01a16baf56527773980e692ad36d5e3e"
+        },
+        {
+          "id": "exam-20",
+          "truth": {
+            "verdict": "retest",
+            "next_parameter": "ride_height_mm",
+            "direction": "decrease"
+          },
+          "answer": {
+            "verdict": "retest",
+            "next_parameter": "rear_wing_deg",
+            "direction": "decrease"
+          },
+          "verdict_ok": true,
+          "param_ok": false,
+          "mubit_request_id": "mreq_01a16baf57ca7031b021c5ef8ededaa3"
+        }
+      ]
+    },
+    "last_console_read_at": null
+  }
+}

@@ -1,8 +1,49 @@
 # Lane GAME
 
-Status: in_progress (lane-file PR: filming notes + P1.T2 browser numbers pending). Owner: agent A (Claude, session `session_019VA5sAvTHuQ3bGbWV5CX4M`). Branch: `claude/game-lane-film`; merged: `claude/game-p1-aero` (P1.T1), `claude/game-p1-aero-broadcast` (P1.T2), `claude/game-p3-grid` (P3.T3).
+Status: in_progress (PR: lab follow-ups — 60 s grace + audio resume, stacked on lane-file PR #14). Owner: agent A (Claude, session `session_019VA5sAvTHuQ3bGbWV5CX4M`). Branch: `claude/game-lane-film`; merged: `claude/game-p1-aero` (P1.T1), `claude/game-p1-aero-broadcast` (P1.T2), `claude/game-p3-grid` (P3.T3).
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
+
+### 2026-10-24 05:45 London — agent A (Claude) — GAME follow-ups from the UI review (lab mode only, opt-in)
+- Status: **done, verified headless** (PR from `claude/game-lab-followups` into `claude/amazing-planck-804i13`, branched at `df2733f`). `npm test` 75/75.
+- Files changed: `js/race.js`, `js/main.js`, this file.
+- (1) **Race mode ends 60 s after the first finisher.** `race.js`: in lab race mode (no `labCar`), `LAB_GRACE` = 60 s after the first lab car's `raceTime` the race is `over` and `classified` at once if the other car has not crossed; `race.labIncomplete = true`. `main.js` `labPostResult` then posts the finished car's numbers and `lap: null, sectors: [null,null,null], vmax_kmh: null, vmin_becketts_kmh: null, finished: false` for the other (its `laps[]` so far stay in the message) plus a top-level `incomplete: true`; the UI shows "race incomplete". Grid mode (candidate's finish ends the race) and the shipped game (players) are unchanged.
+- (2) **Sound.** `labStart` calls `EI.Audio.resume()` (wrapped in try). It unmutes when the click that opened the page reaches this frame, i.e. the lab iframe needs `allow="autoplay"` (UI lane); opened directly from the address bar the game stays silent until a click on the canvas, as before.
+- Verify step run + output:
+  - Headless stuck-car race (Node, candidate parked 16 m off the track on the grass after lap 1, baseline normal): baseline finishes at **246.7 s**, race `over` + `classified` at **306.7 s** (grace observed **60.0 s**), `labIncomplete: true`, baseline best lap 80.938 kept, candidate `finished: false`, `lapsDone: 1`.
+  - Regression, the normal two-car race (seed 42): unchanged, baseline 80.742 / candidate 81.260, both finished, classified at 249 s.
+  - `npm test` 75/75; `node --check` on both files.
+- Decisions proposed: `LAB_GRACE = 60 s` lives in `js/race.js` next to `LAB_GAP`; the `incomplete` flag is additive to the `purple:result` contract (ARCH §5 route ignores unknown fields; the UI may read it).
+- Blockers / questions for Tanuj: none.
+- Next three actions: (1) integrator merges this PR; UI adds `allow="autoplay"` on `#game` and the "race incomplete" state. (2) GAME standing by (nothing left in the lane plan after P3.T3). (3) If time allows: a browser run of the full race on a machine with a GPU for the lane file's AC1 numbers.
+
+### 2026-10-24 05:15 London — agent A (Claude) — UI review: lab/lab.js "Race it" iframe integration (read-only, no lab/* edits)
+
+Reviewed at integration head `df2733f` (`lab/lab.js` 474 lines, `lab/index.html`). Against the GAME contract (P1.T2 entry below and TASK_LOG D-G1/D-G2).
+
+**Matches the contract (no action):**
+1. `raceIt()` builds `../index.html?` + `URLSearchParams({ lab: "1", exp: x.id, seed, laps: LAPS (3), circuit, baseline, candidate, mult_baseline, mult_candidate })`: exactly the eight parameters the game reads; `exp` is present (my earlier ask), `circuit` falls back to `x.conditions.circuit` then `silverstone`.
+2. Base64: `btoa(unescape(encodeURIComponent(JSON.stringify(obj))))` = standard base64 (`+ / =`), percent-encoded by `URLSearchParams`; the game's parser decodes with `atob` after a base64url normalisation, so both alphabets work. Setups are ASCII JSON anyway.
+3. `mult_*` = `b64(EI.aero.toMultipliers(setup, conditions))`: the full object (`legal`, `violations`, …) rides along; the game keeps only `df, cd, a0, b0` and treats a missing or non-positive value as ×1. Wet conditions are inside the multipliers (`a0`, `df`, `b0`), so a wet race and a wet evaluation agree.
+4. Listener: `ev.origin !== location.origin` → drop; `d.type !== "purple:result"` → drop; payload `{ experiment_id: d.experiment_id || d.exp || S.racing.id, seed (int), cars }` → `POST /api/race/result`, retry keeps the same payload. The game posts with target origin `*` from the same origin, so the check passes; the extra per-car fields (`laps`, `laps_deleted`, `finished`, `setup`, `aero`) are forwarded and the route `pick`s what it stores.
+5. `renderMain()` unloads the iframe (`removeAttribute("src")`) when `S.racing` is null: Cancel stops the race; "Race again" reloads the page, so the second race is a clean start with the same seed.
+6. Seeds: the server draws `Math.floor(Math.random() * 2 ** 31)`; the game does `parseInt(seed) >>> 0`, lossless below 2^32.
+
+**Findings for the UI lane (ranked):**
+1. *(demo UX, medium)* On a successful `POST /api/race/result` the page sets `S.racing = null` → `renderMain()` removes the iframe `src` in the same render. The game posts `purple:result` on classification, i.e. the exact frame the chequered-flag results card appears, so on the lab page the broadcast vanishes before the flag/results/highlights can be seen or filmed. Suggest keeping the iframe up until the engineer presses "Back to 3D view" (or a ≥ 15 s grace): e.g. `S.racing = { …, done: true }` on success and `game.hidden = !(S.racing)` only; the RACE card can already show the measured Δ meanwhile.
+2. *(hardening, low)* Add `ev.source === $("#game").contentWindow` to the message filter: same-origin is right (ARCH §10) but any same-origin tab/opener could post a `purple:result` with a stale `experiment_id`; also ignore a message whose `experiment_id` ≠ `S.racing.id` when `S.racing` is set.
+3. *(honesty, low)* Wind: `toMultipliers` carries no wind term (the evaluator applies wind per track sample, ARCH §8), and the game has no wind at all, so a windy experiment races in still air and `agreement_pct` degrades for a reason the viewer cannot see. Suggest the RACE card's source line says "race runs in still air" when `conditions.wind_ms > 0` (or disable Race it for wind scenarios until the game has wind).
+4. *(robustness, low)* `S.racing.started` is recorded but unused: a "no result after 6 min — Cancel and retry" hint would cover a stuck bot (the game posts only when both cars have finished; a car that never finishes never ends the race — GAME follow-up below).
+5. *(sound, low)* The iframe has no `allow="autoplay"`, and in lab mode nothing calls `EI.Audio.resume()`, so the broadcast is silent inside the lab page. If sound is wanted for the demo: `allow="autoplay"` on `#game` (UI) + `EI.Audio.resume()` in `labStart` (GAME follow-up; it only works when the click's user activation reaches the same-origin iframe, which Chrome allows).
+
+**Grid mode from the UI later (F-10): yes, two small additions.** URL `../index.html?lab=1&mode=grid&exp=<id>&driver=<code>&candidate=<b64>&mult_candidate=<b64>&seed=<n>&laps=2&circuit=<c>` (no `baseline`/`mult_baseline`). The listener currently drops `d.type === "purple:grid"`; a branch that shows `position`, `best_lap`, `driver.name`, `grid` in the card is enough (there is no server route and ARCH has none; the ledger does not need it). The main-area badge should read **"CINEMATIC · mixes car and driver"** (the game draws its own caption too, G-HON-05), and a driver `<select>` can come from `EI.SEASON.drivers` (`code`, `first`/`last`, `team`) which the lab page already loads with the game scripts. `LAPS` would be 2 for that mode.
+
+**GAME follow-ups I will take if the integrator wants them:** (a) race mode: end the race when the first lab car has finished and the other has not crossed within 60 s (today both must finish); (b) `EI.Audio.resume()` in `labStart`; (c) nothing else from this review touches game files.
+
+### 2026-10-24 03:20 London — agent A (Claude) — P1.T2 browser verification (T-F04-AC1 / AC2 in a real page)
+- **T-F04-AC2, parent page + iframe (Playwright, headless Chromium, software GL):** the game page auto-started inside an iframe of a parent page listening for `message`; at race time 6.1 s (both cars at ~246 km/h) both cars were marked finished from the test harness to trigger classification early; the page then posted `{ type: 'purple:result', experiment_id: 'exp-test-rw8', seed: 42, circuit: 'silverstone', laps: 3, cars: [{ role: 'baseline', …, setup, aero: {1,1,1,1} }, { role: 'candidate', …, setup (rear wing 28), aero: { df 1.144, cd 1.088, a0 0.9872, b0 1 } }] }` and **the parent received it**; 0 page errors, 0 console errors. (`lap`/`sectors` are `null` in that forced run because no lap was completed; the shape, ids and roles are what the server route reads.)
+- **T-F04-AC1 in the browser:** the full-length run is limited by software GL here (about 0.03× real time): a 1-lap run reached 41 s of race time, both cars racing cleanly on the TV camera with the HUD on the baseline car and 0 errors, before the harness's 25-minute cap. A second attempt with a 95-minute cap is running; its best lap / vmax / Becketts vmin will be appended here if it lands. The 3-lap AC1 is covered by the headless race (same `race.js` + `car.js` + `ai.js`, 3 laps, both cars classified, numbers in the P1 entry below); on a laptop GPU the page runs in real time.
+- No code changed. Files: this file only.
 
 ### 2026-10-24 02:55 London — agent A (Claude) — How to film it (for Tanuj's recording, P3.T4)
 

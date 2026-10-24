@@ -4,7 +4,9 @@ Living document. Owned by the **integrator** (whoever merges lane branches). Lan
 
 ## 1. Where we are (handover from integrator session 1, 2026-10-24 02:25 London)
 
-**Integrator: session 1 (`session_01U2tgEhT5Kgr4kE9kJ4Psw4`) continues** (usage reset 03:00). Check-in trigger re-armed (45 min). If it runs out again: `docs/agents/INTEGRATOR_PROMPT.md`. PR #1 to main: https://github.com/rayhankhilji/purple/pull/1.
+**Integrator: session 1 (`session_01U2tgEhT5Kgr4kE9kJ4Psw4`) continues** (usage reset 03:00; may run out again). Check-in trigger `trig_01P3Ep2jBqL6QHKPN1wGRmQp` (45 min). If it runs out: start the next integrator from `docs/agents/INTEGRATOR_PROMPT.md`. PR #1 to main (description current as of 04:30): https://github.com/rayhankhilji/purple/pull/1.
+
+**Audits (b) guardrails and (c) correctness: done 04:45/04:55, findings routed to lanes (TASK_LOG 04:45, 04:55); EVAL fixing the wind cap, SERVER a batch of 9+8 items, UI its fix PR. Audit (a) QA in flight (04:30, Opus subagents of session 1; results may be pending or lost if session 1 dies):** (a) QA end-to-end pass of the lab loop in headless Chromium → writes `docs/agents/lanes/QA.md` + `qa-screens/` (committed locally in session 1's checkout, NOT pushed until the integrator pushes it); (b) guardrail/security audit (report only, in chat); (c) correctness review of server/lab/game-hook code (report only). If their findings never reached TASK_LOG, re-run the audits with the briefs summarised in TASK_LOG (04:30 entry).
 
 **Phase state.** P0 done (console: task "Research engineer of F1", Training v1, 43 kept of 57 at 23:58). P1 exit met (demo experiment `01M5NHXH4RSEQ50VM955FK20B7`: rear wing +8°, predicted +0.436 s, measured +0.518 s, agreement 19 %, in the ledger). v2 collected 01:50 (40 scenarios, rule R-01 active, promote_bias 0.3; truth promote 14 / retest 12 / reject 14; agent verdicts agreed 38/39; next_parameter now spread). 99 trained + 21 untrained calls. Provider exam: 20/20 verdicts, 10/20 next-step. **The story is the next experiment, not the verdict** (the prompt states the thresholds). v1 candidates were 94 % front-wing (PRNG seeding defect, fixed; one canonical `scenarios.seededRng`).
 
@@ -16,12 +18,12 @@ Living document. Owned by the **integrator** (whoever merges lane branches). Lan
 
 | Lane | Session | Status / next |
 |---|---|---|
-| GAME | `session_019VA5sAvTHuQ3bGbWV5CX4M` | P1.T1/T2 + P3.T3 merged. Next: browser-run numbers (lane-file PR), filming notes, review UI's Race-it iframe |
-| SERVER | `session_01Tq3p158ophv4wuU2ibcJbj` | all routes done. Next: `server/scripts/snapshot.js` (ledger freeze), review `lab/lab.js` fetches when UI's PR lands |
+| GAME | `session_019VA5sAvTHuQ3bGbWV5CX4M` | everything merged incl. PR #27 (60 s grace, audio). Idle; its long browser lap may still post numbers to GAME.md |
+| SERVER | `session_01Tq3p158ophv4wuU2ibcJbj` | everything merged (#2 #3 #5 #6 #10 #13 #20 #21 #23). Standing by to re-check UI's fixes |
 | EVAL | `session_01Ma6U13odw1SA1vFhepRj8u` | exam, sheet, rng done. Next: `--score` for hand-entered Try-models answers, `docs/try-models/README.md` |
-| UI | `session_01LerQvr7T9YvRQxL76EErVH` | **P2.T1 + P2.T6 merged (PR #16/#17).** Lab page at http://127.0.0.1:8788/lab/ with `npm run dev`. Next: re-verify in a real browser against the merged CORS/CAR3D/GAME, then P3.T2 polish. Decisions D-U1..D-U4 in its lane file still to copy into TASK_LOG; SERVER to review lab.js fetches |
-| CAR3D | `session_01DoxHh5Ynx2BDWZsPvLCyDR` | P2.T2 + P3.T2 part 1 merged. Next: hero polish part 2 against the merged lab page |
-| DEMO | `session_01UAY6ykh3dQkf9GfJoZ9BTy` | demo-script.md rewritten (3:00, measured numbers) and merged; deck sources / shot list: see docs/deck/. Numbers owed list in its lane file |
+| UI | `session_01LerQvr7T9YvRQxL76EErVH` | P2.T1 + P2.T6 merged. **Owes the fix PR**: SERVER findings 1/2/4 (reuse x-client-id on retry; last_console_read_at; race-incomplete state), GAME findings (keep the broadcast after the flag; still-air note when wind_ms > 0; source check; grid-mode branch), favicon, allow="autoplay"; then a real-browser re-verify. Last code item before P2 exit |
+| CAR3D | `session_01DoxHh5Ynx2BDWZsPvLCyDR` | P2.T2 + P3.T2 done (self-loading liveries fixed the black panel). Idle |
+| DEMO | `session_01UAY6ykh3dQkf9GfJoZ9BTy` | script v2.1, docs/deck/slides.md + README (Marp → PDF), shot-list.md all merged. Owed numbers (v1/v2 results, Try-models scores) listed in its lane file |
 
 **Human (Tanuj) items:** Discord `/team create`; console screenshots of Tasks (expect ≈ 80 kept) and Adapters (v1 result; if Below target / Prompt only → collect 30 more now); `/checkin` #1 by 12:00 from `docs/checkins/checkin-1.md`; `/checkin` #2 12:00–18:00; merge PR #1 at tag points; Try models by hand (P3.T1) with `docs/try-models/sheet.md`; record the video; `/submit` by Sat 23:59; rotate the Mubit key after the hackathon.
 

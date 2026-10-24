@@ -9,7 +9,10 @@
 //   EI.labCar3D.setBaseline(setup | null)      -> ghost the baseline wings when the current setup differs from it
 //   EI.labCar3D.hero()                         -> 600 ms ease to the three-quarter rear view (instant under prefers-reduced-motion)
 //   EI.labCar3D.dispose()                      -> stop rendering, free GL resources, empty the container
-// Loads after the game's scripts (needs THREE, EI.U, EI.TEAM_BY_ID, EI.TYRES, EI.paintLivery, EI.CarModel). No network, no Mubit.
+// Loads after the game's scripts: needs THREE, EI.U (js/util.js) and EI.CarModel (js/carmodel.js) at mount time. The livery pipeline
+// (season data, ads, teams, liveries, carglb) is loaded by this file itself, from the repo root next to lab/, if the page did not
+// include it; the car appears when it is ready (container event 'car3d:ready'), setSetup / setBaseline before that are queued.
+// No network beyond the repo's own scripts and brand artwork, no Mubit.
 window.EI = window.EI || {};
 (function () {
   const DEFAULTS = {
@@ -25,10 +28,32 @@ window.EI = window.EI || {};
   };
   // the hero: a three-quarter rear view with the rear wing in frame (DESIGN_SYSTEM §8). Camera on a sphere around TARGET:
   // azim 0 = straight behind the car, positive = towards the car's right (z); elev above the ground plane
-  const HERO = { target: new THREE.Vector3(-0.45, 0.5, 0), radius: 7.4, elev: 0.23, azim: 0.68, fov: 30, refAspect: 1.5 };   // radius is for a frame at least refAspect wide; narrower frames pull back (fitRadius) so the whole car stays in view
+  const HERO = { target: new THREE.Vector3(-0.45, -0.05, 0), radius: 7.4, elev: 0.21, azim: 0.68, fov: 30, refAspect: 1.5 };   // target below the car centre: the car sits in the upper two thirds, clear of the lab page's bottom overlays   // radius is for a frame at least refAspect wide; narrower frames pull back (fitRadius) so the whole car stays in view
   const SWAY = { amp: 0.22, period: 26 };             // idle sway of azim (rad, s): the rear wing never leaves the frame
   const HERO_MS = 600, HERO_EASE = (t) => 1 - Math.pow(1 - t, 3);   // DESIGN_SYSTEM §5 "Wing rebuild"
   const WING_KEYS = ['front_wing_deg', 'rear_wing_deg', 'ride_height_mm'];
+
+  // the repo root, from this script's own URL (lab/car3d.js), so the lab page's location does not matter
+  const ROOT = (() => { const cs = document.currentScript; const u = (cs && cs.src) || location.href; return u.replace(/lab\/[^/]*(\?.*)?$/, ''); })();
+  const LIVERY_SCRIPTS = ['js/data/season2026.js', 'js/ads.js', 'js/teams.js', 'js/liveries.js', 'js/liveries/mercedes.js', 'js/liveries/ferrari.js', 'js/liveries/mclaren.js', 'js/liveries/redbull.js', 'js/liveries/racingbulls.js', 'js/liveries/alpine.js', 'js/liveries/haas.js', 'js/liveries/audi.js', 'js/liveries/williams.js', 'js/liveries/astonmartin.js', 'js/liveries/cadillac.js', 'js/liveries/lumi.js', 'js/liveries/intake.js', 'js/carglb.js'];
+  const liveryLoaded = () => !!(EI.paintLivery && EI.TEAM_BY_ID && EI.TYRES);
+  const loadScript = (src) => new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.async = false; el.onload = () => res(); el.onerror = () => rej(new Error('car3d: failed to load ' + src)); document.head.appendChild(el); });
+  let liveryP = null;
+  function ensureLivery() {
+    if (liveryLoaded()) return Promise.resolve();
+    if (liveryP) return liveryP;
+    liveryP = (async () => {
+      for (const f of LIVERY_SCRIPTS) {
+        if (f === 'js/data/season2026.js' && EI.SEASON) continue; if (f === 'js/ads.js' && EI.Ads) continue; if (f === 'js/carglb.js' && EI.CarGLB) continue;
+        await loadScript(ROOT + f);
+        if (f === 'js/ads.js' && EI.Ads) { EI.Ads.BRAND_DIR = ROOT + 'assets/brand/'; EI.Ads.PARTNER_DIR = EI.Ads.BRAND_DIR + 'partners/'; }   // ads.js resolves artwork relative to the page
+      }
+      if (!liveryLoaded()) throw new Error('car3d: livery pipeline did not initialise');
+      // brand artwork and fonts for the livery sheet; never hold the car back more than a moment (the painters fall back to wordmarks)
+      if (EI.Ads && EI.Ads.ready) await Promise.race([EI.Ads.ready(), new Promise((r) => setTimeout(r, 3500))]);
+    })();
+    return liveryP;
+  }
 
   const reducedMotion = () => !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const now = () => performance.now();
@@ -68,9 +93,8 @@ window.EI = window.EI || {};
   function mount(container, opts) {
     if (view) dispose();
     if (!container) throw new Error('labCar3D.mount: container element required');
-    if (!EI.CarModel || !EI.paintLivery || !EI.TEAM_BY_ID) throw new Error('labCar3D.mount: load the game scripts (teams, liveries, carmodel) first');
+    if (!window.THREE || !EI.CarModel || !EI.U) throw new Error('labCar3D.mount: load vendor/three.min.js, js/util.js and js/carmodel.js first');
     const o = Object.assign({}, DEFAULTS, opts || {});
-    const team = EI.TEAM_BY_ID[o.team] || EI.TEAM_BY_ID.lumi || EI.TEAMS[0];
     const rm = reducedMotion();
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
@@ -101,24 +125,19 @@ window.EI = window.EI || {};
     // the car and lights never move (only the camera does): render the shadow map once per setup change, not per frame
     renderer.shadowMap.autoUpdate = false; renderer.shadowMap.needsUpdate = true;
 
-    // the car: the game's model, same materials and livery pipeline as the menu / race
-    const carLike = { team, num: o.num, name: null, isPlayer: false, driver: o.driver || undefined, tyre: EI.TYRES.medium };
-    const model = EI.CarModel.build(carLike, o.setup || undefined);
-    model.group.traverse((obj) => { if (obj.isMesh) obj.receiveShadow = false; });
-    scene.add(model.group);
-
     // baseline ghost: edge lines of the baseline wings, in a sibling group so its own ride height holds
     const ghostGroup = new THREE.Group(); ghostGroup.visible = false; scene.add(ghostGroup);
     const ghostMat = new THREE.LineBasicMaterial({ color: srgb(o.ghostColor), transparent: true, opacity: 0.6, depthTest: false });
 
     const state = {
-      container, renderer, scene, camera, model, floor, ghostGroup, ghostMat, opts: o, rm,
-      setup: o.setup || null, baseline: null, ghostGeo: null,
+      container, renderer, scene, camera, model: null, floor, ghostGroup, ghostMat, opts: o, rm,
+      setup: o.setup || null, baseline: o.baseline || null, ghostGeo: null,
       azim: HERO.azim, elev: HERO.elev, radius: HERO.radius, t0: now(), raf: 0, hero: null, disposed: false, lastMs: null,
     };
     view = state;
     resize();
-    if (o.baseline) setBaseline(o.baseline);
+    // the car: the game's model, same materials and livery pipeline as the menu / race; built once the livery scripts are in
+    ensureLivery().then(() => { if (view === state && !state.disposed) buildCar(state); }).catch((e) => { console.error(e); state.error = e; });
 
     // resize: observe the container; window resize as the fallback
     if (window.ResizeObserver) { state.ro = new ResizeObserver(() => resize()); state.ro.observe(container); }
@@ -131,6 +150,15 @@ window.EI = window.EI || {};
 
   // the hero distance for the current frame: the car's length is the horizontal extent, so a narrower frame needs more distance
   const fitRadius = (s) => HERO.radius * Math.max(1, HERO.refAspect / s.camera.aspect);
+  function buildCar(s) {
+    const o = s.opts; const team = EI.TEAM_BY_ID[o.team] || EI.TEAM_BY_ID.lumi || EI.TEAMS[0];
+    const carLike = { team, num: o.num, name: null, isPlayer: false, driver: o.driver || undefined, tyre: EI.TYRES.medium };
+    const model = EI.CarModel.build(carLike, s.setup || undefined);
+    model.group.traverse((obj) => { if (obj.isMesh) obj.receiveShadow = false; });
+    s.scene.add(model.group); s.model = model; s.renderer.shadowMap.needsUpdate = true; s.dirty = true;
+    if (s.baseline) setBaseline(s.baseline);
+    try { s.container.dispatchEvent(new CustomEvent('car3d:ready', { detail: { setup: s.setup } })); } catch (e) { /* fine */ }
+  }
   function resize() {
     const s = view; if (!s) return;
     const w = Math.max(1, s.container.clientWidth | 0), h = Math.max(1, s.container.clientHeight | 0);
@@ -172,6 +200,7 @@ window.EI = window.EI || {};
   function setSetup(setup, o) {
     const s = view; if (!s) throw new Error('labCar3D.setSetup: mount first');
     const t0 = now();
+    if (!s.model) { s.setup = setup || null; if (!(o && o.animate === false)) hero(); return { ms: 0, total: now() - t0, pending: true }; }   // applied by buildCar
     const ms = EI.rebuildWings(s.model, setup || null);
     s.renderer.shadowMap.needsUpdate = true;
     s.setup = setup || null; s.lastMs = ms;
@@ -188,7 +217,7 @@ window.EI = window.EI || {};
     s.baseline = setup || null;
     if (s.ghostGeo) { s.ghostGeo.dispose(); s.ghostGeo = null; }
     while (s.ghostGroup.children.length) s.ghostGroup.remove(s.ghostGroup.children[0]);
-    if (s.baseline && s.opts.ghost) {
+    if (s.baseline && s.opts.ghost && s.model) {
       const wingGeo = EI.CarModel.wingGeometry(s.baseline, true);   // only the elements the setup moves
       s.ghostGeo = new THREE.EdgesGeometry(wingGeo, 18); wingGeo.dispose();
       const lines = new THREE.LineSegments(s.ghostGeo, s.ghostMat); lines.renderOrder = 10; s.ghostGroup.add(lines);
@@ -215,7 +244,8 @@ window.EI = window.EI || {};
 
   const api = {
     mount, setSetup, setBaseline, hero, dispose,
-    view: () => view, HERO, SWAY, DEFAULTS,
+    view: () => view, HERO, SWAY, DEFAULTS, ROOT,
+    ready: () => !!(view && view.model),
     // test hooks: the current rear main plane angle of attack (rad) and the last measured swap time
     rearAoa: () => { const s = view; const d = s && s.setup && typeof s.setup.rear_wing_deg === 'number' ? EI.CarModel.SETUP_K.rearAoaPerDeg * (s.setup.rear_wing_deg - EI.CarModel.SETUP_BASE.rear_wing_deg) : 0; return 0.16 + d; },
     lastMs: () => (view ? view.lastMs : null),

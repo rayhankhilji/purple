@@ -454,6 +454,7 @@ window.EI = window.EI || {};
   // auto-start once the scene is built: no players, the two lab cars, skill 100 (the neutral driver), the TV camera from the first frame
   function labStart() {
     if (!LAB || race) return;
+    try { EI.Audio.resume(); } catch (e) { /* no audio context here (headless, or no gesture yet): the race is silent */ }   // sound when the opener's click reaches this frame (lab iframe with allow="autoplay")
     if (LAB.mode === 'grid') {   // F-10: the full 2026 grid at real pace (Official F1), a real starting grid of this circuit, the candidate aero on the chosen driver's car
       startRace({ players: [], bots: 22, laps: LAB.laps, difficulty: 'official', grid: 'season', gridRound: labGridRound(), assist: 'full', seed: LAB.seed, envMap, lab: LAB });
       const c = race && race.labCar; labCaption('Cinematic · mixes car and driver' + (c ? ' · ' + c.driver.name + ' in the candidate car' : ' · no driver matched ?driver=') + ' · reduced-order lap model');
@@ -475,17 +476,18 @@ window.EI = window.EI || {};
     const r1 = (x) => +x.toFixed(1), r3 = (x) => +x.toFixed(3);
     const cars = race.cars.map(car => {
       const T = car.labTel || {}; const lapNos = Object.keys(T).map(Number);
-      const best = car.bestLap > 0 ? car.bestLap : (car.laps.length ? Math.min.apply(null, car.laps) : null);   // every lap deleted (track limits): the quickest, flagged below
+      // a car that did not finish (race.js LAB_GRACE timeout) reports null numbers: the lab shows "race incomplete" (its laps so far stay in laps[])
+      const best = !car.finished ? null : car.bestLap > 0 ? car.bestLap : (car.laps.length ? Math.min.apply(null, car.laps) : null);   // every lap deleted (track limits): the quickest, flagged below
       const bi = best != null ? car.laps.indexOf(best) : -1; const L = bi >= 0 ? T[bi + 1] : null;   // car.laps[i] is lap i + 1
       const all = lapNos.reduce((a, n) => ({ vmax: Math.max(a.vmax, T[n].vmax), vmin: Math.min(a.vmin, T[n].vmin) }), { vmax: 0, vmin: Infinity });
       const vmax = L && L.vmax > 0 ? L.vmax : all.vmax, vmin = L && isFinite(L.vmin) ? L.vmin : all.vmin;
       return {
-        role: car.role, lap: best != null ? r3(best) : null, sectors: car.bestSectors.map(s => (s > 0 ? r3(s) : null)),
-        vmax_kmh: vmax > 0 ? r1(vmax) : null, vmin_becketts_kmh: isFinite(vmin) ? r1(vmin) : null,
+        role: car.role, lap: best != null ? r3(best) : null, sectors: car.finished ? car.bestSectors.map(s => (s > 0 ? r3(s) : null)) : [null, null, null],
+        vmax_kmh: car.finished && vmax > 0 ? r1(vmax) : null, vmin_becketts_kmh: car.finished && isFinite(vmin) ? r1(vmin) : null,
         laps: car.laps.map(r3), laps_deleted: (car.lapsDeleted || []).some(Boolean), finished: !!car.finished, setup: (car.labSpec && car.labSpec.setup) || null, aero: car.aero,
       };
     });
-    const msg = { type: 'purple:result', experiment_id: LAB.exp, seed: race.seed, circuit: track.data.id, laps: race.laps, cars };
+    const msg = { type: 'purple:result', experiment_id: LAB.exp, seed: race.seed, circuit: track.data.id, laps: race.laps, incomplete: !!race.labIncomplete || cars.some(c => !c.finished), cars };
     EI.labResult = msg; console.log('purple:result ' + JSON.stringify(msg));
     try { window.parent.postMessage(msg, '*'); } catch (e) { console.warn('PURPLE: postMessage failed', e); }
   }

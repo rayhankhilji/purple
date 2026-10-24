@@ -1,4 +1,4 @@
-// PURPLE - node server/scripts/collect-dry.js --n 40 --seed 2 [--promote-bias 0.3] [--circuit silverstone] [--list]
+// PURPLE - node server/scripts/collect-dry.js --n 40 --seed 2 [--promote-bias 0.3] [--circuit silverstone] [--list] [--data data]
 // Dry run of `npm run collect`: the same seeds, generator and evaluator, but NO Mubit call and NO write to data/. Prints the verdict
 // mix the truth rule would give (promote / retest / reject), the delta_lap range, the conditions mix and the parameters moved, so the
 // v2 collection can be previewed before Saturday's budget is spent. The real run is `npm run collect -- --n 40 --with-rules --promote-bias 0.3`.
@@ -8,6 +8,7 @@ const args = process.argv.slice(2); const arg = (k, d) => { const i = args.index
 const n = parseInt(arg("n", "40"), 10), seed = parseInt(arg("seed", "2"), 10), promote_bias = parseFloat(arg("promote-bias", "0")), circuit = arg("circuit", "silverstone");
 if (!Number.isInteger(n) || n < 1) { console.error("collect-dry: --n must be an integer >= 1"); process.exit(1); }
 if (!Number.isFinite(promote_bias) || promote_bias < 0 || promote_bias > 1) { console.error("collect-dry: --promote-bias must be a number between 0 and 1"); process.exit(1); }
+const dataArg = (() => { const a = process.argv.slice(2), i = a.indexOf("--data"); return i >= 0 ? a[i + 1] : null; })(); if (dataArg) process.env.PURPLE_DATA_DIR = dataArg;   // --data <dir> wins over PURPLE_DATA_DIR; MUBIT_MOCK=1 without either -> data-mock/
 const { createApp } = require("../app.js");
 const noMubit = { callMubit: async () => { throw new Error("collect-dry never calls Mubit"); } };   // belt and braces: no planner at all
 const { dryCollect, db } = createApp({ mubit: noMubit, log: () => {} });
