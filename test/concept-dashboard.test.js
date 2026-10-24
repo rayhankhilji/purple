@@ -29,7 +29,7 @@ test("budget: trained calls are counted from the call files on disk (research le
   fs.writeFileSync(path.join(root, "docs", "concept", "loop-runs", "live-untrained-1", "calls.jsonl"), rows(9, true, "c"));                   // not a trained-* run folder
   const extra = tmp(); fs.mkdirSync(path.join(extra, "concept-engine", "eng-1"), { recursive: true }); fs.writeFileSync(path.join(extra, "concept-engine", "eng-1", "calls.jsonl"), rows(4, true, "d"));
   const b = route.trainedBudget(root, [extra]);
-  assert.equal(b.used, 7 + 5 + 4); assert.equal(b.remaining, 250 - 16); assert.equal(b.total, 250);
+  assert.equal(b.used, 7 + 5 + 4); assert.equal(b.remaining, 2500 - 16); assert.equal(b.total, 2500);
   assert.deepEqual(b.by_source.map(x => x.trained_calls), [7, 5, 4]);
   // this repository: the integrator's trained designer runs are in docs/concept/loop-runs/trained-*: the live counter sees them
   const repo = route.trainedBudget(ROOT, []), trainedDirs = fs.readdirSync(path.join(ROOT, "docs", "concept", "loop-runs")).filter(d => /^trained-/.test(d));
@@ -50,7 +50,7 @@ test("local search: deterministic, legal only, starts from the proposal (t = 1) 
 test("routes: info, garage lap (legal and illegal, FIA articles, per-corner deltas, legal ranges), car sheet with flags", async () => {
   const a = app();
   const info = (await get(a, "/api/concept/engine/info")).data;
-  assert.equal(info.trained_run_cap, 30); assert.equal(info.budget.total, 250); assert.ok(info.cpus >= 1);
+  assert.equal(info.trained_run_cap, 200); assert.equal(info.budget.total, 2500); assert.ok(info.cpus >= 1);
   const init = (await get(a, "/api/concept/engine/garage/init?team=redbull")).data;
   assert.equal(init.legal, true); assert.equal(init.d_lap_s, 0); assert.equal(init.catalogue.length, 23); assert.ok(Object.keys(init.materials).length >= 5);
   for (const p of Object.keys(init.materials)) assert.ok(init.materials[p].options.every(o => /permitted|baseline/.test(o.fia || "permitted") || o.id === init.materials[p].base), p);
@@ -81,8 +81,8 @@ test("guards: trained needs live + confirm + the typed confirmation + the per-ru
   assert.match((await run({ trained: true })).j.error.message, /live/);
   assert.match((await run({ llm: "live", trained: true, max_calls: 5 })).j.error.message, /confirm must be "trained"/);
   assert.match((await run({ llm: "live", trained: true, confirm: "trained", max_calls: 5, confirm_text: "train 5" })).j.error.message, /TRAIN 5/);
-  const cap = await run({ llm: "live", trained: true, confirm: "trained", max_calls: 31, confirm_text: "TRAIN 31" });
-  assert.equal(cap.status, 400); assert.match(cap.j.error.message, /capped at 30/);
+  const cap = await run({ llm: "live", trained: true, confirm: "trained", max_calls: 201, confirm_text: "TRAIN 201" });
+  assert.equal(cap.status, 400); assert.match(cap.j.error.message, /capped at 200|max_calls|calls/);
   assert.match((await run({ llm: "live", trained: true, confirm: "trained", max_calls: 10, confirm_text: "TRAIN 10", seed: 1, max_iterations: 0 })).j.error.message, /max_iterations/);
   const prev = process.env.MUBIT_MOCK; process.env.MUBIT_MOCK = "1";
   try { const m = app(); assert.match((await post(m, "/api/concept/engine/run", { mode: "auto", llm: "live" })).j.error.message, /MUBIT_MOCK=1/); }
@@ -98,7 +98,7 @@ test("guards: trained needs live + confirm + the typed confirmation + the per-ru
 });
 
 test("budget refusal: a trained run asking for more calls than remain is refused before any call", async () => {
-  const root = tmp(); fs.mkdirSync(path.join(root, "data")); fs.writeFileSync(path.join(root, "data", "calls.jsonl"), Array.from({ length: 245 }, (_, i) => JSON.stringify({ trained: true, mubit_request_id: "x" + i })).join("\n") + "\n");
+  const root = tmp(); fs.mkdirSync(path.join(root, "data")); fs.writeFileSync(path.join(root, "data", "calls.jsonl"), Array.from({ length: 2495 }, (_, i) => JSON.stringify({ trained: true, mubit_request_id: "x" + i })).join("\n") + "\n");
   const { Hono } = require("hono"); const h = new Hono();
   class ApiError extends Error { constructor(code, m, extra) { super(m); this.code = code; this.extra = extra; } }
   h.onError((e, c) => c.json({ ok: false, error: { message: e.message } }, 400));
@@ -106,7 +106,7 @@ test("budget refusal: a trained run asking for more calls than remain is refused
   route.mount(h, { ok: (c, d) => c.json({ ok: true, data: d }), body: async c => JSON.parse(await c.req.text()), ApiError, mock: false, dataDir: tmp(), root, workers: 0, tmpDir: tmp(), mubit: { callMubit: async () => { called++; throw new Error("no"); } } });
   const r = await h.request("/api/concept/engine/run", { method: "POST", body: JSON.stringify({ mode: "auto", llm: "live", trained: true, confirm: "trained", max_calls: 10, confirm_text: "TRAIN 10" }) });
   const j = await r.json();
-  assert.match(j.error.message, /not enough trained-call budget left: 5 of 250/); assert.equal(called, 0);
+  assert.match(j.error.message, /not enough trained-call budget left: 5 of 2500/); assert.equal(called, 0);
 });
 
 test("autonomous (mock): ~10 hybrid iterations, deterministic, every result fed to the next call, final re-scored with a band; nothing written to data/", async () => {

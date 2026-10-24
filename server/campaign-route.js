@@ -1,7 +1,7 @@
 // PURPLE - the concept ENGINE on the API (docs/concept/DASHBOARD.md): the dashboard in the concept lab starts, follows and stops it.
 // Routes (all under /api/concept/engine; JSON envelope { ok, data } | { ok, error } like the rest of server/app.js):
 //   GET  /info                  limits, defaults, machine (cpus), the active run, the trained-call budget, prompt version
-//   GET  /budget                the project's trained-call budget (250), counted from the call files on disk (never a constant)
+//   GET  /budget                the project's trained-call budget (2,500), counted from the call files on disk (never a constant)
 //   GET  /timings               live stage timings (mean / p95 / n / last) measured in this process
 //   GET  /carsheet?team=redbull every number the physics sim uses for the RB22 / DM01 baseline, with source and FIA/EST/MODEL flag,
 //                               and the "how a part moves the lap" table (mechanism from COUPLING.md, Δlap measured here, now)
@@ -32,8 +32,8 @@ const loop = require("../concept/designer/loop.js"), scenario = require("../conc
 const conceptRoutes = require("./concept.js");
 
 const CIRCUIT = "silverstone";
-const BUDGET_TOTAL = 250;            // EVAL_GUARDRAILS §4: trained calls, the whole project (research agent + designer)
-const TRAINED_RUN_CAP = 30;          // hard cap of trained calls in ONE engine run
+const BUDGET_TOTAL = 2500;           // EVAL_GUARDRAILS §4: trained calls, the whole project (research agent + designer); owner raised 250 → 2,500 on 2026-10-24 (own Anthropic key inside Mubit)
+const TRAINED_RUN_CAP = 200;         // hard cap of trained calls in ONE engine run (= LIMITS.calls max)
 const LIMITS = { evals: [20, 200000], seeds: 8, refine_evals: [0, 20000], combo_evals: [0, 2000], lambda: [4, 64], prescreen: [1, 8], iterations: [1, 500], patience: [1, 200], search_budget: [0, 3000], calls: [1, 200], pace_ms: [0, 3000] };
 const SIM_LABEL = sim.LABEL + " · Silverstone · 2026 British GP qualifying conditions";
 const REAL_LABEL = "real 2026 British GP qualifying · OpenF1 / formula1.com (js/data/racepace2026.js)";
