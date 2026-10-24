@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="concept-lab.css">
 <link rel="stylesheet" href="engine-panel.css">
 <link rel="stylesheet" href="engineer-panel.css">
+<link rel="stylesheet" href="exam-panel.css">
 </head>
 <body class="clab-page">
 <header class="top">
@@ -22,6 +23,7 @@
   <div class="viewsw" role="group" aria-label="view">
     <button type="button" class="btn small on" id="btnViewEng" aria-pressed="true" title="the autonomous engineer: Mubit decides what to explore, the engine screens thousands of variants and keeps by the numbers">Autonomous engineer</button>
     <button type="button" class="btn small" id="btnViewNoAI" aria-pressed="false" title="the plain in-browser optimiser (no AI at all), for comparison">Compare: no AI</button>
+    <button type="button" class="btn small" id="btnViewExam" aria-pressed="false" title="the designer exam: 30 held-out car situations, no AI vs regular Claude vs the Mubit-trained adapter, graded on the physics lap sim">Exam</button>
   </div>
   <div id="banner" role="alert" hidden></div>
   <span class="spacer"></span>
@@ -123,5 +125,7 @@
 <script src="engine-panel.js"></script>
 <!-- the autonomous engineer (engine v2, docs/concept/ENGINE_V2.md): the primary view; replays recorded live runs, live after unlock, mock only as a labelled offline demo -->
 <script src="engineer-panel.js"></script>
+<!-- the designer exam (concept/exam/): paste the Mubit-trained adapter's Try-models replies, graded on the physics sim by POST /api/concept/exam/grade (no Mubit call) -->
+<script src="exam-panel.js"></script>
 </body>
 </html>

@@ -70,6 +70,10 @@ const LIMITS = {
   live_calls_global_hour: intEnv("PURPLE_LIVE_GLOBAL_HOUR", 120),
   cpu_runs_per_ip_hour: intEnv("PURPLE_CPU_RUNS_PER_IP_HOUR", 6),      // engine speed / auto runs (each can use a whole function invocation)
   cpu_runs_global_hour: intEnv("PURPLE_CPU_RUNS_GLOBAL_HOUR", 30),
+  // exam grades (POST /api/concept/exam/grade): ~1-3 s of one vCPU each, so their own bucket; the defaults are 15x / 10x the engine-run
+  // limits above (PURPLE_CPU_RUNS_*), PURPLE_CPU_GRADES_* override them
+  cpu_grades_per_ip_hour: intEnv("PURPLE_CPU_GRADES_PER_IP_HOUR", 15 * intEnv("PURPLE_CPU_RUNS_PER_IP_HOUR", 6)),
+  cpu_grades_global_hour: intEnv("PURPLE_CPU_GRADES_GLOBAL_HOUR", 10 * intEnv("PURPLE_CPU_RUNS_GLOBAL_HOUR", 30)),
   unlock_failures_per_ip_10min: 10,
   time_box_s: Math.min(intEnv("PURPLE_TIME_BOX_S", MAX_DURATION_S - 60), MAX_DURATION_S - 30),
   orphan_s: 20,                               // a mock / speed run nobody follows for this long is stopped (its stream went elsewhere)
@@ -156,7 +160,7 @@ function create() {
   const deferred = new Map();   // run id -> promise that settles when that validation-only run has stopped
   const allowedLive = new Set();
   const gated = { callMubit(args) { if (!allowedLive.has(args.sessionId)) { const e = new Error("deferred: a live run calls Mubit only from the instance that streams it"); e.code = "deferred"; return Promise.reject(e); } return realMubit.callMubit(args); } };
-  const api = createApp({ dataDir, mubit: switching, conceptMubit: gated, hostOk: /^[a-z0-9.-]+(:\d+)?$/i, engineWorkers: LIMITS.engine_workers, engineTmpDir: path.join(TMP(), "engine"), log: (...a) => console.log(...a) });
+  const api = createApp({ dataDir, mubit: switching, conceptMubit: gated, hostOk: /^[a-z0-9.-]+(:\d+)?$/i, engineWorkers: LIMITS.engine_workers, engineTmpDir: path.join(TMP(), "engine"), examWritable: false, examWorkers: LIMITS.engine_workers, log: (...a) => console.log(...a) });
   const inner = api.app;
 
   const limiter = Limiter();
@@ -166,10 +170,10 @@ function create() {
   const envelope = (c, status, code, message, extra) => c.json({ ok: false, error: Object.assign({ code, message }, extra || {}), deploy: info(c, "mock") }, status);
   const liveRefusal = c => { const why = liveOff(); if (why) return envelope(c, 503, "LIVE_OFF", "live Mubit calls are off on this deployment: " + why); if (!authorized(c)) return envelope(c, 403, "PASSCODE_REQUIRED", "live Mubit calls from the public site need the passcode: open /api/unlock in this browser (or send the x-purple-passcode header). Without it, use mock mode."); return null; };
   const reserve = (c, bucket, n) => {
-    const ip = ipOf(c), per = bucket === "live" ? [LIMITS.live_calls_per_ip_hour, LIMITS.live_calls_global_hour] : [LIMITS.cpu_runs_per_ip_hour, LIMITS.cpu_runs_global_hour];
+    const ip = ipOf(c), per = bucket === "live" ? [LIMITS.live_calls_per_ip_hour, LIMITS.live_calls_global_hour] : bucket === "grade" ? [LIMITS.cpu_grades_per_ip_hour, LIMITS.cpu_grades_global_hour] : [LIMITS.cpu_runs_per_ip_hour, LIMITS.cpu_runs_global_hour];
     const r = limiter.take([[bucket + ":ip:" + ip, per[0]], [bucket + ":all", per[1]]], n, HOUR);
     if (r.ok) return null;
-    const what = bucket === "live" ? "live Mubit calls" : "engine runs";
+    const what = bucket === "live" ? "live Mubit calls" : bucket === "grade" ? "exam grades" : "engine runs";
     return envelope(c, 429, "RATE_LIMITED", "hourly limit of " + what + " reached (" + (/:ip:/.test(r.key) ? "this IP" : "the whole site") + ": " + r.used + " of " + r.max + " used, this request needs " + n + "). Try again in " + Math.ceil(r.retry_after_s / 60) + " min, or use mock mode.", { retry_after_s: r.retry_after_s, limit: r.max, used: r.used, asked: n });
   };
   const waitUntil = p => { try { const ctx = globalThis[Symbol.for("@vercel/request-context")]; const w = ctx && ctx.get && ctx.get(); if (w && typeof w.waitUntil === "function") w.waitUntil(p); } catch (e) { /* not on Vercel */ } };
@@ -245,7 +249,7 @@ function create() {
     return wantsJson ? c.json({ ok: true, data: { unlocked: true, expires_at: new Date(exp).toISOString() } }) : c.redirect("/api/unlock", 303);
   });
   app.get("/api/lock", c => { c.header("set-cookie", "purple_live=; Path=/api; HttpOnly; Secure; SameSite=Strict; Max-Age=0"); return c.redirect("/api/unlock", 303); });
-  app.get("/api/deploy", c => c.json({ ok: true, data: info(c, "mock", { limits: LIMITS, max_duration_s: MAX_DURATION_S, seeded, prompt_hash_ok: promptHash.ok, designer_prompt: { version: designerPrompt.DESIGNER_PROMPT_VERSION, draft: !!designerPrompt.DRAFT }, usage_this_instance: { live_calls_hour: limiter.view("live:all", HOUR), engine_runs_hour: limiter.view("cpu:all", HOUR) } }) }));
+  app.get("/api/deploy", c => c.json({ ok: true, data: info(c, "mock", { limits: LIMITS, max_duration_s: MAX_DURATION_S, seeded, prompt_hash_ok: promptHash.ok, designer_prompt: { version: designerPrompt.DESIGNER_PROMPT_VERSION, draft: !!designerPrompt.DRAFT }, usage_this_instance: { live_calls_hour: limiter.view("live:all", HOUR), engine_runs_hour: limiter.view("cpu:all", HOUR), exam_grades_hour: limiter.view("grade:all", HOUR) } }) }));
 
   // ---- research agent routes that call Mubit
   app.post("/api/plan", async c => {
@@ -266,6 +270,12 @@ function create() {
     const n = b && isInt(b.n) && b.n > 0 ? b.n : 1;
     const no = liveRefusal(c) || (b && b.confirm === "trained" ? reserve(c, "live", n) : null); if (no) return no;
     return forward(c, { live: true });
+  });
+
+  // ---- the designer exam's grader (server/exam-route.js): physics sim only, never Mubit; CPU, so rate limited; nothing is stored here
+  app.post("/api/concept/exam/grade", async c => {
+    const no = reserve(c, "grade", 1); if (no) return no;
+    return forward(c, { note: "graded on the physics lap sim on this instance (no Mubit call). This site cannot store answers (read-only): they stay in this browser; use Export answers" });
   });
 
   // ---- runs

@@ -9,6 +9,7 @@ Production: **https://purple-wine.vercel.app** · Vercel project `purple` (`prj_
 | The game (Equation I, pre-existing) | `/index.html` |
 | Research lab | `/lab/` (redirects to `/lab/?api=/` so the page talks to this site's API, not 127.0.0.1:8787) |
 | Concept lab (Mubit loop drawer, Engine dashboard) | `/concept/lab/` (same redirect; `?engine=1` etc. are kept) |
+| Designer exam (paste the Mubit adapter's Try-models replies, graded on the physics sim) | `/concept/lab/?api=/&view=exam` (the "Exam" button in the lab header) |
 | 3D viewer | `/concept/view/` |
 | Silverstone race replay | `/concept/race/` |
 | Unlock live Mubit calls | `/unlock` → `/api/unlock` |
@@ -48,7 +49,7 @@ runs `npm ci` and `node server/vercel.js build` (copies the static site into `pu
 | `MUBIT_API_KEY` | production + preview, sensitive | read only by `server/mubit.js`; never sent to the browser or logged (G-SEC-02) |
 | `PURPLE_PASSCODE` | production + preview, sensitive | the live-call passcode (below) |
 | `MUBIT_MOCK` | **must not be set** | if set, live calls are refused (`/api/deploy` says why) |
-| optional: `PURPLE_LIVE_PER_IP_HOUR`, `PURPLE_LIVE_GLOBAL_HOUR`, `PURPLE_CPU_RUNS_PER_IP_HOUR`, `PURPLE_CPU_RUNS_GLOBAL_HOUR`, `PURPLE_TIME_BOX_S` | | override the limits in §5 |
+| optional: `PURPLE_LIVE_PER_IP_HOUR`, `PURPLE_LIVE_GLOBAL_HOUR`, `PURPLE_CPU_RUNS_PER_IP_HOUR`, `PURPLE_CPU_RUNS_GLOBAL_HOUR`, `PURPLE_CPU_GRADES_PER_IP_HOUR`, `PURPLE_CPU_GRADES_GLOBAL_HOUR`, `PURPLE_TIME_BOX_S` | | override the limits in §5 |
 
 Change one: `npx vercel@65.2.0 env rm NAME production --yes --token "$VERCEL_TOKEN"`, then add it again piping the value on
 stdin (`printf %s "$VALUE" | npx vercel@65.2.0 env add NAME production --sensitive --token "$VERCEL_TOKEN"`), then redeploy.
@@ -79,6 +80,7 @@ stdin (`printf %s "$VALUE" | npx vercel@65.2.0 env add NAME production --sensiti
 | live Mubit calls per IP | 30 / hour | reserved up front: concept loop = `iterations`, engine auto = `max_calls` (default 20, trained 10), `/api/plan` = 2, exam = 20, collect = `n` |
 | live Mubit calls, whole site | 120 / hour | |
 | engine runs (speed or auto) per IP / whole site | 6 / 30 per hour | CPU: each can use a whole function invocation |
+| exam grades (`POST /api/concept/exam/grade`) per IP / whole site | 90 / 300 per hour | CPU, ~1-4 s of one vCPU each (concept/exam/grade.js on one worker thread, in-process if workers fail); defaults are 15× / 10× the engine-run limits; no Mubit call; nothing is stored on the site (the page keeps grades in the browser and exports `answers-adapter.json`) |
 | run time box | 240 s | a concept loop or engine run gets one function invocation; then it stops cleanly (`stop_reason` says so), the engine re-scores the best car so far |
 | engine workers | 1 worker thread | one vCPU per function (body `workers` is clamped to 0-1) |
 | Mubit concurrency | 2 in flight per instance | `server/mubit.js` (G-MUBIT-05) |
