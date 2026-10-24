@@ -228,6 +228,20 @@ and vmin for the centre car at training time); the tests compare it with the liv
 differ, so a stale surrogate cannot pass unnoticed. For a given seed the file is byte-identical except `report.machine` (timings).
 The trainer writes only to `--out` (default `concept/surrogate/models/`) and refuses `data/` and `data-mock/`. No network, no Mubit.
 
+### 7a. Multi-track physics models (SIM.md §9)
+
+`node concept/surrogate/train.js --sim physics --circuits monza,monaco,spa,hungaroring` (~10 min on 4 CPUs) writes one `physics-<circuit>.json` per circuit. On a circuit other than Silverstone the centre car is `baselineCar("redbull", circuit)`, the RB22 with its fitted set-up there, and the box is built from `teamCarsAt(circuit)`, the 11 team cars with their set-ups, plus MARGIN. Silverstone's model is unchanged. Results: n 6000 each; the chosen lap model is the MLP everywhere.
+
+| Circuit | Lap RMSE (test) s | R² | Trap RMSE km/h | Team cars in box | Team-car lap RMSE s | Ranking ρ |
+|---|---|---|---|---|---|---|
+| silverstone (unchanged) | 0.125 | 0.9966 | 1.12 | 11 | 0.049 | 0.980 |
+| monza | 0.094 | 0.9966 | 0.56 | 11 | 0.014 | 0.985 |
+| monaco | 0.079 | 0.9975 | 0.49 | 11 | 0.064 | 0.995 |
+| spa | 0.132 | 0.9967 | 0.97 | 11 | 0.036 | 0.991 |
+| hungaroring | 0.109 | 0.9970 | 1.01 | 11 | 0.036 | 0.984 |
+
+`test/concept-sim-multitrack.test.js` checks each model's `sim_fingerprint` against the live sim, and the centre car's prediction against the sim to within 50 ms.
+
 ## 8. Limits
 
 1. **It imitates a sim.** Its errors are against that sim; the sim's own gaps to real cars (SIM.md: 13 km/h speed RMS on held-out

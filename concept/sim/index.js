@@ -1,5 +1,5 @@
 // PURPLE concept - lap-sim public API (docs/concept/SIM.md). One entry point for Node and the browser.
-//   simulateLap(car, "silverstone", conditions?, opts?) -> { lap_s, sectors_s, vmax_kmh, speed_trap_kmh, vmin_kmh, energy, trace?, label, ... }
+//   simulateLap(car, trackId, conditions?, opts?) - trackId: silverstone, monza, monaco, spa, hungaroring (SIM.md "Multi-track") -> { lap_s, sectors_s, vmax_kmh, speed_trap_kmh, vmin_kmh, energy, trace?, label, ... }
 //   baselineCar(), calibrate(opts?), fitTeams(opts?), teamCar(teamId), teamCars(), cornerTable(car?), LABEL, fitted()
 // Node:    const sim = require("./concept/sim/index.js");
 // Browser: load js/data/silverstone.js, then concept/sim/{track,lapsim,fitted,fit,index}.js in that order -> window.EI.conceptSim
@@ -11,6 +11,12 @@
   const S = EI.conceptSim && EI.conceptSim.simulateLap ? EI.conceptSim : require("./lapsim.js");
   if (typeof require === "function" && !EI.CONCEPT_SIM_FIT) { try { require("./fitted.js"); } catch (e) { /* no fit yet: identity calibration */ } }
   const F = EI.conceptSimFit || require("./fit.js");
+  // multi-track (SIM.md "Multi-track"): per-circuit set-up and fit (setup.js, multitrack.js, fitted-tracks.js)
+  if (typeof require === "function" && !EI.CONCEPT_SIM_TRACK_FIT) { try { require("./fitted-tracks.js"); } catch (e) { /* no multi-track fit yet */ } }
+  // browser: load concept/sim/{setup,multitrack,fitted-tracks}.js before this file for the multi-track API (absent: Silverstone only)
+  const SU = EI.conceptSimSetup || (typeof require === "function" ? require("./setup.js") : null);
+  const MT = EI.conceptSimMulti || (typeof require === "function" ? require("./multitrack.js") : null);
+  const need = (m, file) => { if (!m) throw new Error("concept sim: load concept/sim/" + file + ".js for the multi-track API"); return m; };
 
   // named corner windows (centreline s frame) for the radius table; names follow js/data/silverstone.js corners[]
   const CORNERS = {
@@ -28,7 +34,7 @@
   const TNAMES = { 1: "Abbey", 2: "Farm", 3: "Village", 4: "The Loop", 5: "Aintree", 6: "Brooklands", 7: "Luffield", 8: "Woodcote", 9: "Copse", 10: "Maggotts", 11: "Maggotts", 12: "Becketts", 13: "Becketts", 14: "Chapel", 15: "Stowe", 16: "Vale", 17: "Club", 18: "Club" };
   function cornerWindows(tr, trackId) {
     if (tr.line === "telemetry" && tr.corners && tr.corners.length && tr.corners[0].d != null)
-      return tr.corners.map(k => ({ name: (TNAMES[k.n] || "T") + " (T" + k.n + ")", n: k.n, marker_s: k.d, s0: k.d - 70, s1: k.d + 90 }));
+      return tr.corners.map(k => ({ name: ((tr.frame === "f1" ? (tr.corner_names || {})[k.n] : TNAMES[k.n]) || "T") + " (T" + k.n + ")", n: k.n, marker_s: k.d, s0: k.d - 70, s1: k.d + 90 }));
     return CORNERS[trackId] || [];
   }
   function cornerTable(car, trackId, conditions) {
@@ -58,7 +64,7 @@
   function segmentsOf(tr) {
     const K = (tr.corners || []).filter(k => k.d != null).slice().sort((a, b) => a.d - b.d), L = tr.L, out = [];
     if (!K.length) return [{ kind: "lap", name: "lap", s0: 0, s1: L }];
-    const names = S.CORNER_NAMES[tr.id] || {}, nm = k => (names[k.n] || "T") + " (T" + k.n + ")";
+    const names = S.CORNER_NAMES[tr.id] || tr.corner_names || {}, nm = k => (names[k.n] || "T") + " (T" + k.n + ")";
     const zone = K.map((k, i) => {
       const prev = K[(i - 1 + K.length) % K.length].d - (i === 0 ? L : 0), next = K[(i + 1) % K.length].d + (i === K.length - 1 ? L : 0);
       return { kind: "corner", name: nm(k), n: k.n, s0: Math.max(k.d - 100, (prev + k.d) / 2), s1: Math.min(k.d + 100, (k.d + next) / 2) };
@@ -91,7 +97,12 @@
     contributions, segmentsOf,
     calibrate: F.calibrate, fitTeams: F.fitTeams, teamCar: F.teamCar, teamCars: F.teamCars, teamTargets: F.teamTargets,
     fitted: F.fitted, reference: F.reference, heldOut: F.heldOut, cornerTable, CORNERS, buildTrack: T.buildTrack,
-    baselineCar: teamId => (teamId ? F.teamCar(teamId) : S.baselineCar()),
+    // baselineCar(teamId?, trackId?): with a circuit, the team's car with its fitted set-up there (multitrack.teamCarAt)
+    baselineCar: (teamId, trackId) => (teamId ? (trackId && trackId !== "silverstone" ? MT.teamCarAt(teamId, trackId) : F.teamCar(teamId)) : S.baselineCar()),
+    CIRCUITS: MT ? MT.CIRCUITS : ["silverstone"],
+    setupCar: (...a) => need(SU, "setup").setupCar(...a), wingCurve: (...a) => need(SU, "setup").wingCurve(...a), wingFactors: (...a) => need(SU, "setup").wingFactors(...a),
+    trackGrip: (...a) => need(SU, "setup").trackGrip(...a), teamSetup: (...a) => need(SU, "setup").teamSetup(...a), fittedTracks: (...a) => need(SU, "setup").fittedTracks(...a),
+    teamCarAt: (...a) => need(MT, "multitrack").teamCarAt(...a), teamCarsAt: trackId => F.fitted().teams.map(t => need(MT, "multitrack").teamCarAt(t.team, trackId)), optimalWing: (...a) => need(MT, "multitrack").optimalWing(...a), ourDriver: (...a) => need(MT, "multitrack").ourDriver(...a),
   });
   EI.conceptSim = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;

@@ -38,7 +38,7 @@ anchor. In the browser the anchor uses the generic gear ratios (HAD's measured r
 Children of the design keep `team` and `livery`. The concept lab and the CLI default to it; the generic car stays selectable.
 
 **Bench** (`concept/bench.js`). `sim: "auto"` (physics when loaded) | `"physics"` | `"v0"` | a function; `objective: "weekend"`
-(default at Silverstone with the weekend module) | `"quali"`. The physics sim runs Silverstone only (other circuits: v0). Results
+(default at Silverstone with the weekend module) | `"quali"`. The bench runs the physics sim at Silverstone only (other circuits: v0); `simulateLap` itself runs five circuits (SIM.md §9). Results
 are cached twice: physics laps by the PhysicalCar's numbers + circuit + conditions, bench results by design + options (both LRU,
 6000 entries), so a revisited design or the lab's re-bench of a kept design costs ~0.1 ms. A physics lap is 20-35 ms in Node (the
 RB22 car carries gearing), ~22 ms in Chromium. **Exploit guard:** the energy fields are pinned to the regulation values before a

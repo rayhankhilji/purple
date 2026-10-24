@@ -163,6 +163,8 @@
     const want = (opts && opts.line) || (lineData(trackId) ? "telemetry" : "osm");
     const key = trackId + ":" + want;
     if (cache[key]) return cache[key];
+    // multi-track (SIM.md "Multi-track"): a line in the F1 timing frame (build-lines.js) needs no OSM centreline
+    if (want === "telemetry" && lineData(trackId) && lineData(trackId).frame === "f1") return (cache[key] = buildF1Track(trackId, lineData(trackId)));
     if (want === "telemetry") return (cache[key] = buildLineTrack(trackId, lineData(trackId), buildTrack(trackId, { line: "osm" })));
     return (cache[key] = buildOsmTrack(trackId));
   }
@@ -198,6 +200,39 @@
       id: trackId, name: osm.name, line: "telemetry", n, L, ds: L / n,
       s: sOf, x: c.x, z: c.z, kappa: rl.kappa, kappa_centre: kc, seg: Float64Array.from(seg), heading: rl.head, grade, elev,
       straightZone, zones, sf: 0, sectors: LN.timing.sectors.slice(), timing: LN.timing, corners: LN.corners, reference: LN,
+      racing_line_length_m: L, geom: GEOM,
+    };
+    track.idxAtS = s => { s = ((s % L) + L) % L; return Math.min(n - 1, Math.round(s / track.ds)) % n; };
+    return track;
+  }
+
+  // multi-track: racing line = the field's median line in the F1 timing frame (concept/sim/build-lines.js), s = the pole lap's
+  // speed-integral distance; smoothing exactly as buildLineTrack; elevation from the line file (track model profile, by lap
+  // fraction; flat where none); Straight Mode zones from the line file (the field's full-throttle straights). There is no separate
+  // centreline: kappa_centre is the line's own curvature (it is used only for the radius table).
+  function buildF1Track(trackId, LN) {
+    const r0 = resampleClosed(LN.x, LN.z, GEOM.ds_m), dtS = LN.position_sample_interval_s || 0.26;
+    const sig = new Float64Array(r0.n);
+    for (let i = 0; i < r0.n; i++) { const k = Math.min(LN.ref_v_kmh.length - 1, Math.round(((i / r0.n) * LN.lap_length_m) / 5)); sig[i] = Math.max(GEOM.line_smooth_min_m, (LN.ref_v_kmh[k] / 3.6) * dtS * GEOM.line_smooth_samples); }
+    const sx = smoothVariable(r0.x, sig, r0.step), sz = smoothVariable(r0.z, sig, r0.step);
+    const c = resampleClosed(Array.from(sx), Array.from(sz), GEOM.ds_m);
+    const n = c.n, L = LN.lap_length_m, sOf = new Float64Array(n);
+    for (let i = 0; i < n; i++) sOf[i] = (i / n) * L;
+    const rl = curvature(c.x, c.z, GEOM.kappa_smooth_sigma_m);
+    const segSum = rl.seg.reduce((p, v) => p + v, 0), seg = rl.seg.map(v => (v * L) / segSum);
+    const elev = new Float64Array(n), grade = new Float64Array(n);
+    if (LN.elev && LN.elev.length) for (let i = 0; i < n; i++) { const f = (sOf[i] / L) * (LN.elev.length - 1), k = Math.floor(f), t = f - k; elev[i] = LN.elev[k] + t * ((LN.elev[Math.min(k + 1, LN.elev.length - 1)]) - LN.elev[k]); }
+    for (let i = 0; i < n; i++) { const j = (i + 1) % n; grade[i] = (elev[j] - elev[i]) / (seg[i] || 1); }
+    const straightZone = new Uint8Array(n), zones = [];
+    for (const zn of LN.zones) {
+      const a = ((zn.s0 % L) + L) % L, len = (((zn.s1 - zn.s0) % L) + L) % L;
+      for (let d = 0; d <= len; d += L / n) straightZone[Math.round(((a + d) % L) / (L / n)) % n] = 1;
+      zones.push({ name: zn.name, s0: +a.toFixed(0), s1: +((a + len) % L).toFixed(0), len_m: +len.toFixed(0), source: "telemetry" });
+    }
+    const track = {
+      id: trackId, name: trackId, line: "telemetry", frame: "f1", n, L, ds: L / n,
+      s: sOf, x: c.x, z: c.z, kappa: rl.kappa, kappa_centre: rl.kappa, seg: Float64Array.from(seg), heading: rl.head, grade, elev,
+      straightZone, zones, sf: 0, sectors: LN.timing.sectors.slice(), timing: LN.timing, corners: LN.corners, corner_names: LN.corner_names || {}, reference: LN,
       racing_line_length_m: L, geom: GEOM,
     };
     track.idxAtS = s => { s = ((s % L) + L) % L; return Math.min(n - 1, Math.round(s / track.ds)) % n; };
