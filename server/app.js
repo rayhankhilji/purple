@@ -248,7 +248,9 @@ function createApp(opts) {
   });
   app.post("/api/plan", async c => {
     const b = await body(c); const key = c.req.header("x-client-id");
-    if (key) { const hit = inflight.get(key); if (hit && Date.now() - hit.ts < 10000) return ok(c, await hit.p); const p = runPlan(b); inflight.set(key, { ts: Date.now(), p }); try { return ok(c, await p); } finally { setTimeout(() => inflight.delete(key), 10000).unref(); } }
+    // idempotent per x-client-id for 10 s, but only for a call that succeeded: a rejected promise is dropped at once so the UI's Retry
+    // (same client id, correctness item d) runs a fresh plan instead of replaying the error for 10 s
+    if (key) { const hit = inflight.get(key); if (hit && Date.now() - hit.ts < 10000) return ok(c, await hit.p); const p = runPlan(b); inflight.set(key, { ts: Date.now(), p }); p.catch(() => inflight.delete(key)); try { return ok(c, await p); } finally { setTimeout(() => inflight.delete(key), 10000).unref(); } }
     return ok(c, await runPlan(b));
   });
   app.post("/api/promote", async c => {

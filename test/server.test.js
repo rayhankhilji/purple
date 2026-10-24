@@ -23,6 +23,17 @@ test("T-F03-AC1 POST /api/plan -> 200 envelope, ledger row with mubit_request_id
   // ledger lists it
   const led = await json(app, "/api/ledger?limit=5"); assert.equal(led.body.data.length, 1);
 });
+test("correctness d: a rejected /api/plan is not cached for the x-client-id; the same id retried right away runs a fresh plan", async () => {
+  mock.reset(); mock.queue("prose, not json", "still prose"); const { app } = createApp({ dataDir: tmp(), mubit: mock, log: () => {} });
+  const first = await post(app, "/api/plan", { scenario_overrides: { seed: 3 } }, { "x-client-id": "retry-1" }); assert.equal(first.status, 502); assert.equal(first.body.error.code, "PARSE_ERROR"); assert.equal(mock.count(), 2);
+  const again = await post(app, "/api/plan", { scenario_overrides: { seed: 3 } }, { "x-client-id": "retry-1" }); assert.equal(again.status, 200, JSON.stringify(again.body)); assert.equal(again.body.data.status, "planned"); assert.equal(mock.count(), 3);
+  const cached = await post(app, "/api/plan", {}, { "x-client-id": "retry-1" }); assert.equal(cached.body.data.id, again.body.data.id); assert.equal(mock.count(), 3);   // the success is still deduped
+  const e = new Error("busy"); e.code = "starter_credit_busy"; e.status = 429; mock.queue(e);
+  const err = await post(app, "/api/plan", { scenario_overrides: { seed: 4 } }, { "x-client-id": "retry-2" }); assert.equal(err.status, 502); assert.equal(err.body.error.code, "MUBIT_ERROR");
+  const ok2 = await post(app, "/api/plan", { scenario_overrides: { seed: 4 } }, { "x-client-id": "retry-2" }); assert.equal(ok2.status, 200);
+  const ill = await post(app, "/api/plan", { scenario_overrides: { candidate: Object.assign({}, ok2.body.data.baseline, { rear_wing_deg: 36 }) } }, { "x-client-id": "retry-3" }); assert.equal(ill.status, 422);
+  const ok3 = await post(app, "/api/plan", { scenario_overrides: { seed: 5 } }, { "x-client-id": "retry-3" }); assert.equal(ok3.status, 200);
+});
 test("T-F03-AC3 planner returns prose -> one retry, then status parse_error and 502 PARSE_ERROR", async () => {
   mock.reset(); mock.queue("Sure! Here is my plan: {\"verdict\":\"reject\"}", "I think we should reject."); const dir = tmp(); const { app } = createApp({ dataDir: dir, mubit: mock, log: () => {} });
   const r = await post(app, "/api/plan", { scenario_overrides: { seed: 3 } }); assert.equal(r.status, 502); assert.equal(r.body.ok, false); assert.equal(r.body.error.code, "PARSE_ERROR"); assert.ok(r.body.error.experiment_id);
