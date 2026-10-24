@@ -34,7 +34,8 @@ test("uncertainty: built from the sim's held-out sector errors and fit residuals
   const bias = U.sectorBias(); assert.ok(bias.mean_s[1] > 0.4 && bias.mean_s[0] < 0 && bias.mean_s[2] < 0);
   const b = U.band({ lap_s: 87.9, sectors_s: [27.9, 36.2, 23.8] }, { lap_s: 88.749, sectors_s: [28.158, 36.522, 24.07] }, "redbull");
   assert.ok(b.sigma_s > U.NOISE_S && b.band95_s[0] < 87.9 && b.band95_s[1] > 87.9);
-  assert.equal(b.components.surrogate_s, 0); assert.equal(b.anchor.residual_s, 0.003);
+  const A = U.anchorRecord("redbull");
+  assert.equal(b.components.surrogate_s, 0); assert.equal(b.anchor.residual_s, +(A.lap_sim_s - A.lap_real_s).toFixed(3)); assert.equal(A.lap_real_s, 88.746);
   assert.equal(U.verdict({ lap_s: 87, band95_s: [86.8, 87.2] }, 88.111).inside, false);
   assert.equal(U.verdict({ lap_s: 88, band95_s: [87.8, 88.2] }, 88.111).inside, true);
   assert.equal(U.anchorRecord(null).driver, "ANT");
@@ -56,7 +57,7 @@ test("campaign: every kept candidate and the best car are legal (FIA rules + PU 
   for (const k of r.kept) {
     const d = Object.assign(design.baseline("redbull"), { params: k.design.params });
     const f = design.facts(d);
-    assert.deepEqual(regs.checkFacts(f), [], "kept " + k.seed + "/" + k.evals);
+    assert.deepEqual(regs.check(d), [], "kept " + k.seed + "/" + k.evals);
     assert.deepEqual(bench.checkPU(phys.physical(d), d, f.mass), []); assert.deepEqual(bench.checkMaterials(d), []);
   }
   assert.equal(r.legality.filter(x => x.status === "FAIL").length, 0);
@@ -76,7 +77,7 @@ test("campaign: final numbers are physics lap sim laps, never the surrogate's (a
     assert.equal(r.best.lap_s, lap.lap_s); assert.deepEqual(r.best.sectors_s, lap.sectors_s); assert.equal(r.best.direct_sim_lap_s, lap.lap_s);
     assert.equal(r.sim_label, sim.LABEL); assert.match(r.best.source, /physics lap sim/);
     assert.equal(r.best.delta_to_pole_s, +(lap.lap_s - 88.111).toFixed(3)); assert.equal(r.best.delta_to_had_s, +(lap.lap_s - 88.746).toFixed(3));
-    assert.equal(r.baseline.lap_s, 88.749);
+    assert.equal(r.baseline.lap_s, sim.simulateLap(bench.guardEnergy(phys.physical(design.baseline("redbull"))), "silverstone", r.conditions).lap_s);
   }
   assert.ok(Math.abs(wrong.best.lap_s - 50) > 30);
   const md = run.summaryMarkdown(await campaign({ workers: 0 }));

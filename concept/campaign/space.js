@@ -7,7 +7,7 @@
 "use strict";
 const parts = require("../parts.js"), design = require("../design.js"), regs = require("../regs.js"), bench = require("../bench.js"), materials = require("../materials.js");
 
-// single-parameter rule limits: [rule id, field to read from the rule ("value" | "min" | "max"), "lo" | "hi"]
+// single-parameter rule limits: [rule id, field to read from the rule ("value" | "min" | "max") or the number itself, "lo" | "hi"]
 const RULE_BOUNDS = {
   "layout.wheelbase_mm": [["REG-C-WB", "value", "hi"]],
   "survival_cell.front_axle_offset_mm": [["REG-C-FRONT-AXLE", "min", "lo"], ["REG-C-FRONT-AXLE", "max", "hi"]],
@@ -17,16 +17,17 @@ const RULE_BOUNDS = {
   "front_wing.elements": [["REG-C-FW-ELEMENTS", "value", "hi"]],
   "rear_wing.span_mm": [["REG-C-RW-SPAN", "value", "hi"]],
   "rear_wing.chord_mm": [["REG-C-RW-CHORD", "value", "hi"]],
-  "rear_wing.elements": [["REG-C-RW-ELEMENTS", "value", "hi"]],
+  "rear_wing.elements": [["REG-C-RW-ELEMENTS", "value", "hi"], ["REG-C-ELEMENTS-MIN", 2, "lo"]],   // rear >= 2 volumes (C3.11.7(b))
+  "sidepods.inlet_cm2": [["REG-C-SIDEPOD-INLET", "value", "hi"]],
   "rear_wing.endplate_top_mm": [["REG-C-RW-ENDPLATE", "value", "hi"]],
   "floor.width_mm": [["REG-C-FLOOR-WIDTH", "value", "hi"]],
 };
 const VARS = parts.PARAMS.map(s => {
   const key = s.part + "." + s.param; let lo = s.min, hi = s.max; const from = [];
   for (const [id, field, side] of RULE_BOUNDS[key] || []) {
-    const r = regs.BY_ID[id]; if (!r || typeof r[field] !== "number") continue;
-    if (side === "lo" && r[field] > lo) { lo = r[field]; from.push(id + " ≥ " + r[field]); }
-    if (side === "hi" && r[field] < hi) { hi = r[field]; from.push(id + " ≤ " + r[field]); }
+    const r = regs.BY_ID[id], val = typeof field === "number" ? field : r && r[field]; if (!r || typeof val !== "number") continue;   // a number: that rule's value for this parameter
+    if (side === "lo" && val > lo) { lo = val; from.push(id + " ≥ " + val); }
+    if (side === "hi" && val < hi) { hi = val; from.push(id + " ≤ " + val); }
   }
   return { key, part: s.part, param: s.param, lo, hi, step: s.step, int: !!s.int, unit: s.unit, label: s.label, domain: [s.min, s.max], tightened_by: from };
 });
@@ -35,9 +36,18 @@ const N = VARS.length;
 const clip01 = v => (v < 0 ? 0 : v > 1 ? 1 : v);
 function encode(d) { return VARS.map(v => (d.params[v.part][v.param] - v.lo) / (v.hi - v.lo)); }
 // x (any reals) -> a Design: clipped into the box, quantised by design.applyChanges; materials and identity come from `base`
+// REPAIR (coupled limit, deterministic): the front-wing chord is capped at the front-wing envelope for the wing's own span,
+// setting and volume count (REG-C-FW-CHORD: X extent; REG-C-FW-PROFILES-Z: X and Z together, regs.fwProfilesChordLimit), rounded
+// down to the chord's step. Repairing only moves a candidate onto the rule's edge; the full check still runs on it.
 function decode(x, base, meta) {
   const changes = VARS.map((v, i) => ({ part: v.part, param: v.param, to: v.lo + clip01(x[i]) * (v.hi - v.lo) }));
-  return design.applyChanges(base, changes, meta || {}).design;
+  let d = design.applyChanges(base, changes, meta || {}).design;
+  const fw = d.params.front_wing, cv = VARS.find(v => v.key === "front_wing.chord_mm");
+  let lim = regs.fwChordLimit(fw.span_mm);
+  if (regs.fwProfilesChordLimit) { const z = regs.fwProfilesChordLimit(fw); if (isFinite(z)) lim = Math.min(lim, z); }
+  const cap = Math.floor((lim - cv.domain[0]) / cv.step + 1e-9) * cv.step + cv.domain[0];
+  if (fw.chord_mm > cap && cap >= cv.lo) d = design.applyChanges(d, [{ part: "front_wing", param: "chord_mm", to: cap }], meta || {}).design;
+  return d;
 }
 // squared distance outside the box (CMA penalty: the decoded car sits on the edge, the sample does not)
 function outside(x) { let s = 0; for (const v of x) { const c = clip01(v); s += (v - c) * (v - c); } return s; }

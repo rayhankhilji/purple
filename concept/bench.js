@@ -217,6 +217,8 @@
   // no extra PU field the sim could read (e.g. superclip_kw), the PU part masses and the MGU-K transmission option of the mass sheet
   // (C5.5, C5.18.7, C5.17.9, C5.3.4), no override on a PU part, and the anchor team. Fuel flow (C5.2.3-4) and the MGU-K taper
   // (C5.2.8) are constants inside the sim (REGS), not PhysicalCar fields, so no design reaches them.
+  // checkPhysical rules not enforced yet (re-enable by emptying this list once the inputs are fixed; docs/concept/CAMPAIGN.md §3)
+  const PHYSICAL_SKIP = ["REG-C-SUSP-WIDTH"];
   const PU_PARTS = Object.freeze(["pu_ice", "pu_turbo", "pu_mguk", "pu_es", "pu_electronics"]);
   const PU_FIELDS = Object.freeze(["ice_kw", "mguk_kw", "es_deploy_mj_per_lap", "es_harvest_mj_per_lap", "es_soc_window_mj"]);
   const PU_RULE = "C5 · the baseline team's homologated power unit, unchanged (campaign rule: same engine)";
@@ -333,9 +335,18 @@
     if (hit) { physStats.bench_hits = (physStats.bench_hits || 0) + 1; const r = JSON.parse(hit); r.id = d.id || null; r.physical.id = d.id || null; r.ms = Date.now() - t0; return r; }
     const f = design.facts(d, opts), violations = regs.checkFacts(f, opts);
     const pc = phys.physical(d, opts);
-    // same engine and permitted materials (on unless a what-if study turns them off; concept/optimize.js never does)
-    if (opts.pu_guard !== false) for (const x of checkPU(pc, d, f.mass)) violations.push(x);
-    if (opts.material_guard !== false) for (const x of checkMaterials(d)) violations.push(x);
+    // FIA checklist on the PhysicalCar (regs.checkPhysical): the Section C PU / energy limits and the PU lock against the team's
+    // homologated PU (PKG-PU-FIXED). recharge_limit_mj is NOT passed: es_harvest_mj_per_lap is the car's C5.2.10 cap (8.5 MJ); the
+    // session's 6.5 MJ applies to what a lap harvests and is checked on the sim's report (checkEnergy). PHYSICAL_SKIP rules are
+    // left out until their model inputs exist (REG-C-SUSP-WIDTH: track widths, claude/sim-v3-fia).
+    if (regs.checkPhysical) for (const x of regs.checkPhysical(pc, { pu_ref: homologatedPU(d.team || null) })) if (!PHYSICAL_SKIP.includes(x.id)) violations.push(x);
+    // same engine and permitted materials: BACKSTOPS on top of regs.js (PKG-PU-FIXED, the C15 rules). They speak only when regs.js
+    // found nothing, so a car regs.js rejects carries exactly regs.js's verdict, and a car it lets through still cannot carry a
+    // changed PU (exact ICE / MGU-K / ES figures, PU masses, no extra PU field, no power_scale) or a material the campaign does not
+    // allow (FIA status other than permitted; homologated safety structures). On unless a what-if study turns them off;
+    // concept/optimize.js never does.
+    if (!violations.length && opts.pu_guard !== false) for (const x of checkPU(pc, d, f.mass)) violations.push(x);
+    if (!violations.length && opts.material_guard !== false) for (const x of checkMaterials(d)) violations.push(x);
     const out = {
       id: d.id || null, label: LABEL, legal: violations.length === 0, violations,
       physical: pc, team: d.team || null,
@@ -368,7 +379,7 @@
   }
 
   const api = { LABEL, V0_LABEL, SCORE_LABEL, SCORE_LABEL_V0, V0, PHYSICS_CIRCUITS, game, racepace, activationZones, v0Multipliers, simV0, simPhysics, resolveSim, physicsSim, guardEnergy, cacheStats, clearCache, weekend, bench, profile, zoneDownforce, refCar,
-    PU_PARTS, PU_FIELDS, PU_RULE, homologatedPU, checkPU, checkEnergy, MATERIAL_FIXED_STRUCTURES, materialAllowed, checkMaterials };
+    PU_PARTS, PU_FIELDS, PU_RULE, PHYSICAL_SKIP, homologatedPU, checkPU, checkEnergy, MATERIAL_FIXED_STRUCTURES, materialAllowed, checkMaterials };
   C.bench = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();

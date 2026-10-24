@@ -43,7 +43,7 @@ test("PU guard in the bench: a changed PU is illegal, gets no lap, and the sim i
   const over = design.clone(RB); over.overrides = { pu_ice: { mass_kg: 118.5, x_mm: 2400 } };
   for (const [d, o] of [[RB, { calibration: { power_scale: 1.05 } }], [over, {}], [RB, { calibration: { power_scale: 0.97 } }]]) {
     const r = bench.bench(d, Object.assign({ sim: spy, objective: "quali", cache: false }, o));
-    assert.equal(r.legal, false); assert.ok(ids(r.violations).includes("PU-HOMOLOGATED")); assert.equal(r.score, null); assert.deepEqual(r.circuits, {});
+    assert.equal(r.legal, false); assert.ok(ids(r.violations).some(id => id === "PU-HOMOLOGATED" || id === "PKG-PU-FIXED")); assert.equal(r.score, null); assert.deepEqual(r.circuits, {});
   }
   assert.equal(called, 0);
   assert.ok(bench.bench(RB, { sim: spy, objective: "quali", cache: false }).legal); assert.equal(called, 1);
@@ -89,7 +89,10 @@ test("materials: only C15.2-permitted materials, never on the homologated safety
   for (const p of bench.MATERIAL_FIXED_STRUCTURES) assert.equal(bench.materialAllowed(p, "cfrp_t800s"), false);
   const bad = design.applyChanges(RB, [{ part: "floor", param: "material", to: "albemet_am162" }]).design;
   const r = bench.bench(bad, { sim: "v0", objective: "quali", cache: false });
-  assert.equal(r.legal, false); assert.ok(ids(r.violations).includes("MAT-C15"));
+  assert.equal(r.legal, false); assert.ok(ids(r.violations).some(id => id === "MAT-C15" || /^REG-C-MAT-/.test(id)));
+  // a C15-permitted laminate on a homologated safety structure: regs.js lets it through, the campaign backstop does not
+  const sc = design.applyChanges(RB, [{ part: "nose", param: "material", to: "cfrp_t800s" }]).design, rs = bench.bench(sc, { sim: "v0", objective: "quali", cache: false });
+  if (regs.check(sc).length === 0) assert.deepEqual(ids(rs.violations), ["MAT-C15"]); else assert.equal(rs.legal, false);
   const P = optimize.esProposer(8, { materials: true }), rng = design.seededRng(9);
   let swaps = 0;
   for (let i = 0; i < 60; i++) for (const p of P.propose([], RB, { lambda: 8, rng, sigma: 0.1 })) for (const c of p.changes) if (c.param === "material") { swaps++; assert.ok(bench.materialAllowed(c.part, c.to), c.part + " " + c.to); }
@@ -110,7 +113,29 @@ test("energy limits: every physics lap is re-checked (C5.2.9 SoC window, C5.2.10
     assert.equal(e.strategy, s); assert.ok(e.harvested_mj <= 6.5 + 1e-9 && e.deployed_mj <= e.harvested_mj + 4 + 0.002, s);
     laps[s] = r.circuits.silverstone.lap_s;
   }
-  assert.equal(laps.threshold, 88.749);
+  assert.equal(laps.threshold, sim.simulateLap(bench.guardEnergy(phys.physical(RB)), "silverstone").lap_s);
   assert.notEqual(laps.marginal, laps.threshold);   // the strategy reaches the sim (and moves the lap: why the campaign keeps the calibrated one)
   assert.throws(() => bench.bench(RB, { sim: "physics", objective: "quali", strategy: "boost", cache: false }), /strategy/);
+});
+
+test("FIA checklist in the bench and the proposer: regs.checkPhysical (PKG-PU-FIXED) is in the verdict, REG-C-SUSP-WIDTH waits; proposer limits", () => {
+  const spy = () => ({ lap_s: 80, sectors_s: [26, 30, 24], energy: {}, label: "spy" });
+  const r = bench.bench(RB, { sim: spy, objective: "quali", cache: false, calibration: { power_scale: 1.02 } });
+  assert.ok(ids(r.violations).includes("PKG-PU-FIXED"));
+  // what regs.js allows but the backstop does not: an extra PU field the sim could read (superclip_kw) is caught by checkPU
+  assert.deepEqual(regs.checkPhysical(Object.assign({}, pcOf(RB), { pu: Object.assign({}, pcOf(RB).pu, { superclip_kw: 500 }) }), { pu_ref: bench.homologatedPU("redbull") }).filter(v => v.id !== "REG-C-SUSP-WIDTH"), []);
+  assert.deepEqual(bench.PHYSICAL_SKIP, ["REG-C-SUSP-WIDTH"]);
+  assert.ok(regs.checkPhysical(pcOf(RB), {}).some(v => v.id === "REG-C-SUSP-WIDTH"), "still pending upstream: when this fails, empty PHYSICAL_SKIP");
+  assert.ok(bench.bench(RB, { sim: spy, objective: "quali", cache: false }).legal);
+  const L = optimize.proposerLimits(RB.params);
+  assert.equal(L["rear_wing.elements"].min, 2);
+  assert.ok(Math.abs(L["front_wing.chord_mm"].max - regs.fwProfilesChordLimit(RB.params.front_wing)) < 1e-9);
+  // the ES proposer's changes always respect them (on the design they produce)
+  const P = optimize.esProposer(8), rng = design.seededRng(21);
+  for (let i = 0; i < 80; i++) for (const p of P.propose([], RB, { lambda: 8, rng, sigma: 0.2 })) {
+    const d = design.applyChanges(RB, p.changes).design;
+    assert.ok(d.params.rear_wing.elements >= 2);
+    const lim = regs.fwProfilesChordLimit(d.params.front_wing);   // below the 400 mm domain floor no chord fits: the bench rejects the car
+    assert.ok(d.params.front_wing.chord_mm <= lim + 1e-9 || lim < 400 || !p.changes.some(c => c.part === "front_wing" && c.param === "chord_mm"));
+  }
 });

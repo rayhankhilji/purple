@@ -152,7 +152,8 @@ async function refine(ctx, start) {
   // 1. wing volume counts: a short CMA-ES from the incumbent for every other (front, rear) combination (single-volume wings lose
   //    their straight-mode flap: C3.10.10(a)(i), C3.11.6(a)(i))
   const combos = [];
-  for (let fe = 1; fe <= 3; fe++) for (let re = 1; re <= 3; re++) {
+  const vol = k => space.VARS.find(v => v.key === k), fv = vol("front_wing.elements"), rv = vol("rear_wing.elements");
+  for (let fe = fv.lo; fe <= fv.hi; fe++) for (let re = rv.lo; re <= rv.hi; re++) {
     if (fe === cur.design.params.front_wing.elements && re === cur.design.params.rear_wing.elements) continue;
     combos.push([fe, re]);
   }
@@ -212,9 +213,9 @@ function ruleLimit(r, f) {
 // the full legality report: every rule regs.js knows (FIA articles + model rules), plus the campaign guards
 function legalityReport(d, violations, pc) {
   const f = design.facts(d), vio = new Map(); for (const v of violations) vio.set(v.id, v);
-  const rows = regs.RULES.concat(regs.MODEL_RULES).map(r => ({
+  const rows = (regs.ALL_RULES || regs.RULES.concat(regs.MODEL_RULES)).map(r => ({
     id: r.id, article: r.article, kind: r.kind, verified: r.verified, text: r.text, limit: ruleLimit(r, f), value: ruleValue(r.id, f),
-    status: vio.has(r.id) ? "FAIL" : r.kind === "info" ? "info (recorded; " + (r.modelled_as ? "not a shape/mass check" : "not checkable here") + ")" : "pass",
+    status: vio.has(r.id) ? "FAIL" : (bench.PHYSICAL_SKIP || []).includes(r.id) ? "not enforced yet (model input pending)" : r.kind === "info" ? "info (recorded; " + (r.modelled_as ? "not a shape/mass check" : "not checkable here") + ")" : "pass",
   }));
   const H = bench.homologatedPU(d.team || null);
   rows.push({ id: "PU-HOMOLOGATED", article: bench.PU_RULE, kind: "campaign", verified: true, text: "PhysicalCar PU = the homologated " + H.name + " (ICE, MGU-K, ES figures, PU masses, MGU-K transmission option)", limit: "identical", value: "ICE " + pc.pu.ice_kw + " kW, MGU-K " + pc.pu.mguk_kw + " kW, ES " + pc.pu.es_soc_window_mj + " / " + pc.pu.es_harvest_mj_per_lap + " MJ", status: vio.has("PU-HOMOLOGATED") ? "FAIL" : "pass" });
@@ -237,9 +238,20 @@ async function report(ctx, final, seeds, refineOut) {
   // and the raw sim call itself (no bench in between): must be the same lap
   const direct = sim.simulateLap(bench.guardEnergy(phys.physical(best)), CIRCUIT, cond, ctx.opts.strategy ? { strategy: ctx.opts.strategy } : undefined);
   if (Math.abs(direct.lap_s - c.lap_s) > 1e-9) throw new Error("concept campaign: bench lap " + c.lap_s + " differs from the sim's own " + direct.lap_s);
-  const unc = U.band({ lap_s: c.lap_s, sectors_s: c.sectors_s }, { lap_s: b.lap_s, sectors_s: b.sectors_s }, ctx.team);
-  const segMod = require("../designer/segments.js"), segB = segMod.segmentTimes(ctx.base, { conditions: cond }), segX = segMod.segmentTimes(best, { conditions: cond });
-  const segDelta = segMod.segmentDelta(segB, segX);
+  const simOpts = ctx.opts.strategy ? { strategy: ctx.opts.strategy } : undefined;
+  const noise = U.measureNoise(bench.guardEnergy(R.physical), cond, simOpts);
+  const unc = U.band({ lap_s: c.lap_s, sectors_s: c.sectors_s }, { lap_s: b.lap_s, sectors_s: b.sectors_s }, ctx.team, { noise_s: noise.sigma_s, noise });
+  // where the time comes from: the sim's own per-segment contributions (sim v2 contributions(car, ref): corner zones and the
+  // straights between, from both cars' time traces; they add up to the lap delta), else the designer's segment cut
+  let segDelta, segLabel;
+  if (typeof sim.contributions === "function") {
+    const k = sim.contributions(bench.guardEnergy(R.physical), bench.guardEnergy(B.physical), cond, { simOpts });
+    segDelta = k.segments.map(g => ({ name: g.name, kind: g.kind, d_s: g.delta_s, s0_m: g.s0_m, s1_m: g.s1_m, min_kmh: g.min_kmh, ref_min_kmh: g.ref_min_kmh }));
+    segLabel = "physics lap sim contributions(best, baseline): per corner zone (marker ±100 m) and straight, best − baseline; sum = lap delta " + k.delta_s + " s";
+  } else {
+    const segMod = require("../designer/segments.js"), segB = segMod.segmentTimes(ctx.base, { conditions: cond }), segX = segMod.segmentTimes(best, { conditions: cond });
+    segDelta = segMod.segmentDelta(segB, segX); segLabel = "per-segment time, physics sim time-at-distance (concept/designer/segments.js), best − baseline";
+  }
   const diff = design.diff(ctx.base, best).map(d0 => {
     const v = space.VARS.find(q => q.part === d0.part && q.param === d0.param);
     const edge = v && v.tightened_by.length && (Math.abs(d0.to - v.hi) < 1e-9 || Math.abs(d0.to - v.lo) < 1e-9) ? v.tightened_by.join("; ") : v && (Math.abs(d0.to - v.domain[0]) < 1e-9 || Math.abs(d0.to - v.domain[1]) < 1e-9) ? "model domain edge" : null;
@@ -272,6 +284,7 @@ async function report(ctx, final, seeds, refineOut) {
       ["front wing (span, chord, setting, volumes)", ["front_wing.span_mm", "front_wing.chord_mm", "front_wing.aoa_deg", "front_wing.elements"]],
       ["rear wing (span, chord, setting, volumes, endplate)", ["rear_wing.span_mm", "rear_wing.chord_mm", "rear_wing.aoa_deg", "rear_wing.elements", "rear_wing.endplate_top_mm"]],
       ["floor and diffuser (width, throat, ride height, expansion)", ["floor.width_mm", "floor.throat_mm", "floor.ride_height_mm", "diffuser.expansion_deg"]],
+      ["floor throat only (REG-C-FLOOR-ROOF not yet checkable)", ["floor.throat_mm"]],
       ["sidepods (inlet, undercut)", ["sidepods.inlet_cm2", "sidepods.undercut_mm"]],
       ["packaging (wheelbase, survival cell)", ["layout.wheelbase_mm", "survival_cell.front_axle_offset_mm", "survival_cell.cockpit_len_mm", "survival_cell.bulkhead_gap_mm"]],
       ["ballast (position, extra)", ["ballast.x_frac", "ballast.extra_kg"]],
@@ -308,7 +321,7 @@ async function report(ctx, final, seeds, refineOut) {
     pu: Object.assign(puReport(R.physical, ctx.team), { name: H.name, guard_violations: bench.checkPU(R.physical, best, R.mass && design.facts(best).mass).length }),
     energy_check: bench.checkEnergy(c, cond),
     legality: legalityReport(best, R.violations, R.physical),
-    changes: diff, segments: segDelta, segments_label: "per-segment time, physics sim time-at-distance (concept/designer/segments.js), best − baseline",
+    changes: diff, segments: segDelta, segments_label: segLabel,
     surrogate, sensitivity: sens,
     seeds: seeds.map(s => ({ seed: s.seed, best_s: s.best_s, physics_laps: s.physics_laps, surrogate_screened: s.surrogate_screened, restarts: s.restarts, runtime_s: s.runtime_s })),
     refine: { start_s: refineOut.start_s, best_s: refineOut.best_s, physics_laps: refineOut.physics_laps, log: refineOut.log.map(l => ({ stage: l.stage, lap_s: l.lap_s, laps: l.laps, accepted: l.accepted, moves: l.moves })) },
@@ -359,12 +372,12 @@ function summaryMarkdown(out) {
     L.push("| baseline | " + f3(r.baseline.lap_s) + " | " + r.baseline.sectors_s.map(f3).join(" / ") + " | " + r.baseline.speed_trap_kmh + " | " + sg(r.baseline.lap_s - r.real.pole.s) + " | " + sg(r.baseline.lap_s - r.real.had.s) + " | P" + r.baseline.grid_position + " |");
     L.push("| **campaign best** | **" + f3(r.best.lap_s) + "** ± " + f3(u.sigma_s) + " (1σ) | " + r.best.sectors_s.map(f3).join(" / ") + " | " + r.best.speed_trap_kmh + " | " + sg(r.best.delta_to_pole_s) + " | " + sg(r.best.delta_to_had_s) + " | P" + r.best.grid_position + " (95 %: P" + r.best.grid_range_95[0] + "–P" + r.best.grid_range_95[1] + ") |", "");
     L.push("95 % band " + u.band95_s.map(f3).join("–") + " s. vs pole: " + r.verdict_pole.text + ". vs HAD: " + r.verdict_had.text + ".", "");
-    L.push("Uncertainty components (s): transfer " + f3(u.components.transfer_s) + " (k = " + u.components.transfer_k + " × sector changes " + u.components.sector_change_s.map(sg).join(" / ") + "), fit residual RMS " + f3(u.components.fit_residual_rms_s) + ", sim noise " + f3(u.components.sim_noise_s) + ", surrogate 0. Known bias: anchor residual " + sg(u.anchor.residual_s) + " s (" + u.anchor.driver + "); anchor-relative lap " + f3(u.anchor.anchor_relative_lap_s) + " s; held-out sector bias " + u.sector_bias.mean_s.map(sg).join(" / ") + " s, bias-corrected sectors " + u.sector_bias.corrected_sectors_s.map(f3).join(" / ") + " s.", "");
+    L.push("Uncertainty components (s): transfer " + f3(u.components.transfer_s) + " (k = " + u.components.transfer_k + " × sector changes " + u.components.sector_change_s.map(sg).join(" / ") + "), fit residual RMS " + f3(u.components.fit_residual_rms_s) + ", sim noise " + f3(u.components.sim_noise_s) + " (measured on the final car), surrogate 0. Sim's held-out trace RMS " + u.heldout_trace_rms_kmh + " km/h. Known bias: anchor residual " + sg(u.anchor.residual_s) + " s (" + u.anchor.driver + "); anchor-relative lap " + f3(u.anchor.anchor_relative_lap_s) + " s; held-out sector bias " + u.sector_bias.mean_s.map(sg).join(" / ") + " s, bias-corrected sectors " + u.sector_bias.corrected_sectors_s.map(f3).join(" / ") + " s.", "");
     L.push("PU: " + r.pu.name + " — " + (r.pu.identical && r.pu.guard_violations === 0 ? "identical to the homologated PU" : "DIFFERS") + " (" + r.pu.fields.map(x => x.field + " " + x.car).join(", ") + "). Energy: deployed " + r.best.energy.deployed_mj + " MJ, recharged " + r.best.energy.harvested_mj + " MJ of " + r.best.energy.recharge_cap_mj + " MJ (" + (r.energy_check.length ? "OVER A LIMIT" : "within C5.2.9 / C5.2.10") + ").", "");
     L.push("| Part · parameter | From → to | At a limit |", "|---|---|---|");
     for (const d of r.changes.slice().sort((a, b) => Math.abs(b.domain_frac || 0) - Math.abs(a.domain_frac || 0))) L.push("| " + d.text.split(" · ")[0] + " · " + d.param + " | " + d.text.split(" · ").slice(1).join(" · ") + " | " + (d.at_limit || "") + " |");
-    L.push("", "| Segment | Δ time (s) |", "|---|---|");
-    for (const s of r.segments) L.push("| " + s.name + " (" + s.kind + ") | " + sg(s.d_s) + " |");
+    L.push("", "Where the time comes from (" + r.segments_label + "):", "", "| Segment | Δ time (s) |", "|---|---|");
+    for (const s of r.segments) L.push("| " + s.name + " (" + s.kind + (s.s0_m != null ? ", " + s.s0_m + "–" + s.s1_m + " m" : "") + ") | " + sg(s.d_s) + (s.min_kmh != null ? " (min " + s.ref_min_kmh + " → " + s.min_kmh + " km/h)" : "") + " |");
     L.push("", "| Seed | Best lap (s) | Physics laps | Surrogate-screened | Restarts | Runtime (s) |", "|---|---|---|---|---|---|");
     for (const s of r.seeds) L.push("| " + s.seed + " | " + f3(s.best_s) + " | " + s.physics_laps + " | " + s.surrogate_screened + " | " + s.restarts.length + " | " + s.runtime_s + " |");
     L.push("| refine | " + f3(r.refine.best_s) + " (from " + f3(r.refine.start_s) + ") | " + r.refine.physics_laps + " | — | — | " + r.refine.runtime_s + " |", "");

@@ -8,7 +8,8 @@
 //       σ_i = k·|g_i|; the three sectors are added in quadrature (the lap change itself is never held out, so the sector errors
 //       are not forced to cancel).
 //   (b) lap-level fit error: the RMS of the 11 team-car lap residuals (fit, not held out).
-//   (c) the sim's own numerical noise on nearby designs: ±0.005 s (SIM.md §3, the energy strategy's discrete φ search).
+//   (c) the sim's own numerical noise on nearby designs, measured at the final car (measureNoise: 21 laps over ±0.2 % CLA, RMS
+//       residual about a straight line); never below ±0.005 s (SIM.md §3, the energy strategy's discrete φ search).
 //   (d) surrogate: 0. No final number comes from the surrogate; every one is a physics sim lap (its disagreement is reported).
 //   σ = √(a² + b² + c²); the band is ±1.96 σ (≈ 95 % if the errors were normal).
 // Known BIAS, reported beside the band (not inside it): the anchor's own fit residual (RB22: sim − real HAD lap; generic: sim −
@@ -57,10 +58,26 @@ function sectorBias() {
 function fitResidualRms() { const T = fitInfo().teams; return Math.sqrt(T.reduce((s, t) => s + t.residual_lap_s * t.residual_lap_s, 0) / T.length); }
 
 const r3 = v => Math.round(v * 1000) / 1000;
+// mean held-out speed-trace RMS of the team laps (information: how far the sim's speed trace sits from the real ones)
+function heldoutTraceRms() { const F = fitInfo(), ref = F.calibration.fit_lap.driver, t = F.teams.filter(x => x.driver !== ref && x.heldout); return +(t.reduce((s, x) => s + x.heldout.trace_rms_kmh, 0) / t.length).toFixed(1); }
+// the sim's numerical noise AT the final car: 21 laps with the corner and Straight Mode CLA scaled by 1 ± 0.2 % in 0.02 % steps;
+// the RMS residual about a straight-line fit of lap vs scale is the lap-to-lap noise a nearby design sees (energy strategy search)
+function measureNoise(pc, conditions, simOpts) {
+  const xs = [], ys = [];
+  for (let i = -10; i <= 10; i++) {
+    const k = 1 + 0.0002 * i, c = JSON.parse(JSON.stringify(pc));
+    for (const m of ["corner", "straight"]) { c.aero[m].CLA_front_m2 *= k; c.aero[m].CLA_rear_m2 *= k; }
+    xs.push(k - 1); ys.push(sim.simulateLap(c, "silverstone", conditions, simOpts).lap_s);
+  }
+  const n = xs.length, mx = xs.reduce((s, v) => s + v, 0) / n, my = ys.reduce((s, v) => s + v, 0) / n;
+  const sl = xs.reduce((s, v, i) => s + (v - mx) * (ys[i] - my), 0) / xs.reduce((s, v) => s + (v - mx) * (v - mx), 0);
+  const res = ys.map((y, i) => y - (my + sl * (xs[i] - mx))), sd = Math.sqrt(res.reduce((s, v) => s + v * v, 0) / (n - 2));
+  return { sigma_s: +sd.toFixed(4), max_abs_s: +Math.max(...res.map(Math.abs)).toFixed(4), slope_s_per_pct_cla: +(sl / 100).toFixed(4), n };
+}
 // band(best, baseline, team): best / baseline = { lap_s, sectors_s } from the physics sim (same conditions)
 function band(best, baseline, team, extra) {
   const tr = transferError(team), g = best.sectors_s.map((s, i) => s - baseline.sectors_s[i]);
-  const a = tr.k * Math.sqrt(g.reduce((s, v) => s + v * v, 0)), b = fitResidualRms(), c = NOISE_S;
+  const a = tr.k * Math.sqrt(g.reduce((s, v) => s + v * v, 0)), b = fitResidualRms(), c = Math.max(NOISE_S, (extra && extra.noise_s) || 0);
   const sigma = Math.sqrt(a * a + b * b + c * c), A = anchorRecord(team), bias = sectorBias();
   const lo = best.lap_s - Z95 * sigma, hi = best.lap_s + Z95 * sigma;
   return {
@@ -69,7 +86,7 @@ function band(best, baseline, team, extra) {
     anchor: { id: A.id, driver: A.driver, lap_real_s: A.lap_real_s, lap_sim_s: A.lap_sim_s, residual_s: r3(A.lap_sim_s - A.lap_real_s), basis: A.basis,
       anchor_relative_lap_s: r3(A.lap_real_s + (best.lap_s - baseline.lap_s)), note: "the anchor's real lap plus the sim's change from the anchor car: removes the anchor's own fit residual" },
     sector_bias: Object.assign(bias, { corrected_sectors_s: best.sectors_s.map((s, i) => r3(s - bias.mean_s[i])) }),
-    transfer_pairs: tr.n,
+    transfer_pairs: tr.n, heldout_trace_rms_kmh: heldoutTraceRms(),
     not_covered: "the concept aero map's relative coefficients (guesses), part-mass estimates, and what the point-mass sim leaves out (SIM.md §7)",
     extra: extra || null,
   };
@@ -82,4 +99,4 @@ function verdict(b, target_s) {
   return { target_s, side: b.lap_s < target_s ? "faster" : "slower", inside: true, text: (b.lap_s < target_s ? "faster" : "slower") + " than " + target_s.toFixed(3) + " s, but " + target_s.toFixed(3) + " s is inside the 95 % band (" + lo.toFixed(3) + "–" + hi.toFixed(3) + " s): not resolved by the model" };
 }
 
-module.exports = { band, verdict, transferError, sectorBias, fitResidualRms, anchorRecord, NOISE_S, Z95 };
+module.exports = { band, verdict, transferError, sectorBias, fitResidualRms, anchorRecord, heldoutTraceRms, measureNoise, NOISE_S, Z95 };
