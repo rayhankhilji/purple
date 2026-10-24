@@ -15,7 +15,7 @@
   const EI = (root.EI = root.EI || {}); const C = (EI.concept = EI.concept || {});
   const req = (name, file) => C[name] || (typeof require === "function" ? require(file) : null);
   const regs = req("regs", "./regs.js"), design = req("design", "./design.js"), phys = req("physical", "./physical.js");
-  const LABEL = "concept · reduced-order lap model · calibrated to 2026 pole laps · concept aero map v0";
+  const LABEL = "concept · reduced-order lap model · calibrated to 2026 pole laps · concept aero map v1";
   const V0_LABEL = LABEL + " · sim v0 (game lap model, relative to the baseline concept car)";
   const SCORE_LABEL = "qualifying score · Silverstone · margin to the real 2026 pole and projected grid slot vs the real 2026 qualifying laps (EI.RACEPACE)";
   const SCORE_LABEL_V0 = SCORE_LABEL + " · baseline anchored at pole by construction (sim v0)";
