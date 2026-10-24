@@ -14,9 +14,10 @@
   const S = EI.conceptSim && EI.conceptSim.simulateLap ? EI.conceptSim : require("./lapsim.js");
 
   const TEAM_FIT = {
-    sigma: { lap_s: 0.10, trap_kmh: 1.0, cla: 0.12, cda: 0.10, pu: 0.03 },          // likelihood widths and prior widths (log scale)
+    sigma: { lap_s: 0.10, trap_kmh: 2.5,   // trap 2.5 km/h: the trap is not a clean car property (tow, deployment state)
+      cla: 0.12, cda: 0.10, pu: 0.03 },          // likelihood widths and prior widths (log scale)
     bounds: { cla: [0.70, 1.15], cda: [0.80, 1.25], pu: [0.92, 1.05] },
-    iters: 14, lambda0: 1e-2, fd: 0.01,
+    iters: 30, lambda0: 1e-2, fd: 0.02,
   };
 
   function gameData() {
@@ -87,37 +88,136 @@
     const idx = F.map((v, i) => i).sort((a, b) => F[a].f - F[b].f || a - b);
     return F[idx[0]];
   }
-  const EST = { iters: 320, step: 0.15, lap_weight: 25, prior_sigma: [0.15, 0.3, 0.3, 0.7], prior_weight: 10 };   // [mu, CLA, CDA, load_sens]
-  function estimatedCar(prior, x) {
-    const c = JSON.parse(JSON.stringify(prior)), [mu, cla, cda, ls] = x.map(Math.exp);
-    for (const m of ["corner", "straight"]) { c.aero[m].CLA_front_m2 *= cla; c.aero[m].CLA_rear_m2 *= cla; c.aero[m].CDA_m2 *= cda; }
-    c.tyres.mu_x *= mu; c.tyres.mu_y *= mu; c.tyres.load_sens *= ls;
+  // v2: the baseline's unpublished parameters are estimated INSIDE the sourced prior ranges of concept/data/priors-2026.json
+  // (recommended_fit_priors: lo / central / hi, the researcher's judgement on public sources). Each parameter is mapped to its
+  // [lo, hi] range by a logistic transform (hard bounds) and carries a Gaussian prior centred on `central` with sd = (hi - lo) / 4
+  // (the range is +-2 sd). PRIOR_RANGES is the embedded copy used in the browser; a test checks it against the JSON.
+  const PRIOR_RANGES = {
+    mu_y_peak_at_2kN: [1.6, 1.8, 2.0], mu_x_peak_at_2kN: [1.5, 1.75, 1.9], CLA_corner: [3.2, 3.9, 4.6], aero_balance_front: [0.4, 0.435, 0.47],
+    CDA_corner: [0.75, 1.0, 1.25], CDA_straight: [0.6, 0.75, 1.0], CDA_straight_over_corner: [0.75, 0.82, 0.92], CLA_straight_over_corner: [0.68, 0.72, 0.8],
+    load_sensitivity: [3.0, 4.5, 6.0], ICE_crank_power: [385, 405, 430], peak_decel_high_speed_entry: [3.1, 3.4, 3.8],
+  };
+  function priorRanges() {
+    if (typeof require !== "function") return PRIOR_RANGES;
+    try {
+      const fs = require("fs"), path = require("path"), f = path.join(__dirname, "..", "data", "priors-2026.json");
+      if (!fs.existsSync(f)) return PRIOR_RANGES;
+      const out = Object.assign({}, PRIOR_RANGES);
+      for (const r of JSON.parse(fs.readFileSync(f, "utf8")).recommended_fit_priors || []) if (out[r.key]) out[r.key] = [r.lo, r.central, r.hi];
+      return out;
+    } catch (e) { return PRIOR_RANGES; }
+  }
+  // estimated parameters: [name, prior key]. CDA_straight is estimated as a position inside the intersection of its own range and
+  // CDA_corner x the Straight/Corner ratio range, so both priors hold; load sensitivity is in % per kN of tyre load (the sim's
+  // dimensionless load_sens = %/kN / 100 x the mean static tyre load in kN).
+  const EST = {
+    iters: 420, restarts: 2, step: 0.6, lap_weight: 400, trap_weight: 0, prior_weight: 10,   // km/h^2 per s^2 of lap error / per (km/h)^2 of trap error
+    params: [["mu_y", "mu_y_peak_at_2kN"], ["mu_x", "mu_x_peak_at_2kN"], ["cla", "CLA_corner"], ["balance", "aero_balance_front"], ["cda", "CDA_corner"],
+      ["cda_straight", "CDA_straight"], ["cla_straight_ratio", "CLA_straight_over_corner"], ["load_sens_pct_per_kN", "load_sensitivity"]],
+    // ICE power is NOT estimated: it stays at the FIA's 2026 design figure (400 kW, inside the 385-430 kW prior); with the lap and
+    // trace alone it trades against drag (the derived-car degeneracy, REDBULL-DERIVED.md §2), and the design layer keys on it
+    // brake supplier simulation for 2026 Silverstone (priors-2026 peak_decel_high_speed_entry 3.1-3.8 g, central 3.4), at 260 km/h
+    brake_peak_kmh: 260,
+  };
+  const sigm = z => 1 / (1 + Math.exp(-z)), logit = f => Math.log(f / (1 - f));
+  // parameter values for a point z of the search space
+  function paramValues(z, P) {
+    const v = {};
+    EST.params.forEach(([k, key], i) => {
+      let lo = P[key][0], hi = P[key][2];
+      if (k === "cda_straight") { const r = P.CDA_straight_over_corner; lo = Math.max(lo, v.cda * r[0]); hi = Math.min(hi, v.cda * r[2]); if (hi < lo) hi = lo; }
+      v[k] = lo + (hi - lo) * sigm(z[i]);
+    });
+    return v;
+  }
+  function z0Of(P) {
+    return EST.params.map(([k, key]) => {
+      const [lo, c, hi] = P[key];
+      if (k === "cda_straight") return 0;
+      return logit(Math.min(0.98, Math.max(0.02, (c - lo) / (hi - lo))));
+    });
+  }
+  function carOfParams(prior, v) {
+    const c = JSON.parse(JSON.stringify(prior)), cs = v.cla * v.cla_straight_ratio;
+    c.aero.corner = Object.assign({}, c.aero.corner, { CLA_front_m2: v.cla * v.balance, CLA_rear_m2: v.cla * (1 - v.balance), CDA_m2: v.cda });
+    c.aero.straight = Object.assign({}, c.aero.straight, { CLA_front_m2: cs * v.balance, CLA_rear_m2: cs * (1 - v.balance), CDA_m2: v.cda_straight });
+    const fz0kN = ((c.mass_kg + c.fuel_kg) * 9.81) / 4 / 1000;
+    c.tyres.mu_y = v.mu_y; c.tyres.mu_x = v.mu_x; c.tyres.load_sens = (v.load_sens_pct_per_kN / 100) * fz0kN;
+    if (v.ice_kw != null) c.pu.ice_kw = v.ice_kw;
     return c;
+  }
+  // a car's parameters against the prior ranges (for fitted.js / SIM.md): value, lo, central, hi, inside
+  function priorTable(car, P) {
+    P = P || priorRanges();
+    const a = car.aero, cla = a.corner.CLA_front_m2 + a.corner.CLA_rear_m2, fz0kN = ((car.mass_kg + car.fuel_kg) * 9.81) / 4 / 1000;
+    const rows = [["CLA_corner", cla], ["aero_balance_front", a.corner.CLA_front_m2 / cla], ["CDA_corner", a.corner.CDA_m2], ["CDA_straight", a.straight.CDA_m2],
+      ["CDA_straight_over_corner", a.straight.CDA_m2 / a.corner.CDA_m2], ["CLA_straight_over_corner", (a.straight.CLA_front_m2 + a.straight.CLA_rear_m2) / cla],
+      ["mu_y_peak_at_2kN", car.tyres.mu_y], ["mu_x_peak_at_2kN", car.tyres.mu_x], ["load_sensitivity", (car.tyres.load_sens / fz0kN) * 100], ["ICE_crank_power", car.pu.ice_kw]];
+    return rows.map(([k, v]) => { const [lo, c, hi] = P[k]; return { key: k, value: +v.toFixed(4), lo, central: c, hi, inside: v >= lo - 1e-3 && v <= hi + 1e-3 }; });
+  }
+  // telemetry-derived measurements of one team's car (concept/data/cars-2026-derived.json, Node only; null if absent)
+  let derivedCache = null;
+  function derivedFile() {
+    if (derivedCache !== null) return derivedCache;
+    derivedCache = false;
+    if (typeof require !== "function") return derivedCache;
+    try {
+      const fs = require("fs"), path = require("path"), f = path.join(__dirname, "..", "data", "cars-2026-derived.json");
+      if (fs.existsSync(f)) derivedCache = JSON.parse(fs.readFileSync(f, "utf8"));
+    } catch (e) { derivedCache = false; }
+    return derivedCache;
+  }
+  function derivedStats(teamId) {
+    const j = derivedFile(), t = j && j.teams && j.teams[teamId];
+    if (!t || !t.stats) return null;
+    const st = k => (t.stats[k] ? { v: t.stats[k].central, sd: t.stats[k].sd_robust || t.stats[k].sd } : null);
+    return { team: teamId, driver: t.fit_driver, mass_kg: t.mass && t.mass.kg, ay150_g: st("ay150_g"), ay250_g: st("ay250_g"), cda_c: st("CdA_c"), cda_s: st("CdA_s"), mu_x: st("mu_x"), gearing: t.gearing || null, ice_kw: t.physical_car && t.physical_car.pu && t.physical_car.pu.ice_kw };
+  }
+  // Gaussian data terms comparing a car with its team's derived measurements (chi^2 contributions, and a table for SIM.md)
+  function derivedAgreement(car, d, cond) {
+    if (!d) return { chi2: 0, rows: [] };
+    const c150 = S.capacity(car, 150, cond), c250 = S.capacity(car, 250, cond), rows = [];
+    const add = (name, sim, m) => { if (m && m.sd > 0) rows.push({ name, sim: +sim.toFixed(3), derived: m.v, sd: m.sd, z: +((sim - m.v) / m.sd).toFixed(2) }); };
+    add("lateral limit at 150 km/h (g)", c150.ay_g, d.ay150_g);
+    add("lateral limit at 250 km/h (g)", c250.ay_g, d.ay250_g);
+    add("CdA Corner Mode (m2)", car.aero.corner.CDA_m2, d.cda_c);
+    add("CdA Straight Mode (m2)", car.aero.straight.CDA_m2, d.cda_s);
+    return { chi2: rows.reduce((p, r) => p + r.z * r.z, 0), rows };
   }
   function calibrate(opts) {
     opts = opts || {};
     const trackId = opts.trackId || "silverstone", tr = T.buildTrack(trackId), ref = opts.reference || tr.reference;
     if (!ref) throw new Error("concept sim: calibrate needs the telemetry reference lap (concept/sim/line-" + trackId + ".js)");
-    const prior = opts.prior || S.priorCar(), cond = opts.conditions || {}, ident = { grip_scale: 1, drag_scale: 1 };
+    const prior = opts.prior || S.priorCar(), cond = opts.conditions || {}, ident = { grip_scale: 1, drag_scale: 1 }, P = priorRanges();
     if (ref.gearing_estimate) prior.gearing = ref.gearing_estimate;
-    const f = x => {
-      const car = estimatedCar(prior, x), r = S.simulateLap(car, trackId, cond, { trace: true, cal: ident });
+    const dstat = opts.derived !== undefined ? opts.derived : derivedStats("mercedes");   // the pole car (ANT, Mercedes)
+    const bp = P.peak_decel_high_speed_entry, sdOf = key => (P[key][2] - P[key][0]) / 4;
+    const f = z => {
+      const v = paramValues(z, P), car = carOfParams(prior, v), r = S.simulateLap(car, trackId, cond, { trace: true, cal: ident });
       const rms = traceError(r, ref, tr);
-      // MAP: log-normal priors around the sourced prior car keep weakly identified directions (e.g. CLA vs rolling load) at
-      // physically plausible values; widths EST.prior_sigma (log scale), weight EST.prior_weight (km/h^2 per sigma^2)
-      const pen = x.reduce((p, v, i) => p + (v / EST.prior_sigma[i]) ** 2, 0) * EST.prior_weight;
-      return { f: rms * rms + EST.lap_weight * (r.lap_s - ref.reference.lap_s) ** 2 + pen, rms, r, car, x };
+      let pen = 0; EST.params.forEach(([k, key]) => { pen += ((v[k] - P[key][1]) / sdOf(key)) ** 2; });
+      pen += ((v.cda_straight / v.cda - P.CDA_straight_over_corner[1]) / sdOf("CDA_straight_over_corner")) ** 2;
+      const dat = derivedAgreement(car, dstat, cond).chi2 + ((S.capacity(car, EST.brake_peak_kmh, cond).brake_g - bp[1]) / ((bp[2] - bp[0]) / 2)) ** 2;
+      const trapErr = ref.reference.speed_trap_kmh != null ? r.speed_trap_kmh - ref.reference.speed_trap_kmh : 0;
+      return { f: rms * rms + EST.lap_weight * (r.lap_s - ref.reference.lap_s) ** 2 + EST.trap_weight * trapErr * trapErr + EST.prior_weight * (pen + dat), rms, r, car, v, z };
     };
-    const best = nelderMead(f, [0, 0, 0, 0], EST.step, opts.iters || EST.iters);
+    // Nelder-Mead, then EST.restarts restarts from the best point with a fresh simplex (the lap is only piecewise smooth in the
+    // parameters - energy-strategy switches - so a simplex can stall on a ridge; restarts are deterministic)
+    let best = nelderMead(f, opts.x0 || z0Of(P), EST.step, opts.iters || EST.iters);
+    for (let k = 0; k < EST.restarts; k++) { const b2 = nelderMead(f, best.z, EST.step / 2, Math.round((opts.iters || EST.iters) / 2)); if (b2.f < best.f) best = b2; }
     const c = best.car, r1 = v => Math.round(v * 1e4) / 1e4;
     for (const m of ["corner", "straight"]) for (const k of ["CLA_front_m2", "CLA_rear_m2", "CDA_m2"]) c.aero[m][k] = r1(c.aero[m][k]);
     for (const k of ["mu_x", "mu_y", "load_sens"]) c.tyres[k] = r1(c.tyres[k]);
-    const r = best.r;
+    c.pu.ice_kw = Math.round(c.pu.ice_kw * 10) / 10;
+    const r = S.simulateLap(c, trackId, cond, { trace: true, cal: ident }), values = {};
+    EST.params.forEach(([k]) => { values[k] = r1(best.v[k]); });
     return {
-      method: "MAP (Nelder-Mead, " + (opts.iters || EST.iters) + " iterations) on the pole lap's speed trace + lap time; 4 global parameters with log-normal priors (sigma mu 0.15, CLA 0.3, CDA 0.3, load_sens 0.7)",
-      scales: { mu: r1(Math.exp(best.x[0])), cla: r1(Math.exp(best.x[1])), cda: r1(Math.exp(best.x[2])), load_sens: r1(Math.exp(best.x[3])) },
-      estimate: { aero: { corner: c.aero.corner, straight: c.aero.straight }, tyres: { mu_x: c.tyres.mu_x, mu_y: c.tyres.mu_y, load_sens: c.tyres.load_sens }, gearing: prior.gearing || null },
-      fit_lap: { driver: ref.reference.driver, lap_real_s: ref.reference.lap_s, lap_sim_s: r.lap_s, sectors_real_s: ref.reference.sectors_s, sectors_sim_s: r.sectors_s, trap_real_kmh: ref.reference.speed_trap_kmh, trap_sim_kmh: r.speed_trap_kmh, trace_rms_kmh: Math.round(best.rms * 100) / 100 },
+      method: "MAP (Nelder-Mead, " + (opts.iters || EST.iters) + " iterations + " + EST.restarts + " restarts) on the pole lap's speed trace + lap time; " + EST.params.length + " global parameters (" + EST.params.map(p => p[0]).join(", ") + ") bounded to the concept/data/priors-2026.json ranges with Gaussian priors (range = +-2 sd), plus Gaussian terms for the pole team's telemetry-derived lateral limits and CdA (cars-2026-derived.json) and the brake supplier's 2026 Silverstone peak deceleration",
+      scales: values,
+      estimate: { aero: { corner: c.aero.corner, straight: c.aero.straight }, tyres: { mu_x: c.tyres.mu_x, mu_y: c.tyres.mu_y, load_sens: c.tyres.load_sens }, pu: { ice_kw: c.pu.ice_kw }, gearing: prior.gearing || null },
+      fit_lap: { driver: ref.reference.driver, lap_real_s: ref.reference.lap_s, lap_sim_s: r.lap_s, sectors_real_s: ref.reference.sectors_s, sectors_sim_s: r.sectors_s, trap_real_kmh: ref.reference.speed_trap_kmh, trap_sim_kmh: r.speed_trap_kmh, trace_rms_kmh: Math.round(traceError(r, ref, tr) * 100) / 100 },
+      prior_check: priorTable(c, P),
+      derived_agreement: derivedAgreement(c, dstat, cond).rows,
       label: S.LABEL,
     };
   }
@@ -157,13 +257,28 @@
     return out;
   }
 
+  // team-scale bounds: TEAM_FIT.bounds intersected with what keeps every team car's CLA, CDA (both modes) and ICE power inside the
+  // priors-2026 ranges (one physical model, one set of numbers for every car)
+  function teamBounds(base, P) {
+    P = P || priorRanges();
+    const B = TEAM_FIT.bounds, a = base.aero, cla = a.corner.CLA_front_m2 + a.corner.CLA_rear_m2;
+    const cut = (b, lo, hi) => { const r = [Math.max(b[0], lo), Math.min(b[1], hi)]; return r[1] < r[0] ? [r[0], r[0]] : r; };
+    return {
+      cla: cut(B.cla, P.CLA_corner[0] / cla, P.CLA_corner[2] / cla),
+      cda: cut(B.cda, Math.max(P.CDA_corner[0] / a.corner.CDA_m2, P.CDA_straight[0] / a.straight.CDA_m2), Math.min(P.CDA_corner[2] / a.corner.CDA_m2, P.CDA_straight[2] / a.straight.CDA_m2)),
+      pu: cut(B.pu, P.ICE_crank_power[0] / base.pu.ice_kw, P.ICE_crank_power[2] / base.pu.ice_kw),
+    };
+  }
   // ---- competitor model: MAP fit of (cla_scale, cda_scale) per team and pu_scale per power-unit maker
   function fitTeams(opts) {
     opts = opts || {};
     const trackId = opts.trackId || "silverstone", cond = opts.conditions || {}, cal = opts.cal || S.activeCal();
-    const base = opts.car || S.baselineCar(), targets = teamTargets(trackId), sg = TEAM_FIT.sigma, B = TEAM_FIT.bounds;
+    const base = opts.car || S.baselineCar(), targets = teamTargets(trackId), sg = TEAM_FIT.sigma, B = teamBounds(base);
     const pus = Array.from(new Set(targets.map(t => t.pu))).sort();
     const nT = targets.length, nP = nT * 2 + pus.length;
+    // traps are matched in absolute terms (opts.trap_bias_kmh shifts every target, e.g. to fit relative to the baseline's own trap
+    // error; 0 by default: fitting relative made the held-out traces worse, SIM.md §6)
+    const trapBias = opts.trap_bias_kmh != null ? +opts.trap_bias_kmh : 0;
     const idxPU = t => nT * 2 + pus.indexOf(t.pu);
     const lb = [], ub = [];
     for (let i = 0; i < nT; i++) { lb.push(Math.log(B.cla[0]), Math.log(B.cda[0])); ub.push(Math.log(B.cla[1]), Math.log(B.cda[1])); }
@@ -173,7 +288,7 @@
     // residual vector: 2 data terms per team, then one prior term per parameter
     function residuals(x, sims) {
       const r = [];
-      targets.forEach((t, i) => { const s = sims[i]; r.push((s.lap_s - t.q_s) / sg.lap_s, (s.speed_trap_kmh - t.trap_kmh) / sg.trap_kmh); });
+      targets.forEach((t, i) => { const s = sims[i]; r.push((s.lap_s - t.q_s) / sg.lap_s, (s.speed_trap_kmh - t.trap_kmh - trapBias) / sg.trap_kmh); });
       for (let i = 0; i < nT; i++) r.push(x[2 * i] / sg.cla, x[2 * i + 1] / sg.cda);
       for (let k = 0; k < pus.length; k++) r.push(x[nT * 2 + k] / sg.pu);
       return r;
@@ -206,15 +321,18 @@
       }
       if (!accepted || accepted === "converged") break;
     }
+    // the stored scales are rounded to 4 decimals: re-simulate with exactly those, so a stored car reproduces its stored lap
+    const xr = x.map(v => Math.log(+Math.exp(v).toFixed(4)));
+    sims = targets.map((t, i) => sim(t, i, xr));
     const teams = targets.map((t, i) => ({
       team: t.team, name: t.name, chassis: t.chassis, pu: t.pu, driver: t.driver,
       q_real_s: t.q_s, q_sim_s: sims[i].lap_s, residual_lap_s: +(sims[i].lap_s - t.q_s).toFixed(3),
-      trap_real_kmh: t.trap_kmh, trap_sim_kmh: sims[i].speed_trap_kmh, residual_trap_kmh: +(sims[i].speed_trap_kmh - t.trap_kmh).toFixed(1),
+      trap_real_kmh: t.trap_kmh, trap_sim_kmh: sims[i].speed_trap_kmh, residual_trap_kmh: +(sims[i].speed_trap_kmh - t.trap_kmh).toFixed(1), residual_trap_rel_kmh: +(sims[i].speed_trap_kmh - t.trap_kmh - trapBias).toFixed(1),
       cla_scale: +Math.exp(x[2 * i]).toFixed(4), cda_scale: +Math.exp(x[2 * i + 1]).toFixed(4), pu_scale: +Math.exp(x[idxPU(t)]).toFixed(4),
       at_bound: [2 * i, 2 * i + 1, idxPU(t)].filter(p => Math.abs(x[p] - lb[p]) < 1e-9 || Math.abs(x[p] - ub[p]) < 1e-9).map(p => (p === idxPU(t) ? "pu" : p % 2 ? "cda" : "cla")),
     }));
     const puScale = {}; pus.forEach((p, k) => { puScale[p] = +Math.exp(x[nT * 2 + k]).toFixed(4); });
-    return { teams, pu_scale: puScale, iterations: it, cost: +c.toFixed(3), settings: TEAM_FIT, cal, label: S.LABEL };
+    return { teams, pu_scale: puScale, iterations: it, cost: +c.toFixed(3), settings: Object.assign({}, TEAM_FIT, { bounds: B }), trap_bias_kmh: +trapBias.toFixed(1), cal, label: S.LABEL };
   }
 
   function fitted() { return EI.CONCEPT_SIM_FIT || (typeof require === "function" ? require("./fitted.js") : null); }
@@ -222,7 +340,7 @@
   function baseOf(f) {
     const c = S.priorCar(), e = f && f.baseline_estimate;
     c.id = "baseline-2026"; c.label = "baseline 2026 car (prior + parameters estimated from the 2026 British GP pole lap)";
-    if (e) { c.aero.corner = Object.assign({}, e.aero.corner); c.aero.straight = Object.assign({}, e.aero.straight); Object.assign(c.tyres, e.tyres); if (e.gearing) c.gearing = JSON.parse(JSON.stringify(e.gearing)); }
+    if (e) { c.aero.corner = Object.assign({}, e.aero.corner); c.aero.straight = Object.assign({}, e.aero.straight); Object.assign(c.tyres, e.tyres); if (e.pu) Object.assign(c.pu, e.pu); if (e.gearing) c.gearing = JSON.parse(JSON.stringify(e.gearing)); }
     return c;
   }
   // optional per-team physical overrides derived elsewhere from telemetry, e.g. concept/data/redbull-2026-derived.json
@@ -264,7 +382,7 @@
   }
   function teamCars(fit) { const f = fit || fitted(); return f.teams.map(t => teamCar(t.team, f)); }
 
-  const api = { baseOf, derivedOverrides, TEAM_FIT, EST, CORNER_WINDOWS, reference, teamTargets, scaledCar, calibrate, fitTeams, heldOut, compareLap, traceError, teamCar, teamCars, fitted };
+  const api = { baseOf, derivedOverrides, derivedStats, derivedAgreement, priorRanges, priorTable, teamBounds, paramValues, carOfParams, PRIOR_RANGES, TEAM_FIT, EST, CORNER_WINDOWS, reference, teamTargets, scaledCar, calibrate, fitTeams, heldOut, compareLap, traceError, teamCar, teamCars, fitted };
   EI.conceptSimFit = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();
