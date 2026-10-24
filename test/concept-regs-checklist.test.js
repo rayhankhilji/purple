@@ -72,9 +72,12 @@ function oracle(d, opts) {
   add("PKG-COOLING", a.cooling.capacity < a.cooling.need * 1.05 - 1e-9, a.cooling.capacity - a.cooling.need * 1.05);
   add("PKG-FLOOR-STALL", a.stall_margin_mm < 2 - 1e-9, a.stall_margin_mm - 2);
   add("PKG-PART-MASS", m.parts.some(r => !(r.mass_kg >= 0)));
+  // the PU lock: every PU row as the same design WITHOUT overrides builds it, and the transmission option unchanged
+  const ref = parts.massSheet(p, { session: opts && opts.session }).parts;
+  add("PKG-PU-FIXED", ["pu_ice", "pu_turbo", "pu_mguk", "pu_es", "pu_electronics"].some(id => { const a = m.parts.find(r => r.id === id), b = ref.find(r => r.id === id); return !a || a.mass_kg !== b.mass_kg || a.x_mm !== b.x_mm || a.z_mm !== b.z_mm; }) || m.mguk_transmission !== parts.PU.mguk_transmission);
   return { ids: out, near };
 }
-const ORACLE_IDS = ["REG-C-WIDTH", "REG-C-WB", "REG-C-FRONT-AXLE", "REG-C-COCKPIT", "REG-C-BULKHEAD", "REG-C-FLOOR-WIDTH", "REG-C-FW-ELEMENTS", "REG-C-RW-ELEMENTS", "REG-C-FW-SPAN", "REG-C-RW-SPAN", "REG-C-FW-CHORD", "REG-C-FW-SM-ENVELOPE", "REG-C-FW-PROFILES-Z", "REG-C-RW-CHORD", "REG-C-RW-ENDPLATE", "REG-C-FW-FLAP", "REG-C-RW-FLAP", "REG-C-SM-DIRECTION", "REG-C-ELEMENTS-MIN", "REG-C-PLANK", "REG-C-PLANK-HOLES", "REG-C-SIDEPOD-INLET", "REG-C-MASS-MIN", "REG-C-MASS-FRONT", "REG-C-MASS-REAR", "REG-C-DRIVER-MASS", "REG-C-PU-MASS", "REG-C-ICE-MASS", "REG-C-MGUK-MASS", "REG-C-TC-MASS", "REG-C-ES-MASS", "REG-C-PU-COG", "REG-C-DRIVELINE-MASS", "PKG-WB", "PKG-COOLING", "PKG-FLOOR-STALL", "PKG-PART-MASS"];
+const ORACLE_IDS = ["REG-C-WIDTH", "REG-C-WB", "REG-C-FRONT-AXLE", "REG-C-COCKPIT", "REG-C-BULKHEAD", "REG-C-FLOOR-WIDTH", "REG-C-FW-ELEMENTS", "REG-C-RW-ELEMENTS", "REG-C-FW-SPAN", "REG-C-RW-SPAN", "REG-C-FW-CHORD", "REG-C-FW-SM-ENVELOPE", "REG-C-FW-PROFILES-Z", "REG-C-RW-CHORD", "REG-C-RW-ENDPLATE", "REG-C-FW-FLAP", "REG-C-RW-FLAP", "REG-C-SM-DIRECTION", "REG-C-ELEMENTS-MIN", "REG-C-PLANK", "REG-C-PLANK-HOLES", "REG-C-SIDEPOD-INLET", "REG-C-MASS-MIN", "REG-C-MASS-FRONT", "REG-C-MASS-REAR", "REG-C-DRIVER-MASS", "REG-C-PU-MASS", "REG-C-ICE-MASS", "REG-C-MGUK-MASS", "REG-C-TC-MASS", "REG-C-ES-MASS", "REG-C-PU-COG", "REG-C-DRIVELINE-MASS", "PKG-WB", "PKG-COOLING", "PKG-FLOOR-STALL", "PKG-PART-MASS", "PKG-PU-FIXED"];
 
 // ---------------------------------------------------------------- design generators
 const quantize = (s, v) => +Math.min(s.max, Math.max(s.min, Math.round((v - s.min) / s.step) * s.step + s.min)).toFixed(6);
@@ -93,6 +96,10 @@ function samples(seed) {
   edge("floor", "width_mm", 1540); edge("floor", "width_mm", 1550); edge("front_wing", "span_mm", 1350); edge("front_wing", "span_mm", 1360); edge("rear_wing", "span_mm", 1150); edge("rear_wing", "span_mm", 1160);
   edge("rear_wing", "chord_mm", 465); edge("rear_wing", "chord_mm", 470); edge("rear_wing", "endplate_top_mm", 880); edge("rear_wing", "endplate_top_mm", 885); edge("floor", "ride_height_mm", 24); edge("floor", "ride_height_mm", 23.5);
   edge("front_wing", "aoa_deg", 25.5); edge("front_wing", "chord_mm", 575); edge("rear_wing", "elements", 1); edge("sidepods", "inlet_cm2", 1100);
+  // overrides: PU changes (the PU lock) and non-PU changes (legal while the mass rules hold)
+  const ov = (name, o) => { const d = design.clone(B); d.overrides = o; out.push(["override " + name, d]); };
+  ov("ICE +2 kg", { pu_ice: { mass_kg: 120.5 } }); ov("ICE -0.5 kg", { pu_ice: { mass_kg: 118 } }); ov("ES moved 100 mm", { pu_es: { x_mm: 2000 } }); ov("TC lowered", { pu_turbo: { z_mm: 400 } });
+  ov("MGU-K 22 kg", { pu_mguk: { mass_kg: 22 } }); ov("misc +3 kg", { misc: { mass_kg: 15.2 } }); ov("hydraulics moved", { hydraulics: { x_mm: 1500 } }); ov("electronics -2 kg", { electronics: { mass_kg: 23.8 } });
   return out;
 }
 
@@ -246,6 +253,50 @@ test("materials (C15): the table contract, permitted / prohibited classes and co
     // the real table, when present, must classify every row it ships (no unknown material in the catalogue)
     if (before) for (const row of before.list) { const c = regs.classify(row); assert.notEqual(c.family, "unknown", "materials-2026.json row " + row.id + " cannot be classified"); }
   } finally { regs.setMaterials(before ? before.list : null); }
+});
+
+test("materials (C15) on the real table: every row's verdict on a general part agrees with its fia.status; every baseline material is legal on its part; the bench rejects an illegal material", () => {
+  const M = require("../concept/materials.js");
+  regs.setMaterials(M.MATERIALS);
+  // the checklist's reading differs from the table's on mg_we43 only: C15.2.1(c) lists WE43B (UNS M18432) and WE43C (UNS M18434),
+  // not WE43 / WE43A; the row does not say which (correction requested for concept/data/materials-2026.json)
+  const KNOWN = { mg_we43: "grade unstated" };
+  for (const m of M.MATERIALS) {
+    const v = regs.materialViolations("rear_wing", m.id).map(x => x.id), expectLegal = m.fia.status === "permitted";
+    if (KNOWN[m.id]) { assert.ok(v.length > 0, m.id + " " + KNOWN[m.id]); continue; }
+    assert.equal(v.length === 0, expectLegal, m.id + " (" + m.fia.status + "): " + v.join(", "));
+  }
+  for (const part of Object.keys(M.PARTS)) assert.deepEqual(regs.materialViolations(part, M.baseOf(part)), [], part + " baseline material " + M.baseOf(part));
+  // through the bench (facts.mass.materials carries every named material): illegal materials are never scored
+  for (const [part, mat, id] of [["rear_wing", "cfrp_m60j", "REG-C-MAT-PERMITTED"], ["floor", "albemet_am162", "REG-C-MAT-SPECIFIC-MODULUS"], ["sidepods", "al_li_2195", "REG-C-MAT-PERMITTED"], ["survival_cell", "gfrp_e", "REG-C-MAT-COMPONENT"], ["front_wing", "al_7075_t6", "REG-C-MAT-COMPONENT"], ["floor", "carbon_carbon", "REG-C-MAT-PERMITTED"]]) {
+    const d = design.clone(B); d.params[part].material = mat;
+    if (M.problem(part, mat)) continue;   // a form the part cannot take is refused by design.validate already
+    const r = bench.bench(d); assert.equal(r.legal, false, part + " " + mat); assert.equal(r.score, null); assert.ok(r.violations.some(v => v.id === id && v.part === part), part + " " + mat + ": " + r.violations.map(v => v.id).join(", "));
+  }
+  for (const [part, mat] of [["rear_wing", "cfrp_m55j"], ["floor", "ti64"], ["gearbox", "al_li_2099"], ["survival_cell", "cfrp_t1100g"], ["ballast", "steel_maraging_300"]]) {
+    const d = design.clone(B); d.params[part].material = mat; assert.deepEqual(regs.check(d), [], part + " " + mat);
+  }
+});
+
+test("PU lock (owner brief: the baseline team's PU, unchanged): any PU mass, position or option change is rejected; the PhysicalCar PU cannot exceed the baseline's", () => {
+  // the lock table equals the baseline mass sheet
+  const sheet = design.facts(B).mass, g = parts.geometry(B.params);
+  for (const id of Object.keys(regs.PU_LOCK.rows)) { const ref = regs.PU_LOCK.rows[id], r = sheet.parts.find(x => x.id === id); assert.equal(r.mass_kg, ref.kg, id); assert.equal(r.x_mm, Math.round(g[ref.at] + ref.dx), id); assert.equal(r.z_mm, ref.z, id); }
+  assert.equal(regs.PU_LOCK.mguk_transmission, parts.PU.mguk_transmission);
+  // the lock follows the geometry: moving the bulkhead moves the PU with it, legally
+  const moved = design.clone(B); moved.params.survival_cell.bulkhead_gap_mm = 370; moved.params.layout.wheelbase_mm = 3400; assert.ok(!ids(moved).includes("PKG-PU-FIXED"));
+  for (const [id, o] of [["pu_ice", { mass_kg: 125 }], ["pu_ice", { z_mm: 260 }], ["pu_turbo", { mass_kg: 13 }], ["pu_mguk", { x_mm: 2500 }], ["pu_es", { mass_kg: 36 }], ["pu_electronics", { mass_kg: 5 }]]) {
+    const d = design.clone(B); d.overrides = { [id]: o }; const v = regs.check(d);
+    assert.ok(v.some(x => x.id === "PKG-PU-FIXED" && x.part === id), id + " " + JSON.stringify(o) + ": " + v.map(x => x.id).join(", "));
+    const r = bench.bench(d); assert.equal(r.legal, false); assert.equal(r.score, null);
+  }
+  const f = design.facts(B); f.mass.mguk_transmission = "b"; assert.ok(regs.checkFacts(f).some(v => v.id === "PKG-PU-FIXED"));
+  // the PhysicalCar: every design's PU equals the baseline team's (ICE may only drop through the cooling derate)
+  for (const team of [undefined, "redbull"]) {
+    const base = design.baseline(team), ref = physical.physical(base).pu, rng = design.seededRng(17); let d = design.clone(base);
+    for (let i = 0; i < 30; i++) { d = design.mutate(d, rng, 0.2).design; assert.deepEqual(regs.checkPhysical(physical.physical(d), { pu_ref: ref }).filter(v => v.id !== "REG-C-SUSP-WIDTH"), [], "gen " + i); }
+    const hot = JSON.parse(JSON.stringify(physical.physical(base))); hot.pu.ice_kw += 5; hot.pu.es_harvest_mj_per_lap = 8; assert.deepEqual(regs.checkPhysical(hot, { pu_ref: ref }).filter(v => v.id === "PKG-PU-FIXED").map(v => v.field), ["pu.es_harvest_mj_per_lap", "pu.ice_kw"]);
+  }
 });
 
 test("PU and ERS figures the scorer uses stay inside C5.2 (checkPU, sim constants, the C5.2.8 taper)", () => {

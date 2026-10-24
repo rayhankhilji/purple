@@ -7,7 +7,7 @@
 // Anything not read in that document is `verified: false` with its basis stated. Never claims more.
 // FIA checklist pass (2026-10-24, docs/concept/FIA_CHECKLIST.md: one row per article the concept can touch, with the check and the
 // test that covers it): COMBO_RULES (wing X+Z envelope, straight-mode direction, volume minimums, plank holes, sidepod inlet,
-// suspension width, part-mass sanity), MATERIAL_RULES (C15 and the component material articles, against
+// suspension width, part-mass sanity, the PU lock PKG-PU-FIXED), MATERIAL_RULES (C15 and the component material articles, against
 // concept/data/materials-2026.json), checkPU (C5.2 figures handed to the lap sims) and NaN-safe comparisons throughout.
 // test/concept-regs-checklist.test.js re-implements every checked limit independently and compares verdicts on random and extreme
 // designs. Issue 21 (19/10/2026) reads the same for every article checked here (it changes C5.2.10(ii), 5 -> 4 MJ, and C5.2.8(iii),
@@ -107,6 +107,12 @@
   // sheet's wheel rows when they carry y_mm (wheel centre plane): inboard plane = y − half the rim overall width (C10.7.2(a): 334 /
   // 420.3 mm ref.).
   const SUSP_WIDTH = { wheels_front: { max_y: 603, half_rim: 167 }, wheels_rear: { max_y: 525, half_rim: 210.15 } };
+  // the PU lock (PKG-PU-FIXED): the baseline team's PU as concept/parts.js massSheet builds it (kg, anchor plane, X offset, Z);
+  // test/concept-regs-checklist.test.js checks this table against the baseline mass sheet so the two cannot drift apart
+  const PU_LOCK = {
+    mguk_transmission: "a",
+    rows: { pu_ice: { kg: 118.5, at: "XPU", dx: 310, z: 230 }, pu_turbo: { kg: 12, at: "XPU", dx: 600, z: 430 }, pu_mguk: { kg: 20, at: "XPU", dx: 150, z: 180 }, pu_es: { kg: 35, at: "XC", dx: 120, z: 150 }, pu_electronics: { kg: 5.7, at: "XC", dx: 250, z: 250 } },
+  };
   // RV-FLOOR-BODY roof (App. C2 §4.5, §4.11): Z = 75 at the centreline section from XF=1775 (§4.11; XF=1450 for the §4.1 part) to
   // XR=−600, the section is extruded across Y, and Floor Body must lie inside it (C3.5.1(a)). See REG-C-FLOOR-ROOF.
   const FLOOR_ROOF_Z = 75;
@@ -171,6 +177,7 @@
     { id: "REG-C-FLOOR-ROOF", article: "C3.5.1(a), App. C2 §4.5, §4.11", kind: "info", value: FLOOR_ROOF_Z, unit: "mm (Z) between XF=1775 and XR=−600", text: "Floor Body lies within RV-FLOOR-BODY, whose roof is Z=75 from XF=1775 to XR=−600 at every Y, so no floor channel can be more than 75 mm above Z=0 there", verified: true, modelled_as: "NOT CHECKED: floor.throat_mm is labelled 'Venturi throat height above Z=0' with domain 80-130 mm (base 100), entirely above this roof under that label; the parameter needs a regulation-consistent definition first (FIA_CHECKLIST.md, fix requested in concept/parts.js + concept/aeromap.js)" },
     { id: "REG-C-HEAT-HAZARD", article: "C4.1, C4.6(a)", kind: "info", value: 5, unit: "kg", text: "When a Heat Hazard is declared, the Minimum Mass rises by 5 kg", verified: true, modelled_as: "not modelled: no Heat Hazard in the concept's Silverstone sessions (qualifying air 25.2 °C)" },
     { id: "REG-C-BALLAST", article: "C4.3.1-C4.3.3", kind: "info", text: "Ballast fixed to the sprung mass with tools needed to remove it; driver ballast between the ends of the cockpit entry template, on the survival cell, density > 7500 kg/m³ (C4.3.2); ballast ahead of XA=0 must be present in the front impact test (C4.3.3)", verified: true, modelled_as: "ballast sits between XF=0 and XR (x_frac 0-1), never ahead of XA=0; driver ballast at XC−750 (in the cockpit); densities checked when materials are assigned (REG-C-MAT-DENSITY)" },
+    { id: "PKG-PU-FIXED", article: "concept PU lock (owner constraint: the baseline team's homologated PU, C5.5.7, App. C4)", kind: "requires", text: "The power unit is the baseline team's, unchanged: every PU part's mass and position (relative to XPU=0 / XC=0), the MGU-K transmission option and the PU energy figures handed to the lap sims must equal the baseline's (only the cooling derate may lower ICE power)", verified: false, source: "owner brief 2026-10-24 (same PU as the baseline team); PU rows of concept/parts.js massSheet (concept part masses v1, MASS.md)" },
     { id: "PKG-PART-MASS", article: "concept mass model v1", kind: "min", value: 0, unit: "kg per part", text: "Every part on the mass sheet has a finite, non-negative mass and position (overrides cannot delete mass to buy free ballast)", verified: false, source: "concept mass model (physical sanity, not regulation text)" },
   ];
   // C15 materials (Issue 19 pp. C156-C166) and the component-specific material articles. Checked against the materials table
@@ -215,7 +222,8 @@
   function setMaterials(table) { matTable = normTable(table); matLoaded = true; return matTable; }
   function materialTable() {
     if (!matLoaded) {
-      matLoaded = true; let t = C.materials_table || null;
+      matLoaded = true; let t = C.materials_table || (C.materials && C.materials.MATERIALS) || null;   // concept/materials.js (browser copy)
+      if (!t && typeof require === "function") { try { t = require("./materials.js").MATERIALS; } catch (e) { t = null; } }
       if (!t && typeof require === "function") { try { t = require("./data/materials-2026.json"); } catch (e) { t = null; } }
       matTable = normTable(t);
     }
@@ -257,12 +265,14 @@
   // classify a table record: { family, metallic, fibre, ... }. Family order matters (Be-Al before aluminium, C/C before CFRP, MMC
   // before ceramic, carbide before tungsten).
   function classify(mat) {
-    const s = [mat.id, mat.name, mat.family, mat.class, mat.category, mat.type, mat.grade, mat.uns, mat.fibre, mat.fiber, mat.matrix].filter(v => v != null).join(" ");
+    const fib = mat.fibre && typeof mat.fibre === "object" ? mat.fibre : null;
+    const s = [mat.id, mat.name, mat.family, mat.class, mat.category, mat.type, mat.grade, mat.uns, fib ? fib.name : mat.fibre, mat.fiber, mat.matrix].filter(v => v != null).join(" ");
     const cls = String([mat.class, mat.category, mat.type, mat.family].filter(v => v != null).join(" ")).toLowerCase();
     const T = (rx) => rx.test(s);
     let family = "unknown", fibre = null;
     if (mat.shape_memory === true || T(/nitinol|\bniti\b|shape.?memory/i)) family = "shape_memory";
-    else if (T(/carbon.?carbon|\bc\/c\b|\bc-c composite/i)) family = "carbon_carbon";
+    else if (cls === "carbon_carbon" || T(/carbon.?carbon|\bc\/c\b|\bc-c composite/i)) family = "carbon_carbon";
+    else if (cls === "core") family = "core";
     else if (T(/ceramic.?matrix|\bcmc\b|\bc\/sic\b|\bsic\/sic\b/i)) family = "cmc";
     else if (T(/metal.?matrix|\bmmc\b|supremex|particulate.?reinforc|\bram2\b|\ba20x\b|boron.?alumin|\bb\/al\b|sic.?(particle|reinforced)/i)) family = "mmc";
     else if (T(/cu-?be\b|copper.?berylli|berylli\w*.?copper|\bc17[25]00\b/i)) family = "copper";
@@ -289,10 +299,12 @@
     else if (T(/peek|pekk|nylon|polyamide|\bpa-?\d|\babs\b|polycarbonate|ptfe|acetal|delrin|ultem|\bpei\b|thermoplastic|thermoset|polymer|elastomer|rubber|resin/i)) family = "polymer";
     else if (/metal|alloy/.test(cls) || mat.metallic === true) family = "metal_unknown";
     else if (/composite/.test(cls)) { family = "composite"; fibre = "unknown"; }
+    if (family === "composite" && fib && fibre !== "carbon" && /carbon|\(pan\)|pitch/i.test(fib.name || "")) fibre = "carbon";
     const METALS = ["iron", "aluminium", "magnesium", "titanium", "superalloy", "copper", "tungsten", "beryllium", "mmc", "intermetallic", "precious", "shape_memory", "metal_unknown"];
     const metallic = mat.metallic === true || (mat.metallic !== false && METALS.includes(family));
-    let be = num(mat.be_pct); if (be == null) be = family === "beryllium" ? (T(/albemet|\bal-?be\b|\bbe-?al\b/i) ? 62 : 100) : family === "copper" && T(/cu-?be|berylli/i) ? 2.0 : 0;
-    let li = num(mat.li_pct); if (li == null) li = family === "aluminium" && T(/al-?li\b|lithium|\b(2050|2055|2099|2195|2196|2198|2090|2091|8090)\b/) ? (T(/\b2050\b/) ? 1.3 : T(/\b2055\b/) ? 1.3 : 2.0) : 0;
+    const top = v => (Array.isArray(v) ? num(v[v.length - 1]) : num(v));   // C15.1.9: the whole declared range must be inside the limit
+    let be = mat.be_pct != null ? top(mat.be_pct) : top(mat.be_wt_pct); if (be == null) be = family === "beryllium" ? (T(/albemet|\bal-?be\b|\bbe-?al\b/i) ? 62 : 100) : family === "copper" && T(/cu-?be|berylli/i) ? 2.0 : 0;
+    let li = mat.li_pct != null ? top(mat.li_pct) : top(mat.li_wt_pct); if (li == null) li = family === "aluminium" && T(/al-?li\b|lithium|\b(2050|2055|2099|2195|2196|2198|2090|2091|8090)\b/) ? (T(/\b2050\b/) ? 1.3 : T(/\b2055\b/) ? 1.3 : 2.0) : 0;
     return { family, fibre, metallic, be, li, ag: num(mat.ag_pct) || 0, pgm: num(mat.pgm_pct) || (family === "precious" ? 100 : 0), text: s };
   }
   function num(v) { return typeof v === "number" && isFinite(v) ? v : null; }
@@ -318,9 +330,11 @@
         const mx = mat.matrix != null ? String(mat.matrix).toLowerCase() : null;
         if (mx && !/epoxy|cyanate|bismaleimide|\bbmi\b|phenolic|polyurethane|polyester|thermoplastic|peek|pekk|pps|\bpa\b|polyamide|bio/.test(mx)) return "matrix " + mat.matrix + " not in C15.2.3(a)";
         if (c.fibre === "carbon") {
-          const f = FIBRES.find(x => x[0].test(s)), E = num(mat.fibre_modulus_GPa) != null ? num(mat.fibre_modulus_GPa) : f ? f[1] : null;
-          const Ft = num(mat.fibre_strength_MPa) != null ? num(mat.fibre_strength_MPa) : f ? f[2] : null;
-          const rho = num(mat.fibre_density_kg_m3) != null ? num(mat.fibre_density_kg_m3) / 1000 : f ? f[3] : null, pre = String(mat.precursor || (f ? f[4] : "PAN"));
+          const f = FIBRES.find(x => x[0].test(s)), fo = mat.fibre && typeof mat.fibre === "object" ? mat.fibre : {};
+          const pick = (...vs) => { for (const v of vs) if (num(v) != null) return num(v); return null; };
+          const E = pick(mat.fibre_modulus_GPa, fo.E_GPa, f && f[1]), Ft = pick(mat.fibre_strength_MPa, fo.tensile_MPa, f && f[2]);
+          const rhoKg = pick(mat.fibre_density_kg_m3, fo.density_kg_m3), rho = rhoKg != null ? rhoKg / 1000 : f ? f[3] : null;
+          const pre = String(mat.precursor || (/pitch/i.test(fo.name || "") ? "pitch" : f ? f[4] : "PAN"));
           if (!/pan|polyacrylonitrile/i.test(pre)) return "carbon fibre not from a PAN precursor (" + pre + ") (C15.2.3(b)(i))";
           if (E != null && E > 550) return "carbon fibre modulus " + E + " GPa > 550 GPa (C15.2.3(b)(i))";
           if (Ft != null && Ft > 7100) return "carbon fibre strength " + Ft + " MPa > 7100 MPa (C15.2.3(b)(i))";
@@ -389,6 +403,9 @@
     const out = {}; let n = 0;
     const add = (part, ref) => { if (ref != null && ref !== "" && !own(out, part)) { out[part] = ref; n++; } };
     if (f.materials && typeof f.materials === "object") for (const k of Object.keys(f.materials)) add(k, f.materials[k]);
+    // the mass sheet's material summary (concept/parts.js massSheet: every material-able part, its named or baseline material)
+    const ms = f.mass && f.mass.materials && typeof f.mass.materials === "object" ? f.mass.materials : null;
+    if (ms) for (const k of Object.keys(ms)) add(k, ms[k] && typeof ms[k] === "object" ? ms[k].material : ms[k]);
     const ps = f.params && typeof f.params === "object" ? f.params : { front_wing: f.front_wing, rear_wing: f.rear_wing, floor: f.floor };
     for (const k of Object.keys(ps)) { const p = ps[k]; if (p && typeof p === "object" && own(p, "material")) add(k, p.material); }
     return n ? out : null;
@@ -412,8 +429,15 @@
   // checkPhysical(pc): a PhysicalCar (concept/physical.js) against the limits the lap sims rely on: its PU block (checkPU) and the
   // C10.10.1 suspension width through its track widths (wheel centre plane = Wheel Coordinate System origin + half the rim overall
   // width, C2.1.3(a), C10.7.2(a): front track ≤ 2 × (603 + 167) = 1540 mm, rear ≤ 2 × (525 + 210.15) = 1470.3 mm)
+  // opts.pu_ref: the baseline team's PhysicalCar.pu; with it the PU lock applies (PKG-PU-FIXED): MGU-K power and the energy
+  // figures equal, ICE power not above the reference (the cooling derate may only lower it)
   function checkPhysical(pc, opts) {
     const out = checkPU(pc && pc.pu, opts); if (!pc) return out;
+    const ref = opts && opts.pu_ref, pu = pc.pu || {};
+    if (ref) {
+      for (const k of ["mguk_kw", "es_deploy_mj_per_lap", "es_harvest_mj_per_lap", "es_soc_window_mj"]) if (ref[k] !== undefined && !(Math.abs(pu[k] - ref[k]) <= 1e-9)) out.push(viol("PKG-PU-FIXED", "pu." + k + " " + pu[k], ref[k], { field: "pu." + k }));
+      if (!(pu.ice_kw <= ref.ice_kw + 1e-9)) out.push(viol("PKG-PU-FIXED", "pu.ice_kw " + pu.ice_kw, "≤ " + ref.ice_kw, { field: "pu.ice_kw" }));
+    }
     for (const [k, w] of [["track_front_m", SUSP_WIDTH.wheels_front], ["track_rear_m", SUSP_WIDTH.wheels_rear]]) {
       if (pc[k] === undefined) continue;
       const o = (pc[k] * 1000) / 2 - w.half_rim; if (over(o, w.max_y)) out.push(viol("REG-C-SUSP-WIDTH", o, w.max_y + " (" + k + " " + pc[k] + " m)", { field: k }));
@@ -491,6 +515,14 @@
       const inX = r.x_mm >= -1300 && r.x_mm <= (g.XR || 0) + 800, inZ = r.z_mm >= (typeof m.ground_z_mm === "number" ? m.ground_z_mm : -100) - 1e-9 && r.z_mm <= 1000;
       if (!(r.mass_kg >= 0) || !inX || !inZ) out.push(viol("PKG-PART-MASS", r.mass_kg, "finite ≥ 0 kg inside the car (" + r.id + " at x " + r.x_mm + ", z " + r.z_mm + ")", { part: r.id }));
     }
+    // the PU lock: any change to a PU part (mass, position) or to the transmission option is rejected (PKG-PU-FIXED)
+    for (const id of Object.keys(PU_LOCK.rows)) {
+      const ref = PU_LOCK.rows[id], r = (m.parts || []).find(x => x.id === id), x0 = g[ref.at] + ref.dx;
+      if (!r) { out.push(viol("PKG-PU-FIXED", "missing", id, { part: id })); continue; }
+      if (!(Math.abs(r.mass_kg - ref.kg) <= 0.006) || !(Math.abs(r.x_mm - x0) <= 0.51) || !(Math.abs(r.z_mm - ref.z) <= 0.51))
+        out.push(viol("PKG-PU-FIXED", id + " " + r.mass_kg + " kg at x " + r.x_mm + ", z " + r.z_mm, ref.kg + " kg at " + ref.at + "+" + ref.dx + ", z " + ref.z, { part: id }));
+    }
+    if (m.mguk_transmission !== PU_LOCK.mguk_transmission) out.push(viol("PKG-PU-FIXED", "transmission option " + m.mguk_transmission, PU_LOCK.mguk_transmission, { part: "pu_mguk" }));
     const mats = materialsOf(f);
     if (mats) for (const v of checkMaterials(mats)) out.push(v);
     return out;
@@ -515,7 +547,7 @@
 
   const api = {
     SOURCE, DOC, NOMINAL_TYRE_MASS, QUALI_SESSIONS, SESSIONS, MGUK_TRANSMISSION, FLOOR_BODY_MAX_Y, RULES, MODEL_RULES, COMBO_RULES, MATERIAL_RULES, ALL_RULES, BY_ID,
-    PLANK_HOLE, SIDEPOD_INLET_MAX_CM2, SUSP_WIDTH, FLOOR_ROOF_Z, PU_PARTS, isQuali, minMass, fwEnvelopeX, fwChordLimit, fwStraightExtent, fwSectionZ, rwSectionZ,
+    PLANK_HOLE, SIDEPOD_INLET_MAX_CM2, SUSP_WIDTH, FLOOR_ROOF_Z, PU_PARTS, PU_LOCK, isQuali, minMass, fwEnvelopeX, fwChordLimit, fwStraightExtent, fwSectionZ, rwSectionZ,
     fwProfilesChordLimit, rwProfilesChordLimit, setMaterials, materialTable, findMaterial, classify, materialViolations, materialsOf, checkMaterials, checkPU, checkPhysical,
     mgukLimitKw, checkFacts, check, describeViolation,
   };

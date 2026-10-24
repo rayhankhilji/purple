@@ -40,54 +40,54 @@ edges); it fails if a single check drifts by a few mm (tried: +3 mm on the front
 | I. Wheels, tyres, suspension, brakes (C10, C11) | 7 | | 3 | 1 | | 3 |
 | J. Survival cell, crash structures, halo (C12, C13, C15.5) | 4 | | 2 | | | 2 |
 | K. Materials (C15, general) | 11 | 6 | 2 | 2 | | 1 |
-| L. Concept-model rules (not regulation text) | 4 | 4 | | | | |
-| **Total** | **93** | **44** | **9** | **13** | **4** | **23** |
+| L. Concept-model rules (not regulation text) | 5 | 5 | | | | |
+| **Total** | **94** | **45** | **9** | **13** | **4** | **23** |
 
-Gaps found in this pass and closed in `regs.js` (each with a test): 13 (listed under "Gaps fixed"). Fixes requested in files this
-checklist does not own: 5 (listed under "Fixes requested"); two are regulation conflicts, kept visible as `todo` tests.
+Gaps found in this pass and closed in `regs.js` (each with a test): 14 (listed under "Gaps fixed"). Fixes requested in files this
+checklist does not own: 7 (listed under "Fixes requested"); two are regulation conflicts, kept visible as `todo` tests.
 
 ## A. Dimensions and layout (C2)
 
 | Article | Rule | Touches | Check (regs.js) | Test | Status |
 |---|---|---|---|---|---|
-| C2.3.1 (C11) | No part except tyres, rims and rim-attached parts more than 950 mm from Y=0 | `floor.width_mm`, `front_wing.span_mm`, `rear_wing.span_mm` (half-width = max of the three / 2) | `REG-C-WIDTH`, checkFacts l.437 | concept.test, oracle | checked |
+| C2.3.1 (C11) | No part except tyres, rims and rim-attached parts more than 950 mm from Y=0 | `floor.width_mm`, `front_wing.span_mm`, `rear_wing.span_mm` (half-width = max of the three / 2) | `REG-C-WIDTH`, checkFacts l.461 | concept.test, oracle | checked |
 | C2.3.2 (C11-12) | Nothing below the floor reference volumes except the Plank Assembly | (no parameter: the floor is the lowest body) | — | — | fixed |
-| C2.3.3 (C12) | Wheelbase XF=0 → XR=0 ≤ 3400 mm | `layout.wheelbase_mm` | `REG-C-WB`, l.438 | concept.test, oracle | checked |
-| C2.3.4 (C12) | XF=0 between XA=0 and XA=150 | `survival_cell.front_axle_offset_mm` | `REG-C-FRONT-AXLE`, l.439 | concept.test, oracle | checked |
-| C2.3.5 (C12) | XA=0 → XC=0 between 1830 and 2030 mm | `survival_cell.cockpit_len_mm` | `REG-C-COCKPIT`, l.440 | concept.test, oracle | checked |
-| C2.3.6 (C12) | XC=0 → XPU=0 ≥ 360 mm | `survival_cell.bulkhead_gap_mm` | `REG-C-BULKHEAD`, l.441 | concept.test, oracle | checked |
-| C2.5 (C12) | Stated values are the limits regardless of decimals | every limit | inclusive comparisons with 1e-9 slack (`over` / `under`, l.433) | checklist: "every regulation edge is inclusive" | checked |
+| C2.3.3 (C12) | Wheelbase XF=0 → XR=0 ≤ 3400 mm | `layout.wheelbase_mm` | `REG-C-WB`, l.462 | concept.test, oracle | checked |
+| C2.3.4 (C12) | XF=0 between XA=0 and XA=150 | `survival_cell.front_axle_offset_mm` | `REG-C-FRONT-AXLE`, l.463 | concept.test, oracle | checked |
+| C2.3.5 (C12) | XA=0 → XC=0 between 1830 and 2030 mm | `survival_cell.cockpit_len_mm` | `REG-C-COCKPIT`, l.464 | concept.test, oracle | checked |
+| C2.3.6 (C12) | XC=0 → XPU=0 ≥ 360 mm | `survival_cell.bulkhead_gap_mm` | `REG-C-BULKHEAD`, l.465 | concept.test, oracle | checked |
+| C2.5 (C12) | Stated values are the limits regardless of decimals | every limit | inclusive comparisons with 1e-9 slack (`over` / `under`, l.457) | checklist: "every regulation edge is inclusive" | checked |
 | C3.3.1(a) (C15) | Design to a reference-volume edge only where required or not relied upon | — | — (CAD-process rule; the concept treats limits as inclusive per C2.5) | — | not applicable |
 
 ## B. Front wing (C3.10)
 
 | Article | Rule | Touches | Check | Test | Status |
 |---|---|---|---|---|---|
-| C3.10.1(a), App. C2 §22.1 (C31, C219) | Profiles inside RV-FW-PROFILES, whose section reaches Y=675: span ≤ 1350 mm | `front_wing.span_mm` | `REG-C-FW-SPAN`, l.444 | concept.test, oracle | checked |
-| C3.10.1(a), App. C2 §21.1, §22.2-22.4 | RV-FW-PROFILES spans XF −1250 → −475, trimmed by two vertical planes: X extent 500 mm at Y=0, 647.5 at Y=440, 559.4 at Y=675 | `front_wing.chord_mm` × `span_mm` | `REG-C-FW-CHORD`: mean chord ≤ mean trimmed X extent over \|Y\| ≤ span/2 (`fwChordLimit`, l.51; check l.446) | guards 7, concept.test, oracle | checked |
-| **C3.10.1(a), App. C2 §22.1** | The same volume in **Z**: section [0,60] [100,60] [675,115] [675,275] [400,300] [0,200], i.e. 140 mm tall at Y=0, 211 mm at Y=400, 160 mm at Y=675 | **combination**: `chord_mm` × `aoa_deg` × `elements` × `span_mm` | **new** `REG-C-FW-PROFILES-Z`: per \|Y\| the chord must fit min(X extent, Z height / ((n−1)/n · tan setting)); mean chord ≤ that minimum's span-mean (`fwProfilesChordLimit` l.91, exact piecewise-linear mean `meanMin` l.81; check l.483). Model: the forwardmost volume flat, the flaps straight at the setting, the same model `REG-C-FW-SM-ENVELOPE` already used. Baseline (1300 × 580 mm, 25°, 3 volumes) limit 580.05 mm: legal; +0.5° needs ≤ 571 mm | checklist: "combinations", oracle | partially (model-dependent geometry) |
-| C3.10.1(b), (d) | Up to three non-intersecting volumes; profiles must obscure RS-FW-PROFILES from above, so at least one | `front_wing.elements` (domain 1-4) | `REG-C-FW-ELEMENTS` (≤ 3, l.443); **new** `REG-C-ELEMENTS-MIN` (integer ≥ 1, l.480) | concept.test, checklist: "combinations", oracle | checked |
+| C3.10.1(a), App. C2 §22.1 (C31, C219) | Profiles inside RV-FW-PROFILES, whose section reaches Y=675: span ≤ 1350 mm | `front_wing.span_mm` | `REG-C-FW-SPAN`, l.468 | concept.test, oracle | checked |
+| C3.10.1(a), App. C2 §21.1, §22.2-22.4 | RV-FW-PROFILES spans XF −1250 → −475, trimmed by two vertical planes: X extent 500 mm at Y=0, 647.5 at Y=440, 559.4 at Y=675 | `front_wing.chord_mm` × `span_mm` | `REG-C-FW-CHORD`: mean chord ≤ mean trimmed X extent over \|Y\| ≤ span/2 (`fwChordLimit`, l.51; check l.470) | guards 7, concept.test, oracle | checked |
+| **C3.10.1(a), App. C2 §22.1** | The same volume in **Z**: section [0,60] [100,60] [675,115] [675,275] [400,300] [0,200], i.e. 140 mm tall at Y=0, 211 mm at Y=400, 160 mm at Y=675 | **combination**: `chord_mm` × `aoa_deg` × `elements` × `span_mm` | **new** `REG-C-FW-PROFILES-Z`: per \|Y\| the chord must fit min(X extent, Z height / ((n−1)/n · tan setting)); mean chord ≤ that minimum's span-mean (`fwProfilesChordLimit` l.91, exact piecewise-linear mean `meanMin` l.81; check l.507). Model: the forwardmost volume flat, the flaps straight at the setting, the same model `REG-C-FW-SM-ENVELOPE` already used. Baseline (1300 × 580 mm, 25°, 3 volumes) limit 580.05 mm: legal; +0.5° needs ≤ 571 mm | checklist: "combinations", oracle | partially (model-dependent geometry) |
+| C3.10.1(b), (d) | Up to three non-intersecting volumes; profiles must obscure RS-FW-PROFILES from above, so at least one | `front_wing.elements` (domain 1-4) | `REG-C-FW-ELEMENTS` (≤ 3, l.467); **new** `REG-C-ELEMENTS-MIN` (integer ≥ 1, l.504) | concept.test, checklist: "combinations", oracle | checked |
 | C3.10.1(c), (e)-(l) | ≤ 3 sections per Y-plane, trailing-edge visibility and slope, curvature, 5-15 mm slot gaps (k), 30° normal limit | (shape detail, no parameter) | — | — | not applicable |
 | C3.10.2-C3.10.9, App. C2 §23-27 | Endplate, footplates, diveplane, pylon, strake volumes (endplate within Y 560-900) | (fixed 2.0 kg endplates in the mass model) | — | — | fixed |
-| C3.10.10(a)(i), (b)(i) | FW Primary Flap excludes the forwardmost volume; Secondary Flap only in the rearmost: a straight-mode wing needs ≥ 2 volumes | `elements` × `sm_delta_deg` | `REG-C-FW-FLAP`, l.452 | concept.test, oracle | checked |
-| C3.10.10(n)(ii) | Straight Mode = a DECREASE in incidence of a constant magnitude (two fixed positions) | `front_wing.sm_delta_deg` (one value per wing, so constant by construction) | **new** `REG-C-SM-DIRECTION` (≥ 0, l.479); before this pass a negative delta was silently "no straight mode" | checklist: "combinations", oracle | checked |
-| C3.10.10(s)(i), (u) | Flaps stay inside RV-FW-PROFILES in every position; physical stops | `chord_mm` × `aoa_deg` × `sm_delta_deg` × `elements` × `span_mm` | `REG-C-FW-SM-ENVELOPE`: straight-mode X extent chord·(1−s) + chord·s·cos(θ−δ)/cos θ ≤ the trimmed envelope (`fwStraightExtent` l.61, check l.447); flattening only lowers Z, so Z is covered by the Corner-Mode row | guards 7, concept.test, oracle | partially (model-dependent geometry) |
+| C3.10.10(a)(i), (b)(i) | FW Primary Flap excludes the forwardmost volume; Secondary Flap only in the rearmost: a straight-mode wing needs ≥ 2 volumes | `elements` × `sm_delta_deg` | `REG-C-FW-FLAP`, l.476 | concept.test, oracle | checked |
+| C3.10.10(n)(ii) | Straight Mode = a DECREASE in incidence of a constant magnitude (two fixed positions) | `front_wing.sm_delta_deg` (one value per wing, so constant by construction) | **new** `REG-C-SM-DIRECTION` (≥ 0, l.503); before this pass a negative delta was silently "no straight mode" | checklist: "combinations", oracle | checked |
+| C3.10.10(s)(i), (u) | Flaps stay inside RV-FW-PROFILES in every position; physical stops | `chord_mm` × `aoa_deg` × `sm_delta_deg` × `elements` × `span_mm` | `REG-C-FW-SM-ENVELOPE`: straight-mode X extent chord·(1−s) + chord·s·cos(θ−δ)/cos θ ≤ the trimmed envelope (`fwStraightExtent` l.61, check l.471); flattening only lowers Z, so Z is covered by the Corner-Mode row | guards 7, concept.test, oracle | partially (model-dependent geometry) |
 | C3.10.10(o), (p), (t)-(w) | ≤ 400 ms between modes; ≤ 2 actuators; failure returns to Corner Mode; deployed only fully inside an Activation Zone (B7.1.1(d), Section B Issue 07) | (no parameter) | info `REG-C-AERO-MODES`; the physics sim applies Straight Mode only inside FIA zones and after the 400 ms switch (concept/sim/lapsim.js l.269-272); sim v0 charges straight-mode downforce on the zones (bench.js) | guards 10 | fixed |
 
 ## C. Rear wing (C3.11)
 
 | Article | Rule | Touches | Check | Test | Status |
 |---|---|---|---|---|---|
-| C3.11.1(a), App. C2 §30.1 (C38, C220) | RV-RW-PROFILES reaches Y=575: span ≤ 1150 mm | `rear_wing.span_mm` | `REG-C-RW-SPAN`, l.449 | concept.test, oracle | checked |
-| C3.11.1(a), App. C2 §30.1-30.2 | X from XR=165 to XR=630 at every Y: 465 mm | `rear_wing.chord_mm` | `REG-C-RW-CHORD`, l.450 | concept.test, oracle | checked |
+| C3.11.1(a), App. C2 §30.1 (C38, C220) | RV-RW-PROFILES reaches Y=575: span ≤ 1150 mm | `rear_wing.span_mm` | `REG-C-RW-SPAN`, l.473 | concept.test, oracle | checked |
+| C3.11.1(a), App. C2 §30.1-30.2 | X from XR=165 to XR=630 at every Y: 465 mm | `rear_wing.chord_mm` | `REG-C-RW-CHORD`, l.474 | concept.test, oracle | checked |
 | C3.11.1(a), (d), App. C2 §30.2 | Z from 725 (\|Y\| ≤ 150) rising to 785 at Y=575, top 880: 155 mm tall inboard, 95 mm at the tip; forwardmost section's trailing edge within 10° of X | **combination**: `chord_mm` × `aoa_deg` × `elements` × `span_mm` | `REG-C-RW-PROFILES-Z` computed (`rwProfilesChordLimit` l.97) but **info, not enforced**: the aero map gives the rear setting a 5° zero-lift offset (aeromap.js `WING.rear_wing.a_zl`), so it is not a geometric angle, and the fixed (n−1)/n flap share would rule out most settings above ≈ 25° (e.g. 35°, 2 volumes: 384 mm limit vs the 420 mm baseline chord). Needs a rear-setting geometry from the aero-map owner | checklist: "combinations" | partially |
-| C3.11.1(b), C3.11.6(a)(i), C3.11.7(b) | Up to three volumes. 3-5 pairs of Rear Wing Separators MUST be fitted, each joining the forwardmost volume to the RW Flap, and the RW Flap excludes the forwardmost volume: **at least two volumes**, Straight Mode or not | `rear_wing.elements` (domain 1-4) | `REG-C-RW-ELEMENTS` (≤ 3, l.448); **new** `REG-C-ELEMENTS-MIN` (integer ≥ 2, l.480). A one-volume rear wing without Straight Mode was legal before this pass | concept.test, checklist: "combinations", oracle | checked |
+| C3.11.1(b), C3.11.6(a)(i), C3.11.7(b) | Up to three volumes. 3-5 pairs of Rear Wing Separators MUST be fitted, each joining the forwardmost volume to the RW Flap, and the RW Flap excludes the forwardmost volume: **at least two volumes**, Straight Mode or not | `rear_wing.elements` (domain 1-4) | `REG-C-RW-ELEMENTS` (≤ 3, l.472); **new** `REG-C-ELEMENTS-MIN` (integer ≥ 2, l.504). A one-volume rear wing without Straight Mode was legal before this pass | concept.test, checklist: "combinations", oracle | checked |
 | C3.11.1(c), (e)-(g) | Sections per plane, curvature, 20° normal limit, 8-12 mm gaps | (shape detail) | — | — | not applicable |
-| C3.11.2(a), App. C2 §31.1 | Endplate Body within RV-RWEP-BODY, top at Z=880 | `rear_wing.endplate_top_mm` | `REG-C-RW-ENDPLATE`, l.451 | concept.test, oracle | checked |
+| C3.11.2(a), App. C2 §31.1 | Endplate Body within RV-RWEP-BODY, top at Z=880 | `rear_wing.endplate_top_mm` | `REG-C-RW-ENDPLATE`, l.475 | concept.test, oracle | checked |
 | C3.11.2(c) | Endplate must obscure RS-RWEP from the side (a minimum endplate) | `endplate_top_mm` (lower side) | — RS-RWEP is not defined in the Section C text (CAD only), so no minimum can be checked | — | partially (max side only) |
-| C3.11.6(a)(i) | Straight Mode moves the RW Flap, which excludes the forwardmost volume | `elements` × `sm_delta_deg` | `REG-C-RW-FLAP`, l.453 (now implied by the ≥ 2 row) | concept.test, oracle | checked |
+| C3.11.6(a)(i) | Straight Mode moves the RW Flap, which excludes the forwardmost volume | `elements` × `sm_delta_deg` | `REG-C-RW-FLAP`, l.477 (now implied by the ≥ 2 row) | concept.test, oracle | checked |
 | C3.11.6(a)(ii)-(iii) | RW Flap excludes volumes outboard of Y=535, includes all inboard of Y=530 | `rear_wing.span_mm` × `sm_delta_deg` | modelled, not a legality test: aeromap.js `flapShare` (the tips stay in Corner Mode); info `REG-C-RW-FLAP-SPAN` | guards 10 | fixed |
-| C3.11.6(c)(ii), (h) | Straight Mode lowers RW Flap incidence by an always-identical amount; only two positions | `rear_wing.sm_delta_deg` | **new** `REG-C-SM-DIRECTION`, l.479 | checklist: "combinations", oracle | checked |
+| C3.11.6(c)(ii), (h) | Straight Mode lowers RW Flap incidence by an always-identical amount; only two positions | `rear_wing.sm_delta_deg` | **new** `REG-C-SM-DIRECTION`, l.503 | checklist: "combinations", oracle | checked |
 | C3.11.6(g)(ii), (k) | In Straight Mode the flap is exempt from C3.11.1 (it may leave RV-RW-PROFILES), physical stops required | `sm_delta_deg` | — (no envelope applies; the domain cap of 30° is a model bound, not a rule) | — | not applicable |
 | C3.4.1, C3.11 | No beam wing: only the bodywork of C3.5-C3.13 is permitted and C3.11 defines none | (no part) | the catalogue has no beam-wing part and the aero map none (concept/parts.js, aeromap.js `DF_SHARE`) | — | fixed |
 
@@ -95,20 +95,20 @@ checklist does not own: 5 (listed under "Fixes requested"); two are regulation c
 
 | Article | Rule | Touches | Check | Test | Status |
 |---|---|---|---|---|---|
-| C3.5.1(a), App. C2 §4.9 (C18, C207) | Floor Body inside RV-FLOOR-BODY, whose plan reaches Y=770 (at XF=1100): floor body ≤ 1540 mm wide | `floor.width_mm` | `REG-C-FLOOR-WIDTH`, l.442 | guards 4, concept.test, oracle | checked |
-| **C3.5.1(a), App. C2 §4.5-4.7, §4.11-4.13** | The RV-FLOOR-BODY roof is Z=75 from XF=1775 (XF=1450 for the §4.1 part) to XR=−600 at every Y, rising to 175 at XR−350 and 250 at XR+300: no floor channel can be more than 75 mm above Z=0 in the mid-floor | `floor.throat_mm` ("Venturi throat height above Z=0", domain 80-130, base 100) | info `REG-C-FLOOR-ROOF` (`FLOOR_ROOF_Z` l.112). **Not enforced: the whole domain, the baseline included, lies above the roof under the parameter's own label**; enforcing it would make every design illegal. Fix requested (see below) | checklist: todo "the floor throat parameter fits the RV-FLOOR-BODY roof" | not checked (conflict) |
+| C3.5.1(a), App. C2 §4.9 (C18, C207) | Floor Body inside RV-FLOOR-BODY, whose plan reaches Y=770 (at XF=1100): floor body ≤ 1540 mm wide | `floor.width_mm` | `REG-C-FLOOR-WIDTH`, l.466 | guards 4, concept.test, oracle | checked |
+| **C3.5.1(a), App. C2 §4.5-4.7, §4.11-4.13** | The RV-FLOOR-BODY roof is Z=75 from XF=1775 (XF=1450 for the §4.1 part) to XR=−600 at every Y, rising to 175 at XR−350 and 250 at XR+300: no floor channel can be more than 75 mm above Z=0 in the mid-floor | `floor.throat_mm` ("Venturi throat height above Z=0", domain 80-130, base 100) | info `REG-C-FLOOR-ROOF` (`FLOOR_ROOF_Z` l.118). **Not enforced: the whole domain, the baseline included, lies above the roof under the parameter's own label**; enforcing it would make every design illegal. Fix requested (see below) | checklist: todo "the floor throat parameter fits the RV-FLOOR-BODY roof" | not checked (conflict) |
 | C3.5.1(b), App. C2 §2 (RV-DIFF, CAD part FIA-LEG-0137) | Floor Body must obscure RV-DIFF from below; the roof profile allows a 21.8° rise over XR−600 → XR−350 (75 → 175 mm) and 6.6° behind | `diffuser.expansion_deg` (8-22°) | — no article limits an expansion angle; RV-DIFF is CAD-only, and whether a ramp fits depends on its start height (the throat, above) | — | not checked |
 | C3.5.2-C3.5.14, App. C2 §5-10 | Foot, sidewall, board, bib, leading-edge device, winglet, fence, corner, stays | (no parameter) | — | — | not applicable |
-| C3.6.1(c) (C24) | Plank holes at XF=500, XC−800…XC−600 and XPU+470…XPU+630, the rearmost on or ahead of XR=−500: **XR − XPU ≥ 970 mm** | **combination**: `wheelbase_mm` × `front_axle_offset_mm` × `cockpit_len_mm` × `bulkhead_gap_mm` | **new** `REG-C-PLANK-HOLES`, l.484 (the packaging model's 1140 mm minimum also implies it, but that is an estimate) | checklist: "combinations", oracle | checked |
-| C3.6.1(d) | Plank 10 ± 0.2 mm new, ≥ 8 mm worn (2 mm wear) | `floor.ride_height_mm` | `REG-C-PLANK` against the concept wear estimate (0.25 mm per mm below 32 mm static ride height: parts.js `PLANK`, a model assumption), l.454. Section C has no minimum ride height of its own | concept.test, oracle | partially |
-| C3.6.2(a) | Plank homogeneous, specific gravity 1.30-1.45 | plank material | `REG-C-MAT-COMPONENT` when a material is assigned to part `plank` (materialViolations l.345); parts.js models the plank inside `floor` at the regulation geometry | checklist: "materials" | checked (when assigned) |
+| C3.6.1(c) (C24) | Plank holes at XF=500, XC−800…XC−600 and XPU+470…XPU+630, the rearmost on or ahead of XR=−500: **XR − XPU ≥ 970 mm** | **combination**: `wheelbase_mm` × `front_axle_offset_mm` × `cockpit_len_mm` × `bulkhead_gap_mm` | **new** `REG-C-PLANK-HOLES`, l.508 (the packaging model's 1140 mm minimum also implies it, but that is an estimate) | checklist: "combinations", oracle | checked |
+| C3.6.1(d) | Plank 10 ± 0.2 mm new, ≥ 8 mm worn (2 mm wear) | `floor.ride_height_mm` | `REG-C-PLANK` against the concept wear estimate (0.25 mm per mm below 32 mm static ride height: parts.js `PLANK`, a model assumption), l.478. Section C has no minimum ride height of its own | concept.test, oracle | partially |
+| C3.6.2(a) | Plank homogeneous, specific gravity 1.30-1.45 | plank material | `REG-C-MAT-COMPONENT` when a material is assigned to part `plank` (materialViolations l.359); parts.js models the plank inside `floor` at the regulation geometry | checklist: "materials" | checked (when assigned) |
 | C3.6.3(d) | Metallic skids Ti6Al4V (AMS4928/4911) or 17-4PH | skid material | `REG-C-MAT-COMPONENT` for part `skids` | checklist: "materials" (grade list) | checked (when assigned) |
 
 ## E. Sidepods, bodywork, cooling (C3.8, C3.16, C7.4)
 
 | Article | Rule | Touches | Check | Test | Status |
 |---|---|---|---|---|---|
-| C3.16.9 (C51) | Sidepod Inlet aperture ≤ 80,000 mm² per side, above Z=275 | `sidepods.inlet_cm2` (both sides, domain 300-1100) | **new** `REG-C-SIDEPOD-INLET` ≤ 1600 cm², l.486 (reads `facts.params`; `check()` attaches it, bench needs design.js to pass it, see fixes) | checklist: "combinations", oracle | checked |
+| C3.16.9 (C51) | Sidepod Inlet aperture ≤ 80,000 mm² per side, above Z=275 | `sidepods.inlet_cm2` (both sides, domain 300-1100) | **new** `REG-C-SIDEPOD-INLET` ≤ 1600 cm², l.510 (reads `facts.params`; `check()` attaches it, bench needs design.js to pass it, see fixes) | checklist: "combinations", oracle | checked |
 | C3.8.1, App. C2 §16 | Sidepod inside RV-SIDEPOD (XF 900-1300, Y ≤ 715, Z 125-600), > 50 mm from the Floor Board | `sidepods.undercut_mm` | — the undercut depth has no geometry to compare (RV-EC continues behind XF=1300 down to Z=50) | — | not checked |
 | C7.4.1(a)-(d) (C91) | Primary heat-exchanger cores and header tanks aluminium alloy, not additive manufactured, tube wall ≥ 0.18 mm | cooling material | `REG-C-MAT-COMPONENT` for part `cooling`; tube geometry not modelled | checklist: "materials" | partially |
 | C3.8.2, C3.16.10-12 | Engine cover volume RV-EC, louvre and cockpit apertures | (no parameter) | — | — | not applicable |
@@ -119,25 +119,25 @@ The cooling capacity itself is the concept-model rule `PKG-COOLING` (section L).
 
 | Article | Rule | Touches | Check | Test | Status |
 |---|---|---|---|---|---|
-| C4.1 (C60) | Minimum Mass 726 kg + Nominal Tyre Mass in Qualifying / Sprint Qualifying, 724 kg + NTM otherwise; Car Mass includes the driver, excludes fuel | every part mass, `ballast.extra_kg` (auto ballast tops up to the minimum) | `REG-C-MASS-MIN`, l.455; `minMass(session)` l.190 | guards 2, concept.test, oracle | checked |
+| C4.1 (C60) | Minimum Mass 726 kg + Nominal Tyre Mass in Qualifying / Sprint Qualifying, 724 kg + NTM otherwise; Car Mass includes the driver, excludes fuel | every part mass, `ballast.extra_kg` (auto ballast tops up to the minimum) | `REG-C-MASS-MIN`, l.479; `minMass(session)` l.197 | guards 2, concept.test, oracle | checked |
 | C4.7 (C61) | Nominal Tyre Mass published by the tyre supplier | NTM | 44 kg **estimate** (**secondary**: 768 kg press minimum − 724 kg; RacingNews365 2 Apr 2026, FIA/F1 2024 announcements), `NOMINAL_TYRE_MASS` flagged `verified: false` | concept.test | partially (secondary) |
-| C4.2 (C60) | Qualifying and Sprint Qualifying only: front axle ≥ 0.44 × Minimum Mass, rear ≥ 0.54 × | **combination**: `ballast.x_frac` × `extra_kg` × every position (survival cell, wheelbase, PU) | `REG-C-MASS-FRONT` / `-REAR`, l.457-458 | guards 2, concept.test, oracle | checked |
-| C4.5.2 (C61) | Reference driver mass + driver ballast ≥ 82 kg | driver (75 kg estimate) + auto driver ballast | `REG-C-DRIVER-MASS`, l.460 | concept.test, oracle | checked |
-| C4.3.1-C4.3.2 (C60) | Ballast fixed to the sprung mass; driver ballast within the cockpit-entry-template X range, on the survival cell, density > 7500 kg/m³ | ballast position (`x_frac` 0-1 × WB: always between XF=0 and XR), driver ballast at XC−750 | positions by construction (info `REG-C-BALLAST`); density `REG-C-MAT-DENSITY` when a material is assigned (l.380) | checklist: "materials" | partially |
+| C4.2 (C60) | Qualifying and Sprint Qualifying only: front axle ≥ 0.44 × Minimum Mass, rear ≥ 0.54 × | **combination**: `ballast.x_frac` × `extra_kg` × every position (survival cell, wheelbase, PU) | `REG-C-MASS-FRONT` / `-REAR`, l.481-482 | guards 2, concept.test, oracle | checked |
+| C4.5.2 (C61) | Reference driver mass + driver ballast ≥ 82 kg | driver (75 kg estimate) + auto driver ballast | `REG-C-DRIVER-MASS`, l.484 | concept.test, oracle | checked |
+| C4.3.1-C4.3.2 (C60) | Ballast fixed to the sprung mass; driver ballast within the cockpit-entry-template X range, on the survival cell, density > 7500 kg/m³ | ballast position (`x_frac` 0-1 × WB: always between XF=0 and XR), driver ballast at XC−750 | positions by construction (info `REG-C-BALLAST`); density `REG-C-MAT-DENSITY` when a material is assigned (l.394) | checklist: "materials" | partially |
 | C4.3.3 | Ballast ahead of XA=0 must be present in the front impact test | ballast position | never ahead of XF=0 > XA=0 | — | not applicable |
 | C4.6 (C61) | Heat Hazard: Minimum Mass + 5 kg | session conditions | info `REG-C-HEAT-HAZARD`: no Heat Hazard in the modelled Silverstone sessions (qualifying air 25.2 °C, lapsim DEFAULT_CONDITIONS) | — | not checked |
-| — | Mass-sheet sanity: every part mass finite and ≥ 0, every part inside the car (XF −1300 … XR + 800, ground … Z=1000) | `design.overrides` | **new** model rule `PKG-PART-MASS`, l.492; NaN-safe comparisons everywhere (a NaN override passed every mass rule before) | checklist: "robustness", oracle | checked |
+| — | Mass-sheet sanity: every part mass finite and ≥ 0, every part inside the car (XF −1300 … XR + 800, ground … Z=1000) | `design.overrides` | **new** model rule `PKG-PART-MASS`, l.516; NaN-safe comparisons everywhere (a NaN override passed every mass rule before) | checklist: "robustness", oracle | checked |
 
 ## G. PU masses and CoG (C5.3-C5.5, C5.17-C5.18, C9.5)
 
 | Article | Rule | Touches | Check | Test | Status |
 |---|---|---|---|---|---|
-| C5.5.1 + C5.18.7 (C71, C79) | ICE PU Mass group (ICE + TC + Powerbox) and MGU-K minima paired by the MGU-K transmission option: 130/20, 134/16, 132/18 kg | `pu_ice`, `pu_turbo`, `pu_mguk` masses (overrides), option fixed "a" | `REG-C-ICE-MASS`, `REG-C-MGUK-MASS`, l.466-468 | guards 1, concept.test, oracle | checked |
-| C5.5.2 | Overall PU ≥ 185 kg | PU masses | `REG-C-PU-MASS`, l.461 | concept.test, oracle | checked |
-| C5.3.4 | Turbocharger ≥ 12 kg | `pu_turbo` | `REG-C-TC-MASS`, l.471 | concept.test, oracle | checked |
-| C5.17.9 | ES Main Enclosure group ≥ 35 kg | `pu_es` | `REG-C-ES-MASS`, l.472 | concept.test, oracle | checked |
-| C5.5.3 | PU (ICE + TC groups) CoG above Z=200 | `pu_ice`, `pu_turbo` z (overrides) | `REG-C-PU-COG`, l.473 | concept.test, oracle | checked |
-| C9.5.2 | Driveline + gear change ≥ 22 kg | `gearbox` | `REG-C-DRIVELINE-MASS`, l.474 | concept.test, oracle | checked |
+| C5.5.1 + C5.18.7 (C71, C79) | ICE PU Mass group (ICE + TC + Powerbox) and MGU-K minima paired by the MGU-K transmission option: 130/20, 134/16, 132/18 kg | `pu_ice`, `pu_turbo`, `pu_mguk` masses (overrides), option fixed "a" | `REG-C-ICE-MASS`, `REG-C-MGUK-MASS`, l.490 | guards 1, concept.test, oracle | checked |
+| C5.5.2 | Overall PU ≥ 185 kg | PU masses | `REG-C-PU-MASS`, l.485 | concept.test, oracle | checked |
+| C5.3.4 | Turbocharger ≥ 12 kg | `pu_turbo` | `REG-C-TC-MASS`, l.495 | concept.test, oracle | checked |
+| C5.17.9 | ES Main Enclosure group ≥ 35 kg | `pu_es` | `REG-C-ES-MASS`, l.496 | concept.test, oracle | checked |
+| C5.5.3 | PU (ICE + TC groups) CoG above Z=200 | `pu_ice`, `pu_turbo` z (overrides) | `REG-C-PU-COG`, l.497 | concept.test, oracle | checked |
+| C9.5.2 | Driveline + gear change ≥ 22 kg | `gearbox` | `REG-C-DRIVELINE-MASS`, l.498 | concept.test, oracle | checked |
 | C9.5.1 | Final drive within XR ±60 mm, 390-450 mm behind the first gear pair | wheelbase vs PU and gearbox length | model rule `PKG-WB` (ICE 620 + gearbox 520 mm, estimates ≥ the 390 mm the article implies) | concept.test, oracle | partially |
 | C5.4.5 | Crankshaft axis at Z=90 | PU z positions | parts.js estimates (ICE CoG 140 mm above the axis) | — | fixed |
 | C5.5.8 | ICE ballast ≤ 2 kg, density > 7500 kg/m³ | (no ICE ballast in the model) | — | — | not applicable |
@@ -146,8 +146,8 @@ The cooling capacity itself is the concept-model rule `PKG-COOLING` (section L).
 
 | Article | Rule | Touches | Check | Test | Status |
 |---|---|---|---|---|---|
-| C5.2.7 (C63) | ERS-K DC power ≤ 350 kW | PhysicalCar `pu.mguk_kw` | `checkPU` l.400 (`REG-C-ERS-K`); the physics sim also clamps to `REGS.mguk_max_kw` | checklist: "PU and ERS figures" | checked |
-| C5.2.8(i)-(ii) | ERS-K propulsion ≤ 1800 − 5v kW below 340 km/h, 6900 − 20v to 345, 0 above; Overtake 7100 − 20v to 355 | sim deployment | `mgukLimitKw` l.424; lapsim `mgukTaperKw` equal at every 0.5 km/h 0-360 | checklist: "PU and ERS figures" | checked |
+| C5.2.7 (C63) | ERS-K DC power ≤ 350 kW | PhysicalCar `pu.mguk_kw` | `checkPU` l.417 (`REG-C-ERS-K`); the physics sim also clamps to `REGS.mguk_max_kw` | checklist: "PU and ERS figures" | checked |
+| C5.2.8(i)-(ii) | ERS-K propulsion ≤ 1800 − 5v kW below 340 km/h, 6900 − 20v to 345, 0 above; Overtake 7100 − 20v to 355 | sim deployment | `mgukLimitKw` l.448; lapsim `mgukTaperKw` equal at every 0.5 km/h 0-360 | checklist: "PU and ERS figures" | checked |
 | C5.2.8(iii) | 250 kW on FIA-specified race sectors | race model | — (the scored lap is a qualifying lap) | — | not applicable |
 | C5.2.9 | ES state-of-charge window ≤ 4 MJ on track | `pu.es_soc_window_mj`, deploy ≤ window + recharge | `checkPU` (`REG-C-ES-SOC`); lapsim `REGS.es_soc_window_mj` | checklist: "PU and ERS figures" | checked |
 | C5.2.10 | Recharge ≤ 8.5 MJ/lap (7 at some events, ≥ 5 MJ floor in Q/SQ; Issue 21: 4 MJ). Silverstone qualifying 6.5 MJ (**FIA 2026 British GP Power Unit Information, Doc 7 V02, 02/07/2026**) | `pu.es_harvest_mj_per_lap`, sim `recharge_limit_mj` | `checkPU` (`REG-C-ES-RECHARGE`, with the session limit); lapsim default 6.5 MJ | checklist: "PU and ERS figures" | checked |
@@ -155,7 +155,7 @@ The cooling capacity itself is the concept-model rule `PKG-COOLING` (section L).
 | C5.2.4, C5.2.11, C5.2.12 | Fuel flow below 10,500 rpm; MGU-K torque ≤ 500 Nm; MGU-K from 50 km/h at the start | (no rpm, torque or start model) | — | — | not applicable |
 | C5.1 | 1.6 L V6, 90°, 4-stroke | PU | — | — | fixed |
 
-`checkPhysical(pc)` (l.415) runs `checkPU` plus the C10.10.1 track check on any PhysicalCar. The bench does not call it yet (fix
+`checkPhysical(pc)` (l.434) runs `checkPU` plus the C10.10.1 track check on any PhysicalCar. The bench does not call it yet (fix
 requested); the checklist test runs it on 40 mutated designs and both baselines.
 
 ## I. Wheels, tyres, suspension, brakes (C10, C11)
@@ -165,7 +165,7 @@ requested); the checklist test runs it on 40 mutated designs and both baselines.
 | C10.7.1 (C113) | Wheel rims AZ70 or AZ80 magnesium alloy only | `wheels_front` / `wheels_rear` material | `REG-C-MAT-COMPONENT` (materialViolations) | checklist: "materials" | checked (when assigned) |
 | C10.7.2 | Rim 462.5/463 mm diameter, mounting width 315 / 401.3 mm, overall 334 / 420.3 mm ref. | (catalogue wheels) | info `REG-C-RIMS` | — | fixed |
 | C10.8.2 | Tyre specification by the supplier | tyre radius 353 mm (estimate) | — | — | fixed |
-| C10.10.1, C2.1.3(a) (C117, C10) | Front Wheel Coordinate System origin (inboard rim plane) not outboard of Y=603, rear Y=525; with half the rim overall width that is a wheel centre plane ≤ 770 / 735 mm, track ≤ 1540 / 1470 mm | wheel positions, PhysicalCar tracks | **new** `REG-C-SUSP-WIDTH`: on mass-sheet wheel rows when they carry `y_mm` (l.488) and in `checkPhysical` on `track_front_m` / `track_rear_m`. **Conflict: the PhysicalCar uses 1.60 / 1.55 m tracks (lapsim baselineCar) and the mass sheet 790 / 760 mm wheel \|y\|, all outside the limit** | checklist: "combinations", "checkPhysical bites", todo "track widths fit" | partially (conflict) |
+| C10.10.1, C2.1.3(a) (C117, C10) | Front Wheel Coordinate System origin (inboard rim plane) not outboard of Y=603, rear Y=525; with half the rim overall width that is a wheel centre plane ≤ 770 / 735 mm, track ≤ 1540 / 1470 mm | wheel positions, PhysicalCar tracks | **new** `REG-C-SUSP-WIDTH`: on mass-sheet wheel rows when they carry `y_mm` (l.512) and in `checkPhysical` on `track_front_m` / `track_rear_m`. **Conflict: the PhysicalCar uses 1.60 / 1.55 m tracks (lapsim baselineCar) and the mass sheet 790 / 760 mm wheel \|y\|, all outside the limit** | checklist: "combinations", "checkPhysical bites", todo "track widths fit" | partially (conflict) |
 | C15.3.3 | Uprights: wrought 2014 / 2618 / 7075 / 7022 Al, C15.2.1(e) Ti, C15.2.1(h) MMC, C15.2.2 AM Al/Ti | upright material | `REG-C-MAT-COMPONENT` for part ids ending `upright(s)` (none in the catalogue today) | — (code path shared with the tested component checks) | checked (when assigned) |
 | C11.2.2, C15.4(b)-(c) | Calipers aluminium (C15.2.1(b)); carbon-carbon and CMC allowed for friction materials | `brakes_*` material | brakes accept C15.2 materials plus carbon-carbon / CMC; the caliper-only aluminium rule cannot be separated from the disc in the one-part model | checklist: "materials" (C/C on brakes) | checked (when assigned) |
 | C11.3.2-3 | Discs ≤ 34 mm thick, 325-345 mm front / 260-280 mm rear | (catalogue brakes) | — | — | fixed |
@@ -181,25 +181,29 @@ requested); the checklist test runs it on 40 mutated designs and both baselines.
 
 ## K. Materials (C15, general rules)
 
-The table is `concept/data/materials-2026.json` (being added by the parts/materials helper): `[{ id, name, density_kg_m3, E_GPa, … }]`,
-also accepted as `{ materials: [...] }`, `{ items: [...] }` or an object keyed by id. Optional fields refine the classification:
-`class`/`category`/`type`, `family`, `grade`, `uns`, `metallic`, `be_pct`, `li_pct`, `ag_pct`, `pgm_pct`, `mmc_vol_pct`,
-`fibre`, `fibre_modulus_GPa`, `fibre_strength_MPa`, `fibre_density_kg_m3`, `precursor`, `matrix`, `additive`, `shape_memory`,
-`intermetallic`, `nanomaterial`, `foil_metallurgy`, `commercially_available`. Without them the grade is read from `id`/`name`
-(e.g. "Magnesium AZ80A", "Titanium Ti-6Al-4V (Grade 5)", "Carbon fibre (T800) / epoxy"). A design assigns materials as
-`design.materials = { <part id>: <material id or index> }` or a `material` field on a part's params. Without the file nothing is
-checked unless a design assigns a material, which is then illegal (`REG-C-MAT-PERMITTED`, "no materials table loaded"): an unknown
-material cannot be shown to be listed (C15.1.1). `regs.setMaterials(table)` installs a table explicitly.
+The table is `concept/data/materials-2026.json` (merged at c3c55c0; browser copy in `concept/materials.js`): 23 entries
+`{ id, name, class, form, density_kg_m3, E_GPa, tensile_MPa, fia: { article, status, note, verified: false }, sources }`, laminates
+with `fibre: { name, E_GPa, tensile_MPa, density_kg_m3 }`, Al-Li alloys with `li_wt_pct: [min, max]`, AlBeMet with `be_wt_pct`.
+regs.js reads it lazily (`concept/materials.js` MATERIALS, else the JSON), tolerantly (an array, `{ materials }`, `{ items }` or an
+object keyed by id), and never trusts `fia.status`: every verdict is recomputed from the Issue 19 text (the test compares the two).
+A design names a material as `params.<part>.material` on the 13 `parts.MATERIAL_PARTS`; the mass sheet lists every NAMED material
+in `facts.mass.materials`, so the bench checks materials through `checkFacts` with no other wiring (`regs.check` also accepts
+`design.materials`). Unnamed parts use the part's baseline material (`materials.baseOf`), all 13 of which pass (tested). C15.1.9
+("the whole declared range" inside each limit) is applied to `li_wt_pct` / `be_wt_pct` by taking the range maximum. Without any
+table nothing is checked unless a design names a material, which is then illegal (`REG-C-MAT-PERMITTED`, "no materials table
+loaded"): an unknown material cannot be shown to be listed (C15.1.1). Optional fields that refine the classification: `grade`,
+`uns`, `metallic`, `ag_pct`, `pgm_pct`, `mmc_vol_pct`, `precursor`, `matrix`, `additive`, `shape_memory`, `intermetallic`,
+`nanomaterial`, `foil_metallurgy`, `commercially_available`.
 
 | Article | Rule | Check | Test | Status |
 |---|---|---|---|---|
-| C15.1.4 (C156) | No metallic material with E/ρ > 40 GPa/(g/cm³) (beryllium 155, AlBeMet 93, 40 % SiC/Al ≈ 51) | `REG-C-MAT-SPECIFIC-MODULUS` on every metallic material (l.353) | checklist: "materials" | checked |
-| C15.1.1, C15.2 (C156-C159) | Outside the PU only the listed materials (below) | `REG-C-MAT-PERMITTED` (`c152`, l.303) | checklist: "materials" | checked |
+| C15.1.4 (C156) | No metallic material with E/ρ > 40 GPa/(g/cm³) (beryllium 155, AlBeMet AM162 93, SupremEX 225XE 39.9: just legal, 40 % SiC/Al ≈ 51) | `REG-C-MAT-SPECIFIC-MODULUS` on every metallic material (l.367) | checklist: "materials" | checked |
+| C15.1.1, C15.2 (C156-C159) | Outside the PU only the listed materials (below) | `REG-C-MAT-PERMITTED` (`c152`, l.315) | checklist: "materials", "materials (C15) on the real table" (M60J, Al-Li 2195, C/C on the floor rejected through the bench) | checked |
 | C15.1.3 | Commercially available | `commercially_available: false` → `REG-C-MAT-PERMITTED` | — (field flag) | checked (when assigned) |
 | C15.1.8 | PU materials FIA-approved | an unidentifiable material on a PU part → `REG-C-MAT-PU` | checklist: "materials" | partially (approval list not public) |
 | C15.2.2 | AM metals list; finished part ≥ 60 % of the printed mass | AM grade lists when `additive: true`; the 60 % ratio is not modelled | — | partially |
 | C15.2.3 | Matrices (epoxy, cyanate ester, BMI, phenolic, PU, polyester, thermoplastics); fibres: PAN carbon ≤ 550 GPa, ≤ 7100 MPa, ≤ 1.92 g/cm³; aramid, PBO, PE, PP, E/S/Q/BF glass, flax/hemp/linen/cotton/bamboo; cores | fibre grade table (manufacturer datasheets, **secondary**: T300-T1100, IM7/IM10, MR70, M40J-M60J, pitch fibres); a laminate stiffer than 330 GPa without a named fibre implies a fibre above 550 GPa (≤ 60 % fibre volume, assumption) | checklist: "materials" (M60J, pitch, stiff UD, basalt rejected; T800 accepted) | checked |
-| C15.3.1-C15.3.2 (C159) | Forbidden: shape-memory (except piezo sensors), AM with beryllium, > 5 % Pt+Ru+Ir+Re+Au, foil metallurgy, intermetallics | `REG-C-MAT-PROHIBITED` (l.367) | checklist: "materials" (nitinol) | checked |
+| C15.3.1-C15.3.2 (C159) | Forbidden: shape-memory (except piezo sensors), AM with beryllium, > 5 % Pt+Ru+Ir+Re+Au, foil metallurgy, intermetallics | `REG-C-MAT-PROHIBITED` (l.381) | checklist: "materials" (nitinol) | checked |
 | C15.3.4 | Primary Roll Structure: no particulate-reinforced material | `REG-C-MAT-COMPONENT` for part ids `roll_hoop` / `roll_structure` | — | checked (when assigned) |
 | C15.4 (C160) | Exceptions: ceramics for bearings etc., CMC and carbon-carbon for friction, electrical components, seals, fluids, tyres, coatings, paint, adhesives, insulation, regulated parts, FIA single-supply parts, Stellite on or above Z=0 | `electronics`, `fuel_system`, `seat_safety` exempt from C15.2; C/C and CMC accepted on `brakes_*`; Stellite 6/12 accepted | checklist: "materials" | checked |
 | C15.6.1 (C162) | Inside the PU: no Mg alloys, MMCs (> 2 % v/v), intermetallics, > 5 % Pt/Ru/Ir/Re, Cu > 2.2 % Be, other alloys > 0.25 % Be, W-base alloys, ceramics/CMC, Al > 1 % Li or > 1 % Ag, nanomaterials, density > 18,400 kg/m³, unlisted composites | `REG-C-MAT-PU` for `pu_ice`, `pu_turbo`, `pu_mguk`, `pu_es`, `pu_electronics` | checklist: "materials" (AZ80, SupremEX, tungsten, Al-Li 2099, C/C rejected; steel, Ti64, CuBe 2 % accepted) | checked |
@@ -225,14 +229,35 @@ material cannot be shown to be listed (C15.1.1). `regs.setMaterials(table)` inst
 | `electronics`, `fuel_system`, `seat_safety` | exempt from C15.2 (still C15.1.4) | C15.4(d), (e), (l) |
 | every other part (`floor`, `rear_wing`, `diffuser`, `sidepods`, `engine_cover`, `nose`, `rear_impact`, `gearbox` case, suspension, `hydraulics`, `misc`, `ballast`) | C15.2: any iron alloy; Al 1xxx-7xxx wrought / 2xx-7xx cast with < 1 % Li plus 2050/2055/2099; Mg WE43B, WE43C, WE54A, AZ80A; Inconel 625/718, Waspaloy, MP35N, MP159; CP Ti, Grade 9, 5/23, Ti6242, Ti6246, Ti10-2-3, Ti15-3-3-3, Beta C, Ti5553, Ti21S, Ti1100, Ti-6Cr-5Mo-5V-4Al; Cu < 2.5 % Be; any W alloy; SupremEX 225XE/XF; listed AM metals; C15.2.3 composites; cores; polymers | C15.2 (C156-C159) |
 
+**The materials table's `fia` readings, checked against the Issue 19 text** (test "materials (C15) on the real table"): 22 of 23
+rows agree with the checklist's verdict on a general part. Corrections requested for `concept/data/materials-2026.json` (owned by
+the parts/materials helper; regs.js already applies the Issue 19 reading):
+
+1. `mg_we43` ("Magnesium alloy WE43 (T6)", status permitted, article C15.2.1(c)(i)-(ii)): C15.2.1(c) lists **WE43B (UNS M18432)** and
+   **WE43C (UNS M18434)** only, as defined under ASTM B107-13; WE43A (UNS M18430) is not listed, and the row does not say which
+   variant it is. Name the variant and UNS number (e.g. "Magnesium alloy WE43C (UNS M18434), T6"); until then regs.js rejects
+   `mg_we43` outside the PU (`REG-C-MAT-PERMITTED`, "magnesium grade not in C15.2.1(c)").
+2. `afrp_k49` note: "KC60/KC170 aramid cloths are prescribed in PL-HALO and PL-HEADREST": C15.5.2 prescribes **KC60 only** (PL-HALO
+   [KC60, CC100, KC60], PL-HEADREST [KC60, KC60]); KC170 is defined in C15.5.1(c) but used by neither.
+3. `cfrp_t1100g` note "CC-UHS-eligible": CC-UHS is defined as "Woven carbon cloth, fibre Ftu > 6250MPa, epoxy prepreg" (C15.5.1(f)),
+   so the fibre qualifies but only in a woven-cloth form; the row describes a quasi-isotropic laminate. Wording only, no verdict change.
+4. `tungsten_ha` article "C15.6.1(g), (l)": (g) (tungsten-base alloys) is what excludes it from the PU; (l) (density > 18,400 kg/m³)
+   does not apply at 18,000 kg/m³. Wording only.
+
+Every other row (`cfrp_t700s`, `cfrp_t800s`, `cfrp_m55j`, `cfrp_m60j`, `pbo_zylon`, `gfrp_e`, both cores, `ti64`, `al_7075_t6`,
+`al_li_2099`, `al_li_2195`, `mg_az80a`, `steel_17_4ph`, `steel_maraging_300`, `inconel_718`, `mmc_supremex_225xe`,
+`albemet_am162`, `carbon_carbon`) cites the right article and status; the specific moduli quoted in the notes reproduce from the
+row's E and density.
+
 ## L. Concept-model rules (not regulation text; same violation channel, `verified: false`)
 
 | Rule | What | Check | Test | Status |
 |---|---|---|---|---|
-| `PKG-WB` | Wheelbase fits axle offset + cockpit + bulkhead gap + ICE (620 mm) + gearbox (520 mm), estimates | l.475 | concept.test, oracle | checked |
-| `PKG-COOLING` | Cooling capacity ≥ 1.05 × need (aero map v0 assumption) | l.476 | guards 8, oracle | checked |
-| `PKG-FLOOR-STALL` | Dynamic floor gap ≥ 2 mm above the modelled stall onset | l.477 | guards 9, oracle | checked |
-| `PKG-PART-MASS` | Part masses finite, ≥ 0, inside the car | l.492 | checklist: "robustness", oracle | checked |
+| `PKG-WB` | Wheelbase fits axle offset + cockpit + bulkhead gap + ICE (620 mm) + gearbox (520 mm), estimates | l.499 | concept.test, oracle | checked |
+| `PKG-COOLING` | Cooling capacity ≥ 1.05 × need (aero map v0 assumption) | l.500 | guards 8, oracle | checked |
+| `PKG-FLOOR-STALL` | Dynamic floor gap ≥ 2 mm above the modelled stall onset | l.501 | guards 9, oracle | checked |
+| `PKG-PART-MASS` | Part masses finite, ≥ 0, inside the car | l.516 | checklist: "robustness", oracle | checked |
+| `PKG-PU-FIXED` | **PU lock** (owner brief: the baseline team's PU, unchanged; it is a homologated unit, C5.5.7): every PU part's mass and position relative to XPU=0 / XC=0 (`PU_LOCK`, l.112), the MGU-K transmission option, and on a PhysicalCar (`checkPhysical(pc, { pu_ref })`, l.434) MGU-K power and the energy figures equal to the baseline team's, ICE power not above it (only the cooling derate may lower it) | l.521 | checklist: "PU lock", oracle (PU override samples) | checked |
 
 ## Combinations covered
 
@@ -246,7 +271,7 @@ part class (C15 and the component articles). Rear-wing chord × setting × volum
 ## Gaps fixed in this pass (regs.js, each with a test in test/concept-regs-checklist.test.js)
 
 1. **NaN / non-numeric inputs passed every rule they fed** (`x > max` is false for NaN): e.g. `overrides: { pu_ice: { mass_kg: NaN } }`
-   was a legal car. All comparisons are now NaN-safe (`over` / `under`, l.433). Test "robustness".
+   was a legal car. All comparisons are now NaN-safe (`over` / `under`, l.457). Test "robustness".
 2. **Negative part masses and parts outside the car** (overrides) were not checked as such (they could buy free ballast or weight
    distribution): `PKG-PART-MASS`.
 3. **Front-wing Z envelope** (C3.10.1(a), App. C2 §22.1) was not checked: a 40° setting at 580 mm chord was legal.
@@ -263,32 +288,39 @@ part class (C15 and the component articles). Rear-wing chord × setting × volum
 11. **C5.2 figures handed to the sims** were not checked by regs.js: `checkPU`, `checkPhysical`, `mgukLimitKw`.
 12. **`regs.check(design)` ignored the design's own params / materials**: it now attaches them to the facts.
 13. **Rear-wing Z envelope** made explicit (`rwProfilesChordLimit`, info) with the reason it is not enforced.
+14. **PU changes** (overrides of PU masses or positions, another transmission option, a PhysicalCar PU above the baseline team's)
+    were legal as long as the C5 floors held: `PKG-PU-FIXED` and `checkPhysical(pc, { pu_ref })`.
 
 No existing check was weakened (all kept their limits; the comparisons only became stricter on non-finite input).
 
 ## Fixes requested in files this checklist does not own
 
-1. **concept/parts.js l.57 + concept/aeromap.js l.36-43, l.80 (floor throat vs C3.5.1(a), App. C2 §4.5/§4.11).** `floor.throat_mm`
+1. **concept/parts.js l.68 + concept/aeromap.js l.58-65, l.128 (floor throat vs C3.5.1(a), App. C2 §4.5/§4.11).** `floor.throat_mm`
    is "Venturi throat height above Z=0", domain 80-130, base 100; RV-FLOOR-BODY's roof is Z=75 between XF=1775 and XR=−600, so every
    value is above the roof. Either redefine it as a height above the ground (throat − 10 mm plank − ride height above Z=0; baseline 55
    mm, legal) and say so in the label, or rescale the domain to ≤ 75 (e.g. 40-75, base 60) and re-fit `FLOOR.throat_k` so
    c = throat_k × throat stays 31.7 mm at the base (throat_k = 31.7 / 60 = 0.528). Then flip `REG-C-FLOOR-ROOF` to `kind: "max"` with a
    check `over(throat above Z=0, 75)` in `checkFacts` and turn the todo test into a normal one.
 2. **concept/sim/lapsim.js l.80 (`track_front_m: 1.6, track_rear_m: 1.55`), concept/data/cars-2026-derived.json (1.58 / 1.52),
-   concept/physical.js REF_V0 l.33 (1.58 / 1.52) and concept/parts.js l.138-139 (wheel |y| 790 / 760 mm) vs C10.10.1.** The
+   concept/physical.js REF_V0 l.38 (1.58 / 1.52) and concept/parts.js l.186-187 (wheel |y| 790 / 760 mm) vs C10.10.1.** The
    Wheel Coordinate System origin (inboard rim plane, C2.1.3(a)) may not lie outboard of Y=603 (front) / Y=525 (rear); with half the
    rim overall width (334 / 420.3 mm, C10.7.2(a)) the widest legal tracks are 1.540 m front and 1.470 m rear, wheel centres at |y| 770
-   / 735 mm. Use those (or narrower) values; then add `y_mm` to `massSheet` part rows (parts.js l.167) so `REG-C-SUSP-WIDTH` checks
+   / 735 mm. Use those (or narrower) values; then add `y_mm` to `massSheet` part rows (parts.js l.220) so `REG-C-SUSP-WIDTH` checks
    them, and the todo test "track widths fit" passes. The tracks are shared by our car and the calibrated field, so the relative score
    moves little, but the scored car is not legal as modelled.
-3. **concept/design.js l.130-138 (`facts`).** Add `params: p, materials: d.materials` to the returned facts so that
-   `bench` (which calls `regs.checkFacts(design.facts(d))`) checks the sidepod inlet and materials too (`regs.check` already attaches
-   them). If materials are carried as a `material` field on part params, `design.validate` (l.52-72) must accept that key (string id)
-   instead of rejecting it as an unknown, non-numeric parameter.
-4. **concept/bench.js l.252 (optional, defensive).** Append `regs.checkPhysical(pc, { recharge_limit_mj })` violations to
+3. **concept/design.js l.169-177 (`facts`).** Add `params: p` to the returned facts so that `bench` (which calls
+   `regs.checkFacts(design.facts(d))`) also runs the sidepod-inlet check (C3.16.9); `regs.check` attaches it already. Not binding
+   today (the inlet domain tops out at 1100 cm² of the 1600 allowed); materials need nothing (they reach checkFacts through
+   `facts.mass.materials`).
+4. **concept/bench.js l.252.** Append `regs.checkPhysical(pc, { recharge_limit_mj, pu_ref: <the baseline team's PhysicalCar.pu> })` violations to
    `violations` so a PhysicalCar outside C5.2 / C10.10.1 can never be scored (today the physics sim clamps ERS-K power and recharge
-   itself, so nothing slips through, but the guarantee lives in the sim, not in the legality check).
-5. **concept/designer/scenario.js l.30-48 (`regBounds`) and concept/optimize.js l.97 (`ctxOf` rules).** The proposer's bounds and rule
+   itself, and the PU lock holds on every mutated design in the test, so nothing slips through today, but the guarantee lives in
+   the sim and physical.js, not in the legality check). Exclude `REG-C-SUSP-WIDTH` until fix 2 lands, or every car is illegal.
+5. **concept/designer/scenario.js l.37-55 (`regBounds`) and concept/optimize.js l.97 (`ctxOf` rules).** The proposer's bounds and rule
    list come from `regs.RULES` only. Add `regs.COMBO_RULES` (non-info) to the rule list if the scenario budget allows, give
    `front_wing.chord_mm` the bound `min(REG-C-FW-CHORD, regs.fwProfilesChordLimit(params.front_wing))`, and `rear_wing.elements`
    the minimum 2, so the LLM proposer sees the new limits instead of learning them from refusals.
+6. **concept/data/materials-2026.json**: the four `fia` corrections listed at the end of section K.
+7. **concept/materials.js `PARTS.front_wing.forms`** (`["laminate", "metal"]`): the part includes the endplates, which C3.19.1 requires
+   in laminate PL-ANTISPLINTER, so regs.js rejects a metal front wing (`REG-C-MAT-COMPONENT`). Either allow only laminates there or
+   split the endplate off as its own (laminate-only) material share.
