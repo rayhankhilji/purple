@@ -17,6 +17,7 @@ Every value we do not have yet is an amber **`FILL <name>`** box in the slides (
 | `FILL v1-verdict` | same | same → `verdict n/8` for v1 | **n/8** |
 | `FILL v2-next` | same | same, v2 rows (needs a `Passed` v2) | **n/8** |
 | `FILL v2-verdict` | same | same | **n/8** |
+| the four `/7` boxes next to v1/v2 next and verdict | slides.md slide 5 table; demo-script 2:10; README [PENDING] | same scoring **without exam-rw8** (the demo experiment, in v2's recorded data, so not held out for v2): score the 7 other sheet items | **n/7** |
 
 Before exporting the submission PDF this must print nothing:
 
