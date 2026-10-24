@@ -1,8 +1,15 @@
 # Lane GAME
 
-Status: in_progress (PR: lab follow-ups — 60 s grace + audio resume, stacked on lane-file PR #14). Owner: agent A (Claude, session `session_019VA5sAvTHuQ3bGbWV5CX4M`). Branch: `claude/game-lane-film`; merged: `claude/game-p1-aero` (P1.T1), `claude/game-p1-aero-broadcast` (P1.T2), `claude/game-p3-grid` (P3.T3).
+Status: in_progress (PR: postMessage target origin = location.origin; everything else merged). Owner: agent A (Claude, session `session_019VA5sAvTHuQ3bGbWV5CX4M`). Branch: `claude/game-lane-film`; merged: `claude/game-p1-aero` (P1.T1), `claude/game-p1-aero-broadcast` (P1.T2), `claude/game-p3-grid` (P3.T3).
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
+
+### 2026-10-24 06:10 London — agent A (Claude) — security audit item: postMessage target origin
+- Status: **done** (PR from `claude/game-post-origin` into `claude/amazing-planck-804i13`). `npm test` green.
+- Files changed: `js/main.js` (two lines), this file.
+- `labPostResult` and `labPostGrid` now post `purple:result` / `purple:grid` with `targetOrigin = window.location.origin` instead of `'*'` (the lab page is same-origin, ARCHITECTURE §10; `lab/lab.js` already filters on `ev.origin === location.origin`). Lab mode only; the shipped game never posts. A page opened from `file://` (origin `null`) would make `postMessage` throw; the existing `try` logs a warning and the result stays in `EI.labResult` and the console.
+- Verify: `node --check js/main.js`; `npm test` green; the message path itself was verified earlier in a real same-origin parent page (03:20 entry).
+- Decisions proposed: none. Blockers: none. Next: standing by.
 
 ### 2026-10-24 05:45 London — agent A (Claude) — GAME follow-ups from the UI review (lab mode only, opt-in)
 - Status: **done, verified headless** (PR from `claude/game-lab-followups` into `claude/amazing-planck-804i13`, branched at `df2733f`). `npm test` 75/75.
