@@ -16,6 +16,10 @@
 // Options: --seeds a,b (1,2,3,4) · --evals N physics laps per seed (3000) · --lambda L (16) · --prescreen K (4; 1 = no surrogate)
 // · --workers W (cpus) · --baselines redbull,generic · --refine-evals N (3000) · --combo-evals N (240) · --strategy threshold
 // · --out DIR (<os tmp>/purple-campaign) · --svg FILE · --summary FILE · --quiet
+// Engine dashboard hooks (runCampaign opts, all optional; server/campaign-route.js, docs/concept/DASHBOARD.md): onProgress(ev) after
+// every generation / refinement step / phase, shouldStop() -> reason | falsy (checked between batches: the run stops cleanly and the
+// best car so far is still re-scored on the physics sim), timer(stage, ms) for the legality / surrogate timings, onPool(pool),
+// continuous: true (keep adding seeds after the listed ones until shouldStop). None of them changes a result.
 "use strict";
 const fs = require("fs"), os = require("os"), path = require("path");
 const design = require("../design.js"), bench = require("../bench.js"), phys = require("../physical.js"), regs = require("../regs.js"), parts = require("../parts.js");
@@ -39,14 +43,22 @@ function realLaps() {
 }
 
 // cheap pre-screen of one design: legality + PU + material guards (no lap), then the surrogate's lap (NaN outside its box)
-function screen(d, pre) {
+const hr = () => Number(process.hrtime.bigint()) / 1e6;
+function screen(d, pre, timer) {
+  const t0 = timer ? hr() : 0;
   const f = design.facts(d), v = regs.checkFacts(f), pc = phys.physical(d);
   for (const x of bench.checkPU(pc, d, f.mass)) v.push(x);
   for (const x of bench.checkMaterials(d)) v.push(x);
+  if (timer) timer("legality", hr() - t0);
   if (v.length) return { legal: false, f: space.penalty(v) };
+  const t1 = timer ? hr() : 0;
   const lap = pre ? pre(bench.guardEnergy(pc)) : NaN;
+  if (timer && pre) timer("surrogate", hr() - t1);
   return { legal: true, f: isFinite(lap) ? lap : null };
 }
+const NOHOOKS = {};
+const stopOf = ctx => { const h = ctx.hooks || NOHOOKS; return ctx.stopped || (h.shouldStop && (ctx.stopped = h.shouldStop() || null)) || null; };
+function progress(ctx, ev) { if ((ctx.hooks || NOHOOKS).onProgress) (ctx.hooks || NOHOOKS).onProgress(Object.assign({ team: ctx.label, total_laps: ctx.pool.laps }, ev)); }
 function makePrescreen(opt) {
   if (opt === false || opt === null) return null;
   if (typeof opt === "function") return opt;
@@ -61,7 +73,7 @@ async function runSeed(ctx, seed) {
   let best = { x: x0, design: base, res: ctx.baseRes, lap: ctx.baseRes.lap_s };
   let evals = 0, screened = 0;
   const trace = [{ evals: 0, best_s: best.lap }], kept = [], restarts = [];
-  for (let r = 0; evals < o.evals; r++) {
+  for (let r = 0; evals < o.evals && !stopOf(ctx); r++) {
     let start = x0, sigma0 = 0.15, lam = o.lambda, kind = "baseline";
     if (r === 1) { sigma0 = 0.3; lam = o.lambda * 2; kind = "baseline-wide"; }
     else if (r > 1 && r % 2 === 0) { start = best.x; sigma0 = 0.06; kind = "local"; }
@@ -72,12 +84,12 @@ async function runSeed(ctx, seed) {
     const cma = CMA({ x0: start, sigma0, lambda: lam, rng });
     let rBest = Infinity, stale = 0, gens = 0, rEvals = 0;
     const K = ctx.pre ? Math.max(1, o.prescreen) : 1;
-    while (evals < o.evals) {
+    while (evals < o.evals && !stopOf(ctx)) {
       gens++;
       const xs = cma.ask(lam * K);
       let chosen;
       if (K > 1) {
-        const sc = xs.map(x => screen(space.decode(x, base), ctx.pre)); screened += xs.length;
+        const sc = xs.map(x => screen(space.decode(x, base), ctx.pre, (ctx.hooks || NOHOOKS).timer)); screened += xs.length;
         // outside the surrogate's training box (NaN) a legal candidate gets the batch's median surrogate lap: the pre-screen is
         // blind there, so it neither favours nor buries it (the physics sim decides)
         const inBox = sc.filter(z => z.legal && z.f != null).map(z => z.f).sort((a, b) => a - b), med = inBox.length ? inBox[Math.floor(inBox.length / 2)] : 500;
@@ -90,6 +102,7 @@ async function runSeed(ctx, seed) {
       const cx = chosen.map(i => xs[i]), designs = cx.map((x, j) => space.decode(x, base, { id: "s" + seed + ".r" + r + ".g" + gens + "." + j }));
       const res = await ctx.pool.evaluate(designs, ctx.benchOpts);
       cma.tell(cx, res.map((q, j) => fitness(q, cx[j])));
+      const before = best.lap;
       for (let j = 0; j < res.length; j++) {
         evals++; rEvals++;
         const q = res[j];
@@ -101,6 +114,7 @@ async function runSeed(ctx, seed) {
       }
       stale++;
       trace.push({ evals, best_s: best.lap });
+      if ((ctx.hooks || NOHOOKS).onProgress) progress(ctx, { type: "gen", seed, restart: r, restart_kind: kind, gen: gens, seed_laps: evals, batch: res.length, legal_in_batch: res.filter(q => q.legal).length, seed_best_s: best.lap, improved: best.lap < before - 1e-9, best: best.lap < before - 1e-9 ? { lap_s: best.lap, sectors_s: best.res.sectors_s, speed_trap_kmh: best.res.speed_trap_kmh, mass_kg: best.res.mass_kg, params: best.design.params } : undefined });
       const st = cma.state();
       if (st.max_std < 2e-3 || stale >= o.patience) break;
     }
@@ -148,7 +162,11 @@ function materialMoves(d) {
 async function refine(ctx, start) {
   const o = ctx.opts, log = [];
   let cur = { design: start.design, res: start.res, lap: start.lap }, laps = 0;
-  const step = (stage, r) => { laps += r.laps; if (r.improved) { cur = r.cur; log.push({ stage, lap_s: cur.lap, laps, moves: r.moves, design: { params: cur.design.params, team: cur.design.team || null } }); } return r.improved; };
+  const step = (stage, r) => {
+    laps += r.laps; if (r.improved) { cur = r.cur; log.push({ stage, lap_s: cur.lap, laps, moves: r.moves, design: { params: cur.design.params, team: cur.design.team || null } }); }
+    if ((ctx.hooks || NOHOOKS).onProgress) progress(ctx, { type: "refine", stage, refine_laps: laps, best_s: cur.lap, improved: r.improved, best: r.improved ? { lap_s: cur.lap, sectors_s: cur.res.sectors_s, speed_trap_kmh: cur.res.speed_trap_kmh, mass_kg: cur.res.mass_kg, params: cur.design.params } : undefined });
+    return r.improved;
+  };
   // 1. wing volume counts: a short CMA-ES from the incumbent for every other (front, rear) combination (single-volume wings lose
   //    their straight-mode flap: C3.10.10(a)(i), C3.11.6(a)(i))
   const combos = [];
@@ -157,14 +175,14 @@ async function refine(ctx, start) {
     if (fe === cur.design.params.front_wing.elements && re === cur.design.params.rear_wing.elements) continue;
     combos.push([fe, re]);
   }
-  for (let ci = 0; ci < combos.length && o.combo_evals > 0; ci++) {
+  for (let ci = 0; ci < combos.length && o.combo_evals > 0 && !stopOf(ctx); ci++) {
     const [fe, re] = combos[ci], ch = [{ part: "front_wing", param: "elements", to: fe }, { part: "rear_wing", param: "elements", to: re }];
     if (fe < 2) ch.push({ part: "front_wing", param: "sm_delta_deg", to: 0 }); if (re < 2) ch.push({ part: "rear_wing", param: "sm_delta_deg", to: 0 });
     const d0 = design.applyChanges(cur.design, ch).design, x0 = space.encode(d0), rng = design.seededRng(1000 + ci);
     const lockI = space.VARS.findIndex(v => v.key === "front_wing.elements"), lockJ = space.VARS.findIndex(v => v.key === "rear_wing.elements");
     const cma = CMA({ x0, sigma0: 0.05, lambda: 12, rng });
     let cb = null, n = 0;
-    while (n < o.combo_evals) {
+    while (n < o.combo_evals && !stopOf(ctx)) {
       const xs = cma.ask().map(x => { const y = x.slice(); y[lockI] = x0[lockI]; y[lockJ] = x0[lockJ]; return y; });
       const ds = xs.map((x, j) => space.decode(x, d0, { id: "combo" + fe + re + "." + n + "." + j }));
       const res = await ctx.pool.evaluate(ds, ctx.benchOpts); n += res.length; laps += res.length;
@@ -176,10 +194,10 @@ async function refine(ctx, start) {
     if (cb && cb.lap < cur.lap - 1e-9) { cur = cb; log[log.length - 1].design = { params: cur.design.params, team: cur.design.team || null }; }
   }
   // 2-3. materials, then coordinates, until neither improves (or the budget is spent)
-  for (let round = 0; round < 6 && laps < o.refine_evals; round++) {
+  for (let round = 0; round < 6 && laps < o.refine_evals && !stopOf(ctx); round++) {
     let any = false;
     if (step("materials", await neighbourhood(ctx, cur, materialMoves(cur.design), "mat" + round))) any = true;
-    for (let sweep = 0; sweep < 40 && laps < o.refine_evals; sweep++) { if (!step("coordinate", await neighbourhood(ctx, cur, coordinateMoves(cur.design), "co" + round + "." + sweep))) break; any = true; }
+    for (let sweep = 0; sweep < 40 && laps < o.refine_evals && !stopOf(ctx); sweep++) { if (!step("coordinate", await neighbourhood(ctx, cur, coordinateMoves(cur.design), "co" + round + "." + sweep))) break; any = true; }
     if (!any) break;
   }
   return { best: cur.design, best_res: cur.res, best_s: cur.lap, physics_laps: laps, log };
@@ -339,21 +357,31 @@ async function report(ctx, final, seeds, refineOut) {
   };
 }
 
-async function runBaseline(team, opts, pool, pre) {
+async function runBaseline(team, opts, pool, pre, hooks) {
   const t0 = Date.now(), { conditions, source } = qualiConditions();
   const benchOpts = { circuit: CIRCUIT, sim: "physics", objective: "quali", conditions };
   if (opts.strategy) benchOpts.strategy = opts.strategy;
   const base = design.baseline(team ? { team } : undefined);
   const [baseRes] = await pool.evaluate([base], benchOpts);
   if (!baseRes.legal) throw new Error("concept campaign: the " + (team || "generic") + " baseline is not legal");
-  const ctx = { opts, team: team || null, base, baseRes, benchOpts, pool, pre, label: team || "generic", real: realLaps(), conditions_source: source };
-  const seeds = [];
-  for (const seed of opts.seeds) { const s0 = Date.now(); const s = await runSeed(ctx, seed); s.runtime_s = +((Date.now() - s0) / 1000).toFixed(1); seeds.push(s); }
+  const ctx = { opts, team: team || null, base, baseRes, benchOpts, pool, pre, label: team || "generic", real: realLaps(), conditions_source: source, hooks: hooks || {}, stopped: null };
+  if ((ctx.hooks || NOHOOKS).onProgress) progress(ctx, { type: "phase", phase: "baseline", baseline: { lap_s: baseRes.lap_s, sectors_s: baseRes.sectors_s, speed_trap_kmh: baseRes.speed_trap_kmh, mass_kg: baseRes.mass_kg, params: base.params }, label: base.label });
+  const seeds = [], maxSeed = Math.max(...opts.seeds);
+  // the listed seeds; continuous: then maxSeed + 1, + 2, ... until shouldStop (the first seed always runs, so there is a best)
+  for (let i = 0; i < opts.seeds.length || (opts.continuous && !stopOf(ctx)); i++) {
+    if (i > 0 && stopOf(ctx)) break;
+    const seed = i < opts.seeds.length ? opts.seeds[i] : maxSeed + 1 + i - opts.seeds.length;
+    if ((ctx.hooks || NOHOOKS).onProgress) progress(ctx, { type: "phase", phase: "seed", seed });
+    const s0 = Date.now(); const s = await runSeed(ctx, seed); s.runtime_s = +((Date.now() - s0) / 1000).toFixed(1); seeds.push(s);
+  }
   const top = seeds.slice().sort((a, b) => a.best_s - b.best_s || a.seed - b.seed)[0];
   const r0 = Date.now();
-  const ref = await refine(ctx, { design: top.best, res: top.best_res, lap: top.best_s });
+  if ((ctx.hooks || NOHOOKS).onProgress && !stopOf(ctx)) progress(ctx, { type: "phase", phase: "refine", start_s: top.best_s });
+  const ref = stopOf(ctx) ? { best: top.best, best_res: top.best_res, best_s: top.best_s, physics_laps: 0, log: [], skipped: "stopped: " + ctx.stopped } : await refine(ctx, { design: top.best, res: top.best_res, lap: top.best_s });
   ref.start_s = top.best_s; ref.runtime_s = +((Date.now() - r0) / 1000).toFixed(1);
+  if ((ctx.hooks || NOHOOKS).onProgress) progress(ctx, { type: "phase", phase: "report" });
   const rep = await report(ctx, { design: ref.best }, seeds, ref);
+  if (ctx.stopped) rep.stopped = ctx.stopped;
   rep.kept = seeds.flatMap(s => s.kept.map(k => Object.assign({ seed: s.seed }, k))).concat(ref.log.filter(l => l.design).map(l => ({ seed: "refine", stage: l.stage, lap_s: l.lap_s, design: l.design })));
   rep.trace = seeds.map(s => ({ seed: s.seed, points: s.trace }));
   rep.refine_trace = ref.log.map(l => ({ laps: l.laps, lap_s: l.lap_s }));
@@ -366,10 +394,22 @@ async function runBaseline(team, opts, pool, pre) {
 async function runCampaign(opts) {
   opts = Object.assign({ seeds: [1, 2, 3, 4], evals: 3000, lambda: 16, prescreen: 4, patience: 25, workers: Math.min(4, os.cpus().length), baselines: ["redbull", "generic"], refine_evals: 3000, combo_evals: 240, quiet: true }, opts || {});
   const t0 = Date.now(), pool = new Pool(opts.workers), pre = opts.prescreen > 1 ? makePrescreen(opts.surrogate) : null;
-  const results = {};
-  try { for (const b of opts.baselines) results[b] = await runBaseline(b === "generic" ? null : b, opts, pool, pre); }
+  const hooks = { onProgress: opts.onProgress, shouldStop: opts.shouldStop, timer: opts.timer };
+  if (opts.onPool) opts.onPool(pool);
+  if (opts.timer) pool.onLap = ms => opts.timer("physics_lap", ms);
+  const results = {}; let stopped = null;
+  try {
+    for (const b of opts.baselines) {
+      if (stopped || (opts.shouldStop && Object.keys(results).length && (stopped = opts.shouldStop() || null))) break;
+      results[b] = await runBaseline(b === "generic" ? null : b, opts, pool, pre, hooks);
+      if (results[b].stopped) stopped = results[b].stopped;
+    }
+  }
   finally { await pool.close(); }
-  return { label: CAMPAIGN_LABEL, sim_label: sim.LABEL, opts: Object.assign({}, opts, { surrogate: typeof opts.surrogate === "function" ? "custom" : opts.prescreen > 1 ? "physics surrogate (concept/surrogate/models/physics-silverstone.json)" : "none" }), results, runtime_s: +((Date.now() - t0) / 1000).toFixed(1), machine: { cpus: os.cpus().length, workers: opts.workers, node: process.version } };
+  const cleanOpts = {}; for (const k of Object.keys(opts)) if (typeof opts[k] !== "function") cleanOpts[k] = opts[k];
+  const out = { label: CAMPAIGN_LABEL, sim_label: sim.LABEL, opts: Object.assign(cleanOpts, { surrogate: typeof opts.surrogate === "function" ? "custom" : opts.prescreen > 1 ? "physics surrogate (concept/surrogate/models/physics-silverstone.json)" : "none" }), results, runtime_s: +((Date.now() - t0) / 1000).toFixed(1), machine: { cpus: os.cpus().length, workers: opts.workers, node: process.version } };
+  if (stopped) out.stopped = stopped;
+  return out;
 }
 
 // ---- text summary (markdown tables; docs/concept/CAMPAIGN.md quotes it)

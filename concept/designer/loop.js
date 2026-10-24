@@ -13,6 +13,13 @@
 //         trained = false, prompt (designer prompt module), team = "redbull" | null, bench: { circuit, sim, ... },
 //         preview(text, meta) -> request (optional, may be async: the exact request that is sent, for the event stream),
 //         onEvent(type, data) (request, response, proposal, result, done), pace_ms (wait before each call; UI pacing), maxCalls }
+// Hybrid mode (the engine dashboard's autonomous mode, docs/concept/DASHBOARD.md; both options absent = the loop exactly as before):
+//   opts.search(ctx) -> Promise<{ changes, laps, ... } | null>   ctx = { parent, changes, gen, proposer, hypothesis, benchOpts }:
+//        after the proposal passes the schema and FIA checks, a short local search of physics laps around it (concept/campaign/local.js); the car it
+//        returns is what the bench measures and the kept rule judges, so row.changes (and the next scenario's tested row) are the
+//        REFINED change (parent -> searched car), and row.search records the proposal, the laps and the lap before / after the search.
+//   opts.shouldStop({ gen, lineage, best }) -> reason | falsy   checked before every iteration's call; a reason ends the run cleanly
+//        (no call is made for that iteration) with result.stopped = reason.
 // mockLlm(seed): a seeded, scripted stand-in that READS the previous result (pushes a change that gained further, reverses one
 // that lost). It is a test double for the closed loop, not a model; its numbers say nothing about an LLM.
 // Dual browser / Node: window.EI.concept.designerLoop and module.exports.
@@ -30,6 +37,7 @@
   const DEFAULTS = { iterations: 10, seed: 1, trained: false, team: "redbull", pace_ms: 0 };
   const r3 = v => (typeof v === "number" && isFinite(v) ? Math.round(v * 1000) / 1000 : null);
   const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const STOP = "__designer_loop_stop__";
 
   // FNV-1a hex of a string (deterministic ids for the mock)
   function fnv(str, seed) { let h = (0x811c9dc5 ^ (seed || 0)) >>> 0; for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 0x01000193) >>> 0; return ("0000000" + h.toString(16)).slice(-8); }
@@ -123,7 +131,7 @@
     const start = opts.start ? design.clone(opts.start) : design.baseline(opts.team ? { team: opts.team } : undefined);
     const startResult = bench.bench(start, benchOpts);
     let parentDesign = start, parentSummary = Object.assign(optimize.summary(startResult), { sim_label: startResult.sim_label || bench.LABEL });
-    const lineage = [], callByGen = new Map(), sentByGen = new Map();
+    const lineage = [], callByGen = new Map(), sentByGen = new Map(), searchByGen = new Map();
     emit("start", { iterations: opts.iterations, seed: opts.seed, trained: !!opts.trained, team: start.team || null, prompt_version: P.DESIGNER_PROMPT_VERSION, draft: !!P.DRAFT, baseline: { lap_s: silver(parentSummary).lap_s, sectors_s: silver(parentSummary).sectors_s, gap_to_pole_s: parentSummary.gap_to_pole_s, score: parentSummary.score }, kept_rule: KEPT_RULE, label: parentSummary.sim_label });
 
     async function llm(text, meta) {
@@ -159,9 +167,24 @@
     const proposer = {
       name: "llm-designer (loop)",
       async propose(history, d, ctx) {
+        if (opts.shouldStop) {
+          const why = opts.shouldStop({ gen: ctx.gen, lineage, best: silver(parentSummary) });
+          if (why) { const e = new Error("designer loop stopped: " + why); e.code = STOP; e.reason = String(why); throw e; }
+        }
         const raw = await p.propose(history, d, ctx), note = p.notes.get(ctx.gen) || {};
         const changes = (raw.changes || []).map(c => ({ part: c.part, param: c.param, from: d.params[c.part] ? d.params[c.part][c.param] : null, to: c.to }));
         emit("proposal", { iteration: ctx.gen, proposer: note.proposer, reason: note.reason, detail: note.detail || null, refused: note.refused || null, changes, change: scenario.describeChanges(changes), hypothesis: raw.hypothesis || null, expected: note.expected || null, clamped: note.clamped || null });
+        if (opts.search && raw.changes && raw.changes.length) {
+          const t0 = Date.now();
+          const s = await opts.search({ parent: d, changes: raw.changes, gen: ctx.gen, proposer: note.proposer, hypothesis: raw.hypothesis || null, benchOpts });
+          if (s && s.changes && s.changes.length) {
+            const refined = s.changes.map(c => ({ part: c.part, param: c.param, from: d.params[c.part] ? d.params[c.part][c.param] : null, to: c.to }));
+            const rec = { proposal: changes, proposal_change: scenario.describeChanges(changes), refined: refined, refined_change: scenario.describeChanges(refined), laps: s.laps, batches: s.batches, budget: s.budget, scope: s.scope, parent_lap_s: s.parent_lap_s, proposal_lap_s: s.proposal_lap_s, proposal_legal: s.proposal_legal, lap_s: s.lap_s, improved_on_proposal: !!s.improved_on_proposal, best_stage: s.best_stage || null, stages: s.stages || [], ms: Date.now() - t0, stopped: !!s.stopped };
+            searchByGen.set(ctx.gen, rec);
+            emit("search", Object.assign({ iteration: ctx.gen, proposer: note.proposer }, rec));
+            return { changes: s.changes.map(c => ({ part: c.part, param: c.param, to: c.to })), hypothesis: raw.hypothesis };
+          }
+        }
         return raw;
       },
     };
@@ -172,12 +195,20 @@
       const call = callByGen.get(row.gen) || null, sent = sentByGen.get(row.gen) || null;
       row.loop = { iteration: row.gen, session_id: sessionId, mubit_request_id: call ? call.mubit_request_id : null, call, trained: !!opts.trained, scenario: sent, fed_to: null };
       row.mubit_request_id = row.loop.mubit_request_id;
+      if (searchByGen.has(row.gen)) row.search = searchByGen.get(row.gen);
       if (row.kept && cand) { parentDesign = cand; parentSummary = Object.assign({}, row.result, { sim_label: parentSummary.sim_label }); }
       lineage.push(row);
       emit("result", { iteration: row.gen, row: compactRow(row), best: { lap_s: silver(parentSummary).lap_s, gap_to_pole_s: parentSummary.gap_to_pole_s, score: parentSummary.score } });
       if (opts.onRow) opts.onRow(row);
     }
-    const res = await optimize.optimizeAsync({ gens: opts.iterations, seed: opts.seed, lambda: 1, start, bench: benchOpts, proposer, onGeneration, yield: opts.yield });
+    let res;
+    try { res = await optimize.optimizeAsync({ gens: opts.iterations, seed: opts.seed, lambda: 1, start, bench: benchOpts, proposer, onGeneration, yield: opts.yield }); }
+    catch (e) {
+      if (!e || e.code !== STOP) throw e;
+      // stopped between iterations: the same result shape optimize() returns, from the measured rows so far
+      const bestResult = bench.bench(parentDesign, benchOpts);
+      res = { best: parentDesign, best_result: bestResult, baseline: start, baseline_result: startResult, lineage, generations: lineage.length, kept: lineage.filter(r => r.kept).length, stopped: e.reason, diff: design.diff(start, parentDesign), seed: opts.seed, proposer: proposer.name, label: bench.LABEL, sim: startResult.sim, sim_label: startResult.sim_label, team: start.team || null };
+    }
     const out = Object.assign(res, { run_id: runId, session_id: sessionId, lineage, calls: p.calls, designer: p.stats(), prompt_version: P.DESIGNER_PROMPT_VERSION, trained: !!opts.trained, kept_rule: KEPT_RULE });
     emit("done", { summary: summaryOf(out) });
     return out;
@@ -189,7 +220,7 @@
     return {
       iteration: row.gen, proposer: row.proposer, kept: row.kept, legal: row.legal,
       changes: (row.changes || []).map(c => ({ part: c.part, param: c.param, from: c.from, to: c.to, clamped: !!c.clamped })), change: scenario.describeChanges(row.changes), hypothesis: row.hypothesis,
-      measured: row.measured, loop: Object.assign({}, row.loop, { scenario: undefined }),
+      measured: row.measured, loop: Object.assign({}, row.loop, { scenario: undefined }), search: row.search || undefined,
       designer: { reason: d.reason || null, detail: d.detail || null, refused: d.refused || null, expected: d.expected || null, measured: d.measured || null, expected_hit: d.expected_hit || null },
       result: row.result ? { lap_s: row.result.lap_s, gap_to_pole_s: row.result.gap_to_pole_s, grid_position: row.result.grid_position, race_position: row.result.race_position, score: row.result.score, mass_kg: row.result.mass_kg } : null,
       score_before: row.score_before, score_after: row.score_after, delta_score: row.delta_score, label: row.label,
@@ -199,7 +230,7 @@
     const b = res.baseline_result, x = res.best_result, sb = b && b.circuits && b.circuits[CIRCUIT], sx = x && x.circuits && x.circuits[CIRCUIT];
     const byProposer = {}; for (const r of res.lineage) if (r.kept) byProposer[r.proposer] = (byProposer[r.proposer] || 0) + 1;
     return {
-      run_id: res.run_id, session_id: res.session_id, iterations: res.generations, kept: res.kept, kept_by_proposer: byProposer, designer: res.designer, trained: res.trained,
+      run_id: res.run_id, session_id: res.session_id, iterations: res.generations, kept: res.kept, stopped: res.stopped || null, kept_by_proposer: byProposer, designer: res.designer, trained: res.trained,
       lap_baseline_s: sb ? sb.lap_s : null, lap_best_s: sx ? sx.lap_s : null, d_lap_s: sb && sx ? r3(sx.lap_s - sb.lap_s) : null,
       gap_to_pole_s: x && x.weekend ? x.weekend.gap_to_pole_s : null, request_ids: res.lineage.map(r => r.loop.mubit_request_id), label: x && x.sim_label || bench.LABEL, kept_rule: KEPT_RULE,
     };
