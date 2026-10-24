@@ -1,6 +1,7 @@
 // PURPLE - node server/scripts/fake-race.js [--id <experiment id>] [--seed 7] [--factor 1.2] [--noise 0.02] [--port 8787]
 // Posts a plausible F-04 race result for the newest ledger row (or --id) to a RUNNING server, so the UI lane can test the RACE card,
 // the SSE `race` event and `agreement_pct` without the game. Measured Δ = predicted Δ × factor ± seeded noise. No Mubit call is made.
+// No data dir of its own: it writes wherever the RUNNING server points (MUBIT_MOCK=1 server -> data-mock/ unless PURPLE_DATA_DIR is set).
 // Needs a planned experiment first: `MUBIT_MOCK=1 npm run dev` then `curl -X POST localhost:8787/api/plan` (or press Run in the lab page).
 const args = process.argv.slice(2); const arg = (k, d) => { const i = args.indexOf("--" + k); return i >= 0 ? args[i + 1] : d; };
 const port = parseInt(arg("port", process.env.PURPLE_PORT || "8787"), 10), base = "http://127.0.0.1:" + port;
