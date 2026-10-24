@@ -22,8 +22,8 @@ function replayDesigns(lineage) {
 }
 
 // ---------------------------------------------------------------- prompt
-test("designer prompt: DRAFT 0-draft, ≤ 1,000 chars, goal + schema + the simulator decides, no tools, separate from the research task", () => {
-  assert.equal(prompt.DRAFT, true); assert.equal(prompt.DESIGNER_PROMPT_VERSION, "0-draft");
+test("designer prompt: frozen v1, ≤ 1,000 chars, goal + schema + the simulator decides, no tools, separate from the research task", () => {
+  assert.equal(prompt.DRAFT, false); assert.equal(prompt.DESIGNER_PROMPT_VERSION, "1");   // frozen 2026-10-24 (test/concept-designer-frozen.test.js)
   assert.ok(prompt.SYSTEM_PROMPT.length <= 1000, "prompt is " + prompt.SYSTEM_PROMPT.length + " chars");
   assert.match(prompt.SYSTEM_PROMPT, /Silverstone pole/); assert.match(prompt.SYSTEM_PROMPT, /legal/);
   assert.match(prompt.SYSTEM_PROMPT, /simulator measures it and keeps it only if/); assert.match(prompt.SYSTEM_PROMPT, /you do not decide/);
@@ -66,7 +66,7 @@ test("scenario: tested rows map lineage (lap delta = -delta_score, kept, illegal
   assert.equal(sc.tested.length, 3); assert.equal(sc.tested[1].change, "front_wing.span_mm 1300->1400");
   assert.deepEqual(sc.refused, [{ change: "b", why: "illegal C2.3.1" }]);
 });
-test("scenario: measured worst case (3 illegal 3-change rows with every article, 3-change refused, 6 near lines) fits ≤ 350 tokens", () => {
+test("scenario: measured worst case (3 illegal 3-change rows with every article, 3-change refused, 9 near lines) fits ≤ 450 tokens (LIMITS.chars 1,800 since live run 2, LOOP.md)", () => {
   const d = design.baseline(); for (const s of parts.PARAMS) d.params[s.part][s.param] = s.max - s.step;   // everything past or near a limit
   d.params.ballast.x_frac = 0.37; d.params.floor.ride_height_mm = 24.5;
   const longest = parts.PARAMS.slice().sort((a, b) => (b.part + b.param).length - (a.part + a.param).length).slice(0, 3);
@@ -76,13 +76,13 @@ test("scenario: measured worst case (3 illegal 3-change rows with every article,
   const o = { design: d, summary: { lap_s: 87.12345, gap_to_pole_s: -0.98765, mass_kg: 770.25, front_share: 0.44567 }, history: [row, row, row], refused: [{ change: S.describeChanges(ch), why: "illegal " + every.map(id => regs.BY_ID[id].article).join(" ") }] };
   const raw = S.fit(Object.assign({}, o, { limits: { chars: 1e9 } }));
   const f = S.fit(o);
-  assert.ok(f.chars <= S.LIMITS.chars && f.tokens <= 350, "worst case " + f.tokens + " tokens (" + f.chars + " chars; untrimmed " + raw.tokens + ")");
+  assert.ok(f.chars <= S.LIMITS.chars && f.tokens <= 450, "worst case " + f.tokens + " tokens (" + f.chars + " chars; untrimmed " + raw.tokens + ")");
   assert.equal(JSON.parse(f.text).tested.length >= 1, true, "the latest tested row survives");
   assert.equal(JSON.parse(f.text).refused.length, 1, "the refused entry survives");
   assert.ok(JSON.parse(raw.text).tested.every(t => t.illegal.length <= S.LIMITS.articles + 1), "articles capped");
   // an even more absurd input still fits (fit trims until it does)
   const absurd = S.fit(Object.assign({}, o, { history: Array(10).fill(row) }));
-  assert.ok(absurd.tokens <= 350);
+  assert.ok(absurd.tokens <= 450);
 });
 
 // ---------------------------------------------------------------- schema
@@ -149,7 +149,8 @@ test("guard: an illegal proposal is refused before the bench with its article an
 });
 test("guard: trained calls are refused while the prompt is DRAFT; a frozen prompt passes trained through; maxCalls caps the budget", async () => {
   const llm = async () => answer([{ part: "floor", param: "throat_mm", to: 95 }]);
-  assert.throws(() => designer.llmProposer({ llm, trained: true }), /DRAFT/);
+  const draft = Object.assign({}, prompt, { DRAFT: true, DESIGNER_PROMPT_VERSION: "0-draft" });
+  assert.throws(() => designer.llmProposer({ llm, trained: true, prompt: draft }), /DRAFT/);
   assert.throws(() => designer.llmProposer({}), /llm/);
   const metas = [];
   const frozen = Object.assign({}, prompt, { DRAFT: false, DESIGNER_PROMPT_VERSION: "1" });
@@ -171,7 +172,7 @@ test("the verdict is numeric only: kept === legal && score_after > score_before,
 });
 
 // ---------------------------------------------------------------- mock loop, determinism, CLI
-test("mock LLM loop: same seed -> identical lineage; the mock exercises parse, illegal and duplicate guards; scenarios stay ≤ 350 tokens", async () => {
+test("mock LLM loop: same seed -> identical lineage; the mock exercises parse, illegal and duplicate guards; scenarios stay ≤ 400 tokens", async () => {
   const run = seed => designer.runDesigner({ gens: 30, seed, designer: { llm: cli.mockLlm(seed), runId: "t" + seed } });
   const a = await run(1), b = await run(1), c = await run(2);
   assert.equal(JSON.stringify(a.lineage), JSON.stringify(b.lineage)); assert.equal(JSON.stringify(a.calls), JSON.stringify(b.calls));
@@ -182,7 +183,7 @@ test("mock LLM loop: same seed -> identical lineage; the mock exercises parse, i
   for (const k of ["parse", "illegal", "duplicate"]) assert.ok(reasons[k], "mock never triggered " + k);
   for (const r of [a, c]) {
     assert.ok(r.best_result.legal && r.best_result.score > r.baseline_result.score, "the loop improves on the baseline");
-    assert.ok(r.calls.every(x => x.scenario_tokens <= 350 && x.trained === false));
+    assert.ok(r.calls.every(x => x.scenario_tokens <= 400 && x.trained === false));
     const designs = replayDesigns(r.lineage); assert.equal(new Set(designs).size, designs.length, "no tested design is measured twice");
     assert.ok(r.lineage.every(x => ["llm", "fallback"].includes(x.proposer)));
   }
@@ -190,7 +191,7 @@ test("mock LLM loop: same seed -> identical lineage; the mock exercises parse, i
 test("CLI: --mock writes lineage, calls and best outside data/; refuses to run without --mock and refuses data/ and data-mock/", () => {
   const out = fs.mkdtempSync(path.join(os.tmpdir(), "purple-designer-test-"));
   const r = spawnSync(process.execPath, [path.join(ROOT, "concept", "designer", "cli.js"), "--mock", "--gens", "6", "--seed", "1", "--out", out, "--quiet"], { encoding: "utf8" });
-  assert.equal(r.status, 0, r.stderr); assert.match(r.stdout, /MOCK LLM \(no network\)/); assert.match(r.stdout, /0-draft \(DRAFT\)/);
+  assert.equal(r.status, 0, r.stderr); assert.match(r.stdout, /MOCK LLM \(no network\)/); assert.match(r.stdout, /prompt 1\b/); assert.doesNotMatch(r.stdout, /DRAFT/);
   const rows = fs.readFileSync(path.join(out, "lineage.jsonl"), "utf8").trim().split("\n").map(JSON.parse);
   assert.equal(rows.length, 6); assert.ok(rows.every(x => x.designer && ["llm", "fallback"].includes(x.proposer)));
   const calls = fs.readFileSync(path.join(out, "calls.jsonl"), "utf8").trim().split("\n").map(JSON.parse);

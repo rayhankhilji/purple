@@ -15,7 +15,7 @@
   const EI = (root.EI = root.EI || {}); const C = (EI.concept = EI.concept || {});
   const req = (name, file) => C[name] || (typeof require === "function" ? require(file) : null);
   const regs = req("regs", "./regs.js"), design = req("design", "./design.js"), phys = req("physical", "./physical.js");
-  const LABEL = "concept · reduced-order lap model · calibrated to 2026 pole laps · concept aero map v0";
+  const LABEL = "concept · reduced-order lap model · calibrated to 2026 pole laps · concept aero map v1";
   const V0_LABEL = LABEL + " · sim v0 (game lap model, relative to the baseline concept car)";
   const SCORE_LABEL = "qualifying score · Silverstone · margin to the real 2026 pole and projected grid slot vs the real 2026 qualifying laps (EI.RACEPACE)";
   const SCORE_LABEL_V0 = SCORE_LABEL + " · baseline anchored at pole by construction (sim v0)";
@@ -188,25 +188,109 @@
   const physCache = new Map(), physStats = { hits: 0, misses: 0, ms: 0 };
   function physicsSim() { return phys.sim ? phys.sim() : null; }
   function simKey(pc, trackId, conditions) {
-    const k = { m: pc.mass_kg, f: pc.fuel_kg, wb: pc.wheelbase_m, t: [pc.track_front_m, pc.track_rear_m], h: pc.cog_height_m, w: pc.weight_dist_front, a: [pc.aero.corner, pc.aero.straight, pc.aero.floor_stalled], pu: [pc.pu.ice_kw, pc.pu.mguk_kw], ty: pc.tyres, b: pc.brakes, e: pc.drivetrain_eff, g: pc.gearing || null };
+    const k = { m: pc.mass_kg, f: pc.fuel_kg, wb: pc.wheelbase_m, t: [pc.track_front_m, pc.track_rear_m], h: pc.cog_height_m, w: pc.weight_dist_front, a: [pc.aero.corner, pc.aero.straight, pc.aero.floor_stalled, pc.aero.ride_sens_per_mm, pc.aero.stall_margin_mm, pc.aero.heave_n_per_mm, pc.aero.floor_share, pc.aero.yaw_sens], pu: [pc.pu.ice_kw, pc.pu.mguk_kw], ty: pc.tyres, b: pc.brakes, e: pc.drivetrain_eff, g: pc.gearing || null };
     return trackId + "|" + JSON.stringify(conditions || null) + "|" + JSON.stringify(k);
   }
   function guardEnergy(pc) {
     const E = phys.ENERGY;
     return Object.assign({}, pc, { pu: Object.assign({}, pc.pu, { es_harvest_mj_per_lap: E.recharge_max_mj, es_deploy_mj_per_lap: E.deploy_mj, mguk_kw: Math.min(pc.pu.mguk_kw, E.mguk_max_kw) }) });
   }
-  function simPhysics(pc, trackId, conditions) {
+  // simOpts (optional): { strategy } - one of the sim's own energy strategies (SIM.md §3; "threshold" is the calibrated default)
+  function simPhysics(pc, trackId, conditions, simOpts) {
     if (!PHYSICS_CIRCUITS.includes(trackId)) return simV0(pc, trackId, conditions);
     const S = physicsSim(); if (!S) throw new Error("concept bench: the physics lap sim (concept/sim/index.js) is not loaded");
-    const key = simKey(pc, trackId, conditions), hit = physCache.get(key);
+    const strategy = simOpts && simOpts.strategy ? String(simOpts.strategy) : null;
+    const key = simKey(pc, trackId, conditions) + (strategy ? "|" + strategy : ""), hit = physCache.get(key);
     if (hit) { physStats.hits++; physCache.delete(key); physCache.set(key, hit); return Object.assign({}, hit); }
-    const t0 = Date.now(), r = S.simulateLap(guardEnergy(pc), trackId, conditions || undefined);
+    const t0 = Date.now(), r = S.simulateLap(guardEnergy(pc), trackId, conditions || undefined, strategy ? { strategy } : undefined);
     physStats.misses++; physStats.ms += Date.now() - t0;
     const out = { lap_s: r.lap_s, sectors_s: r.sectors_s, vmax_kmh: r.vmax_kmh, speed_trap_kmh: r.speed_trap_kmh, vmin_kmh: r.vmin_kmh, energy: r.energy, speeds_kmh: r.speeds_kmh, air_density_kgm3: r.air_density_kgm3, label: r.label, sim: "physics" };
     physCache.set(key, out); if (physCache.size > CACHE_MAX) physCache.delete(physCache.keys().next().value);
     return Object.assign({}, out);
   }
   simPhysics.kind = "physics"; simV0.kind = "v0";
+
+  // ---- SAME ENGINE: the PU homologation guard (docs/concept/CAMPAIGN.md §1). A design changes the chassis and the aero, never the
+  // power unit: every PhysicalCar must carry exactly its team's homologated PU (the Red Bull baseline: the DM01 of the sim's inferred
+  // RB22, sim.baselineCar("redbull"); the generic baseline: the sim's estimated 2026 PU). Checked: ICE kW (the anchor's; a cooling
+  // derate or a calibration power_scale changes it, so both are rejected), MGU-K kW, the energy-store figures (C5.2.9, C5.2.10),
+  // no extra PU field the sim could read (e.g. superclip_kw), the PU part masses and the MGU-K transmission option of the mass sheet
+  // (C5.5, C5.18.7, C5.17.9, C5.3.4), no override on a PU part, and the anchor team. Fuel flow (C5.2.3-4) and the MGU-K taper
+  // (C5.2.8) are constants inside the sim (REGS), not PhysicalCar fields, so no design reaches them.
+  // checkPhysical rules not enforced yet (re-enable by emptying this list once the inputs are fixed; docs/concept/CAMPAIGN.md §3)
+  const PHYSICAL_SKIP = ["REG-C-SUSP-WIDTH"];
+  const PU_PARTS = Object.freeze(["pu_ice", "pu_turbo", "pu_mguk", "pu_es", "pu_electronics"]);
+  const PU_FIELDS = Object.freeze(["ice_kw", "mguk_kw", "es_deploy_mj_per_lap", "es_harvest_mj_per_lap", "es_soc_window_mj"]);
+  const PU_RULE = "C5 · the baseline team's homologated power unit, unchanged (campaign rule: same engine)";
+  const puCache = {};
+  function homologatedPU(team) {
+    team = team && team !== "generic" ? team : null;
+    const key = team || "generic"; if (puCache[key]) return puCache[key];
+    const A = phys.anchor(team), E = phys.ENERGY, parts = req("parts", "./parts.js");
+    const ref = design.baseline(team ? { team } : undefined), sheet = design.facts(ref).mass;
+    const mguk = Math.min(E.mguk_max_kw, parts.BY_ID.pu_mguk.power_kw);
+    if (A && Math.abs(A.pu.mguk_kw - mguk) > 1e-9) throw new Error("concept bench: the anchor's MGU-K (" + A.pu.mguk_kw + " kW) differs from the catalogue's " + mguk + " kW");
+    const masses = {}; for (const id of PU_PARTS) masses[id] = sheet.parts.find(p => p.id === id).mass_kg;
+    const tm = team && design.TEAMS && design.TEAMS[team];
+    const H = {
+      team, name: tm ? tm.pu : (A ? "generic 2026 PU (the physics sim's estimate)" : "generic 2026 PU (v0 estimate)"),
+      ice_kw: +(A ? A.pu.ice_kw : phys.REF_V0.ice_kw).toFixed(4), mguk_kw: mguk,
+      es_deploy_mj_per_lap: E.deploy_mj, es_harvest_mj_per_lap: E.recharge_max_mj, es_soc_window_mj: E.soc_window_mj,
+      masses_kg: masses, mguk_transmission: sheet.mguk_transmission, source: A ? "physics sim anchor " + (A.id || key) + " (" + (A.label || "") + ")" : "PhysicalCar v0 levels",
+      basis: "ICE: the anchor car's (sim fit; DM01 PU scale for Red Bull); MGU-K C5.2.7; ES " + E.basis + "; masses: concept part catalogue (C5.5.1/C5.18.7 option " + sheet.mguk_transmission + ", C5.17.9, C5.3.4)",
+    };
+    return (puCache[key] = Object.freeze(H));
+  }
+  const near = (a, b) => typeof a === "number" && isFinite(a) && Math.abs(a - b) <= 1e-6 * Math.max(1, Math.abs(b));
+  function puViolation(value, limit, what) { return { id: "PU-HOMOLOGATED", article: PU_RULE, value, limit, message: "Power unit differs from the homologated " + what + " [" + PU_RULE + "]" }; }
+  // checkPU(pc, design?, massSheet?) -> violations [] (empty = the team's homologated PU, exactly)
+  function checkPU(pc, d, sheet) {
+    const team = d ? (d.team || null) : ((pc && pc.team) || null), H = homologatedPU(team), out = [];
+    if (!pc || !pc.pu) return [puViolation("missing", "pu", "PU (no pu block)")];
+    if ((pc.team || null) !== (team || null)) out.push(puViolation(pc.team || "generic", team || "generic", "PU: the car is anchored on another team's car"));
+    for (const k of PU_FIELDS) if (!near(pc.pu[k], H[k])) out.push(puViolation(pc.pu[k], H[k], H.name + " " + k + " (" + pc.pu[k] + " vs " + H[k] + ")"));
+    for (const k of Object.keys(pc.pu)) if (!PU_FIELDS.includes(k)) out.push(puViolation(k, PU_FIELDS.join(", "), H.name + ": unknown PU field " + k));
+    const cal = pc.calibration || {};
+    if (cal.power_scale != null && cal.power_scale !== 1) out.push(puViolation(cal.power_scale, 1, H.name + " power (calibration power_scale " + cal.power_scale + ")"));
+    if (sheet) {
+      for (const id of PU_PARTS) { const row = (sheet.parts || []).find(p => p.id === id); if (!row || !near(row.mass_kg, H.masses_kg[id])) out.push(puViolation(row ? row.mass_kg : "missing", H.masses_kg[id], H.name + " " + id + " mass")); }
+      if (sheet.mguk_transmission !== H.mguk_transmission) out.push(puViolation(sheet.mguk_transmission, H.mguk_transmission, H.name + " MGU-K transmission option"));
+    }
+    if (d && d.overrides) for (const id of PU_PARTS) if (d.overrides[id]) out.push(puViolation("override", "none", H.name + " " + id + " (override)"));
+    return out;
+  }
+  // energy limits on a physics lap (C5.2.9 SoC window 4 MJ, C5.2.10 recharge ≤ 8.5 MJ and the session limit): the sim closes the
+  // budget itself; this re-checks its own report so a lap that exceeds a limit is never scored. [] = within the limits.
+  function checkEnergy(r, conditions) {
+    const e = r && r.energy; if (!e || e.recharge_cap_mj == null) return [];
+    const E = phys.ENERGY, lim = conditions && conditions.recharge_limit_mj != null ? +conditions.recharge_limit_mj : Infinity, cap = Math.min(E.recharge_max_mj, lim, e.recharge_cap_mj), out = [];
+    const v = (val, limit, what) => ({ id: "ENERGY-LIMIT", article: "C5.2.9 / C5.2.10", value: val, limit, message: what + " (is " + val + ", limit " + limit + ") [FIA 2026 C5.2.9-C5.2.10]" });
+    if (e.recharge_cap_mj > E.recharge_max_mj + 1e-9) out.push(v(e.recharge_cap_mj, E.recharge_max_mj, "Recharge cap above C5.2.10"));
+    if (e.harvested_mj > cap + 0.002) out.push(v(e.harvested_mj, cap, "Recharge per lap above the limit"));
+    if (e.deployed_mj > e.harvested_mj + E.soc_window_mj + 0.002) out.push(v(e.deployed_mj, +(e.harvested_mj + E.soc_window_mj).toFixed(3), "Deployment above the SoC window plus the recharge"));
+    return out;
+  }
+  // materials: a non-baseline material must be one the materials data marks permitted under C15.2 (fia.status "permitted"), and
+  // the FIA-homologated / tested safety structures (survival cell C15.5.3 + C13, nose and rear impact structures C13) keep their
+  // baseline laminate (campaign rule, conservative: their lay-ups are homologated with the tests, not free choices).
+  const MATERIAL_FIXED_STRUCTURES = Object.freeze(["survival_cell", "nose", "rear_impact"]);
+  function materialAllowed(part, id) {
+    const M = C.materials || (typeof require === "function" ? safeRequire("./materials.js") : null); if (!M) return false;
+    if (id === M.baseOf(part)) return true;
+    if (M.problem(part, id)) return false;
+    if (MATERIAL_FIXED_STRUCTURES.includes(part)) return false;
+    const m = M.get(id); return !!(m && m.fia && m.fia.status === "permitted");
+  }
+  function checkMaterials(d) {
+    const M = C.materials || (typeof require === "function" ? safeRequire("./materials.js") : null), out = [];
+    if (!M || !d || !d.params) return out;
+    for (const part of Object.keys(d.params)) {
+      const id = d.params[part] && d.params[part].material; if (typeof id !== "string" || materialAllowed(part, id)) continue;
+      const m = M.get(id), why = MATERIAL_FIXED_STRUCTURES.includes(part) ? "homologated safety structure keeps its baseline laminate (campaign rule)" : "FIA status " + (m && m.fia ? m.fia.status : "unknown") + " (" + (m && m.fia ? m.fia.article : "C15") + ")";
+      out.push({ id: "MAT-C15", article: (m && m.fia && m.fia.article) || "C15", value: id, limit: "permitted (C15.2)", message: part + " material " + id + ": " + why + " [FIA 2026 C15]" });
+    }
+    return out;
+  }
   // opts.sim -> a sim function: "physics" | "v0" | "auto" (default: physics when concept/sim/ is loaded, else v0) | a function
   function resolveSim(s) {
     if (typeof s === "function") return s;
@@ -238,7 +322,7 @@
   const benchCache = new Map();
   function benchKey(d, opts, simFn) {
     if (opts.cache === false || (simFn !== simPhysics && simFn !== simV0)) return null;
-    const o = { c: opts.circuit, cs: opts.circuits, k: simKind(simFn), ob: opts.objective, cd: opts.conditions, cal: opts.calibration, s: opts.session, mw: opts.mass_weight, wo: opts.weekend };
+    const o = { c: opts.circuit, cs: opts.circuits, k: simKind(simFn), ob: opts.objective, cd: opts.conditions, cal: opts.calibration, s: opts.session, mw: opts.mass_weight, wo: opts.weekend, st: opts.strategy, pg: opts.pu_guard, mg: opts.material_guard };
     return JSON.stringify([d.params, d.overrides || null, d.team || null, o]);
   }
   function bench(d, opts) {
@@ -251,6 +335,18 @@
     if (hit) { physStats.bench_hits = (physStats.bench_hits || 0) + 1; const r = JSON.parse(hit); r.id = d.id || null; r.physical.id = d.id || null; r.ms = Date.now() - t0; return r; }
     const f = design.facts(d, opts), violations = regs.checkFacts(f, opts);
     const pc = phys.physical(d, opts);
+    // FIA checklist on the PhysicalCar (regs.checkPhysical): the Section C PU / energy limits and the PU lock against the team's
+    // homologated PU (PKG-PU-FIXED). recharge_limit_mj is NOT passed: es_harvest_mj_per_lap is the car's C5.2.10 cap (8.5 MJ); the
+    // session's 6.5 MJ applies to what a lap harvests and is checked on the sim's report (checkEnergy). PHYSICAL_SKIP rules are
+    // left out until their model inputs exist (REG-C-SUSP-WIDTH: track widths, claude/sim-v3-fia).
+    if (regs.checkPhysical) for (const x of regs.checkPhysical(pc, { pu_ref: homologatedPU(d.team || null) })) if (!PHYSICAL_SKIP.includes(x.id)) violations.push(x);
+    // same engine and permitted materials: BACKSTOPS on top of regs.js (PKG-PU-FIXED, the C15 rules). They speak only when regs.js
+    // found nothing, so a car regs.js rejects carries exactly regs.js's verdict, and a car it lets through still cannot carry a
+    // changed PU (exact ICE / MGU-K / ES figures, PU masses, no extra PU field, no power_scale) or a material the campaign does not
+    // allow (FIA status other than permitted; homologated safety structures). On unless a what-if study turns them off;
+    // concept/optimize.js never does.
+    if (!violations.length && opts.pu_guard !== false) for (const x of checkPU(pc, d, f.mass)) violations.push(x);
+    if (!violations.length && opts.material_guard !== false) for (const x of checkMaterials(d)) violations.push(x);
     const out = {
       id: d.id || null, label: LABEL, legal: violations.length === 0, violations,
       physical: pc, team: d.team || null,
@@ -259,7 +355,10 @@
       circuits: {}, weekend: null, weekend_model: null, score: null, sim: simKind(sim), objective: null,
     };
     if (out.legal) {   // like the lab: an illegal car gets no lap time
-      for (const c of circuits) out.circuits[c] = sim(pc, c, opts.conditions || null);
+      for (const c of circuits) out.circuits[c] = sim(pc, c, opts.conditions || null, opts.strategy ? { strategy: opts.strategy } : undefined);
+      // energy limits re-checked on the sim's own report: a lap over a C5.2.9 / C5.2.10 limit is never scored
+      const ev = [].concat(...circuits.map(c => checkEnergy(out.circuits[c], opts.conditions || (physicsSim() && physicsSim().DEFAULT_CONDITIONS))));
+      if (ev.length) { out.legal = false; out.violations = violations.concat(ev); out.circuits = {}; out.ms = Date.now() - t0; return out; }
       const lap = out.circuits[scored].lap_s, w = weekend(lap, scored, simKind(sim));
       const extra = Math.max(0, f.mass.total_kg - f.mass.min_kg) * (opts.mass_weight || 0);
       const W = scored === "silverstone" && opts.objective !== "quali" ? weekendModule() : null;
@@ -279,7 +378,8 @@
     return out;
   }
 
-  const api = { LABEL, V0_LABEL, SCORE_LABEL, SCORE_LABEL_V0, V0, PHYSICS_CIRCUITS, game, racepace, activationZones, v0Multipliers, simV0, simPhysics, resolveSim, physicsSim, guardEnergy, cacheStats, clearCache, weekend, bench, profile, zoneDownforce, refCar };
+  const api = { LABEL, V0_LABEL, SCORE_LABEL, SCORE_LABEL_V0, V0, PHYSICS_CIRCUITS, game, racepace, activationZones, v0Multipliers, simV0, simPhysics, resolveSim, physicsSim, guardEnergy, cacheStats, clearCache, weekend, bench, profile, zoneDownforce, refCar,
+    PU_PARTS, PU_FIELDS, PU_RULE, PHYSICAL_SKIP, homologatedPU, checkPU, checkEnergy, MATERIAL_FIXED_STRUCTURES, materialAllowed, checkMaterials };
   C.bench = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();

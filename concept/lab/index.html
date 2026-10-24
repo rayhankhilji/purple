@@ -97,6 +97,7 @@
 <script src="../sim/index.js"></script>
 <!-- the concept engine (docs/concept/CONCEPT.md §3 load order) -->
 <script src="../regs.js"></script>
+<script src="../materials.js"></script>
 <script src="../parts.js"></script>
 <script src="../aeromap.js"></script>
 <script src="../design.js"></script>
@@ -108,5 +109,7 @@
 <!-- 3D viewer (EI.conceptView); if the file is missing the page shows a schematic plan view instead -->
 <script src="../view/view3d.js" onerror="window.__conceptViewMissing = true"></script>
 <script src="concept-lab.js"></script>
+<!-- the Mubit loop drawer (docs/concept/LOOP.md): talks only to the API on :8787, never to Mubit -->
+<script src="loop-panel.js"></script>
 </body>
 </html>

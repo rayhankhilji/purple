@@ -169,7 +169,7 @@ const STYLE = `
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:var(--bg);color:var(--text);overflow:hidden;font-family:Inter,"DejaVu Sans",system-ui,sans-serif}
 .num{font-variant-numeric:tabular-nums}
 `;
-const SCRIPTS = `<script src="/vendor/three.min.js"></script><script src="/concept/regs.js"></script><script src="/concept/parts.js"></script><script src="/concept/aeromap.js"></script><script src="/concept/design.js"></script><script src="/concept/view/view3d.js"></script>`;
+const SCRIPTS = `<script src="/vendor/three.min.js"></script><script src="/concept/regs.js"></script><script src="/concept/materials.js"></script><script src="/concept/parts.js"></script><script src="/concept/aeromap.js"></script><script src="/concept/design.js"></script><script src="/concept/view/view3d.js"></script>`;
 function stagePage(a, meta) {
   return `<!doctype html><html><head><meta charset="utf-8"><title>PURPLE concept film</title><style>${STYLE}
 #car{position:absolute;inset:0}
