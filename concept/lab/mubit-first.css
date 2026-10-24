@@ -100,3 +100,6 @@ body.exam-on .mubit-only, body.eng2-on .mubit-only { display: none !important; }
   .mustrip { grid-template-columns: 1fr; padding: 8px 16px 0; }
   .mu-ctr-s, .mu-ctr-tot, .mu-model-l { white-space: normal; }
 }
+
+/* the floating part tag repeats the "last kept change" callout and collided with the 3D view caption: hidden in the Mubit view */
+body.mubit-on .cv-tags { display: none !important; }
