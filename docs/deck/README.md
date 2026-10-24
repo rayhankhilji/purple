@@ -20,7 +20,7 @@ Needs Node (already installed for the repo) and Chrome, Edge or Chromium on the 
    | `lab-design-td01.png` | DESIGN card error with badge TD-01: "Technical directive TD-01: rear wing capped at 20°" | lab page, TD-01 on, `EI.lab.run` with rear wing 25° (UI lane's `09-td01-violation.png` is a mock-data stand-in) |
    | `ledger-row.png` | ledger with row 01M5NHXH… (rule chip R-01, measured +0.518, agree 19 %) and the Saturday rows below | lab page, ledger table (restore `docs/ledger-snapshot/…/` into `data/` first) |
 
-   A missing file shows as a broken image; the deck still exports. Fill the `[…]` placeholders in `slides.md` (kept count, v1 result, v2 result, the two n/8 rows from `npm run exam:score`) before exporting.
+   A missing file shows as a broken image; the deck still exports. Fill the `[…]` placeholders in `slides.md` (kept count, v1 result, v2 result, the v1/v2 cells of the n/8 table from `npm run exam:score`; the provider cells 1/8 and 8/8 are measured) before exporting. Reference frames already in the repo: `docs/agents/integrator-screens/lab-1440-0315.png` (lab page), `docs/agents/lanes/car3d-screens/hero-rw8.png` (3D car, rear wing 28°), `docs/agents/lanes/ui-screens/*.png` (mock-data card states).
 
 2. From the repo root:
 

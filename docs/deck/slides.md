@@ -116,13 +116,13 @@ Speaker notes: Two identical neutral bots, seed 42, three laps. The model predic
 
 | 8 held-out scenarios (Try models) | provider | v1 | v2 |
 |---|---|---|---|
-| next experiment | [n/8] | [n/8] | [n/8] |
-| verdict | [n/8] | [n/8] | [n/8] |
+| next experiment | **1/8** | [n/8] | [n/8] |
+| verdict | 8/8 | [n/8] | [n/8] |
 
 ![shot bg right:34% fit](shots/try-models-side-by-side.png)
 
 <!--
-Speaker notes: Same unseen scenario to provider, v1 and v2 in Try models, side by side. Scores are counts out of eight, never percentages; five of the eight are deliberate retest cases. If v2 does not beat v1 we show the number anyway. Figure: Try models on exam-rw8, the demo premise, with the version label visible.
+Speaker notes: Same unseen scenario to provider, v1 and v2 in Try models, side by side. On these eight the provider gets every verdict and one next step (the demo premise); on six misses the truth is ride height. Counts, never percentages. If v2 does not beat v1 we show the number anyway. Figure: Try models on exam-rw8, the demo premise, with the version label visible.
 -->
 
 ---
