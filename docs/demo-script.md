@@ -24,7 +24,7 @@ Fixed facts the script is built on (all measured 2026-10-23/24, London):
 | Exam, provider, untrained | verdicts 20/20; next experiment (parameter + direction) 10/20. On the 8 Try-models items (sheet recomposed 04:40 after the wind-cap fix: exam-rw8, -14, -15, -02, -16, -20, -05, -12): verdicts 8/8, next experiment **2/8** (exam-rw8 and exam-12). On all 6 misses the evaluator's truth is a ride-height change; the provider proposed rear wing (5) or brake bias (1) instead | TASK_LOG 00:55, snapshot 0530-windcap-exam |
 | The rule | "Weigh straight-line drag against corner gain; judge on full-lap delta." | P2.T4 |
 | v2 collection (Saturday, 01:50) | 40 scenarios across all five parameters, rule R-01 in every input, promote-biased (0.3): 39 valid, 1 parse error. Evaluator truth promote 14 / retest 12 / reject 14; the agent's verdicts agreed on 38 of 39; its next parameter: ride_height 13, rear_wing 11, front_wing 7, brake_bias 6, ers 2 | TASK_LOG 01:50 |
-| Try-models set (P3.T1) | 8 of the 20 exam items: exam-rw8, -03, -02, -14, -15, -16, -20, -05 (`docs/try-models/sheet.md`); scored verdict n/8 and next-step n/8 by `npm run exam:score` | EVAL |
+| Try-models set (P3.T1) | 8 of the 20 exam items: exam-rw8, -14, -15, -02, -16, -20, -05, -12 (`docs/try-models/sheet.md`); scored verdict n/8 and next-step n/8 by `npm run exam:score` | EVAL |
 | Grid race (F-10) | `index.html?lab=1&mode=grid&driver=VER&…`, VER P7 → P14 at seed 42, caption "Cinematic · mixes car and driver · Max Verstappen in the candidate car · reduced-order lap model" | GAME.md 02:55 |
 | TD-01 | rear wing capped at 20°; label "Technical directive TD-01: rear wing capped at 20°" | `aero.describeViolation` |
 | Monza | rear wing +8° costs +0.757 s there vs +0.436 s at Silverstone | evaluator |
@@ -46,7 +46,7 @@ Fixed facts the script is built on (all measured 2026-10-23/24, London):
 
 ### 0:00–0:20 — Hook and disclosure (G-HON-04)
 
-**On screen:** `lab/index.html` at 1440×900. Stage rail DESIGN · EVALUATE · RACE · LEARN, all dim. 3D car on the three-quarter rear hero angle, baseline setup (rear wing 20°). Mubit widget top-right (orange rule): task "Research engineer of F1", kept examples [≈ 80 after v2; 43 at 23:58], adapter v1 [+ v2], exam `provider 20/20 verdicts · 10/20 next-step`.
+**On screen:** `lab/index.html` at 1440×900. Stage rail DESIGN · EVALUATE · RACE · LEARN, all dim. 3D car on the three-quarter rear hero angle, baseline setup (rear wing 20°). Mubit widget top-right (orange rule): task "Research engineer of F1", kept examples **FILL kept-after-v2** (43 at 23:58), adapter **FILL v1-result** / **FILL v2-result**, exam `provider 20/20 verdicts · 10/20 next-step`.
 
 **Say:** "Can a model learn from an engineer's correction and make better decisions next time? This is PURPLE, an F1 setup research lab that chases purple sectors. It sits on Equation I, a browser F1 game our team built before this weekend. The lab, the evaluator and the Mubit research agent are new tonight."
 
@@ -80,9 +80,9 @@ Fixed facts the script is built on (all measured 2026-10-23/24, London):
 
 ### 1:35–2:10 — LEARN: what v1 learned, the rule, v2 (G-HON-03)
 
-**On screen:** Ledger, newest first, scrolled to the Friday rows: change column shows front-wing moves almost everywhere; verdict column `reject`. Widget exam line: `provider 20/20 verdicts · 10/20 next-step`. Open **Overrule** on the demo experiment: verdict stays **reject**, reason "Weigh straight-line drag against corner gain; judge on full-lap delta." Submit. A rule chip appears on the row (R-01 is already on this experiment from the first overrule at 01:45; a live re-enactment adds a second chip with the same text; say "the rule", not an id). LEARN card lights. Press **Run next**: the new trace line's input carries the rule under `rules`. Cut to the Saturday rows in the ledger: changes across ride height, rear wing, brake bias; verdicts now include `promote`. Then console → Adapters: v1 [result], v2 [status / result].
+**On screen:** Ledger, newest first, scrolled to the Friday rows: change column shows front-wing moves almost everywhere; verdict column `reject`. Widget exam line: `provider 20/20 verdicts · 10/20 next-step`. Open **Overrule** on the demo experiment: verdict stays **reject**, reason "Weigh straight-line drag against corner gain; judge on full-lap delta." Submit. A rule chip appears on the row (R-01 is already on this experiment from the first overrule at 01:45; a live re-enactment adds a second chip with the same text; say "the rule", not an id). LEARN card lights. Press **Run next**: the new trace line's input carries the rule under `rules`. Cut to the Saturday rows in the ledger: changes across ride height, rear wing, brake bias; verdicts now include `promote`. Then console → Adapters: v1 **FILL v1-result**, v2 **FILL v2-result**.
 
-**Say:** "The verdict was right. The next experiment is where the agent is weak: on twenty held-out scenarios it gets twenty of twenty verdicts and ten of twenty next steps. Version one also learned from our mistake: a seeding bug made ninety-four percent of Friday's candidates front-wing moves. We fixed the generator. The engineer kept the verdict and wrote the rule: weigh straight-line drag against corner gain, judge on the full-lap delta. The rule enters every later task input. Forty new scenarios across all five parameters, verdicts agreeing with the evaluator on thirty-eight of thirty-nine. Those kept examples train version two. That is rule-conditioned learning."
+**Say:** "The verdict was right. The next experiment is where the agent is weak: on twenty held-out scenarios it gets twenty of twenty verdicts and ten of twenty next steps. Version one also learned from our mistake: a seeding bug made ninety-four percent of Friday's candidates front-wing moves. We fixed the generator. The engineer kept the verdict and wrote the rule: weigh straight-line drag against corner gain, judge on the full-lap delta. The rule enters every later task input. Forty new scenarios across all five parameters, verdicts agreeing with the evaluator on thirty-eight of thirty-nine. Those kept examples are what version two trains on. That is rule-conditioned learning."
 
 **Trigger:** `POST /api/overrule { experiment_id, verdict: "reject", reason }` → rule active → next `POST /api/plan` input includes it. v2 was collected at 01:50 with `npm run collect -- --n 40 --with-rules --promote-bias 0.3 --confirm-trained --seed 2` (not live in the video; show the ledger rows and the Adapters page).
 
@@ -92,9 +92,9 @@ Fixed facts the script is built on (all measured 2026-10-23/24, London):
 
 ### 2:10–2:35 — Try models (G-HON-06)
 
-**On screen:** Console → Try models, **Side by side**: provider on the left, the adapter version on the right, the same held-out scenario pasted as the user message only (the task adds its own instructions). Scenario to show: `exam-rw8`, the demo premise itself (truth: reject, next step rear wing decrease), then one of the five retest items (`exam-14`, rear wing −4°, truth retest / ride height decrease). Then the widget score line: next step provider 2/8 · v1 [n/8] · v2 [n/8]; verdict provider 8/8 · v1 [n/8] · v2 [n/8]. Always n/8, never a percentage.
+**On screen:** Console → Try models, **Side by side**: provider on the left, the adapter version on the right, the same held-out scenario pasted as the user message only (the task adds its own instructions). Scenario to show: `exam-rw8`, the demo premise itself (truth: reject, next step rear wing decrease), then one of the five retest items (`exam-14`, rear wing −4°, truth retest / ride height decrease). Then the widget score line: next step provider 2/8 · v1 **FILL v1-next** · v2 **FILL v2-next**; verdict provider 8/8 · v1 **FILL v1-verdict** · v2 **FILL v2-verdict**. Always n/8, never a percentage.
 
-**Say:** "Same unseen scenario to provider, version one and version two. Verdicts tie by design, the prompt states the thresholds; the score that matters is the next experiment. On eight hard held-out scenarios the provider gets two next steps in eight: every miss wanted ride height and it reached for the rear wing. Version one: [n of eight]. Version two: [n of eight]."
+**Say:** "Same unseen scenario to provider, version one and version two. Verdicts tie by design, the prompt states the thresholds; the score that matters is the next experiment. On eight hard held-out scenarios the provider gets two next steps in eight: every miss wanted ride height and it reached for the rear wing. Version one: **FILL v1-next** of eight. Version two: **FILL v2-next** of eight."
 
 **Trigger:** none in the lab; P3.T1 by hand per `docs/try-models/README.md` (sheet `docs/try-models/sheet.md`: exam-rw8, -14, -15, -02, -16, -20, -05, -12; five retests, two rejects, one promote), scored with `npm run exam:score`, which prints the `POST /api/status` body. Only a version marked `Passed` can be tried.
 
@@ -129,7 +129,7 @@ Fixed facts the script is built on (all measured 2026-10-23/24, London):
 
 - G-HON-01: every number shot carries its label (EVALUATE, RACE, Try models, Monza).
 - G-HON-02: the words CFD, wind tunnel, validated, aerodynamically tested do not appear. "Calibrated" is the only quality word, and it describes what was done (80.800 s anchor).
-- G-HON-03: the spoken 1:35 line says rule → every later task input → answers → "those kept examples train version two", and names "rule-conditioned learning".
+- G-HON-03: the spoken 1:35 line says rule → every later task input → answers → "those kept examples are what version two trains on", and names "rule-conditioned learning".
 - G-HON-04: disclosure at 0:00–0:20 and on slide 2.
 - G-HON-05: grid footage captioned "cinematic — mixes car and driver"; the result is the baseline-vs-candidate race.
 - G-HON-06: exam scores are spoken and shown as counts (ten of twenty, n/8), never "half" or %.
