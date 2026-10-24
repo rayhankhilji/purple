@@ -1,4 +1,6 @@
-# PURPLE — video shot list (P3.T4)
+# PURPLE — video shot list (P3.T4, v1 research-lab story) — SUPERSEDED
+
+> Superseded 2026-10-24 by `docs/video-script.md` (concept lab + Mubit loop story). Kept for reference; do not record from it.
 
 Placeholders marked **FILL …** are listed, with where to read each one, in `docs/deck/README.md` → "Numbers to fill from the console".
 
