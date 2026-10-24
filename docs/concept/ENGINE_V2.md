@@ -3,6 +3,8 @@
 Version 1 · 2026-10-24 · branch `claude/engine-v2` · status: **built, tested with a mocked LLM (`test/engineer.test.js`, 8 tests),
 mock runs measured; no live Mubit call has been made by engine v2 yet** (no key in the build environment). The public site
 therefore replays the two recorded live engine-v1 hybrid runs until a live v2 run is recorded (§6).
+Update 2026-10-24 (`claude/fast-live`): **§9 parallel rounds** (K ideas from Mubit at once per round, each with its own focus line) and the
+**"kept" training rule** (an idea trains Mubit when physics kept a faster legal car from it); Go live = 10 rounds × 4 ideas in ≈ 50 s.
 
 Label on every lap number: **"physics lap sim · quasi-steady-state point mass · Silverstone · calibrated to 2026 British GP
 qualifying"**. A surrogate value is a ranking, never a reported lap. Model predictions, not a real car's lap.
@@ -99,8 +101,10 @@ default 240 s; ≤ 270 s) and stops cleanly; the final event carries a resumable
   date · n calls · request ids". Bundled now: `trained-hybrid-seed41` (35 trained calls, 87.282 s), `trained-hybrid-seed42` (18 calls,
   87.683 s), `trained-seed29` (pure designer loop, 88.292 s). All are engine v1: the cards say so, and the share of kept gain directed
   by Mubit (13 %, 7 %, 77 %) is shown, not hidden.
-- **Live (after `/unlock`, or a local server with `MUBIT_API_KEY`):** "Go live" posts `{ mode: "engineer", llm: "live" }` (20 untrained
-  calls, `x-middleware-record: metadata`). Trained engineer runs need `trained: true, confirm: "trained", confirm_text: "TRAIN n"`,
+- **Live (after `/unlock`, or a local server with `MUBIT_API_KEY`):** "Go live" on the Mubit-first lab posts parallel rounds (§9):
+  `{ mode: "engineer", llm: "live", record_good: "kept", ideas: 4, rounds: 5 | 10 | 20, max_calls: 4 × rounds, variants: 600,
+  confirm_k: 8, explore: 2 }` (default 10 rounds = 40 untrained calls, `x-middleware-record: metadata`). The older one-at-a-time form
+  `{ mode: "engineer", llm: "live" }` (20 untrained calls) still works. Trained engineer runs need `trained: true, confirm: "trained", confirm_text: "TRAIN n"`,
   `n ≤ 2,000`, budget left (same rules as `auto`; not exposed on the main page).
 - **Offline demo (mock):** an explicit button; the bar says "the proposals come from a SCRIPTED MOCK, not a model".
 - To publish a new live v2 run: copy `<data dir>/concept-engine/<run id>/` to `docs/concept/loop-runs/<name>/`, run
@@ -120,9 +124,63 @@ default 240 s; ≤ 270 s) and stops cleanly; the final event carries a resumable
 
 `POST /api/concept/engine/run { mode: "engineer", llm: "mock" | "live", trained, confirm, confirm_text, max_calls, max_decisions,
 seed, team, variants (100-50,000), confirm_k (4-128), explore, patience (fails before revert, 3), stop_after (decisions without a new
-peak, 15), workers, resume_from | resume_state }` → SSE events `start, request, proposal, progress, screen, decision, revert, done,
-final`. Files per run: `calls.jsonl, decisions.jsonl, events.jsonl, state.json (resumable), tree.json, run.json` (live runs under the
+peak, 15; rounds in round mode), workers, resume_from | resume_state, record_good (true = "kept" | "kept" | "exact"), ideas (1-8,
+default 1), rounds (1-50; max_calls defaults to ideas × rounds), time_box_s (10-3,600) }` → SSE events `start, request, proposal,
+progress, screen, decision, revert, done, final` (+ `round, tested, round_done` with ideas > 1, `training_example` with record_good). Files per run: `calls.jsonl, decisions.jsonl, events.jsonl, state.json (resumable), tree.json, run.json` (live runs under the
 data dir's `concept-engine/`, counted by the trained-call budget; mock runs under the OS temp dir).
 Code: `concept/engineer/{engine,tree,subspace,screen,screen-worker,scenario,replay}.js`, `server/campaign-route.js`
 (`startEngineer`), `server/vercel.js` (engineer mode; a resumed run is served only by the instance that took its POST; live resume is
 local only), `concept/lab/engineer-panel.{js,css}`. Tests: `node --test test/engineer.test.js`.
+
+## 9. Parallel rounds and the "kept" training rule (2026-10-24, branch `claude/fast-live`)
+
+Why: on the public site (1 vCPU, 240 s time box) Go live made one call, then screened 3,000 versions and drove ~30 physics laps, one
+decision at a time (≈ 5.5 s each with a 2.3 s call): 40 or 120 decisions could not finish, and nearly every card read "✗ slower …
+correction: not trained" even when the engine had kept a faster car from that idea.
+
+**A round** (`ideas` K = 2-8, `concept/engineer/engine.js`): K designer calls go out AT ONCE, all from the same head car. At
+temperature 0 identical inputs give identical answers, so call *i*'s scenario starts with one more fact, `focus: "<area>"`
+(`concept/engineer/scenario.js` FOCUS: "front wing and nose" · "rear wing and diffuser" · "floor, sidepods and cooling" ·
+"suspension, set-up and gearbox", then four more for K = 5-8, all distinct; K < 4 rotates through the first four by round). Only the
+user message changes: the frozen designer task (system prompt, model, max_tokens, temperature; `concept/designer/prompt.js`) is the
+same on every call (`test/engineer-rounds.test.js`). The focus line also spreads the ideas over the car instead of the rear-wing
+fixation measured in `TESTS_TO_POLE.md`. The engine then tests every idea exactly as in §2 (as written, projection / repair, screen,
+confirm, interactions; its own decision row with `round, slot, of, focus`), takes the round's fastest legal car, keeps it if it beats
+the head (one tree step per round: `patience` and `stop_after` count rounds), and the round ends. Rows also carry `found_faster` (the
+idea's best legal version beat the head by > 0.5 ms) and `round_best`. SSE adds `round` (focus list), `tested` (per idea) and
+`round_done` (kept, Δ, versions, laps, ms). Calls in flight: ≤ 8 per run (the route's slot limit for the K calls and the trained
+re-sends; `server/mubit.js` SLOTS 2 → 8, G-MUBIT-05). `time_box_s` (the Vercel adapter sends its time box − 10 s): the run stops
+cleanly BEFORE a round that would end after it, judged on the slowest of the last three rounds: "stopped at the time limit after N
+rounds".
+
+**Training rule** (`record_good`, `concept/engineer/record-good.js`), a named option:
+- `"kept"` (the default for live runs; `record_good: true` means it): an idea becomes a Mubit training example when **physics kept a
+  faster legal car from it**: the engine's best legal version of the idea (as written, made legal, or a screened variant of its
+  subspace) beat the head car it started from by more than 0.5 ms. That is what the card's main chip says ("✓ kept −0.021 s", or
+  "✓ faster car −0.012 s" when another idea of the same round was faster still).
+- `"exact"` (the harvest's, `concept/engineer/cli.js --record-good`, and `recorder()`'s default): the idea exactly as written was
+  legal and faster.
+Either way the trained call re-sends the identical request (same user content incl. its focus line, same session, same frozen task;
+temperature 0, so the same answer), the as-written lap stays on the card as the grey line "as written: +0.19 s", ideas from the
+engine's own fallback step (`by: "engine"`) are never trained, and every rejected idea stays an untrained call whose measured result
+goes back to Claude in the next scenario ("correction: back to Claude"). Honest reading: under "kept" the example says "this
+direction led the engine to a faster car", not "this exact change was faster"; the harvest keeps the stricter rule.
+
+**Go live** (Mubit-first lab): 5 / 10 / 20 rounds × 4 ideas (default 10 = 40 calls), 600 versions screened and 8 (+ 2 explore)
+confirmed per idea. The public site reserves ideas × rounds live calls of its hourly limit (`server/vercel.js`; defaults raised to
+160 per IP / 800 site-wide per hour); the trained re-sends are counted by the project's trained-call budget (the route checks
+`TRAIN <max_calls>` and the remaining budget as before).
+
+Measured on this machine (4 CPUs, the run pinned to ONE CPU with `taskset`, engine workers 1 like a Vercel function, a stub Mubit that
+sleeps 2.3 s per call and answers with the scripted mock; another session's browser was running on the machine at the same time):
+
+| run | total (incl. start + final re-score) | per round / decision | versions · physics laps | calls (+ trained re-sends) |
+|---|---|---|---|---|
+| **Go live 10 rounds × 4** (stub 2.3 s) | **49.5 s** | 4.47 s mean (first 7.2 s, then 4.2 s; 2.3 s of it the 4 calls at once) | 22,921 · 467 | 40 (+33) |
+| Go live 20 rounds × 4 (stub 2.3 s) | 83.5 s | 4.07 s | 46,008 · 903 | 80 (+48) |
+| 20 × 4 with time_box_s 60 | 60.1 s: "stopped at the time limit after 13 rounds" | 4.28 s | 29,727 · 603 | 52 (+41) |
+| offline demo 10 × 4 (mock, no delay) | 22.2 s | 2.0 s | 23,492 · 480 | 40 |
+| old Go live: 12 decisions one at a time, 3,000 versions / 24 confirmed (stub 2.3 s) | 71.5 s | 5.54 s per decision (40 would need ≈ 220 s) | 34,088 · 343 | 12 (+10) |
+
+So 40 Mubit ideas now take about 50 s instead of ≈ 220 s, and the default run fits the 230 s engine time box with about 4.5× margin
+(20 rounds: 2.7×). A Vercel vCPU may be slower than this machine's core; the time box stop covers that.

@@ -20,9 +20,11 @@ function getClient() {
   return client;
 }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-// G-MUBIT-05, process-wide: at most SLOTS calls in flight at once, whoever calls (collect at concurrency 2, a UI click, the exam).
-// withSlot(fn) runs fn once a slot is free; the 429 retry inside callMubit keeps its slot. Exported for the test.
-const SLOTS = 2; let inFlight = 0; const waiting = [];
+// G-MUBIT-05, process-wide: at most SLOTS calls in flight at once, whoever calls (collect at concurrency 2, a UI click, the exam, an
+// engine run's parallel round). 2 -> 8 on 2026-10-24 (owner: up to 100 Mubit calls in flight overall, ≤ 8 per engine run; a parallel
+// round sends K ≤ 8 designer calls at once). withSlot(fn) runs fn once a slot is free; the 429 retry inside callMubit keeps its slot.
+// Exported for the test.
+const SLOTS = 8; let inFlight = 0; const waiting = [];
 function withSlot(fn) {
   const run = () => { inFlight++; return Promise.resolve().then(fn).finally(() => { inFlight--; const next = waiting.shift(); if (next) next(); }); };
   if (inFlight < SLOTS) return run();
