@@ -12,7 +12,7 @@
 (function () {
   // ---------------------------------------------------------------- the one place to update the Mubit model status (integrator)
   const MUBIT_MODEL = {
-    text: "Mubit model: v1 trained on 98 examples · failed Mubit's test (5/19) · 751 physics-approved examples sent for v2",
+    text: "Mubit model: v1 trained on 98 examples · failed Mubit's test (5/19) · 2,609 physics-approved examples sent for v2",
     source: "Mubit console, owner screenshots 2026-10-24",
   };
   const LIVE_CALLS = 12;   // designer calls per live run (record_good: up to one trained re-send each; the server checks budget and caps)

@@ -15,11 +15,11 @@
   const MUBIT = {
     model: [
       ["v1", "98 examples · Mubit test 5/19, not passed"],
-      ["v2", "751 physics-approved examples sent"],
+      ["v2", "2,609 physics-approved examples sent"],
     ],
     model_source: "Mubit console, 24 Oct",
     // docs/concept/loop-runs/trained-harvest: good.jsonl rows (test/mubit-first.test.js checks the count)
-    harvest: { examples: 751, decisions: 8933, source: "harvest runs, 24 Oct (docs/concept/loop-runs/trained-harvest)" },
+    harvest: { examples: 2609, decisions: 31285, source: "harvest runs, 24 Oct (docs/concept/loop-runs/trained-harvest, trained-harvest-2)" },
   };
   const LIVE_CHOICES = [12, 40, 120];
   const MODEL_NAME = "Claude Haiku 4.5";

@@ -31,11 +31,13 @@ test("mubit-first: the browser never calls Mubit; Go live is the demo's record_g
 
 test("mubit-first: the Mubit numbers match their sources (harvest count, model status), scores as n/N", () => {
   const js = read("concept/lab/mubit-first.js");
-  const good = read("docs/concept/loop-runs/trained-harvest/good.jsonl").split("\n").filter(l => l.trim()).length;
+  const dirs = ["trained-harvest", "trained-harvest-2"];
+  const good = dirs.map(d => read("docs/concept/loop-runs/" + d + "/good.jsonl").split("\n").filter(l => l.trim()).length).reduce((a, b) => a + b, 0);
+  const decisions = dirs.map(d => +(/([\d,]+) Claude decisions/.exec(read("docs/concept/loop-runs/" + d + "/README.md"))[1].replace(/,/g, ""))).reduce((a, b) => a + b, 0);
   const m = /harvest: \{ examples: (\d+), decisions: (\d+)/.exec(js);
   assert.ok(m, "MUBIT.harvest");
-  assert.equal(+m[1], good, "751 physics-approved examples = good.jsonl rows");
-  assert.match(read("docs/concept/loop-runs/trained-harvest/README.md"), new RegExp(Number(m[2]).toLocaleString("en-GB") + " Claude decisions, " + m[1] + " physics-approved"));
+  assert.equal(+m[1], good, "physics-approved examples = good.jsonl rows of both harvests");
+  assert.equal(+m[2], decisions, "Claude decisions = the harvest READMEs");
   assert.match(js, /98 examples · Mubit test 5\/19, not passed/);
   assert.match(js, /model_source: "Mubit console, 24 Oct"/);
   const banned = new RegExp(["\\bC" + "FD\\b", "wind" + " tunnel", "valid" + "ated"].join("|"), "i");
