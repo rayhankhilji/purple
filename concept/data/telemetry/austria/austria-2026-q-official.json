@@ -1,0 +1,250 @@
+{
+ "source": "https://www.formula1.com/en/results/2026/races/1288/austria/qualifying",
+ "retrieved": "2026-10-24",
+ "how": "formula1.com qualifying results page, read with WebFetch (the page text passes through a summarising model, so every time is re-checked against OpenF1 lap times in the README)",
+ "note": "null = no time shown for that session. Spa: the page lists HAD's Q3 as DNF (stored as null). A driver's fastest lap can come in Q1 or Q2, so compare with the minimum of the three.",
+ "classification": [
+  {
+   "pos": 1,
+   "code": "RUS",
+   "driver": "George Russell",
+   "team": "Mercedes",
+   "q1_q2_q3": [
+    "1:07.398",
+    "1:06.979",
+    "1:06.113"
+   ]
+  },
+  {
+   "pos": 2,
+   "code": "LEC",
+   "driver": "Charles Leclerc",
+   "team": "Ferrari",
+   "q1_q2_q3": [
+    "1:07.543",
+    "1:07.030",
+    "1:06.349"
+   ]
+  },
+  {
+   "pos": 3,
+   "code": "HAM",
+   "driver": "Lewis Hamilton",
+   "team": "Ferrari",
+   "q1_q2_q3": [
+    "1:07.290",
+    "1:06.994",
+    "1:06.408"
+   ]
+  },
+  {
+   "pos": 4,
+   "code": "ANT",
+   "driver": "Kimi Antonelli",
+   "team": "Mercedes",
+   "q1_q2_q3": [
+    "1:07.083",
+    "1:06.763",
+    "1:06.414"
+   ]
+  },
+  {
+   "pos": 5,
+   "code": "VER",
+   "driver": "Max Verstappen",
+   "team": "Red Bull Racing",
+   "q1_q2_q3": [
+    "1:07.407",
+    "1:07.183",
+    "1:06.475"
+   ]
+  },
+  {
+   "pos": 6,
+   "code": "NOR",
+   "driver": "Lando Norris",
+   "team": "McLaren",
+   "q1_q2_q3": [
+    "1:07.259",
+    "1:06.897",
+    "1:06.502"
+   ]
+  },
+  {
+   "pos": 7,
+   "code": "PIA",
+   "driver": "Oscar Piastri",
+   "team": "McLaren",
+   "q1_q2_q3": [
+    "1:07.487",
+    "1:06.890",
+    "1:06.511"
+   ]
+  },
+  {
+   "pos": 8,
+   "code": "HAD",
+   "driver": "Isack Hadjar",
+   "team": "Red Bull Racing",
+   "q1_q2_q3": [
+    "1:07.408",
+    "1:07.086",
+    "1:06.632"
+   ]
+  },
+  {
+   "pos": 9,
+   "code": "LAW",
+   "driver": "Liam Lawson",
+   "team": "Racing Bulls",
+   "q1_q2_q3": [
+    "1:07.385",
+    "1:07.136",
+    "1:06.955"
+   ]
+  },
+  {
+   "pos": 10,
+   "code": "LIN",
+   "driver": "Arvid Lindblad",
+   "team": "Racing Bulls",
+   "q1_q2_q3": [
+    "1:07.549",
+    "1:07.155",
+    "1:07.007"
+   ]
+  },
+  {
+   "pos": 11,
+   "code": "GAS",
+   "driver": "Pierre Gasly",
+   "team": "Alpine",
+   "q1_q2_q3": [
+    "1:08.038",
+    "1:07.223",
+    null
+   ]
+  },
+  {
+   "pos": 12,
+   "code": "BOR",
+   "driver": "Gabriel Bortoleto",
+   "team": "Audi",
+   "q1_q2_q3": [
+    "1:08.035",
+    "1:07.293",
+    null
+   ]
+  },
+  {
+   "pos": 13,
+   "code": "BEA",
+   "driver": "Oliver Bearman",
+   "team": "Haas F1 Team",
+   "q1_q2_q3": [
+    "1:08.061",
+    "1:07.523",
+    null
+   ]
+  },
+  {
+   "pos": 14,
+   "code": "HUL",
+   "driver": "Nico Hulkenberg",
+   "team": "Audi",
+   "q1_q2_q3": [
+    "1:08.066",
+    "1:07.611",
+    null
+   ]
+  },
+  {
+   "pos": 15,
+   "code": "OCO",
+   "driver": "Esteban Ocon",
+   "team": "Haas F1 Team",
+   "q1_q2_q3": [
+    "1:08.231",
+    "1:07.817",
+    null
+   ]
+  },
+  {
+   "pos": 16,
+   "code": "COL",
+   "driver": "Franco Colapinto",
+   "team": "Alpine",
+   "q1_q2_q3": [
+    "1:07.894",
+    "1:08.171",
+    null
+   ]
+  },
+  {
+   "pos": 17,
+   "code": "SAI",
+   "driver": "Carlos Sainz",
+   "team": "Williams",
+   "q1_q2_q3": [
+    "1:08.252",
+    null,
+    null
+   ]
+  },
+  {
+   "pos": 18,
+   "code": "ALB",
+   "driver": "Alexander Albon",
+   "team": "Williams",
+   "q1_q2_q3": [
+    "1:08.509",
+    null,
+    null
+   ]
+  },
+  {
+   "pos": 19,
+   "code": "PER",
+   "driver": "Sergio Perez",
+   "team": "Cadillac",
+   "q1_q2_q3": [
+    "1:08.945",
+    null,
+    null
+   ]
+  },
+  {
+   "pos": 20,
+   "code": "BOT",
+   "driver": "Valtteri Bottas",
+   "team": "Cadillac",
+   "q1_q2_q3": [
+    "1:09.030",
+    null,
+    null
+   ]
+  },
+  {
+   "pos": 21,
+   "code": "ALO",
+   "driver": "Fernando Alonso",
+   "team": "Aston Martin",
+   "q1_q2_q3": [
+    "1:09.942",
+    null,
+    null
+   ]
+  },
+  {
+   "pos": 22,
+   "code": "STR",
+   "driver": "Lance Stroll",
+   "team": "Aston Martin",
+   "q1_q2_q3": [
+    "1:10.363",
+    null,
+    null
+   ]
+  }
+ ]
+}
