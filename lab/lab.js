@@ -6,6 +6,7 @@
   const qs = new URLSearchParams(location.search);
   const API = (qs.get("api") || "http://127.0.0.1:8787").replace(/\/$/, "");
   const LAPS = 3;                                   // F-04.AC1: three laps, no input
+  const SHEET_N = 8;                                // G-HON-06: v1 / v2 Try models scores are out of the 8-item sheet unless exam.v1_total says otherwise
   const FLAT = 0.03;                                // DeltaCell: |Δ| ≤ 0.03 s is grey (the prompt's own retest band)
   const TRACE_MAX = 200, BACKFILL = 12;
   const RACE_TIMEOUT_MS = 6 * 60 * 1000;             // EVAL_GUARDRAILS §6: no purple:result within 6 minutes -> "No result received"
@@ -40,6 +41,11 @@
   const pname = k => (PARAM[k] ? PARAM[k][0] : k);
   const punit = k => (PARAM[k] ? PARAM[k][1] : "");
   const fmtSetupV = (k, v) => (k === "ers_deploy" ? (+v).toFixed(1) : String(v));
+  // Honesty audit A: the evaluator's 80.800 s is the game's time scale; the real 2026 pole maps onto it linearly (lab/evaluator.js MODEL_LABEL is pinned by tests, so the scale note lives here)
+  const GAME_SCALE = { silverstone: "real 2026 pole 88.111 s = 80.800 s (×1.090)", monza: "real 2026 pole 81.786 s = 76.650 s (×1.067)" };
+  const GAME_SCALE_SHORT = { silverstone: "real 2026 pole 88.111 s = 80.800 s", monza: "real 2026 pole 81.786 s = 76.650 s" };   // EVALUATE label row: one extra line at 1280×800 (QA B1)
+  const gameScale = circuit => "game time scale · " + (GAME_SCALE[circuit] ? GAME_SCALE[circuit] + " · " : "") + "Δ in game seconds";
+  const gameScaleShort = circuit => "game time" + (GAME_SCALE_SHORT[circuit] ? " · " + GAME_SCALE_SHORT[circuit] : " seconds");
   const agentLabel = () => "research agent · " + ((S.status && S.status.model) || "claude-haiku-4-5") + " via Mubit";
 
   // ---- state
@@ -168,7 +174,7 @@
       el("div", { class: "one", title: "top speed, candidate vs baseline" }, el("span", { class: "muted", text: "vmax " }), el("span", { class: "num " + settle, text: Math.round(ev.vmax_kmh) }), el("span", { class: "muted", text: " vs " + Math.round(base.vmax_kmh) + " km/h" })),
       el("div", { class: "one", title: "minimum speed through " + vminName + ", candidate vs baseline" }, el("span", { class: "muted", text: "vmin " }), el("span", { class: "num " + settle, text: Math.round(ev.vmin_kmh) }), el("span", { class: "muted", text: " vs " + Math.round(base.vmin_kmh) + " km/h" })),
     ];
-    card("evaluate", { state: "success", body, src: (ev.model || "reduced-order lap model") + " · vmin at " + vminName, foot: [btn("Race it", raceIt, { cls: "primary", disabled: !!S.racing }), btn("Promote", promote, { disabled: !!S.busy.learn || x.status === "promoted" })] });
+    card("evaluate", { state: "success", body, src: (ev.model || "reduced-order lap model") + " · vmin at " + vminName + " · " + gameScaleShort(circuit), foot: [btn("Race it", raceIt, { cls: "primary", disabled: !!S.racing }), btn("Promote", promote, { disabled: !!S.busy.learn || x.status === "promoted" })] });
   }
 
   // ---- RACE: baseline vs candidate in the game iframe; measured deltas and agreement_pct from POST /api/race/result
@@ -191,7 +197,7 @@
       el("p", { text: "Baseline vs candidate · same neutral driver · " + LAPS + " laps · seed " + S.racing.seed + ". About 4½ minutes; no result after " + Math.round(RACE_TIMEOUT_MS / 60000) + " min shows an error." }), windNote(S.current)],
       src: "the game posts purple:result when the chequered flag falls", foot: [btn("Cancel", cancelRace, { cls: "small" })] });
     const g = S.grid && x && S.grid.experiment_id === x.id ? S.grid : null;
-    const gridLabel = g ? (g.label || "cinematic — mixes car and driver") + " · " + (g.laps || GRID_LAPS) + " laps · seed " + g.seed + " · not in the ledger" : null;
+    const gridLabel = g ? (g.label || "cinematic — mixes car and driver") + " · " + (g.laps || GRID_LAPS) + " laps · seed " + g.seed + " · not in the ledger · game seconds" : null;
     const gridRow = g ? el("div", { class: "row" }, el("span", { class: "badge amber", text: "CINEMATIC · mixes car and driver" }),
       el("span", {}, el("b", { text: g.position != null ? "P" + g.position : "DNF" }), el("span", { class: "muted", text: g.field ? " of " + g.field : "" })), el("span", { class: "num", text: g.best_lap != null ? fmtT(g.best_lap) : "—" }), el("span", { class: "muted sans", text: g.driver ? g.driver.name + " · " + (g.driver.team || "") : "" })) : null;
     if (!m) return rc({ state: g ? "success" : "empty", stateLabel: g ? "grid raced" : "empty",
@@ -204,8 +210,8 @@
         el("span", { class: "agr nw " + (isNum(m.agreement_pct) ? (m.agreement_pct <= 25 ? "green" : "amber") : "muted"), text: "agreement " + fmtPct(m.agreement_pct) })),
       el("div", { class: "sectors" }, (m.measured_sector_deltas || []).map((d, i) => el("div", { class: "cell" }, el("span", { class: "label", text: "S" + (i + 1) + " Δ" }), delta(d)))),
       // QA N4: one header row with a blank key, then one line per car (best lap · top speed / minimum through the fast complex)
-      el("div", { class: "cars", title: "best lap · top speed / minimum through the fast complex, km/h" },
-        el("span"), el("span", { class: "h", text: "lap · vmax / vmin km/h" }),
+      el("div", { class: "cars", title: "best lap (game seconds) · top speed / minimum through the fast complex, km/h" },
+        el("span"), el("span", { class: "h", text: "lap (game s) · vmax / vmin km/h" }),
         ["baseline", "candidate"].map(role => { const c = m[role] || {}; return [el("span", { class: "k", text: role }), el("span", { class: "one" }, el("span", { class: "num", text: fmtT(c.lap) }), el("span", { class: "muted", text: " · " + spd(c.vmax_kmh) + " / " + spd(c.vmin_becketts_kmh) }))]; })),
       // windy: the "still air" flag in the card head carries the note here (no room for the sentence under the numbers)
       g ? el("div", { class: "grid-res" }, gridRow, el("div", { class: "src", text: gridLabel })) : null,
@@ -243,7 +249,7 @@
       el("label", { class: "switch", title: (r.active ? "active" : "inactive") + " · created " + hhmm(r.created_at) }, el("input", { type: "checkbox", checked: r.active, "aria-label": "rule " + r.id + " active", onchange: ev => toggleRule(r.id, ev.target.checked) }), el("span", { class: "tk" })),
       el("span", { class: "chip" + (r.active ? " rule" : " off"), text: r.id }), el("span", { class: "txt", title: r.text, text: r.text })))) : null;
     if (!x) return card("learn", { state: S.rules.length ? "success" : "empty", stateLabel: S.rules.length ? S.rules.length + " rule" + (S.rules.length > 1 ? "s" : "") : "empty",
-      body: [el("p", { text: "Overrule a decision to teach the agent a pit-wall rule; every active rule enters each later scenario." }), rulesList], foot: [btn("Overrule", null, { disabled: true, title: S.illegalCandidate ? "the candidate is illegal: nothing to overrule" : "run a plan first" })] });
+      body: [el("p", { text: "Overrule a decision to add a pit-wall rule; every active rule enters each later task input (rule-conditioned learning)." }), rulesList], foot: [btn("Overrule", null, { disabled: true, title: S.illegalCandidate ? "the candidate is illegal: nothing to overrule" : "run a plan first" })] });
     const sel = el("select", { id: "ovVerdict", name: "verdict", required: true }, ["promote", "reject", "retest"].map(v => el("option", { value: v, selected: x.plan && x.plan.verdict !== v && v === (x.plan.verdict === "reject" ? "promote" : "reject") }, v)));
     const inp = el("input", { id: "ovReason", name: "reason", type: "text", required: true, maxlength: "160", placeholder: "e.g. Weigh straight-line drag against corner gain; judge on full-lap delta." });
     // the buttons live in the card's fixed foot (form="ovForm"), so a long rules list can never push them out of view
@@ -308,7 +314,7 @@
   function renderWidget(editing) {
     const w = $("#widget"), s = S.status || {}, ex = s.exam || {}, total = ex.total || 20, b = s.budget;
     // G-HON-06: v1 / v2 are scored on the Try models sheet (n/8, exam.v1_total from `scenarios.js --score`), not out of the 20-item exam
-    const outOf = who => (isNum(ex[who + "_total"]) ? ex[who + "_total"] : total);
+    const outOf = who => (isNum(ex[who + "_total"]) ? ex[who + "_total"] : who === "v1" || who === "v2" ? SHEET_N : total);
     const examLine = (who, v, p, when) => (isNum(v) || isNum(p) ? el("div", { class: "exam" }, el("b", { text: who }), " " + (isNum(v) ? v + "/" + outOf(who) + " verdicts" : "—") + (isNum(p) ? " · " + p + "/" + outOf(who) + " next-step" : ""), when ? el("span", { class: "src", text: " · " + when }) : null) : null);
     const head = el("div", { class: "head" }, el("span", { class: "label", text: "Mubit · task" }), el("button", { class: "btn icon", type: "button", "aria-label": editing ? "cancel editing" : "edit status (values from the console)", title: "edit values copied from the console", onclick: () => renderWidget(!editing) }, editing ? "✕" : "✎"));
     if (editing) {
@@ -316,8 +322,9 @@
       const form = el("form", { onsubmit: ev => { ev.preventDefault(); saveStatus(new FormData(ev.target)); } },
         f("task_name", "task name", s.task_name), f("kept_examples", "kept examples", s.kept_examples, "number"), f("adapter_version", "adapter version", s.adapter_version), f("test_result", "test result", s.test_result),
         f("provider", "provider verdicts", ex.provider, "number"), f("provider_param", "provider next-step", ex.provider_param, "number"),
-        f("v1", "v1 verdicts", ex.v1, "number"), f("v1_param", "v1 next-step", ex.v1_param, "number"), f("v2", "v2 verdicts", ex.v2, "number"), f("v2_param", "v2 next-step", ex.v2_param, "number"),
-        el("div", { class: "acts" }, el("span", { class: "src", text: "→ POST /api/status · exam out of " + total }), el("button", { class: "btn primary small", type: "submit" }, "Save")));
+        f("v1", "v1 verdicts", ex.v1, "number"), f("v1_param", "v1 next-step", ex.v1_param, "number"), f("v1_total", "v1 out of", isNum(ex.v1_total) ? ex.v1_total : SHEET_N, "number"),
+        f("v2", "v2 verdicts", ex.v2, "number"), f("v2_param", "v2 next-step", ex.v2_param, "number"), f("v2_total", "v2 out of", isNum(ex.v2_total) ? ex.v2_total : SHEET_N, "number"),
+        el("div", { class: "acts" }, el("span", { class: "src", text: "→ POST /api/status · provider out of " + total + " · v1/v2 Try models sheet" }), el("button", { class: "btn primary small", type: "submit" }, "Save")));
       w.replaceChildren(head, form); return;
     }
     w.replaceChildren(...[head,
@@ -339,7 +346,9 @@
     for (const k of ["task_name", "adapter_version", "test_result"]) { const v = fd.get(k); if (v != null && String(v).trim() !== "" && v !== (S.status || {})[k]) patch[k] = String(v).trim(); }
     const ke = num(fd.get("kept_examples")); if (isNum(ke)) patch.kept_examples = ke;
     let examChanged = false;
-    for (const k of ["provider", "provider_param", "v1", "v1_param", "v2", "v2_param"]) { const v = num(fd.get(k)); if (isNum(v) && cur[k] !== v) { exam[k] = v; examChanged = true; } }
+    for (const k of ["provider", "provider_param", "v1", "v1_param", "v1_total", "v2", "v2_param", "v2_total"]) { const v = num(fd.get(k)); if (isNum(v) && cur[k] !== v) { exam[k] = v; examChanged = true; } }
+    // D: a v1/v2 score is out of the Try models sheet (SHEET_N), never the 20-item exam
+    for (const m of ["v1", "v2"]) if ((isNum(exam[m]) || isNum(exam[m + "_param"])) && !isNum(exam[m + "_total"]) && !isNum(cur[m + "_total"])) exam[m + "_total"] = SHEET_N;
     if (examChanged) patch.exam = isNum(cur.total) ? exam : Object.assign({ total: 20 }, exam);   // POST /api/status merges one level deep (D-S15)
     try { S.status = await api("POST", "/api/status", patch); clearBanner(); renderWidget(false); }
     catch (e) { banner(e); renderWidget(false); }
@@ -349,7 +358,10 @@
   function renderLedger() {
     const wrap = $("#ledgerWrap"), L = S.ledger;
     $("#ledgerMeta").textContent = L.length ? S.ledgerTotal + " experiment" + (S.ledgerTotal === 1 ? "" : "s") + " · newest first" : "";
-    $("#ledgerSrc").textContent = L.length ? "pred Δ: evaluator · reduced-order lap model · calibrated to 2026 pole laps · aero map v1 — meas Δ, agree: measured in race, same seed" : "";
+    // the scale note follows the circuits of the rows on screen (one note per circuit)
+    const circuits = [...new Set(L.map(x => x.circuit || (x.conditions && x.conditions.circuit) || "silverstone"))];
+    const scaleNote = circuits.length === 1 ? gameScale(circuits[0]) : "game time scale · " + circuits.map(c => c + ": " + (GAME_SCALE[c] || "game seconds")).join(" · ") + " · Δ in game seconds";
+    $("#ledgerSrc").textContent = L.length ? "pred Δ: evaluator · reduced-order lap model · calibrated to 2026 pole laps · aero map v1 — meas Δ, agree: measured in race, same seed · " + scaleNote : "";
     if (!L.length) { wrap.replaceChildren(el("div", { class: "empty", text: "No experiments yet — run one" })); return; }
     const total = S.ledgerTotal || L.length;
     const rows = L.map((x, i) => {

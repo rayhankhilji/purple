@@ -2,7 +2,7 @@ PURPLE is built on Equation I (pre-existing, by this team). Everything under `la
 
 # PURPLE
 
-PURPLE is an autonomous F1 engineering research lab that chases purple sectors (the fastest sector of a session). A research agent, an LLM routed through Mubit, proposes a setup change to a parametric car. A reduced-order lap model scores it in milliseconds. The game races baseline against candidate. A human engineer overrules bad decisions, and each correction becomes a pit-wall rule that enters every later task input. Mubit trains the next adapter version from those recorded calls. The agent's decision has a computed ground truth, so "did the correction help?" is a count, not an opinion.
+PURPLE is an agent-driven F1 engineering research lab that chases purple sectors (the fastest sector of a session). A research agent, an LLM routed through Mubit, proposes a setup change to a parametric car. A reduced-order lap model scores it in milliseconds, on the game's time scale (80.800 s game time = real 2026 Silverstone pole 88.111 s). The game races baseline against candidate. A human engineer overrules bad decisions, and those corrections enter the task input as pit-wall rules (rule-conditioned learning); the kept examples train the next adapter version through Mubit. The agent's decision has a model-defined answer (the reduced-order lap model), so "did the correction help?" is a count, not an opinion.
 
 Built for Night Shift, London, 2026-10-24. Judges: the Mubit team.
 
@@ -13,12 +13,12 @@ Built for Night Shift, London, 2026-10-24. Judges: the Mubit team.
 - **Trained vs untrained calls.** 99 trained calls: 57 on Friday (43 kept examples, console shows Training v1), 1 demo experiment, 41 on Saturday for v2. 61 untrained calls (smoke test, exam runs) carry `x-middleware-record: metadata` and train nothing. Source: `calls.jsonl` in the frozen snapshot `docs/ledger-snapshot/2026-10-24_02-37-26Z-0530-windcap-exam/` (the live `data/` ledger is gitignored).
 - **Corrections are rule-conditioned learning.** The engineer's overrule becomes a pit-wall rule. The rule enters the task input (the newest 3 active rules are sent). The provider's answers change. Those kept examples train the next adapter version. There is no gradient from the engineer's click. Rule R-01: *"Weigh straight-line drag against corner gain; judge on full-lap delta."*
 - **v1 and v2 adapters.** v1 trained on the Friday collection. Our seeding bug made 50 of 53 candidates front-wing moves; it is fixed. v2's 40 scenarios carry R-01 in every input and span all five parameters.
-- **Held-out exam.** 20 scenarios, truth from the evaluator. The 8 hardest go to Mubit **Try models** by hand (`docs/try-models/README.md`). Scores are counts, n/8, never percentages. The provider (untrained) scores verdicts 8/8 and next experiment 2/8 on those 8.
+- **Exam.** 20 scenarios, truth from the evaluator. The 8 hardest go to Mubit **Try models** by hand (`docs/try-models/README.md`). Scores are counts, n/8, never percentages. The provider (untrained) scores verdicts 8/8 and next experiment 2/8 on those 8 (the prompt states the verdict thresholds). exam-rw8 is the demo experiment; its call is in v2's recorded data, so it is not held out for v2. Sheet score also shown without it: n/7 (provider 7/7 verdicts, 1/7 next experiment).
 
 **Still pending (needs the Mubit console, not invented here):**
 
 > **[PENDING]** kept examples after v2: `___` · adapter v1 test result: `___` · adapter v2 test result: `___`
-> **[PENDING]** Try models on the 8 held-out scenarios: v1 next experiment `_/8`, v1 verdict `_/8`, v2 next experiment `_/8`, v2 verdict `_/8`
+> **[PENDING]** Try models on the 8 sheet scenarios: v1 next experiment `_/8`, v1 verdict `_/8`, v2 next experiment `_/8`, v2 verdict `_/8`; without exam-rw8: v1 `_/7` / `_/7`, v2 `_/7` / `_/7`
 > Source when filled: Mubit console, Tasks / Adapters / Try models, scored with `npm run exam:score`.
 
 If v2 does not beat v1, the numbers go in as they come.
@@ -26,22 +26,23 @@ If v2 does not beat v1, the numbers go in as they come.
 ## The loop
 
 1. **DESIGN**: the research agent proposes a setup change; the trace shows the Mubit request id.
-2. **EVALUATE**: the reduced-order lap model gives lap, sectors, top speed, Becketts minimum speed and legality.
+2. **EVALUATE**: the reduced-order lap model (calibrated to 2026 pole laps · aero map v1) gives lap, sectors, top speed, Becketts minimum speed and legality, in game seconds.
 3. **RACE**: baseline vs candidate, identical neutral bots, same seed, broadcast camera.
-4. **LEARN**: the engineer overrules, the rule enters every later task input, Mubit trains the next version.
+4. **LEARN**: the engineer overrules, the rule enters every later task input, Mubit trains the next version from the kept examples.
 
 ## Numbers
 
 | Number | Value | Source label |
 |---|---|---|
 | Baseline lap, Silverstone | 80.800 s | evaluator: reduced-order lap model · calibrated to 2026 pole laps · aero map v1 · game time scale: the real 2026 Silverstone pole 88.111 s maps to 80.800 s |
-| Demo experiment, rear wing +8°: predicted lap delta | +0.436 s | evaluator, same label |
-| Demo experiment: measured lap delta | +0.518 s (80.742 s → 81.260 s) | measured in race, seed 42 (3 laps, two identical neutral bots) |
-| Prediction vs race | 19 % apart (target ≤ 25 %) | measured in race, seed 42 vs evaluator |
+| Demo experiment, rear wing +8°: predicted lap delta | +0.436 s (game seconds; ×1.09 ≈ +0.475 s real scale) | evaluator, same label |
+| Demo experiment: measured lap delta | +0.518 s (80.742 s → 81.260 s, game seconds) | measured in race, seed 42 (3 laps, two identical neutral bots) |
+| Prediction vs race | 19 % apart (target ≤ 25 %; one experiment, n = 1) | measured in race, seed 42 vs evaluator |
 | Same experiment, other seeds | +0.515 s (seed 7), +0.696 s (seed 1234) | measured in race, headless; 60 % from the prediction on seed 1234 |
 | Exam, full 20, verdicts | 20/20 | exam: provider untrained calls, truth from the evaluator |
 | Exam, full 20, next experiment | 10/20 | exam: provider untrained calls |
 | Exam, hardest 8, verdicts / next experiment | 8/8 / 2/8 | exam: provider untrained calls |
+| Same sheet without exam-rw8 (the demo experiment, in v2's recorded data) | 7/7 / 1/7 | exam: provider untrained calls |
 | v2 collection: agent verdict agrees with evaluator | 38 of 39 valid plans | `ledger.jsonl` in `docs/ledger-snapshot/2026-10-24T0215-after-v2/`, evaluator truth |
 | Tests | 118 pass | `npm test`, no network |
 
@@ -109,7 +110,7 @@ npm run test:concept                 # the concept module's 21 tests
 - Build docs, read first: [`docs/INSTRUCTIONS.md`](docs/INSTRUCTIONS.md), then [`docs/PRD.md`](docs/PRD.md), [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/ROADMAP.md`](docs/ROADMAP.md), [`docs/TASK_LOG.md`](docs/TASK_LOG.md) (decisions and session log)
 - Honesty rules: [`docs/EVAL_GUARDRAILS.md`](docs/EVAL_GUARDRAILS.md) · tests: [`docs/TESTING_GUIDE.md`](docs/TESTING_GUIDE.md)
 - Demo: [`docs/demo-script.md`](docs/demo-script.md) · deck source: [`docs/deck/slides.md`](docs/deck/slides.md)
-- Try models scoring: [`docs/try-models/README.md`](docs/try-models/README.md) · held-out sheet: [`docs/try-models/sheet.md`](docs/try-models/sheet.md)
+- Try models scoring: [`docs/try-models/README.md`](docs/try-models/README.md) · exam sheet: [`docs/try-models/sheet.md`](docs/try-models/sheet.md)
 - Concept lab: [`docs/concept/CONCEPT.md`](docs/concept/CONCEPT.md)
 - Agent handover and run commands: [`docs/agents/HANDOVER.md`](docs/agents/HANDOVER.md)
 - The game: [`docs/equation-i/README.md`](docs/equation-i/README.md) · credits: [`CREDITS.md`](CREDITS.md)
