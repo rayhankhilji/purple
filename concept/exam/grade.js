@@ -46,7 +46,7 @@ async function grade(q, text, o) {
   try {
     res = await engine.runEngineer({
       llm: async () => raw, mock: !!o.mock, seed: o.seed == null ? EXAM_SEED : o.seed, team: q.team, start: { params: q.head.params, team: q.team },
-      runId: "exam-" + q.id, maxDecisions: 1, maxCalls: 1, segments: false, pool: P.pool, screenPool: P.screenPool,
+      runId: "exam-" + q.id, maxDecisions: 1, maxCalls: 1, segments: false, corrections: false, pool: P.pool, screenPool: P.screenPool,   // the answer is given: the scenario text is never read
     });
   } finally { if (own) await P.close(); }
   const dec = res.decisions[0], tree = res.tree instanceof Tree ? res.tree : Tree.fromJSON(res.tree);

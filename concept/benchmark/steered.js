@@ -34,4 +34,10 @@ function loadRecorded(seed, dir) {
   };
 }
 
-module.exports = { loadRecorded, RUNS_DIR };
+// decision -> the exact scenario text (the user message) the recorded run sent at that decision
+function loadRequests(seed, dir) {
+  dir = dir || path.join(RUNS_DIR, "trained-engineer-seed" + seed);
+  return new Map(readJsonl(path.join(dir, "events.jsonl")).filter(e => e.type === "request").map(e => [e.decision, e.scenario_text]));
+}
+
+module.exports = { loadRecorded, loadRequests, RUNS_DIR };

@@ -3,6 +3,8 @@
 // from the recorded steered runs and the raw baseline runs written by concept/benchmark/run.js.
 //   node concept/benchmark/report.js --raw <out dir of run.js> [--extra <dir> 1,2,3,4,5,6] [--write]
 //   (prints the markdown tables; --write saves curves.json; --extra adds baseline-only seeds on this checkout's physics as context)
+//   node concept/benchmark/report.js --corrections <dir> [--write]   the physics-corrections section (TESTS_TO_POLE.md §8): merged into
+//   curves.json as `corrections` (the rest of curves.json is kept as it is)
 "use strict";
 const fs = require("fs"), path = require("path");
 const C = require("./curves.js"), S = require("./steered.js");
@@ -134,12 +136,110 @@ function markdown(o) {
   return L.join("\n");
 }
 
-if (require.main === module) {
+// ---- physics corrections (docs/concept/TESTS_TO_POLE.md §8): engine v2 steered WITH the corrections block vs the same engine with no
+// AI, both on this checkout's physics for all three seeds (seed 7 too: its recorded steered run used the older physics, so its
+// recorded numbers are a reference only). Inputs in <dir>:
+//   engine_noai_current-seed<N>.json   run.js --methods engine_noai --label current (uncut curves; reused from curves.json if absent)
+//   steered_corrections-seed<N>.json   concept/engineer/cli.js (written into curves.json only for a LIVE run whose every Mubit-directed
+//                                      decision has a real mreq_ id; a mock run is printed, labelled, never written)
+//   mock_fixation_{corrections,plain}-seed<N>.json   run.js (the fixation stand-in, not a model): printed only, never written
+const CORR_SEEDS = [7, 11, 12];
+const CORR_METHODS = {
+  steered_corrections: "Engine v2 steered by Claude (Haiku 4.5) through Mubit WITH the physics-corrections block in the scenario (live run, concept/engineer/cli.js)",
+  engine_noai: "Same engine v2, no AI (seeded random direction), on this checkout's physics",
+};
+const unpack = rows => rows.map((r, i) => ({ laps: r[0], legal_laps: r[1], screened: r[2], best_s: r[3], step: i }));
+const isMreq = id => typeof id === "string" && /^mreq_[0-9a-f]{32}$/.test(id);
+function liveOk(r) { return !!r && r.llm === "live" && Array.isArray(r.request_ids) && !!r.by && r.by.mubit > 0 && r.request_ids.filter(isMreq).length >= r.by.mubit; }
+function buildCorrections(dir, prev) {
+  const old = (prev && prev.corrections) || null;
+  const read = f => { const p = path.join(dir, f); return fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, "utf8")) : null; };
+  const out = {
+    label: LABEL, pole: prev.pole, budget: prev.budget, budgets: BUDGETS, columns: COLS, methods: CORR_METHODS,
+    physics: "this checkout's physics (redesigns, 36-parameter catalogue, baseline 88.745 s) for seeds 7, 11 and 12; seed 7's recorded steered run (no corrections) used the older physics, so its recorded numbers are a reference, not a pair",
+    curves_note: "uncut: a run's last decision may pass the 3,500-lap cap by its own confirm batch; summaries are cut at the cap",
+    seeds: {}, aggregate: {}, paired: {}, printed_only: {},
+  };
+  for (const seed of CORR_SEEDS) {
+    const s = { baseline_s: null, curves: {}, summary: {}, runs: {} };
+    const noai = read("engine_noai_current-seed" + seed + ".json");
+    const noaiPts = noai ? noai.points : old && old.seeds[seed] && old.seeds[seed].curves.engine_noai ? unpack(old.seeds[seed].curves.engine_noai) : null;
+    if (!noaiPts) throw new Error("tests-to-pole corrections: no current-physics no-AI run for seed " + seed + " (run.js --methods engine_noai --label current)");
+    s.baseline_s = noai ? noai.baseline_s : old.seeds[seed].baseline_s;
+    if ((seed === 11 || seed === 12) && prev.seeds[seed]) {   // same physics as the main table: the no-AI curve must be the one already published
+      const pub = prev.seeds[seed].curves.engine_noai, mine = pack(C.truncate(noaiPts, prev.budget));
+      if (JSON.stringify(pub) !== JSON.stringify(mine)) throw new Error("tests-to-pole corrections: seed " + seed + " no-AI run differs from curves.json (different physics?)");
+    }
+    const runs = { engine_noai: { points: noaiPts, info: noai ? { decisions: noai.decisions, by: noai.by, kept: noai.kept, explore: noai.explore || null } : (old && old.seeds[seed].runs.engine_noai) || null } };
+    const sc = read("steered_corrections-seed" + seed + ".json");
+    if (sc) {
+      if (sc.baseline_s !== s.baseline_s) throw new Error("tests-to-pole corrections: seed " + seed + " steered baseline " + sc.baseline_s + " != " + s.baseline_s);
+      if (liveOk(sc)) runs.steered_corrections = { points: sc.points, info: { run_id: sc.run_id, trained: sc.trained, calls: sc.calls, decisions: sc.decisions, by: sc.by, kept: sc.kept, stopped: sc.stopped, models: sc.models, explore: sc.explore, runtime_s: sc.runtime_s } };
+      else out.printed_only["steered_corrections-seed" + seed] = "not a live run with real Mubit request ids (" + (sc.llm || "?") + (sc.mock_proposer ? ", mock " + sc.mock_proposer : "") + "): not written";
+    } else if (old && old.seeds[seed] && old.seeds[seed].curves.steered_corrections) runs.steered_corrections = { points: unpack(old.seeds[seed].curves.steered_corrections), info: old.seeds[seed].runs.steered_corrections };
+    const printed = sc && !runs.steered_corrections ? { points: sc.points, info: { explore: sc.explore } } : null;
+    const stRun = runs.steered_corrections || printed;
+    const stTotal = stRun ? stRun.points[stRun.points.length - 1].laps : null;
+    const summ = r => { const sum = C.summarize(r.points, { pole_s: prev.pole.s, budgets: BUDGETS, budget: prev.budget }); if (stTotal != null) sum.best_at_steered_total = C.r3(C.bestAt(r.points, Math.min(stTotal, prev.budget))); return sum; };
+    for (const [m, r] of Object.entries(runs)) { s.curves[m] = pack(r.points); s.summary[m] = summ(r); s.runs[m] = r.info; }
+    if (printed) s.printed = { summary: summ(printed), explore: sc.explore, label: "MOCK or unverified: not written" };
+    const rec = prev.seeds[seed] && prev.seeds[seed].summary.steered;
+    if (rec) s.recorded_steered = { physics: seed === 7 ? "older physics (commit 5bf4b1c, baseline 88.763 s): reference only" : "same physics", to_pole_laps: rec.to_pole ? rec.to_pole.laps : null, best_s: rec.best_s, total_laps: rec.total_laps, best_at: rec.best_at };
+    out.seeds[seed] = s;
+  }
+  for (const m of Object.keys(CORR_METHODS)) {
+    const rows = CORR_SEEDS.map(sd => out.seeds[sd].summary[m]).filter(Boolean); if (!rows.length) continue;
+    const ag = { to_pole_laps: C.stats(rows.map(r => r.to_pole ? r.to_pole.laps : null)), best_s: C.stats(rows.map(r => r.best_s)), best_at: {} };
+    for (const B of BUDGETS) ag.best_at[B] = C.stats(rows.map(r => r.best_at[B]));
+    out.aggregate[m] = ag;
+  }
+  const d = {};
+  for (const B of BUDGETS.concat(["steered_total", "to_pole_laps"])) d[B] = C.stats(CORR_SEEDS.map(sd => {
+    const x = out.seeds[sd].summary; if (!x.steered_corrections) return null;
+    if (B === "to_pole_laps") return x.steered_corrections.to_pole && x.engine_noai.to_pole ? x.steered_corrections.to_pole.laps - x.engine_noai.to_pole.laps : null;
+    const a = B === "steered_total" ? x.steered_corrections.best_at_steered_total : x.steered_corrections.best_at[B], b = B === "steered_total" ? x.engine_noai.best_at_steered_total : x.engine_noai.best_at[B];
+    return a == null || b == null ? null : a - b;
+  }));
+  out.paired.engine_noai = d;
+  // strip the print-only parts before anything is written
+  for (const sd of CORR_SEEDS) Object.defineProperty(out.seeds[sd], "printed", { enumerable: false, value: out.seeds[sd].printed });
+  return out;
+}
+function markdownCorrections(o, extra) {
+  const L = [], names = { steered_corrections: "Steered WITH corrections (Claude via Mubit, live)", engine_noai: "Same engine, no AI (current physics)", mock_fixation_corrections: "MOCK fixation stand-in WITH corrections (not a model)", mock_fixation_plain: "MOCK fixation stand-in, no corrections (not a model)" };
+  for (const seed of CORR_SEEDS) {
+    const s = o.seeds[seed];
+    L.push("### Seed " + seed + " · this checkout's physics, baseline " + s.baseline_s + " s", "");
+    L.push("| method | physics laps to beat " + o.pole.s + " s | best lap (s) | @500 | @1,000 | @2,000 | @3,500 | decisions | distinct params named | most-named param (decisions) | illegal as proposed |", "|---|---|---|---|---|---|---|---|---|---|---|");
+    const row = (name, sum, ex) => "| " + name + " | " + (sum.to_pole ? fi(sum.to_pole.laps) : "not reached") + " | " + f3(sum.best_s) + " | " + BUDGETS.map(B => f3(sum.best_at[B])).join(" | ") + " | " + (ex ? ex.decisions + " | " + ex.distinct_params + " | " + (ex.top_param ? "`" + ex.top_param + "` (" + ex.top_param_decisions + ")" : "—") + " | " + ex.illegal_as_proposed : "— | — | — | —") + " |";
+    for (const m of Object.keys(CORR_METHODS)) if (s.summary[m]) L.push(row(names[m], s.summary[m], s.runs[m] && s.runs[m].explore));
+    if (s.printed) L.push(row("steered_corrections file, NOT written (" + s.printed.label + ")", s.printed.summary, s.printed.explore));
+    for (const m of ["mock_fixation_corrections", "mock_fixation_plain"]) { const r = extra && extra[m] && extra[m][seed]; if (r) L.push(row(names[m], C.summarize(r.points, { pole_s: o.pole.s, budgets: BUDGETS, budget: o.budget }), r.explore)); }
+    if (s.recorded_steered) L.push("", "Recorded steered run without corrections (" + s.recorded_steered.physics + "): " + (s.recorded_steered.to_pole_laps != null ? fi(s.recorded_steered.to_pole_laps) + " laps to beat pole" : "pole not beaten") + ", best " + f3(s.recorded_steered.best_s) + " s at " + fi(s.recorded_steered.total_laps) + " laps.");
+    L.push("");
+  }
+  if (o.aggregate.steered_corrections) {
+    L.push("### Paired over seeds: steered with corrections − no AI (negative = steered better)", "", "| laps to beat pole | @500 | @1,000 | @2,000 | @3,500 | @ steered's own total |", "|---|---|---|---|---|---|");
+    const d = o.paired.engine_noai; L.push("| " + ms(d.to_pole_laps, fi) + " | " + BUDGETS.map(B => ms(d[B], f3)).join(" | ") + " | " + ms(d.steered_total, f3) + " |");
+  } else L.push("No live steered-with-corrections run in this directory yet (the integrator runs concept/engineer/cli.js --live; TESTS_TO_POLE.md §8).");
+  for (const [k, v] of Object.entries(o.printed_only)) L.push("", "- " + k + ": " + v);
+  return L.join("\n");
+}
+
+if (require.main === module && process.argv.includes("--corrections")) {
+  const argv = process.argv.slice(2), dir = argv[argv.indexOf("--corrections") + 1];
+  const file = path.join(__dirname, "curves.json"), prev = JSON.parse(fs.readFileSync(file, "utf8"));
+  const o = buildCorrections(dir, prev);
+  const extra = {};
+  for (const m of ["mock_fixation_corrections", "mock_fixation_plain"]) for (const seed of CORR_SEEDS) { const f = path.join(dir, m + "-seed" + seed + ".json"); if (fs.existsSync(f)) (extra[m] = extra[m] || {})[seed] = JSON.parse(fs.readFileSync(f, "utf8")); }
+  if (argv.includes("--write")) { prev.corrections = o; fs.writeFileSync(file, JSON.stringify(prev) + "\n"); }
+  console.log(markdownCorrections(o, extra));
+} else if (require.main === module) {
   const argv = process.argv.slice(2), raw = argv[argv.indexOf("--raw") + 1];
   if (!argv.includes("--raw") || !raw) { console.error("usage: node concept/benchmark/report.js --raw <dir> [--extra <dir> <seeds>] [--write]"); process.exit(2); }
   const ei = argv.indexOf("--extra"), extra = ei >= 0 ? { dir: argv[ei + 1], seeds: argv[ei + 2].split(",").map(Number) } : null;
   const o = build(raw, null, extra);
-  if (argv.includes("--write")) fs.writeFileSync(path.join(__dirname, "curves.json"), JSON.stringify(o) + "\n");
+  if (argv.includes("--write")) { const f = path.join(__dirname, "curves.json"); try { const prev = JSON.parse(fs.readFileSync(f, "utf8")); if (prev.corrections) o.corrections = prev.corrections; } catch (e) { /* first write */ } fs.writeFileSync(f, JSON.stringify(o) + "\n"); }
   console.log(markdown(o));
 }
-module.exports = { build, markdown, LABEL, BUDGETS, METHODS };
+module.exports = { build, markdown, buildCorrections, markdownCorrections, LABEL, BUDGETS, METHODS, CORR_METHODS };

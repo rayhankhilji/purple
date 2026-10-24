@@ -11,8 +11,24 @@
 // fit(): ≤ LIMITS.chars (the designer scenario's limit, 1,800 chars ≈ 450 tokens). Trimmed least useful first: oldest tested rows
 // down to one, near lines down to three, the older abandoned branch, the last row's segments, sub.best strings, the remaining
 // tested row, near. The head car and the tree's peak/head are never trimmed.
+// PHYSICS CORRECTIONS (opt-in: fit({ ..., corrections: { decisions } }); docs/concept/TESTS_TO_POLE.md §8). Every physics verdict of
+// the run so far (ALL branches, not only the last 3 rows of this one) folded into one more block, appended AFTER the four blocks
+// above, which are fitted first exactly as without it (so the text without "corrections" is byte for byte the text with it off):
+//   corrections: { decisions (so far),
+//     tried_cols: ["tried", "kept", "best_d_lap_s", "last_decision"],
+//     tried_by_part: { <part>: [decisions whose proposal named the part, of those kept with the part changed in the kept car,
+//                     the best kept lap delta vs its head (s, negative = faster; null if none), the last decision that named it] },
+//     never_tried: [catalogue parts no proposal named yet],
+//     rejected_repeatedly: ["part.param N tried, K kept, last M not kept"]  (≤ 3; M = proposals of it since its last kept one, ≥ 3),
+//     illegal_as_proposed: ["#k part.param from->to <article> (xN); legal lo-hi step s"]  (≤ 3, newest first: the proposed parameter
+//                     that is illegal on its own at that head (or the combination), and its legal range for the CURRENT head),
+//     legal_range: { <part>: { <param>: "lo-hi" } }  (every parameter whose legal range for the current head, one parameter at a time
+//                     with the rest held, is narrower than the model domain because of an FIA article or a model rule) }
+// ≤ CORRECTIONS.chars (1,400). Trimmed: legal_range entries already in `near`, illegal lines to 2, the widest legal ranges, rejected
+// lines to 2, illegal / rejected to 1, the least-tried parts. Facts only, like the rest of the scenario (no instruction words).
 "use strict";
 const base = require("../designer/scenario.js");
+const parts = require("../parts.js");
 
 const LIMITS = { chars: base.LIMITS.chars, tested: 3, near: base.LIMITS.near, best_params: 3 };
 const r3 = v => (typeof v === "number" && isFinite(v) ? Math.round(v * 1000) / 1000 : null);
@@ -44,6 +60,13 @@ const serialize = sc => JSON.stringify(sc);
 function fit(o) {
   const L = Object.assign({}, LIMITS, o.limits || {});
   const sc = build(o); let text = serialize(sc), dropped = 0;
+  const done = () => {
+    if (!o.corrections) return { scenario: sc, text, chars: text.length, tokens: base.approxTokens(text), dropped };
+    const c = fitCorrections(corrections({ decisions: o.corrections.decisions, head: o.head }), Object.assign({}, CORRECTIONS, o.corrections.limits || {}), sc.near);
+    const baseChars = text.length;
+    sc.corrections = c.block; text = serialize(sc);
+    return { scenario: sc, text, chars: text.length, tokens: base.approxTokens(text), dropped, base_chars: baseChars, corrections_chars: c.chars, corrections_dropped: c.dropped };
+  };
   const lastRow = () => sc.tested[sc.tested.length - 1] || {};
   while (text.length > L.chars) {
     if (sc.tested.length > 1) sc.tested.shift();
@@ -57,7 +80,91 @@ function fit(o) {
     else break;
     dropped++; text = serialize(sc);
   }
-  return { scenario: sc, text, chars: text.length, tokens: base.approxTokens(text), dropped };
+  return done();
 }
 
-module.exports = { LIMITS, build, fit, serialize, testedRow, shortChange };
+// ---- physics corrections
+const CORRECTIONS = { chars: 1400, rejected: 3, illegal: 3, streak: 3, articles: 2 };
+const keyOf = c => c.part + "." + c.param;
+const PART_ORDER = Array.from(new Set(parts.PARAMS.map(s => s.part)));
+const SPEC = new Map(parts.PARAMS.map(s => [keyOf(s), s]));
+// the proposed parameters that are illegal ON THEIR OWN at the head (the rest held); none alone -> the combination. `violations`
+// is the engine's legality check (regs + PU + materials), `apply1(c)` the head with that one change (null if it cannot be applied)
+function culprits(changes, apply1, violations, articlesOf, allArticles) {
+  const out = [];
+  for (const c of changes) { const d = apply1(c); const v = d ? violations(d) : [{ id: "DOMAIN" }]; if (v.length) out.push({ key: keyOf(c), articles: articlesOf(v) }); }
+  return out.length ? out : [{ key: changes.map(keyOf).join("+"), articles: allArticles || [] }];
+}
+// corrections({ decisions (run-wide, oldest first: engine decision rows), head (the current head design) }) -> the block (untrimmed)
+function corrections(o) {
+  const decs = o.decisions || [];
+  const P = new Map(), K = new Map(), I = new Map();
+  for (const d of decs) {
+    const prop = d.proposal || [];
+    const keptCar = d.kept ? (d.best_changes || []) : [], keptKeys = new Set(keptCar.map(keyOf));
+    for (const c of prop) {
+      const k = keyOf(c), e = K.get(k) || { n: 0, k: 0, streak: 0 };
+      e.n++; if (keptKeys.has(k)) { e.k++; e.streak = 0; } else e.streak++;
+      K.set(k, e);
+    }
+    for (const part of new Set(prop.map(c => c.part))) {
+      const e = P.get(part) || { n: 0, k: 0, best: null, last: null };
+      e.n++; e.last = d.decision;
+      if (d.kept && keptCar.some(c => c.part === part)) { e.k++; if (typeof d.d_head_s === "number" && (e.best == null || d.d_head_s < e.best)) e.best = d.d_head_s; }
+      P.set(part, e);
+    }
+    if (d.as_proposed && d.as_proposed.legal === false && prop.length) {
+      const cul = d.illegal_params || [{ key: prop.map(keyOf).join("+"), articles: d.as_proposed.articles || [] }];
+      for (const c of cul) {
+        const e = I.get(c.key) || { n: 0 };
+        const keys = c.key.split("+");
+        e.n++; e.last = d.decision; e.articles = (c.articles || []).slice(0, CORRECTIONS.articles);
+        e.change = base.describeChanges(prop.filter(x => keys.includes(keyOf(x))));
+        I.set(c.key, e);
+      }
+    }
+  }
+  const rng = o.head ? base.ranges(o.head) : [], R = new Map(rng.map(r => [r.key, r]));
+  const rangeOf = k => { const r = R.get(k), s = SPEC.get(k); return r ? r.lo + "-" + r.hi + (s ? " step " + s.step : "") : null; };
+  const tried = {};
+  for (const [part, e] of Array.from(P.entries()).sort((a, b) => b[1].n - a[1].n || PART_ORDER.indexOf(a[0]) - PART_ORDER.indexOf(b[0]))) tried[part] = [e.n, e.k, r3(e.best), e.last];
+  const rejected = Array.from(K.entries()).filter(([, e]) => e.streak >= CORRECTIONS.streak).sort((a, b) => b[1].streak - a[1].streak || b[1].n - a[1].n || (a[0] < b[0] ? -1 : 1))
+    .map(([k, e]) => k + " " + e.n + " tried, " + e.k + " kept, last " + e.streak + " not kept");
+  const illegal = Array.from(I.entries()).sort((a, b) => b[1].last - a[1].last || (a[0] < b[0] ? -1 : 1)).map(([k, e]) => {
+    const rs = k.split("+").map(x => (k.includes("+") ? x + " " : "") + rangeOf(x)).filter(x => !/null$/.test(x)).slice(0, 2);
+    return "#" + e.last + " " + e.change + " " + e.articles.join(" ") + (e.n > 1 ? " (x" + e.n + ")" : "") + (rs.length ? "; legal " + rs.join(", ") : "");
+  });
+  const legal = {}, legalOrder = [];
+  for (const r of rng) {
+    if (r.lo_src === "domain" && r.hi_src === "domain") continue;
+    const [part, param] = r.key.split(".");
+    (legal[part] = legal[part] || {})[param] = r.lo + "-" + r.hi;
+    const s = SPEC.get(r.key), w = s ? s.max - s.min : 1;
+    legalOrder.push({ key: r.key, width: w > 0 ? (r.hi - r.lo) / w : 0 });
+  }
+  return { decisions: decs.length, tried_cols: ["tried", "kept", "best_d_lap_s", "last_decision"], tried_by_part: tried, never_tried: PART_ORDER.filter(p => !P.has(p)), rejected_repeatedly: rejected, illegal_as_proposed: illegal, legal_range: legal, _legal_order: legalOrder };
+}
+// trim to limits.chars, least useful first (see the header); near = the scenario's near lines (their parameters are already there)
+function fitCorrections(c, limits, near) {
+  const L = Object.assign({}, CORRECTIONS, limits || {});
+  const nearKeys = new Set((near || []).map(l => String(l).split(" ")[0]));
+  const order = (c._legal_order || []).slice().sort((a, b) => (nearKeys.has(b.key) ? 1 : 0) - (nearKeys.has(a.key) ? 1 : 0) || b.width - a.width || (a.key < b.key ? -1 : 1));
+  delete c._legal_order;
+  c.rejected_repeatedly = c.rejected_repeatedly.slice(0, L.rejected); c.illegal_as_proposed = c.illegal_as_proposed.slice(0, L.illegal);
+  const dropLegal = () => { const x = order.shift(); if (!x) return false; const [part, param] = x.key.split("."); if (c.legal_range[part]) { delete c.legal_range[part][param]; if (!Object.keys(c.legal_range[part]).length) delete c.legal_range[part]; } return true; };
+  let text = JSON.stringify(c), dropped = 0;
+  while (text.length > L.chars) {
+    if (order.length && nearKeys.has(order[0].key)) dropLegal();
+    else if (c.illegal_as_proposed.length > 2) c.illegal_as_proposed.pop();
+    else if (order.length) dropLegal();
+    else if (c.rejected_repeatedly.length > 2) c.rejected_repeatedly.pop();
+    else if (c.illegal_as_proposed.length > 1) c.illegal_as_proposed.pop();
+    else if (c.rejected_repeatedly.length > 1) c.rejected_repeatedly.pop();
+    else if (Object.keys(c.tried_by_part).length > 3) { const ks = Object.keys(c.tried_by_part); delete c.tried_by_part[ks[ks.length - 1]]; }
+    else break;
+    dropped++; text = JSON.stringify(c);
+  }
+  return { block: c, chars: text.length, dropped };
+}
+
+module.exports = { LIMITS, CORRECTIONS, build, fit, serialize, testedRow, shortChange, corrections, fitCorrections, culprits };

@@ -206,3 +206,127 @@ reaches `server/` or the network (the test checks this), and nothing is written 
   `physics`. Also `aggregate`, `paired`, and `context` (seeds 1-6, baselines only). Chart: x = physics laps, y = best lap, with a
   horizontal line at 88.111 s labelled "Antonelli pole (real)", and the label "physics lap sim, Silverstone, model prediction".
 - `test/tests-to-pole.test.js`.
+
+## 8. Physics corrections: every verdict back into the next decision's input
+
+Version 1 · 2026-10-24 · branch `claude/physics-corrections`. **No live run has been made for this section yet.** What exists: the
+mechanism, the byte-for-byte checks, the exam question set, and a sanity check with a mock stand-in. The live numbers are the
+integrator's to make (§8.5) and to put in this table.
+
+### 8.1 What changed (the user message only)
+
+The engine's scenario (`concept/engineer/scenario.js`) gets a fifth block, `corrections`. It holds every physics verdict of the run so
+far, from all branches, where before the scenario showed only the last 1-3 rows of the current branch. The engine builds it at every
+decision when `opts.corrections` is on, which is the default for new runs (including the engine route's live runs). Off reproduces the
+recorded runs. The frozen designer task is untouched: `concept/designer/prompt.js`, model, `max_tokens`, temperature, task-key sha
+`71d48c5a…` (`test/concept-designer-frozen.test.js` green). Like the rest of the scenario, the block reports facts and gives no
+instructions (the engine test's no-instruction-words rule applies to it too).
+
+| key | what |
+|---|---|
+| `decisions` | decisions so far in the run |
+| `tried_by_part` + `tried_cols` | per part: decisions whose proposal named it, how many of those were kept with that part changed in the kept car, the best such kept lap delta (s), and the last decision that named it |
+| `never_tried` | catalogue parts no proposal has named |
+| `rejected_repeatedly` | at most 3 parameters proposed at least 3 times since their last kept car: `"sidepods.inlet_cm2 63 tried, 0 kept, last 63 not kept"` |
+| `illegal_as_proposed` | at most 3, newest first: the proposed parameter that is illegal **on its own** at that head (or the combination), its articles, a repeat count, and its legal range and step for the **current** head |
+| `legal_range` | every parameter whose legal range for the current head (one parameter at a time, the rest held) is narrower than the model domain because of an FIA article or a model rule |
+
+Size: the four existing blocks are fitted first, exactly as before, to their 1,800-char limit. The block has its own limit of 1,400
+chars, so it adds at most **+1,415 chars (≈ +354 tokens)**. On the replays of seeds 11 and 12 it added 1,040-1,415 chars (mean
+1,383 / 1,374). When it has to be cut, it loses these first: legal ranges already in `near`, illegal lines (down to 2), the widest
+legal ranges, then rejected lines.
+
+Example: the block Claude would have read at decision 120 of the recorded seed-11 run. This is the replay of its own recorded
+proposals with corrections on.
+
+```
+{"decisions":119,"tried_cols":["tried","kept","best_d_lap_s","last_decision"],"tried_by_part":{"setup":[113,23,-0.072,119],
+"rear_wing":[112,32,-0.269,119],"sidepods":[68,2,-0.072,119],"front_wing":[31,6,-0.269,113],"gearbox":[12,3,-0.146,118],
+"floor":[8,6,-0.212,47],"diffuser":[4,1,-0.212,23]},"never_tried":["layout","survival_cell","ballast","nose","cooling",
+"engine_cover","suspension"],"rejected_repeatedly":["sidepods.inlet_cm2 63 tried, 0 kept, last 63 not kept","front_wing.aoa_deg
+21 tried, 3 kept, last 16 not kept","rear_wing.aoa_deg 95 tried, 12 kept, last 13 not kept"],"illegal_as_proposed":["#119
+sidepods.inlet_cm2 650->640 PKG-COOLING PU-HOMOLOGATED (x47); legal 650-1100 step 10","#105 front_wing.aoa_deg 31.5->32.5
+C3.10.10(s)(i) C3.10.1(a) (x10); legal 10-31.5 step 0.5"],"legal_range":{"layout":{"wheelbase_mm":"3375-3400"},
+"survival_cell":{"front_axle_offset_mm":"50-150","cockpit_len_mm":"1845-1955","bulkhead_gap_mm":"360-405"},"front_wing":
+{"span_mm":"1020-1310","elements":"2-2","sm_delta_deg":"0-5"},"rear_wing":{"span_mm":"900-1150","chord_mm":"300-465",
+"elements":"2-3","endplate_top_mm":"760-880"},"floor":{"edge":"1-1"},"sidepods":{"inlet_cm2":"650-1100","undercut_mm":"0-140",
+"concept":"0-0"},"gearbox":{"top_kmh":"309-380","step":"1.08-1.238"},"setup":{"heave_n_mm":"3400-8000"},"cooling":{"layout":"0-1"},
+"engine_cover":{"style":"0-0"}}}
+```
+
+(Line breaks added here for reading. The scenario sends it as one line.) The recorded run never told Claude any of this. It
+proposed the sidepod inlet 650 → 640 cm² 47 times. That move is illegal under PKG-COOLING at that head. A `near` line for the inlet
+appeared in only 2 of the 120 scenarios it was sent (the 1,800-char trim cut it). It never named 7 of the 14 parts.
+
+### 8.2 Off reproduces the recorded runs byte for byte
+
+`run.js --methods replay_text,replay_text_corrections` (seeds 11 and 12, this checkout) feeds each recorded run's own proposals back
+with the per-segment report on, as it was recorded, and compares every decision's scenario text with the text the live run sent
+(`events.jsonl`):
+
+| seed | corrections off: texts equal | physics (laps, best per decision) | corrections on: text without the block equal | physics |
+|---|---|---|---|---|
+| 11 | 120 / 120 | identical (3,429 laps, 87.698 s) | 120 / 120 | identical |
+| 12 | 120 / 120 | identical (3,494 laps, 87.815 s) | 120 / 120 | identical |
+
+The original replay check (§3) still reproduces both runs (the `replay` method is unchanged and runs with corrections off). Seed 7
+replays on the code it ran on (commit 5bf4b1c), which has no corrections option. `test/physics-corrections.test.js` repeats the
+byte-for-byte check on the first 4 decisions of seed 12.
+
+### 8.3 Sanity check with a stand-in (NOT a model; says nothing about Claude)
+
+`concept/benchmark/fixation.js` is a cheap stand-in built to reproduce the failure in §5. It is not Claude. 80 % of its decisions
+name `rear_wing.aoa_deg`, the rest a few favourites, and half the time it also lowers the sidepod inlet by 10 cm². It reads
+nothing but the scenario. With a `corrections` block, it drops a favourite listed in `rejected_repeatedly` for a part from
+`never_tried`, moved inside its `legal_range`, and keeps the inlet inside its legal range. This only shows that the block carries
+what a reader needs to break that fixation. Whether Claude reads it that way is what §8.5 measures.
+
+Engine v2, this checkout's physics, 3,500-physics-lap cap, seeds 7 / 11 / 12 (physics lap sim, Silverstone, model prediction):
+
+| | best lap at 3,500 (s) | physics laps to beat 88.111 s | distinct params named | decisions naming `rear_wing.aoa_deg` | illegal as proposed |
+|---|---|---|---|---|---|
+| stand-in, no corrections | 87.756 / 87.735 / 87.769 | 234 / 207 / 185 | 5 / 5 / 5 | 94 of 124 / 100 of 124 / 97 of 125 | 69 / 56 / 62 |
+| stand-in, with corrections | 87.534 / 87.499 / 87.529 | 256 / 209 / 153 | 22 / 23 / 21 | 30 of 137 / 23 of 139 / 25 of 138 | 13 / 13 / 16 |
+| same engine, no AI | 87.470 / 87.525 / 87.506 | 339 / 374 / 183 | 36 / 36 / 36 | — | 67 / 69 / 85 |
+| recorded Claude runs, no corrections (seed 7 on older physics) | 87.391 at 1,219 laps / 87.698 / 87.815 | 197 / 1,666 / 480 | 14 / 18 / 19 | — / 96 of 120 / 93 of 120 | 26 of 40 / 64 / 64 |
+
+Without the block, the stand-in stalls about where the recorded Claude runs ended (87.74-87.77 s against 87.70 / 87.82 s). With it,
+it explores 21-23 parameters, its illegal proposals drop from 56-69 to 13-16, and it ends level with the no-AI engine
+(−0.06 to +0.03 s). The random step is also often illegal as proposed (67-85). So legality alone does not explain the gap: coverage
+does.
+
+### 8.4 The exam with corrections
+
+`concept/exam/questions-corrections.json` (`node concept/exam/run.js --build-questions --corrections`) contains the **same 30
+held-out states** (seeds 101-110, same decisions and head cars) as `questions.json`. Each text is the engine's text with corrections
+on. Without the block, it is the `questions.json` text byte for byte (`buildCorrections` refuses anything else, and the test checks
+it). The block adds 1,051-1,414 chars. Grading is unchanged: the grader never reads the scenario. Results go to
+`results-<column>-corrections.json`, so `results-base.json` (9/30 direct, 29/30 engine) is never overwritten.
+
+### 8.5 Live runs (for the integrator)
+
+```
+# (a) the regular-Claude column on the corrections questions: 30 UNTRAINED calls (x-middleware-record: metadata), ≤ 2 in flight,
+#     ≈ 2 min of calls + ≈ 2 min of grading -> concept/exam/results-base-corrections.json
+node concept/exam/run.js --column base --questions concept/exam/questions-corrections.json --n 30
+# (b) steered with corrections, TRAINED, this checkout's physics, seeds 7, 11, 12 (seed 7 on the CURRENT physics: its recorded run
+#     used the older one, so seed 7 pairs with the current-physics no-AI run in curves.json `corrections`), 3,500-lap cap, ≤ 150
+#     decisions (one call each). Run one seed at a time (each run makes one call at a time; never more than 2 processes).
+for s in 7 11 12; do node concept/engineer/cli.js --live --confirm-trained "TRAIN 150" --seed $s --max-decisions 150 --budget 3500 --workers 4 --out <scratch>/corr-live; done
+node concept/benchmark/report.js --corrections <scratch>/corr-live --write     # tables + curves.json `corrections.seeds[N].curves.steered_corrections`
+# keep the logs with the other recorded runs (the trained-call budget counts docs/concept/loop-runs/trained-*/calls.jsonl):
+for s in 7 11 12; do cp -r <scratch>/corr-live/run-seed$s docs/concept/loop-runs/trained-corrections-seed$s; done
+```
+
+Estimate for (b): the engine alone needs about 60 s per 120 decisions here (replays, 4 workers), plus about 2.2 s per Mubit call
+(recorded latency). The 3,500-lap cap takes about 125-140 decisions, so expect **≈ 6-7 min and ≈ 125-140 trained calls per seed:
+≈ 20 min and ≈ 380-420 calls for all three** (hard cap 450). Input is about +350 tokens per call against the recorded runs. Without
+`--confirm-trained`, the same command makes untrained calls. `report.js` writes a steered column only for a live run whose every
+Mubit-directed decision has a real `mreq_` id. A mock file is printed and labelled, never written as Claude.
+
+Files: `concept/engineer/scenario.js` (`corrections`, `fitCorrections`, `culprits`), `concept/engineer/engine.js`
+(`opts.corrections`), `concept/engineer/cli.js` (the live / mock run), `concept/benchmark/fixation.js`, `concept/benchmark/run.js`
+(`mock_fixation_*`, `engine_noai --label current`, `replay_text*`), `concept/benchmark/report.js --corrections`,
+`concept/exam/questions.js` (`buildCorrections`), `concept/exam/questions-corrections.json`, `test/physics-corrections.test.js`.
+`curves.json` `corrections`: the current-physics no-AI curves for seeds 7, 11, 12 (uncut; 11 and 12 checked equal to the main
+table's), and the steered-with-corrections curves once (b) has run.
