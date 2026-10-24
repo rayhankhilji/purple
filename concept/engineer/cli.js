@@ -7,7 +7,7 @@
 //   node concept/engineer/cli.js --live --seed 11 --out DIR                     real UNTRAINED calls (x-middleware-record: metadata)
 //   node concept/engineer/cli.js --live --confirm-trained "TRAIN 150" --seed 11 --out DIR
 //                                                                               TRAINED calls: the typed text must be "TRAIN <--max-decisions>"
-// Options: --mix 1|2 (2 = Claude directs every other decision, the engine's random step the rest) · --screen full|direct (full = 3,000 variants / confirm 24 + 4; direct = one physics test per idea) · --corrections on|off (on) · --budget LAPS (3500) · --max-decisions N (150; one designer call per decision) · --workers W (4)
+// Options: --record-good (with --confirm-trained: calls untrained, physics-approved decisions re-sent as trained) · --mix 1|2 (2 = Claude directs every other decision, the engine's random step the rest) · --screen full|direct (full = 3,000 variants / confirm 24 + 4; direct = one physics test per idea) · --corrections on|off (on) · --budget LAPS (3500) · --max-decisions N (150; one designer call per decision) · --workers W (4)
 // · --run-id ID (the Mubit session id, metadata.user_id; default eng-corr-s<seed>-<ulid>) · --team redbull|generic (redbull)
 // Writes DIR/steered_corrections-seed<N>.json (the benchmark curve: node concept/benchmark/report.js --corrections DIR) and
 // DIR/run-seed<N>/ (run.json, events.jsonl, decisions.jsonl, calls.jsonl, tree.json, state.json: the recorded-run format of
@@ -22,13 +22,14 @@ const prompt = require("../designer/prompt.js"), loop = require("../designer/loo
 const B = require("../benchmark/baselines.js"), F = require("../benchmark/fixation.js"), conceptCli = require("../cli.js");
 
 function parseArgs(argv) {
-  const a = { mode: null, mock: null, trained: false, confirm: null, seed: null, corrections: true, budget: 3500, maxDecisions: 150, workers: 4, out: null, runId: null, team: "redbull", screen: "full", mix: 1 };
+  const a = { mode: null, mock: null, trained: false, confirm: null, seed: null, corrections: true, budget: 3500, maxDecisions: 150, workers: 4, out: null, runId: null, team: "redbull", screen: "full", mix: 1, recordGood: false };
   const setMode = m => { if (a.mode && a.mode !== m) throw new Error("choose one of --mock, --live"); a.mode = m; };
   for (let i = 0; i < argv.length; i++) {
     const k = argv[i], v = argv[i + 1];
     if (k === "--mock") { setMode("mock"); a.mock = v; i++; } else if (k === "--live") setMode("live");
     else if (k === "--confirm-trained") { a.trained = true; a.confirm = v; i++; }
     else if (k === "--seed") { a.seed = +v; i++; } else if (k === "--corrections") { if (!["on", "off"].includes(v)) throw new Error("--corrections on|off"); a.corrections = v === "on"; i++; }
+    else if (k === "--record-good") a.recordGood = true;
     else if (k === "--mix") { if (!["1", "2"].includes(v)) throw new Error("--mix 1|2"); a.mix = +v; i++; }
     else if (k === "--screen") { if (!["full", "direct"].includes(v)) throw new Error("--screen full|direct"); a.screen = v; i++; }
     else if (k === "--budget") { a.budget = +v; i++; } else if (k === "--max-decisions") { a.maxDecisions = +v; i++; } else if (k === "--workers") { a.workers = +v; i++; }
@@ -45,6 +46,7 @@ function parseArgs(argv) {
   if (!(Number.isInteger(a.workers) && a.workers >= 0 && a.workers <= 16)) throw new Error("--workers: 0-16");
   if (!a.out) throw new Error("--out DIR is required (a scratch directory; never data/)");
   if (!["redbull", "generic"].includes(a.team)) throw new Error("--team redbull|generic");
+  if (a.recordGood && !a.trained) throw new Error("--record-good needs --confirm-trained (it records the physics-approved decisions as trained calls)");
   if (a.trained && a.mode !== "live") throw new Error("--confirm-trained only applies to --live (trained calls are live calls)");
   if (a.trained && a.confirm !== "TRAIN " + a.maxDecisions) throw new Error("type the confirmation exactly: --confirm-trained \"TRAIN " + a.maxDecisions + "\" (one call per decision, --max-decisions " + a.maxDecisions + ")");
   if (a.runId != null && !/^[A-Za-z0-9_.:-]{1,120}$/.test(a.runId)) throw new Error("--run-id: letters, digits and _ . : - only (≤ 120)");
@@ -81,18 +83,21 @@ async function main(argv, io) {
   const append = (f, row) => fs.appendFileSync(path.join(dir, f), JSON.stringify(row) + "\n");
   const llmName = a.mode === "live" ? "live" : "mock";
   const caller = live ? live.call : a.mock === "fixation" ? F.fixationLlm(a.seed) : loop.mockCaller(a.seed);
-  let n = 0, errRun = 0, abort = null;
+  let n = 0, errRun = 0, abort = null, lastText = null, lastMeta = null;
+  // --record-good: every designer call is untrained; a decision whose proposal, exactly as proposed, is legal and faster on physics is
+  // sent again as a TRAINED call (same request; temperature 0, so the same answer): only physics-approved decisions become Mubit examples
+  const good = [], lastAnswer = {};
   const llm = async (text, meta) => {
     if (abort) { const e = new Error(abort); e.code = "run_cap"; throw e; }
     // --mix 2: the model directs every other decision; the others take the engine's own blind step (the no-AI proposer), no call
     if (a.mix > 1 && (meta.gen || 0) % a.mix === 1) { const e = new Error("mix: engine step this decision"); e.code = "no_ai"; throw e; }
-    n++;
+    n++; lastText = text; lastMeta = meta;
     const row = { created_at: new Date().toISOString(), kind: "design", engine: "engineer-v2", session_id: meta.sessionId, iteration: meta.gen, trained: !!meta.trained, mock: !live, corrections: a.corrections };
     try {
       const r = await caller(text, meta);
       const o = typeof r === "string" ? { text: r } : r;
       append("calls.jsonl", Object.assign(row, { mubit_request_id: o.mubit_request_id || null, served_by: o.served_by || null, model: o.model || null, input_tokens: o.input_tokens == null ? null : o.input_tokens, output_tokens: o.output_tokens == null ? null : o.output_tokens, latency_ms: o.latency_ms == null ? null : o.latency_ms, status: "ok" }));
-      errRun = 0; return o;
+      errRun = 0; lastAnswer[meta.gen] = o.text; return o;
     } catch (e) {
       append("calls.jsonl", Object.assign(row, { mubit_request_id: e.requestId || null, status: "error", mubit_code: e.code || null, http_status: e.status || null }));
       if (++errRun >= 5) abort = "5 designer calls failed in a row (last: " + (e.code || e.message) + ")";
@@ -106,13 +111,21 @@ async function main(argv, io) {
     if (type === "decision") {
       append("decisions.jsonl", data.row);
       const r = data.row;
+      if (a.recordGood && live && r.by === "mubit" && lastText && r.as_proposed && r.as_proposed.legal && typeof r.as_proposed.d_lap_s === "number" && r.as_proposed.d_lap_s < -0.0005) {
+        const text = lastText, meta = Object.assign({}, lastMeta, { trained: true });
+        good.push(caller(text, meta).then(o => { append("calls.jsonl", { created_at: new Date().toISOString(), kind: "design", engine: "engineer-v2", session_id: meta.sessionId, iteration: meta.gen, trained: true, mock: false, corrections: a.corrections, record_good: true, mubit_request_id: o.mubit_request_id || null, served_by: o.served_by || null, model: o.model || null, input_tokens: o.input_tokens, output_tokens: o.output_tokens, latency_ms: o.latency_ms, same_answer: o.text === lastAnswer[r.decision] });
+          const g = { decision: r.decision, d_lap_s: r.as_proposed.d_lap_s, untrained_id: r.mubit_request_id, trained_id: o.mubit_request_id, served_by: o.served_by || null }; append("good.jsonl", g); return g; },
+          e => { append("good.jsonl", { decision: r.decision, error: String(e && (e.code || e.message)) }); return null; }));
+      }
       io.err("#" + String(r.decision).padStart(3) + " " + (r.mubit_request_id || "-").slice(0, 16) + " " + r.by.padEnd(6) + (r.kept ? " kept " : " -    ") + "peak " + data.peak.lap_s.toFixed(3) + " · laps " + data.stats.physics_laps + " · " + (r.as_proposed && r.as_proposed.legal === false ? "ILLEGAL " : "") + (r.proposal_change || "") + "\n");
     }
   };
   const started = new Date().toISOString();
   const opts = { llm: llmName, mock: a.mock, trained: a.trained, team: a.team, seed: a.seed, corrections: a.corrections, budget: a.budget, max_calls: a.maxDecisions, max_decisions: a.maxDecisions, patience: 3, stop_after: null, ...require("../benchmark/baselines.js").SCREENS[a.screen], segments: true, workers: a.workers };
   io.out("PURPLE engine v2 · " + (live ? "LIVE through Mubit · " + (a.trained ? "TRAINED" : "untrained (x-middleware-record: metadata)") : "MOCK (" + a.mock + ", not a model; no network)") + " · corrections " + (a.corrections ? "on" : "off") + " · seed " + a.seed + " · budget " + a.budget + " physics laps · ≤ " + a.maxDecisions + " decisions · session " + runId + (live && live.budget ? " · trained budget " + live.budget.remaining + " of " + live.budget.total + " left" : "") + "\n");
-  const r = await B.runEngine({ seed: a.seed, team: a.team === "generic" ? null : a.team, budget: a.budget, workers: a.workers, llm, mock: !live, corrections: a.corrections, segments: true, trained: a.trained, runId, onEvent, maxDecisions: a.maxDecisions, maxCalls: a.maxDecisions, screen: a.screen });
+  const r = await B.runEngine({ seed: a.seed, team: a.team === "generic" ? null : a.team, budget: a.budget, workers: a.workers, llm, mock: !live, corrections: a.corrections, segments: true, trained: a.trained && !a.recordGood, runId, onEvent, maxDecisions: a.maxDecisions, maxCalls: a.maxDecisions, screen: a.screen });
+  const goodRows = (await Promise.all(good)).filter(Boolean);
+  if (a.recordGood) io.err("record-good: " + goodRows.length + " physics-approved decisions recorded as trained calls");
   const res = r.result; delete r.result;
   const ids = res.decisions.map(d => (d.call ? d.call.mubit_request_id : null));
   const stop = abort || res.stopped;
