@@ -4,6 +4,14 @@ Status: in_progress P3.T5 (PRs #24, #26, #28, #30 merged; sheet-recomposition up
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
 
+### 2026-10-24 19:30 London — helper (Claude, session_014XiAhdMp7HgLX2NuhzBQy2) — focused demo page + record_good on the engine route
+- Status: done (local branch `claude/demo-page`, not pushed).
+- Files changed: `concept/demo/` (index.html, demo.js, demo.css, replays/ = the newest recorded live corrections run, trained-corrections-seed12, built by `node concept/engineer/replay.js`), `concept/engineer/record-good.js` (new, shared), `concept/engineer/cli.js` (--record-good uses it), `server/campaign-route.js` (`record_good` on POST /run mode engineer; SSE `training_example`), `server/vercel.js` (live reservation 2 × max_calls with record_good), `test/engineer-record-good.test.js`, `vercel.json` (root → `/concept/demo/?api=/`), `docs/DEPLOY.md` (page table, limits), screenshots `docs/concept/dashboard-shots/demo-*.png`.
+- Verify step run + output: `npm test` 405/406, the one failure the known timing flake (concept-factors "determinism, speed…", lap time ms under screenshot load), green alone; new test 2/2.
+- Decisions proposed: record_good needs the same confirmations as trained (confirm "trained", confirm_text "TRAIN <max_calls>", cap, budget, DRAFT); the demo's Go live sends them on an explicit click after the passcode unlock (12 calls). Demo copy follows the owner's "no jargon" rule; Mubit model status text lives in `MUBIT_MODEL` at the top of concept/demo/demo.js.
+- Blockers / questions for Tanuj: none.
+- Next three actions: integrator updates MUBIT_MODEL when v2 finishes; one real live record_good run to confirm on the deploy; re-take screenshots on a GPU machine (headless swiftshader renders slowly).
+
 ### 2026-10-24 04:50 London — agent G (DEMO) — P3.T5 provider score on the recomposed Try-models sheet: 2/8
 - Status: done (small PR on `claude/demo-p3-sheet2`).
 - Files changed: `docs/deck/slides.md` (slide 5: 2/8, six misses, rear wing 5 / brake bias 1; .src names snapshot 0530-windcap-exam), `docs/demo-script.md` (facts table, 2:10 on-screen and spoken lines, trigger line with the new 8), `docs/deck/shot-list.md` (shot 11), `docs/deck/README.md`, this file.
