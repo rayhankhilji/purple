@@ -25,7 +25,7 @@ window.EI = window.EI || {};
   };
   // the hero: a three-quarter rear view with the rear wing in frame (DESIGN_SYSTEM §8). Camera on a sphere around TARGET:
   // azim 0 = straight behind the car, positive = towards the car's right (z); elev above the ground plane
-  const HERO = { target: new THREE.Vector3(-0.3, 0.5, 0), radius: 7.9, elev: 0.24, azim: 0.66, fov: 30 };
+  const HERO = { target: new THREE.Vector3(-0.45, 0.5, 0), radius: 7.4, elev: 0.23, azim: 0.68, fov: 30, refAspect: 1.5 };   // radius is for a frame at least refAspect wide; narrower frames pull back (fitRadius) so the whole car stays in view
   const SWAY = { amp: 0.22, period: 26 };             // idle sway of azim (rad, s): the rear wing never leaves the frame
   const HERO_MS = 600, HERO_EASE = (t) => 1 - Math.pow(1 - t, 3);   // DESIGN_SYSTEM §5 "Wing rebuild"
   const WING_KEYS = ['front_wing_deg', 'rear_wing_deg', 'ride_height_mm'];
@@ -117,7 +117,7 @@ window.EI = window.EI || {};
       azim: HERO.azim, elev: HERO.elev, radius: HERO.radius, t0: now(), raf: 0, hero: null, disposed: false, lastMs: null,
     };
     view = state;
-    resize(); placeCamera(state.azim, state.elev, state.radius);
+    resize();
     if (o.baseline) setBaseline(o.baseline);
 
     // resize: observe the container; window resize as the fallback
@@ -129,10 +129,13 @@ window.EI = window.EI || {};
     return api;
   }
 
+  // the hero distance for the current frame: the car's length is the horizontal extent, so a narrower frame needs more distance
+  const fitRadius = (s) => HERO.radius * Math.max(1, HERO.refAspect / s.camera.aspect);
   function resize() {
     const s = view; if (!s) return;
     const w = Math.max(1, s.container.clientWidth | 0), h = Math.max(1, s.container.clientHeight | 0);
     s.renderer.setSize(w, h, false); s.camera.aspect = w / h; s.camera.updateProjectionMatrix(); s.dirty = true;
+    if (!s.hero) { s.radius = fitRadius(s); placeCamera(s.azim, s.elev, s.radius); }
   }
   function placeCamera(azim, elev, radius) {
     const s = view; sphericalPos(s.camera.position, azim, elev, radius); s.camera.lookAt(HERO.target); s.dirty = true;
@@ -145,8 +148,8 @@ window.EI = window.EI || {};
     const sec = (t - s.t0) / 1000;
     let azim = s.azim, elev = s.elev, radius = s.radius, moving = false;
     if (s.hero) {   // 600 ms ease from where the camera was to the hero angle
-      const k = Math.min(1, (t - s.hero.t0) / HERO_MS), e = HERO_EASE(k);
-      azim = s.hero.from.azim + (HERO.azim - s.hero.from.azim) * e; elev = s.hero.from.elev + (HERO.elev - s.hero.from.elev) * e; radius = s.hero.from.radius + (HERO.radius - s.hero.from.radius) * e;
+      const k = Math.min(1, (t - s.hero.t0) / HERO_MS), e = HERO_EASE(k), rFit = fitRadius(s);
+      azim = s.hero.from.azim + (HERO.azim - s.hero.from.azim) * e; elev = s.hero.from.elev + (HERO.elev - s.hero.from.elev) * e; radius = s.hero.from.radius + (rFit - s.hero.from.radius) * e;
       s.azim = azim; s.elev = elev; s.radius = radius; moving = true;
       if (k >= 1) { s.hero = null; s.swayT0 = sec; }
     } else if (s.opts.orbit && !s.rm) {   // idle sway: a slow drift about the hero azimuth, phase-continuous after a hero() ease
@@ -161,7 +164,7 @@ window.EI = window.EI || {};
 
   function hero() {
     const s = view; if (!s) return;
-    if (s.rm) { s.hero = null; s.azim = HERO.azim; s.elev = HERO.elev; s.radius = HERO.radius; placeCamera(s.azim, s.elev, s.radius); return; }
+    if (s.rm) { s.hero = null; s.azim = HERO.azim; s.elev = HERO.elev; s.radius = fitRadius(s); placeCamera(s.azim, s.elev, s.radius); return; }
     s.hero = { t0: now(), from: { azim: s.azim, elev: s.elev, radius: s.radius } };
   }
 
