@@ -3,6 +3,31 @@
 Version 0 · 2026-10-24 · branch `claude/concept-weekend` · file `concept/weekend/weekend.js` · tests `test/concept-weekend.test.js`
 Label on every number: **"concept weekend model · &lt;sim label&gt; · real 2026 British GP lap data"**
 
+## 0. With the physics sim (2026-10-24, `claude/concept-integrate`): what changed
+
+- **Default sim: the physics lap sim** (`concept/sim/`, SIM.md) through `bench.simPhysics` (`sim: "auto"`; `"v0"`, `"physics"` or a
+  function still work). The quali lap is the sim's lap at the qualifying fuel load, now **8 kg** (the sim's assumption; was 10).
+- **Fuel effect: the physics sim's own fuel-mass slope, applied to every car.** Two sim laps on the anchor car (concept/physical.js:
+  the sim's estimated car, or the team's inferred car), at 70 kg and 8 kg, give 0.0191 s/kg (generic) and 0.0192 s/kg (RB22),
+  cached. Applying it to the whole field keeps the race-mode calibration consistent (§4: the offset is computed with the same slope),
+  which is why it is not the old `fuel: "sim"` mode (our car only). `fuel: "coefficient"` restores 0.03 s/kg.
+- **The real grid in the sim's frame** (`field: "sim"`, default with the physics sim): every real qualifying lap moves by its team's
+  fit residual in the sim's team fit (`sim.fitted().teams`: q_sim − q_real of the fitted driver, applied to both team drivers;
+  −0.051 s for Ferrari, −0.009 s for Mercedes, +0.003 s for Red Bull, all within ±0.05 s). Our sim lap is then compared with laps
+  of the same model. The race still uses each driver's real race pace (`r`), which the team cars do not model. A bare `{ lap_s }`
+  with no `sim_kind` stays in the real frame.
+- **Our car takes its team's seat.** The bench passes `replace: "HAD"` for a Red Bull design (the RB22 baseline is HAD's inferred car),
+  so the field is 21 real cars + ours.
+- **`scoreLap(lap_s, { sim_kind, sim_label, team, replace })`** scores a lap the bench already ran (the optimiser's objective, no
+  second sim call). `score()` output adds `field: { frame, replaced, sim, fuel_s_per_kg, fuel_basis }` and `quali.grid` with `real_s`.
+- **The baseline is no longer P1 by construction.** Physics sim, defaults:
+
+| Car | Quali lap | Quali | Race | weekend_score |
+|---|---|---|---|---|
+| Generic 2026 baseline (the sim's pole-lap estimate) | 88.312 | P3 / 23 | P3 | −0.216 |
+| **Red Bull RB22 baseline** (replaces HAD) | 88.749 | **P5** / 22 | **P6** | **−0.667** |
+| Best RB22 concept, seed 1, 200 generations | 87.570 | P1 | P1 | +0.549 |
+
 ## 1. What it is
 
 `concept/bench.js` turns a car into one qualifying lap. This module turns that lap into a **weekend**: a qualifying position among
@@ -13,7 +38,7 @@ pace (`EI.RACEPACE.silverstone.r`) through the same fuel and tyre model as our c
 real field.
 
 ```
-car (PhysicalCar | Design | { lap_s }) ──sim(pc @ 10 kg, softs, "silverstone", conditions)──▶ quali lap (real s)
+car (PhysicalCar | Design | { lap_s }) ──sim(pc @ 8 kg, softs, "silverstone", conditions)──▶ quali lap (real s)
   ├─ qualifying: insert among the real 2026 best quali laps q ──▶ grid slot, gap to pole
   └─ race: our median race lap = quali lap + field-median (r − q) gap; per lap = base + fuel + compound + degradation
            real drivers: per lap = r − model median excess + the same fuel/compound/degradation
@@ -27,15 +52,18 @@ car (PhysicalCar | Design | { lap_s }) ──sim(pc @ 10 kg, softs, "silverstone
 |---|---|
 | `qualifying(car, { sim, conditions, replace })` | `{ lap_s, pos, field_size, pole_s, pole_code, gap_to_pole_s, grid: [{ pos, code, lap_s }], label }` |
 | `race(car, { sim, laps = 52, conditions, seed, noise_s = 0, strategy, fuel, replace, params })` | `{ total_s, pos, field_size, grid, gap_to_winner_s, gap_to_best_other_s, best_other, winner, strategy: { name, stops, stints, pit_laps, chosen_by, alternatives }, pace: { race_lap_median_s, race_mode_offset_s, fuel_s_per_kg, fuel_basis, dirty_air_laps, fastest_lap_s }, classification, label }` |
-| `score(car, opts)` (same opts) | `{ quali: { lap_s, pos, field_size, gap_to_pole_s, pole_code }, race: { total_s, pos, field_size, grid, gap_to_winner_s, gap_to_best_other_s, winner, strategy, pace, classification }, weekend_score, components: { quali_margin_s, race_margin_s_per_lap, weights, definition }, params_from, label, ms }` |
+| `scoreLap(lap_s, { sim_kind, sim_label, team, replace, field, fuel, params })` | `score()` for a lap already run (§0) |
+| `physicsFuelSlope(team, conditions, params)`, `simFieldShift()` | the physics fuel slope and the sim-frame shifts (§0) |
+| `score(car, opts)` (same opts + `field: "real" \| "sim"`) | `{ quali: { lap_s, pos, field_size, gap_to_pole_s, pole_code, pole_s, grid }, field, race: { total_s, pos, field_size, grid, gap_to_winner_s, gap_to_best_other_s, winner, strategy, pace, classification }, weekend_score, components: { quali_margin_s, race_margin_s_per_lap, weights, definition }, params_from, label, ms }` |
 | `calibration(opts)` | the field-vs-model table of §4 |
 | `strategies(params)`, `params(overrides)`, `PARAMS`, `tyreLoss`, `fuelAt` | internals, exported for tests and the lab UI |
 
 - `car`: a `PhysicalCar` (the bench contract), a `Design` (converted with `concept/physical.js`, qualifying session) or `{ lap_s }`
   (a lap already run, e.g. `bench(...).circuits.silverstone`). This module does not check legality. `bench()` does that, and an
   illegal car has no lap to score.
-- `sim`: default `bench.simV0`. The concept/sim/ physics sim plugs in through the same argument, with no other change. The sim is
-  called **once** per weekend: `sim({ ...pc, fuel_kg: 10, tyres: { ...pc.tyres, compound: "soft" } }, "silverstone", conditions)`.
+- `sim`: default `"auto"`: the physics sim (`bench.simPhysics`) when concept/sim/ is loaded, else `bench.simV0`; `"v0"`,
+  `"physics"` or a function choose. The sim is called **once** per weekend (cached in the bench):
+  `sim({ ...pc, fuel_kg: 8, tyres: { ...pc.tyres, compound: "soft" } }, "silverstone", conditions)`.
   With `fuel: "sim"` it is called a second time at the 70 kg start fuel (see §3).
 - `strategy`: omit it to get the minimum-time choice. A number forces the best plan with that many stops. A stint list
   `[{ compound, laps }]` forces that exact plan.
@@ -74,10 +102,10 @@ same for every car. The strategy is computed once and cached.
 |---|---|---|---|
 | `laps` | 52 | official | formula1.com circuit page, FIA final race classification. Read from `concept/data/silverstone-2026-weekend.json` (`circuit.race_laps`) when that file is present |
 | `pit_loss_s` | 20.0 s | reported | formula1.com, "Need to know … ahead of the 2026 British Grand Prix": "Pit stop time loss – 20 seconds (includes 2.5s stop)". The 2025 preview gave 19.9 s. A pre-event figure, not measured in this race. Overridden by `race.pit_loss_s` in the weekend data file if that field ever appears |
-| `quali_fuel_kg` | 10 kg | assumption | `concept/physical.js` `REF.fuel_kg` (estimate). The sim's quali lap and the real `q` laps are taken to be at this load |
+| `quali_fuel_kg` | 8 kg | assumption | The physics sim's qualifying fuel (concept/sim `priorCar`, physical.js anchor; was 10 kg). The sim's quali lap and the real `q` laps are taken to be at this load |
 | `start_fuel_kg` | 70 kg | assumption | Widely reported 2026 figure (down from about 100–110 kg). Not in Section C |
 | `end_fuel_kg` | 1 kg | assumption | FIA fuel sample at the flag. Burn = (70 − 1) / 52 = 1.33 kg per lap, constant |
-| `fuel_s_per_kg` | 0.030 s/kg | assumption | Common rule of thumb, also cited in CONCEPT.md. Applied to every car. `fuel: "sim"` uses the sim's own slope for our car instead (sim v0: 0.0122 s/kg, see §5) |
+| `fuel_s_per_kg` | 0.030 s/kg | assumption | Common rule of thumb, also cited in CONCEPT.md. Applied to every car. With the physics sim the default is the sim's own slope for every car (0.019 s/kg, §0); `fuel: "sim"` uses the sim's slope for our car only (sim v0: 0.0122 s/kg, see §5) |
 | `compounds` | soft C3: +0.00 s, 0.090 s/lap, cliff after 20 laps · medium C2: +0.35 s, 0.035 s/lap, cliff 33 · hard C1: +0.65 s, 0.025 s/lap, cliff 45 · post-cliff +0.4 s/lap per lap | compound names official, numbers assumption | C1/C2/C3 is Pirelli's Silverstone 2026 selection (weekend data file `tyres`, formula1.com preview). Offsets, linear degradation and cliffs are assumptions tuned to three targets. (a) A C3+C2 one-stop is fastest, which is what Pirelli expected ("one-stop … C2 and C3 the main choices"). (b) The best two-stop is clearly slower: model +7.9 s. Pirelli's 2023 Silverstone estimate was one-stop ≈ 13 s faster. (c) Fuel + tyres explain a minority of the real race-vs-quali gap (§4) |
 | `two_compound_rule` | true | reported | Long-standing Sporting Regulations rule (at least two dry compounds in a dry race). The 2026 article was not read |
 | `start_lap_extra_s` | 4.0 s | assumption | Standing-start lap 1 over a flying lap. The same for every car, so it moves totals, never positions |
@@ -156,7 +184,7 @@ The model's quickest green lap is only 0.12 s under its median. The fuel burn-of
 cancel, so the model never produces the real push laps (overtake mode, tow, fresh tyres after the late SC). It reports
 `pace.fastest_lap_s` as a model value only and does not use it in the score.
 
-## 5. Results with sim v0 (bench default, 2026-10-24)
+## 5. Results with sim v0 (`sim: "v0"`; the bench default before the physics sim, 2026-10-24)
 
 | Car | Quali lap | Quali | Race | Gap to best other (s) | weekend_score |
 |---|---|---|---|---|---|
@@ -208,4 +236,6 @@ assumption and can be overridden with `params.weights`.
 - In the default fuel mode the sim affects the weekend only through the quali lap. Compound effects are this module's offsets, and the
   sim is always run on softs, so a physics sim's compound model is not double-counted.
 - sim v0 places the baseline at the real pole by construction (CONCEPT.md §2), so v0 weekend positions rank designs. They do not
-  predict where a 2026 car would really finish.
+  predict where a 2026 car would really finish. The physics sim places the baseline (§0), within its own limits (SIM.md §7: 13 km/h
+  trace RMS on held-out laps, team cars inferred from public laps, not team data).
+- The sim-frame shift uses the team fit at the default qualifying conditions; other `conditions` still use those residuals.

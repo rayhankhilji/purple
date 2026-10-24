@@ -26,9 +26,24 @@
   const spec = (part, param) => { const p = own(parts.BY_ID, part) ? parts.BY_ID[part] : null; return p && own(p.params, param) ? Object.assign({ part, param }, p.params[param]) : null; };
   const quant = (s, v) => { const q = Math.round((v - s.min) / s.step) * s.step + s.min; return +Math.min(s.max, Math.max(s.min, q)).toFixed(6); };
 
-  function baseline() {
+  // the baselines. Every 2026 car runs active aero (C3.10.10, C3.11.6), so the baseline carries a REFERENCE straight-mode flap
+  // setting (front 4°, rear 15°): the setting concept/physical.js maps onto the lap sim's estimated Straight Mode coefficients.
+  // Front 4° is the largest whole degree whose straight-mode X extent still fits RV-FW-PROFILES at the 580 mm chord
+  // (REG-C-FW-SM-ENVELOPE); rear 15° is mid-domain, so the optimiser can open the flap further or close it. Every other parameter is
+  // the catalogue base (concept/parts.js). TEAMS: a team baseline has the same concept shape (no team geometry is public) and is
+  // anchored by concept/physical.js on that team's inferred car in the lap sim (concept/sim baselineCar(team)); `livery` is the
+  // viewer's livery id. design.baseline() = the generic 2026 car; design.baseline({ team: "redbull" }) (or "redbull") = the RB22.
+  const REF_STRAIGHT_MODE = Object.freeze({ front_wing: 4, rear_wing: 15 });
+  const TEAMS = {
+    redbull: { id: "baseline-redbull", label: "Red Bull Racing RB22 · Red Bull Ford DM01 (concept shape on the inferred RB22 car)", team: "redbull", livery: "redbull-rb22", chassis: "RB22", pu: "Red Bull Ford DM01", driver: "HAD", team_name: "Red Bull Racing" },
+  };
+  function baseline(opts) {
+    const team = typeof opts === "string" ? opts : opts && opts.team;
+    if (team && team !== "generic" && !own(TEAMS, team)) throw new Error("concept: no baseline for team " + String(team) + " (known: generic, " + Object.keys(TEAMS).join(", ") + ")");
     const params = {};
     for (const p of parts.CATALOGUE) { params[p.id] = {}; for (const k of Object.keys(p.params)) params[p.id][k] = p.params[k].base; }
+    for (const w of Object.keys(REF_STRAIGHT_MODE)) params[w].sm_delta_deg = REF_STRAIGHT_MODE[w];
+    if (team && team !== "generic") return Object.assign({ params }, JSON.parse(JSON.stringify(TEAMS[team])));
     return { id: "baseline", label: "Baseline 2026-style concept car", params };
   }
   function clone(d) { return JSON.parse(JSON.stringify(d)); }
@@ -122,7 +137,7 @@
     };
   }
 
-  const api = { seededRng, gauss, own, spec, baseline, clone, validate, applyChanges, mutate, diff, describe, describeChange, facts };
+  const api = { seededRng, gauss, own, spec, baseline, REF_STRAIGHT_MODE, TEAMS, clone, validate, applyChanges, mutate, diff, describe, describeChange, facts };
   C.design = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();
