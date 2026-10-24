@@ -1,23 +1,46 @@
-# PURPLE deck (P3.T5) — sources and export
+# PURPLE deck: sources and export
 
-`slides.md` is the deck: 8 slides, no cover, [Marp](https://marp.app) markdown, styled with the DESIGN_SYSTEM tokens (black, mono numbers, one purple accent). `shots/` holds the screenshots the slides reference. `capture.js` takes the lab screenshots. `shot-list.md` is the video shot list (P3.T4). `purple-deck-draft.pdf` is a draft export (amber FILL boxes, missing screenshots); the submission PDF is `purple-deck.pdf`.
+`slides.md` is the deck: **12 slides**, [Marp](https://marp.app) markdown with inline HTML (two-column layouts, the flow diagram,
+the per-corner bars), styled with the DESIGN_SYSTEM tokens (black, mono numbers, one purple accent, Mubit orange). Version 2
+(2026-10-24): the story leads with the concept lab and the Mubit designer loop; the 5-knob research lab is slide 10, "first proof".
+`purple-deck.pdf` is the submission export. `purple-deck-draft.pdf` is the **old v1 (research-lab) draft**, kept for reference
+only. `shots/` and `capture.js` belong to the v1 research-lab deck (slide 10 uses none of them now). The video script is
+`docs/video-script.md` (`shot-list.md` is the v1 shot list, superseded).
 
-Submission needs a **PDF** via `/submit` by Sat 23:59 London.
+Slides: 1 title + result · 2 what is new this weekend (Equation I disclosure) · 3 the problem · 4 how it works · 5 the Mubit loop,
+one real call · 6 Mubit in numbers + console FILL boxes · 7 the physics · 8 the result · 9 garage, 3D car, Silverstone replay ·
+10 the 5-knob lab (first Mubit proof) · 11 limits and honesty · 12 what's next.
 
-## Numbers to fill from the console
+Figures are referenced in place from `docs/concept/` (no copies): `view-v3-shots/01-hero-baseline-rb22.png`,
+`view-v3-shots/13-optimised-vs-baseline-ghost-tags.png`, `race-shots/v3best-1-chase.jpg`, `sim-trace-had.svg`,
+`campaign-convergence.svg`.
 
-Every value we do not have yet is an amber **`FILL <name>`** box in the slides (and **FILL <name>** in bold in `shot-list.md`). None of them may be guessed: "≈ 80 kept" is an expectation, not a number. Read each one, replace the whole `<span class="fill">FILL …</span>` with the value, or cut the cell/clause if it does not exist by export time.
+## Numbers and where they come from
 
-| Placeholder | Appears in | Read it from | Format |
+| Slide | Numbers | Source |
+|---|---|---|
+| 1, 8 | 87.235 ± 0.154 s, 95 % 86.933–87.537, Δ pole −0.876, Δ HAD −1.511, P1; baseline 88.763 (P6); halved aero 87.893; per-corner gains; PU and energy | `docs/concept/CAMPAIGN.md` §4.0 |
+| 2 | import commit `a711399`; 7 game files +633 / −48; 365 commits; 29 test files, 326 tests | `git diff --stat a711399 HEAD -- js css index.html`, `git log`, `npm test` (2026-10-24 ~10:00 UTC) |
+| 5 | the request (iteration 3 of trained run seed 11, session `loop-01m5pgpkgspft7dtx7dz1gqrre`), request ids, measured result | `docs/concept/loop-runs/trained-seed11/lineage.jsonl` row 3 (`loop.scenario`, `loop.mubit_request_id`, `loop.fed_to`) |
+| 6, 11, 12 | runs, calls, trained, LLM used, kept, best laps, 331 ids / 16 sessions / 315 fed, refusals, 48 of 251 | computed from `docs/concept/loop-runs/*/{calls,lineage,summary}` **as of 2026-10-24 09:53 UTC** (the big run's seeds 21–32 were in the main checkout, not yet all committed) |
+| 7, 11 | RMS 10.1 km/h, sector bias, CLA 5.32 vs 4.6; 94-row checklist; 23 materials; 11 cars / 9 circuits / 194 laps | SIM.md §0 §4.2 §7, FIA_CHECKLIST.md, MATERIALS.md, IDENTIFY.md |
+| 9 | 0.62 m mapping RMS; ≤ 1 mm meshes on 11 designs; 10–23 ms part rebuild; ~200 ms garage | RACE.md, VIEW.md, TASK_LOG (view v3), DASHBOARD.md §5 |
+| 10 | 99 trained calls, 43 kept (v1), exam 20/20 · 10/20, sheet 8/8 · 2/8 (7/7 · 1/7), 38 of 39, +0.436 / +0.518 | ledger snapshot `2026-10-24_02-37-26Z-0530-windcap-exam`, TASK_LOG |
+
+## Numbers to fill from the console (amber `FILL` boxes)
+
+None of them may be guessed. Read each one, replace the whole `<span class="fill">FILL …</span>` with the value, or cut the
+clause if it does not exist by export time.
+
+| Placeholder | Slide | Read it from | Format |
 |---|---|---|---|
-| `FILL kept-after-v2` | slides.md slide 2; shot-list shots 2, 10; demo-script 0:00 widget, 1:35 "Numbers owed" | Mubit console → Tasks → *Research engineer of F1* → kept examples | integer (43 before v2) |
-| `FILL v1-result` | slides.md slide 2; shot-list shot 10; demo-script 1:35 | console → Adapters → History, v1 row: test result | the console's own words: `Passed`, `Below target`, `Malformed tool calls`, `Prompt only`, `Not tested` |
-| `FILL v2-result` | slides.md slide 2; shot-list shot 10; demo-script 1:35 | same, v2 row (status if still training: "training") | as above |
-| `FILL v1-next` | slides.md slide 5 table; shot-list shot 11; demo-script 2:10 | `docs/try-models/sheet.md` filled from Try models, then `npm run exam:score` → `next-step n/8` for v1 | **n/8**, never % |
-| `FILL v1-verdict` | same | same → `verdict n/8` for v1 | **n/8** |
-| `FILL v2-next` | same | same, v2 rows (needs a `Passed` v2) | **n/8** |
-| `FILL v2-verdict` | same | same | **n/8** |
-| the four `/7` boxes next to v1/v2 next and verdict | slides.md slide 5 table; demo-script 2:10; README [PENDING] | same scoring **without exam-rw8** (the demo experiment, in v2's recorded data, so not held out for v2): score the 7 other sheet items | **n/7** |
+| `FILL designer-kept` | 6 | Mubit console → Tasks → the designer task ("You are the concept designer of a 2026 …") → kept examples | integer |
+| `FILL designer-adapter` | 6 | console → Adapters → designer task: status and test result | the console's own words (`Passed`, `Below target`, `Training`, `Not tested` …) |
+| `FILL n/N` (provider), `FILL n/N` (adapter) | 6 | console → Try models, same designer scenarios to provider and adapter; count proposals that are legal and faster when measured on the physics sim | **n/N**, never % |
+| `FILL research-kept` | 10 | console → Tasks → "Research engineer of F1" → kept examples after v2 | integer (43 before v2) |
+| `FILL research-adapters` | 10 | console → Adapters → research task, v1 and v2 rows: test result | console's words |
+| `FILL n/8 (n/7)` | 10 | `docs/try-models/sheet.md` filled from Try models, `npm run exam:score`: next step v1 · v2, and without exam-rw8 | **n/8 (n/7)** |
+| `FILL deployed URL` | 12 | the Vercel deployment | URL |
 
 Before exporting the submission PDF this must print nothing:
 
@@ -25,70 +48,41 @@ Before exporting the submission PDF this must print nothing:
 grep -n "FILL" docs/deck/slides.md
 ```
 
-Known values (do not re-read): 99 trained calls (57 Friday, 1 demo, 41 Saturday v2) and 61 untrained (1 smoke, 60 exam) from `data/calls.jsonl`; 43 kept at 23:58 (console); provider exam 20/20 verdicts, 10/20 next step; Try-models sheet provider 8/8 verdicts, 2/8 next step (exam-rw8, exam-12); demo race +0.436 predicted / +0.518 measured, 19 %, seed 42.
+**Re-count before the final export:** the slide 6 table and slides 11–12 counts are "as of 09:53 UTC"; if more designer runs land,
+recompute from `docs/concept/loop-runs/` and update the "as of" stamp in the `.src` lines.
 
 ## Export (Marp CLI, pinned)
 
-From the repo root. Marp is not a repo dependency; `npx` fetches the pinned version (about 30 s the first time). It needs a Chrome/Chromium: in the cloud container that is Playwright's Chromium.
+From the repo root. Marp is not a repo dependency; `npx` fetches the pinned version. It needs a Chrome/Chromium: in the cloud
+container that is Playwright's Chromium. **`--html` is required** (the slides use inline HTML for layout).
 
 ```bash
-CHROME_PATH=/opt/pw-browsers/chromium-1243/chrome-linux64/chrome npx -y @marp-team/marp-cli@4.5.1 docs/deck/slides.md --pdf --allow-local-files -o docs/deck/purple-deck.pdf
+CHROME_PATH=/opt/pw-browsers/chromium-1243/chrome-linux64/chrome npx -y @marp-team/marp-cli@4.5.1 docs/deck/slides.md --pdf --html --allow-local-files -o docs/deck/purple-deck.pdf
 ```
 
-- Verified 2026-10-24 in the cloud container: 8 pages, 960×540 pt. (`/opt/pw-browsers/chromium` is a symlink to the same binary.) On a Mac: `CHROME_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"`; on a laptop with Chrome installed, omit `CHROME_PATH`.
-- `--allow-local-files` lets Marp embed `shots/*.png`. A missing shot prints "Some of the local files are missing" and the export still succeeds (that is the draft).
-- If the command sits silent for more than a minute, kill it and run it again with output redirected to a file (`> /tmp/marp.log 2>&1`); one run in the container hung with its output piped and the identical re-run finished in seconds.
+- Verified 2026-10-24 in the cloud container: 12 pages, 960×540 pt. On a Mac: `CHROME_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"`; with Chrome installed, omit `CHROME_PATH`.
+- `--allow-local-files` lets Marp embed the `../concept/…` figures.
+- If the command sits silent for more than a minute, stop it and run it again with output redirected to a file (`> /tmp/marp.log 2>&1`); in the container about one run in three hung and the identical re-run finished in ~30 s.
+- `pdftoppm` prints "Bad bounding box in Type 3 glyph" warnings for the SVG figures; harmless.
 - Do not add `--pdf-notes`: the judges' copy has no speaker notes.
-- Draft: same command with `-o docs/deck/purple-deck-draft.pdf`.
-- Check: `pdfinfo docs/deck/purple-deck.pdf | grep Pages` → 8; `pdftoppm -r 80 -png docs/deck/purple-deck.pdf /tmp/pg` and look at every page: no FILL boxes, source label at the foot of slides 2–6 and 8, nothing overlapping the label.
+- Check: `pdfinfo docs/deck/purple-deck.pdf | grep Pages` → 12; `pdftoppm -r 100 -png docs/deck/purple-deck.pdf /tmp/pg` and look at every page: no FILL boxes, a source line at the foot of every slide with numbers, nothing overlapping it.
 
-Preview while editing: `npx -y @marp-team/marp-cli@4.5.1 -s docs/deck/`.
+Preview while editing: `npx -y @marp-team/marp-cli@4.5.1 --html -s docs/deck/`.
 
-## Screenshots
+## Fallback: Google Slides (20 minutes)
 
-PNG, exactly these names, into `docs/deck/shots/`. The slide crops them to the right third, so element shots read better than full pages.
-
-| File | Slide | What | How |
-|---|---|---|---|
-| `lab-stage-rail.png` | 1 | the four stage cards for the demo experiment: DESIGN reject, EVALUATE +0.436, RACE +0.518 / 19 %, LEARN R-01 | `capture.js` |
-| `console-tasks.png` | 2 | task "Research engineer of F1", requests, kept examples (after v2), status | human: Mubit console → Tasks |
-| `lab-race-card.png` | 4 | RACE card: measured +0.518, predicted +0.436, agreement 19 %, sector Δ | `capture.js` |
-| `try-models-side-by-side.png` | 5 | Side by side, provider and adapter answers on `exam-rw8`, version label in frame | human: console → Try models (`docs/try-models/README.md`) |
-| `lab-design-td01.png` | 6 | DESIGN card error: ILLEGAL_SETUP, badge TD-01, "Technical directive TD-01: rear wing capped at 20°" | `capture.js` (mock mode only) |
-| `ledger-row.png` | 8 | ledger with the demo row `rear_wing_deg +8` highlighted: +0.436 / +0.518 / 19 % / R-01 / OVERRULED | `capture.js` |
-| `console-adapters.png` | (video shot 10; not on a slide) | v1 and v2 rows with test results | human: console → Adapters → History |
-
-`capture.js` also writes `lab-full.png`, `lab-full-td01.png`, `lab-evaluate-card.png` and `lab-widget.png` (spares; `lab-widget.png` can stand in on slide 2 if no console screenshot exists, but it shows 43 kept until the widget's ✎ form is updated with the console value).
-
-### capture.js
-
-Playwright, 1440×900 at 2× scale, selects an EXISTING ledger row (default the demo experiment `01M5NHXH4RSEQ50VM955FK20B7`) by clicking it; it never presses Run, Race it, Promote or Overrule, and a network guard aborts every write route. The only writes it lets through are for the TD-01 shot, and only when `/api/health` says `mock: true`: `POST /api/state {td01:true}`, one `POST /api/plan` with a 25° rear wing (the server refuses it with 422 before any Mubit call and appends one `illegal` row to `calls.jsonl` in the data dir), then TD-01 back to its previous value.
-
-Run it against a **copy** of the real ledger in mock mode (never `data/` or `data-mock/` themselves):
-
-```bash
-mkdir -p /tmp/deck-data && cp data/{ledger.jsonl,calls.jsonl,rules.json,state.json,status.json,exam.json} /tmp/deck-data/   # or from docs/ledger-snapshot/<latest>/
-MUBIT_MOCK=1 PURPLE_PORT=8821 PURPLE_DATA_DIR=/tmp/deck-data node server/index.js &
-PURPLE_STATIC_PORT=8822 node server/static.js &
-CHROME_PATH=/opt/pw-browsers/chromium-1243/chrome-linux64/chrome node docs/deck/capture.js --static http://127.0.0.1:8822 --api http://127.0.0.1:8821 --out docs/deck/shots
-```
-
-Options: `--exp <ledger id>`, `--only lab-race-card,ledger-row`, `--skip-td01`, `--browser-path <chrome>`, `--headed`, `--wait <ms>`. Playwright is not a repo dependency: the script uses a local `playwright` if there is one, else the global install (`npm i -g playwright@1.63.0`). Update the widget values (kept examples, adapter, test result) through the widget's ✎ form in the copy before capturing if `lab-full.png` or `lab-widget.png` is going to be used.
-
-## Fallback — Google Slides (20 minutes)
-
-1. New presentation, theme "Simple Dark"; background `#0a0a0c`, title colour `#e8e8ec`, accent `#b26cff`.
-2. One slide per `#` heading in `slides.md`: title, small grey subtitle, bullets; the screenshot from the slide's `![shot …](shots/…)` line on the right third.
+1. New presentation, theme "Simple Dark"; background `#0a0a0c`, text `#e8e8ec`, accent `#b26cff`, Mubit orange `#ff4500`.
+2. One slide per `#` heading in `slides.md`: title, small grey subtitle, bullets, the figure named in the slide.
 3. Speaker notes from each `<!-- Speaker notes -->` block.
-4. The `<span class="src">` line as 12 pt grey text at the bottom of slides 2–6 and 8 (G-HON-01).
+4. The `<span class="src">` line as 11 pt grey text at the bottom of every slide with numbers (G-HON-01).
 5. File → Download → PDF.
 
 ## Honesty check before export (EVAL_GUARDRAILS §5)
 
-- G-HON-01: every number carries its source: the `.src` foot line on slides 2–6 and 8; slide 7 names "measured in race, seed 42" in the sentence.
-- G-HON-02: `grep -niE "cfd|wind tunnel|validated|aerodynamically tested" docs/deck/slides.md` prints nothing.
-- G-HON-03: corrections are "rule-conditioned learning" (slides 5, 7); v2 is described by its examples, not by a result we do not have.
-- G-HON-04: slide 2 discloses Equation I as pre-existing.
-- G-HON-05: the grid race is "cinematic · mixes car and driver" (slides 7, 8).
-- G-HON-06: exam scores are n/20 and n/8, never % (`grep -nE "[0-9]+ ?%" docs/deck/slides.md` shows only 94 % of candidates, 19 % agreement and the 25 % target, none of them exam scores).
-- `grep -n "FILL" docs/deck/slides.md` prints nothing.
+- G-HON-01: every number carries its source (the `.src` foot line on every slide with numbers; physics lap sim · Silverstone · 2026 British GP qualifying conditions; real 2026 qualifying · OpenF1 / formula1.com).
+- G-HON-02: `grep -niE "cfd|wind tunnel|validat|aerodynamically tested" docs/deck/slides.md` prints nothing.
+- G-HON-03: Mubit's mechanism as it is: the result travels in the next call's input and is stored on trained calls; research lab: "rule-conditioned learning".
+- G-HON-04: slide 2 discloses Equation I as pre-existing, with the import commit.
+- G-HON-05: game-race modes are "cinematic · game lap model, mixes car and driver" (slide 9); the physics replay is the result.
+- G-HON-06: exam / Try-models scores as n/N (`grep -nE "[0-9]+ ?%" docs/deck/slides.md` shows only CSS widths and the 95 % band).
+- Limits slide states the sim misses its accuracy target (RMS 10.1 vs < 7 km/h) and that the 87.235 s car is the speed run's, not the Mubit loop's.

@@ -1,65 +1,10 @@
-PURPLE is built on Equation I (pre-existing, by this team). Everything under `lab/`, `server/`, `concept/`, and the hooks listed in ARCHITECTURE §9 was written during Night Shift.
-
 # PURPLE
 
-PURPLE is an agent-driven F1 engineering research lab that chases purple sectors (the fastest sector of a session). A research agent, an LLM routed through Mubit, proposes a setup change to a parametric car. A reduced-order lap model scores it in milliseconds, on the game's time scale (80.800 s game time = real 2026 Silverstone pole 88.111 s). The game races baseline against candidate. A human engineer overrules bad decisions, and those corrections enter the task input as pit-wall rules (rule-conditioned learning); the kept examples train the next adapter version through Mubit. The agent's decision has a model-defined answer (the reduced-order lap model), so "did the correction help?" is a count, not an opinion.
+**An AI race engineer that redesigns the 2026 Red Bull RB22 to beat the real 2026 Silverstone qualifying lap, with Mubit in the loop.** The car keeps its own Red Bull Ford DM01 power unit and must pass a 94-row FIA 2026 Section C checklist. Each Mubit call (Claude Haiku 4.5 through Mubit, frozen designer prompt) receives the current best car plus the last changes tried and their simulated results; Mubit proposes the next change; a physics lap sim of Silverstone measures it; the simulator, not the model, decides what is kept; and that measured result travels into the next call. Trained calls are stored by Mubit with that history, which is what its kept examples and adapters learn from. Best legal RB22 / DM01 car so far: **87.235 ± 0.154 s** (95 % band 86.933–87.537 s) against the real 2026 pole of 88.111 s: a **model prediction ± band** (physics lap sim · Silverstone · 2026 British GP qualifying conditions), not a claim about a real car.
 
-Built for Night Shift, London, 2026-10-24. Judges: the Mubit team.
+> **Fresh-code disclosure.** PURPLE is built on **Equation I**, our team's pre-existing browser F1 game (`js/`, `css/`, `assets/`, `vendor/`, `tools/`, `index.html`), imported as one commit (`a711399`, Fri 2026-10-23 21:54 UTC). **New this weekend:** everything under `concept/`, `server/`, `lab/`, `test/` and `docs/`, plus opt-in game hooks in 7 game files (+633 / −48 lines): `?lab=1` (race result to the lab), `?concept=1` (concept replay, new `js/conceptrace.js`), aero inputs in `js/car.js`, `js/ai.js`, `js/carmodel.js`, `js/race.js`, one script tag in `index.html` (ARCHITECTURE.md §9). Without the flags the game behaves as before.
 
-## How Mubit is used
-
-- **One recurring task.** Mubit task **"Research engineer of F1"**. Input: baseline and candidate setups, the evaluator's lap and sector deltas, active pit-wall rules, the last 3 experiments. Output: strict JSON with a verdict and the single next experiment.
-- **One model, one frozen prompt.** `claude-haiku-4-5` (served as `claude-haiku-4-5-20251001`), temperature 0, through the Mubit gateway, called from `server/mubit.js` only. The prompt in `lab/prompt.js` is pinned by sha256 `6c5be1a3f4ed0f5fb21226363fa3524404996558628bc8cba119677dfc37ce6a` (PROMPT_VERSION 1). `npm test` and `npm start` fail if it changes.
-- **Trained vs untrained calls.** 99 trained calls: 57 on Friday (43 kept examples, console shows Training v1), 1 demo experiment, 41 on Saturday for v2. 61 untrained calls (smoke test, exam runs) carry `x-middleware-record: metadata` and train nothing. Source: `calls.jsonl` in the frozen snapshot `docs/ledger-snapshot/2026-10-24_02-37-26Z-0530-windcap-exam/` (the live `data/` ledger is gitignored).
-- **Corrections are rule-conditioned learning.** The engineer's overrule becomes a pit-wall rule. The rule enters the task input (the newest 3 active rules are sent). The provider's answers change. Those kept examples train the next adapter version. There is no gradient from the engineer's click. Rule R-01: *"Weigh straight-line drag against corner gain; judge on full-lap delta."*
-- **v1 and v2 adapters.** v1 trained on the Friday collection. Our seeding bug made 50 of 53 candidates front-wing moves; it is fixed. v2's 40 scenarios carry R-01 in every input and span all five parameters.
-- **Exam.** 20 scenarios, truth from the evaluator. The 8 hardest go to Mubit **Try models** by hand (`docs/try-models/README.md`). Scores are counts, n/8, never percentages. The provider (untrained) scores verdicts 8/8 and next experiment 2/8 on those 8 (the prompt states the verdict thresholds). exam-rw8 is the demo experiment; its call is in v2's recorded data, so it is not held out for v2. Sheet score also shown without it: n/7 (provider 7/7 verdicts, 1/7 next experiment).
-
-**Still pending (needs the Mubit console, not invented here):**
-
-> **[PENDING]** kept examples after v2: `___` · adapter v1 test result: `___` · adapter v2 test result: `___`
-> **[PENDING]** Try models on the 8 sheet scenarios: v1 next experiment `_/8`, v1 verdict `_/8`, v2 next experiment `_/8`, v2 verdict `_/8`; without exam-rw8: v1 `_/7` / `_/7`, v2 `_/7` / `_/7`
-> Source when filled: Mubit console, Tasks / Adapters / Try models, scored with `npm run exam:score`.
-
-If v2 does not beat v1, the numbers go in as they come.
-
-## The loop
-
-1. **DESIGN**: the research agent proposes a setup change; the trace shows the Mubit request id.
-2. **EVALUATE**: the reduced-order lap model (calibrated to 2026 pole laps · aero map v1) gives lap, sectors, top speed, Becketts minimum speed and legality, in game seconds.
-3. **RACE**: baseline vs candidate, identical neutral bots, same seed, broadcast camera.
-4. **LEARN**: the engineer overrules, the rule enters every later task input, Mubit trains the next version from the kept examples.
-
-## Numbers
-
-| Number | Value | Source label |
-|---|---|---|
-| Baseline lap, Silverstone | 80.800 s | evaluator: reduced-order lap model · calibrated to 2026 pole laps · aero map v1 · game time scale: the real 2026 Silverstone pole 88.111 s maps to 80.800 s |
-| Demo experiment, rear wing +8°: predicted lap delta | +0.436 s (game seconds; ×1.09 ≈ +0.475 s real scale) | evaluator, same label |
-| Demo experiment: measured lap delta | +0.518 s (80.742 s → 81.260 s, game seconds) | measured in race, seed 42 (3 laps, two identical neutral bots) |
-| Prediction vs race | 19 % apart (target ≤ 25 %; one experiment, n = 1) | measured in race, seed 42 vs evaluator |
-| Same experiment, other seeds | +0.515 s (seed 7), +0.696 s (seed 1234) | measured in race, headless; 60 % from the prediction on seed 1234 |
-| Exam, full 20, verdicts | 20/20 | exam: provider untrained calls, truth from the evaluator |
-| Exam, full 20, next experiment | 10/20 | exam: provider untrained calls |
-| Exam, hardest 8, verdicts / next experiment | 8/8 / 2/8 | exam: provider untrained calls |
-| Same sheet without exam-rw8 (the demo experiment, in v2's recorded data) | 7/7 / 1/7 | exam: provider untrained calls |
-| v2 collection: agent verdict agrees with evaluator | 38 of 39 valid plans | `ledger.jsonl` in `docs/ledger-snapshot/2026-10-24T0215-after-v2/`, evaluator truth |
-| Tests | 118 pass | `npm test`, no network |
-
-The race was the only check on the evaluator. One demo experiment is a sample, not a calibration.
-
-## Concept lab (in progress)
-
-`concept/` lets an optimiser change the car itself, part by part, instead of five setup numbers. Not finished, off the demo's main path, and no LLM is involved.
-
-- **Adaptable concept car.** 33 parts, 23 shape parameters: wing spans, chords, settings and element counts, straight-mode flap angles, floor, ride height, diffuser, sidepods, wheelbase, ballast.
-- **FIA 2026 constraints.** A machine-readable subset of the 2026 F1 Technical Regulations, Section C, Issue 17 (28/04/2026). Each rule carries its article id. Figures not in Section C are flagged unverified (for example, nominal tyre mass is an estimate of 44 kg).
-- **Part masses are labelled estimates.** Real per-part masses are not public. The baseline sums to 764.9 kg plus 5.1 kg ballast, the 770 kg qualifying minimum.
-- **Optimiser.** A seeded (1+8) evolution strategy keeps a change only if it is legal and the numeric score improves. Every generation is recorded.
-- **Physics lap simulator, being calibrated** to the real 2026 British GP (pole 88.111 s and speed traps). It is not merged yet. Until then the bench is the lab's own lap model scaled to real seconds, which places the baseline at the real pole by construction. It ranks changes. It does not say where a 2026 car would qualify.
-- **What it measured so far.** Label: concept · reduced-order lap model · calibrated to 2026 pole laps · concept aero map v0. A 200-generation run (seed 1) ends 1.225 s under the concept baseline at Silverstone. Straight-mode gains are optimistic, and several best values sit on model edges. Read it as a ranking, not a prediction.
-
-Details, limits and the rule-by-rule verified list: [`docs/concept/CONCEPT.md`](docs/concept/CONCEPT.md).
+Built for Night Shift, London, 2026-10-24. Judges: the Mubit team. Deployed: **FILL: deployed URL**
 
 ## Run it
 
@@ -67,50 +12,91 @@ Node 22 or newer.
 
 ```bash
 npm ci
-cp server/.env.example server/.env   # add MUBIT_API_KEY; server/.env is gitignored
-npm test                             # 118 tests, no network
-MUBIT_MOCK=1 npm run dev             # canned planner, no key needed
+cp server/.env.example server/.env   # set MUBIT_API_KEY=mbt_...; server/.env is gitignored
+npm run dev                          # API 127.0.0.1:8787 + static 127.0.0.1:8788
+npm test                             # 326 tests, no network
 ```
 
-Open <http://127.0.0.1:8788/lab/> (API on 127.0.0.1:8787). Mock mode writes to `data-mock/` and never touches the real ledger.
+| URL | What |
+|---|---|
+| <http://127.0.0.1:8788/concept/lab/> → **Engine** button | the engine dashboard: **Speed run** (CMA-ES, no LLM), **Autonomous · Mubit** (Mubit proposes, a legal-only local search exploits, the sim keeps), **Garage** (hot swap any part or material, FIA verdict + per-corner deltas), **Red Bull car sheet**. The orange **Mubit loop** button opens the plain designer loop with the exact request of every call. |
+| <http://127.0.0.1:8788/concept/race/> | the physics-sim lap replayed on the game's 3D Silverstone, ghosts RB22 (sim) and ANT's real 2026 pole lap (OpenF1); the concept lab's "watch on Silverstone" link opens it with the current best car |
+| <http://127.0.0.1:8788/lab/> | the 5-knob research lab (the first Mubit task) |
 
-```bash
-npm run dev                          # real Mubit calls (needs the key; plan calls are trained calls)
-npm run smoke                        # one untrained call, prints the mreq_ id
-npm run prompt:check                 # verifies the frozen prompt sha
-npm run exam:score                   # scores docs/try-models/sheet.md (verdict n/8, next step n/8)
-npm run concept -- --gens 200 --seed 1 --circuits silverstone,monza --out /tmp/concept-run
-npm run test:concept                 # the concept module's 21 tests
-```
+`MUBIT_MOCK=1 npm run dev` runs everything without a key (the designer is a scripted stand-in; nothing is sent). Live designer calls are untrained by default; trained calls need an explicit confirmation (`TRAIN <n>`) and count against the project budget (EVAL_GUARDRAILS §4).
 
-`npm run collect` and `POST /api/collect` send trained calls. They need an explicit confirmation flag. Read `docs/agents/HANDOVER.md` §3 first.
+## How Mubit is used
+
+**Task 2: the concept designer (the closed loop).** `concept/designer/`, called only through `server/mubit.js`.
+
+- **Model and prompt.** `claude-haiku-4-5`, `max_tokens` 250, temperature 0, no tools; designer prompt v1 frozen (994 chars, task-key sha256 `71d48c5a…`, pinned by `test/concept-designer-frozen.test.js`).
+- **What each call receives** (one user message, ≤ 1,800 chars): the current best car (23 parameters by part, lap, gap to pole, mass, weight split), the last 3 tested changes with their **measured** physics-sim lap delta, sector deltas, kept flag, FIA articles violated and the lap segments that gained or lost most, refused proposals with the reason, and the parameters sitting at a legal limit. A real one: `docs/concept/loop-runs/trained-seed11/lineage.jsonl`, `loop.scenario` of any row (deck slide 5 shows iteration 3).
+- **What comes back:** 1–3 parameter changes, a hypothesis, an expected direction. There is no verdict field: `kept = legal && faster` is computed from the simulator's numbers (`concept/optimize.js`). A refused answer (parse error, illegal, duplicate) is replaced by one seeded fallback step, marked `by: "fallback"` in the next input.
+- **Session per run, request id per result.** `metadata.user_id` = run id = one Mubit session. Every lineage row stores its call's `x-middleware-request-id` (`loop.mubit_request_id`) and the id of the later call whose input carried its result (`loop.fed_to`).
+- **Outcome feedback, honestly.** Mubit has no API to attach an outcome or reward to a call. The result travels in the next call's input; on trained calls Mubit stores that input with the next proposal, and adapters train on the kept examples Mubit selects (docs/concept/LOOP.md §4, with links to Mubit's docs).
+
+Designer runs (as of 2026-10-24 09:53 UTC; source `docs/concept/loop-runs/*/{calls,lineage,summary}`):
+
+| Runs | Sessions | Iterations | Mubit calls | Trained | LLM proposal used | Kept (LLM-proposed) | Best lap (physics lap sim) |
+|---|---|---|---|---|---|---|---|
+| live untrained, prompt tuning | 3 | 13 | 13 | 0 | 7 of 13 | 3 (3) | 88.667 s (baseline 88.752) |
+| trained, frozen v1, sim v2 (seeds 11–14) | 4 | 60 | 60 | 60 | 52 of 60 | 9 (9) | 88.612 s (baseline 88.752) |
+| trained, big run, sim v3 (seeds 21–32) | 12 | 300 | 271 | 271 | 199 of 271 | 66 (39) | 88.292 s (baseline 88.763) |
+
+331 trained designer calls, 331 unique request ids, 16 sessions; 315 results carried into a later call. In the big run 63 answers were illegal and 9 duplicates (seeded fallback instead), and 29 iterations made no call (the designer pauses after 3 failures in a row). The Mubit loop alone, 25 calls a run, reaches 88.292 s (+0.181 s to pole); the 87.235 s car comes from the speed run. Trained-call budget: 99 research + 331 designer = 430 of 2,500.
+
+**Still pending (Mubit console, read by the owner, not invented here):**
+
+> **FILL** designer task: kept examples `___` · adapter status / test result `___` · Try models on the same scenarios, legal-and-faster proposals: provider `_/_`, adapter `_/_`
+
+**Task 1: the research engineer (first proof, the 5-knob lab).** Mubit task "Research engineer of F1", same model, frozen prompt `lab/prompt.js` (sha256 `6c5be1a3…`). 99 trained calls: 57 on Friday (43 kept examples, Training v1), 1 demo experiment, 41 on Saturday with the engineer's pit-wall rule *"Weigh straight-line drag against corner gain; judge on full-lap delta."* in every input (**rule-conditioned learning**: the rule enters the task input, the provider's answers change, those kept examples train the next adapter version; nothing trains on a click). 61 untrained calls (smoke, exam). Exam, 20 scenarios, truth from the evaluator: provider verdicts 20/20, next experiment 10/20; Try-models sheet of the 8 hardest: provider 8/8 verdicts, 2/8 next step (7/7 and 1/7 without exam-rw8, the demo experiment, whose call is in v2's recorded data). Source: `docs/ledger-snapshot/2026-10-24_02-37-26Z-0530-windcap-exam/`.
+
+> **FILL** research task: kept examples after v2 `___` · adapter v1 / v2 test result `___` · Try models next step v1 `_/8` (`_/7`), v2 `_/8` (`_/7`); verdict v1 `_/8` (`_/7`), v2 `_/8` (`_/7`) (score with `npm run exam:score`)
+
+## The result
+
+Source of every lap below: **physics lap sim · Silverstone · 2026 British GP qualifying conditions** (docs/concept/CAMPAIGN.md §4.0); real laps: **real 2026 qualifying · OpenF1 / formula1.com**.
+
+| Car | Lap | Δ real pole (ANT 88.111) | Δ real HAD RB22 (88.746) | Grid on the real 2026 Q order |
+|---|---|---|---|---|
+| RB22 baseline (sim) | 88.763 s | +0.652 | +0.017 | P6 |
+| **best legal RB22 / DM01 car** | **87.235 ± 0.154 s** (95 % 86.933–87.537) | **−0.876** | **−1.511** | **P1** (95 %: P1–P1) |
+| same car, concept aero map gains halved | 87.893 s | −0.218 | −0.853 | |
+
+- PU identical to the homologated DM01 (ICE 396.08 kW, MGU-K 350 kW, ES 4 MJ window); energy 7.633 MJ deployed, 3.657 of 6.5 MJ recharged.
+- Biggest per-corner gains (best − baseline): Stowe −0.258, Brooklands −0.215, Becketts (T13) −0.212, Luffield −0.197, Village −0.163, The Loop −0.115 s; the fastest straights give a little back (T9→T10 +0.038 s).
+- Floor width, rear-wing span and endplate, front-wing span and the bulkhead gap end at their FIA limits; floor throat 66.5 mm under the 75 mm roof.
+- 4 seeds × 5,000 physics laps + refinement (CMA-ES with a surrogate pre-screen; every reported number re-run on the physics sim). The band covers the sim's measured transfer error, fit residual and noise, **not** the concept aero map's coefficients (hence the halved-gains row).
+
+## The physics
+
+- **Physics lap sim v3** (`concept/sim/`, docs/concept/SIM.md): quasi-steady point mass with axle load transfer, power-law tyre load sensitivity, ride-height aero and floor stall, Straight / Corner Mode in the FIA zones only, the C5.12 power-reduction rules, wind, density, gradient. No per-corner factors. Four unknowns estimated on ANT's pole lap only; held out on the other 10 teams' laps: **speed RMS 10.1 km/h (target < 7: missed)**, sector bias +0.172 / +0.015 / −0.192 s. RB22 baseline 88.763 s vs HAD's real 88.746 s.
+- **FIA 2026 checklist** (docs/concept/FIA_CHECKLIST.md): 94 rows against Section C Issue 19, enforced in `concept/regs.js`; same-engine and material guards in `concept/bench.js`. An illegal car gets no lap.
+- **Materials** (MATERIALS.md, 23 materials with their C15 reading), **coupling** (COUPLING.md: all 23 shape parameters reach the simulated car), **identification** of 11 cars over 9 circuits from 194 OpenF1 laps (IDENTIFY.md).
+- **3D car** (VIEW.md): built procedurally from the design at true size (meshes within 1 mm of the parameters on 11 test designs); "concept geometry built to the design's dimensions · FIA 2026 frame · not a team CAD model".
+
+## Honest limits
+
+- The sim misses its own accuracy target (held-out RMS 10.1 vs < 7 km/h); corner-mode downforce sits outside its sourced prior (5.32 vs 4.6 m², widened with the reason in SIM.md §4.2). It is a reduced-order model; no part of it is a flow solution or was measured on a real car.
+- The concept aero map's component shares and slopes are estimates; part masses are labelled estimates.
+- Mubit learns by imitation of kept examples; it has no outcome API. The LLM predicted a faster lap for 250 of its 251 used trained proposals; the sim measured 48 faster. The simulator decides.
+- The grid / game-race modes are cinematic ("game lap model, mixes car and driver"); the physics replay is the result.
+- Equation I is pre-existing. "Model prediction ± band", never "we beat F1".
 
 ## Repo map
 
 | Path | What |
 |---|---|
-| `lab/` | prompt (frozen), aero map, evaluator, schema, the lab page and 3D car view |
-| `server/` | Hono API, Mubit client (`mubit.js`), scenario generator, ledger store, CLIs |
-| `concept/` | concept car: parts, FIA rule subset, aero map v0, optimiser, CLI |
-| `js/`, `css/`, `vendor/`, `assets/`, `index.html` | Equation I, the game (pre-existing; opt-in hooks in ARCHITECTURE §9) |
-| `test/` | `node --test` suites, Mubit mock, baseline fixtures |
-| `data/` | exam set (`exam.json`); the runtime ledger is gitignored |
-| `docs/` | build docs, deck, demo script, ledger snapshots |
-
-## Honest limits
-
-- **The evaluator is a reduced-order lap model**, not a high-fidelity aerodynamic simulation. Its 80.800 s is the game's time scale, anchored to the real 2026 pole (88.111 s). The race is our only check on it: 19 % apart on the demo experiment, 60 % on seed 1234.
-- **Corrections are rule-conditioned learning.** Nothing trains on the click itself. The v1 and v2 adapter results are pending, and v2 may not beat v1.
-- **The verdict is the easy part.** The prompt states the thresholds, so the provider already gets 20/20. The next experiment is what the exam measures, and v1's data was skewed by our seeding bug.
-- **The concept lab is in progress.** Part masses are estimates, the physics simulator is not merged, and its numbers rank changes only.
-- **Equation I is pre-existing.** The grid race is cinematic and mixes car and driver. The baseline-vs-candidate race is the result. A real-time 3-lap race needs a laptop GPU.
+| `concept/` | design layer, FIA rules (`regs.js`), materials, physics lap sim (`sim/`), campaign (`campaign/`), Mubit designer loop (`designer/`), engine dashboard + lab (`lab/`), 3D car (`view/`), Silverstone replay (`race/`), telemetry and data (`data/`) |
+| `server/` | Hono API, the only Mubit client (`mubit.js`), concept and engine routes |
+| `lab/` | the 5-knob research lab (prompt frozen, aero map, evaluator) |
+| `test/` | `node --test` suites (29 files, 326 tests) |
+| `docs/` | build docs, concept docs, deck, demo and video scripts, run logs (`docs/concept/loop-runs/`), ledger snapshots |
+| `js/`, `css/`, `assets/`, `vendor/`, `tools/`, `index.html` | Equation I, the game (pre-existing; opt-in hooks only) |
 
 ## Docs
 
-- Build docs, read first: [`docs/INSTRUCTIONS.md`](docs/INSTRUCTIONS.md), then [`docs/PRD.md`](docs/PRD.md), [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/ROADMAP.md`](docs/ROADMAP.md), [`docs/TASK_LOG.md`](docs/TASK_LOG.md) (decisions and session log)
-- Honesty rules: [`docs/EVAL_GUARDRAILS.md`](docs/EVAL_GUARDRAILS.md) · tests: [`docs/TESTING_GUIDE.md`](docs/TESTING_GUIDE.md)
-- Demo: [`docs/demo-script.md`](docs/demo-script.md) · deck source: [`docs/deck/slides.md`](docs/deck/slides.md)
-- Try models scoring: [`docs/try-models/README.md`](docs/try-models/README.md) · exam sheet: [`docs/try-models/sheet.md`](docs/try-models/sheet.md)
-- Concept lab: [`docs/concept/CONCEPT.md`](docs/concept/CONCEPT.md)
-- Agent handover and run commands: [`docs/agents/HANDOVER.md`](docs/agents/HANDOVER.md)
+- Concept: [`CAMPAIGN.md`](docs/concept/CAMPAIGN.md) (the result) · [`LOOP.md`](docs/concept/LOOP.md) (the Mubit loop) · [`DASHBOARD.md`](docs/concept/DASHBOARD.md) · [`SIM.md`](docs/concept/SIM.md) · [`FIA_CHECKLIST.md`](docs/concept/FIA_CHECKLIST.md) · [`RACE.md`](docs/concept/RACE.md) · [`VIEW.md`](docs/concept/VIEW.md)
+- Deck: [`docs/deck/slides.md`](docs/deck/slides.md) → `docs/deck/purple-deck.pdf` · video: [`docs/video-script.md`](docs/video-script.md) · live demo: [`docs/demo-script.md`](docs/demo-script.md)
+- Honesty rules: [`docs/EVAL_GUARDRAILS.md`](docs/EVAL_GUARDRAILS.md) · decisions and session log: [`docs/TASK_LOG.md`](docs/TASK_LOG.md)
 - The game: [`docs/equation-i/README.md`](docs/equation-i/README.md) · credits: [`CREDITS.md`](CREDITS.md)
