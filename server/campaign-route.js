@@ -54,7 +54,7 @@ const STAGES = {
 function Timings() {
   const m = new Map();
   return {
-    add(stage, ms, meta) { if (typeof ms !== "number" || !isFinite(ms)) return; let s = m.get(stage); if (!s) { s = { xs: [], n: 0, meta: null }; m.set(stage, s); } s.xs.push(ms); if (s.xs.length > 400) s.xs.shift(); s.n++; s.last = ms; if (meta) s.meta = meta; },
+    add(stage, ms, meta) { if (typeof ms !== "number" || !isFinite(ms)) return; let s = m.get(stage); if (!s) { s = { xs: [], n: 0, meta: null }; m.set(stage, s); } s.xs.push(ms); if (s.xs.length > 400) s.xs.shift(); s.n++; s.last = ms; s.meta = meta || null; },
     view() {
       const out = {};
       for (const [k, s] of m) { const xs = s.xs.slice().sort((a, b) => a - b); const mean = xs.reduce((a, b) => a + b, 0) / xs.length; out[k] = { n: s.n, mean_ms: +mean.toFixed(3), p95_ms: +xs[Math.min(xs.length - 1, Math.floor(0.95 * (xs.length - 1) + 0.5))].toFixed(3), last_ms: +s.last.toFixed(3), window: xs.length, what: STAGES[k] || k, meta: s.meta || null }; }
@@ -301,7 +301,7 @@ function mount(app, o) {
       const t = Date.now();
       if (ev.type === "phase" || improved || t - last > 250) {
         last = t;
-        const slim = Object.assign({}, ev); delete slim.best;
+        const slim = Object.assign({}, ev, { kind: ev.type }); delete slim.best; delete slim.type;   // the SSE event type is "progress"; ev.type (gen | refine | phase) travels as kind
         r.push("progress", Object.assign(slim, { laps: ev.total_laps, laps_per_s: st.rate, best_s: (st.best[team] || {}).lap_s, best: improved ? st.best[team] : undefined, grid_position: st.best[team] ? gridOf(st.best[team].lap_s) : null, timings: t - (r.lastT || 0) > 1000 ? (r.lastT = t, timings.view()) : undefined }), ev.type === "phase" || improved);
       }
     };

@@ -149,7 +149,7 @@
     try {
       const base = C.design.baseline({ team: "redbull" });
       S.view = EI.conceptView.mount(host, { baseline: base, design: base, parts: C.parts, label: true, legend: false, livery: base.livery });
-      host.addEventListener("conceptview:design", e => { if (e.detail && isNum(e.detail.ms) && S.view3dPending) { S.view3dPending = false; clientStat("view3d", e.detail.ms); } });
+      host.addEventListener("conceptview:design", e => { if (e.detail && isNum(e.detail.ms) && S.view3dPending) { S.view3dPending = false; clientStat("view3d", e.detail.ms); S.lastRebuild = { ms: e.detail.ms, rebuilt: e.detail.rebuilt || [] }; } });
     } catch (e) { host.append(el("div", { class: "empty warn" }, "3D view error: " + (e.message || e))); S.view = null; }
   }
   function show3d(params, team, highlight) {
@@ -159,8 +159,8 @@
       const base = C.design.baseline(team ? { team } : undefined), d = C.design.clone(base); d.params = JSON.parse(key); d.id = "engine-car";
       S.view3dPending = true;
       const r = S.view.setDesign(d, { baseline: base, animate: false, livery: base.livery });
-      if (r && isNum(r.ms)) { S.view3dPending = false; clientStat("view3d", r.ms); }
-      if (highlight) S.view.setHighlight(highlight);
+      if (r && isNum(r.ms)) { S.view3dPending = false; clientStat("view3d", r.ms); S.lastRebuild = { ms: r.ms, rebuilt: r.rebuilt || [] }; }
+      S.view.setHighlight(highlight || []);   // [] also clears the change tags: only the garage shows them (one edit at a time)
     } catch (e) { console.warn("engine 3D", e); }
   }
 
@@ -185,15 +185,19 @@
     const m = run.mode, st = S[m];
     if (st.es && st.run && st.run.run_id === run.run_id) return;
     if (st.es) st.es.close();
-    if (m === "speed") Object.assign(st, { run, trace: {}, best: {}, baseline: {}, final: null, status: "running", laps: 0, rate: null, phase: "starting", t0: Date.now(), note: null, stopping: false });
-    else Object.assign(st, { run, trace: [], best: null, baseline: null, final: null, status: "running", rows: new Map(), laps: 0, rate: null, calls: 0, note: null, stopping: false, stopReason: null, t0: Date.now() });
+    if (m === "speed") Object.assign(st, { run, trace: {}, best: {}, baseline: {}, final: null, status: "running", laps: 0, rate: null, rateAvg: false, phase: "starting", t0: Date.now(), note: null, stopping: false });
+    else Object.assign(st, { run, trace: [], best: null, baseline: null, final: null, status: "running", rows: new Map(), laps: 0, rate: null, rateAvg: false, calls: 0, note: null, stopping: false, stopReason: null, t0: Date.now() });
     if (fresh) setTab(m);
     const es = new EventSource(API + run.stream); st.es = es;
     const on = (type, fn) => es.addEventListener(type, ev => { try { fn(JSON.parse(ev.data)); } catch (e) { console.warn("engine " + type, e); } schedule(); });
     on("snapshot", x => snapshot(m, x));
     on("start", x => { st.startEv = x; });
     on("progress", x => (m === "speed" ? speedProgress(x) : autoProgress(x)));
-    on("final", x => { st.final = x; if (x.timings) S.timings = x.timings; });
+    on("final", x => {
+      st.final = x; if (x.timings) S.timings = x.timings;
+      if (m === "speed") { st.phase = "finished · " + fmtInt(x.laps) + " physics laps in " + x.runtime_s + " s" + (x.stopped ? " (" + x.stopped + ")" : ""); if (x.runtime_s > 0) { st.rate = x.laps / x.runtime_s; st.rateAvg = true; } }
+      else if (x.laps && st.t0) { st.rate = x.laps / Math.max(1, (Date.now() - st.t0) / 1000); st.rateAvg = true; }
+    });
     on("stopping", () => { st.stopping = true; });
     on("error", x => { if (x && x.error) { st.status = "error"; st.note = "run failed: " + x.error; } });
     on("loop_error", x => { st.note = "loop error: " + (x.error || ""); });
@@ -231,9 +235,9 @@
   function speedProgress(x) {
     const st = S.speed; st.laps = x.laps; if (isNum(x.laps_per_s)) st.rate = x.laps_per_s;
     if (x.timings) S.timings = x.timings;
-    if (x.type === "phase") { st.phase = x.phase === "seed" ? x.team + " · seed " + x.seed : x.phase === "refine" ? x.team + " · refinement (volumes, materials, coordinates)" : x.phase === "report" ? x.team + " · re-scoring the best car on the physics sim" : x.team + " · baseline lapped"; if (x.phase === "baseline") { st.baseline[x.team] = x.baseline; st.trace[x.team] = st.trace[x.team] || [[x.laps, x.baseline.lap_s]]; if (!st.best[x.team]) st.best[x.team] = x.baseline; } }
-    else if (x.type === "gen") st.phase = x.team + " · seed " + x.seed + " · restart " + x.restart + " (" + x.restart_kind + ") · gen " + x.gen + " · " + x.legal_in_batch + "/" + x.batch + " legal";
-    else if (x.type === "refine") st.phase = x.team + " · refinement · " + x.stage + " · " + x.refine_laps + " laps";
+    if (x.kind === "phase") { st.phase = x.phase === "seed" ? x.team + " · seed " + x.seed : x.phase === "refine" ? x.team + " · refinement (volumes, materials, coordinates)" : x.phase === "report" ? x.team + " · re-scoring the best car on the physics sim" : x.team + " · baseline lapped"; if (x.phase === "baseline") { st.baseline[x.team] = x.baseline; st.trace[x.team] = st.trace[x.team] || [[x.laps, x.baseline.lap_s]]; if (!st.best[x.team]) st.best[x.team] = x.baseline; } }
+    else if (x.kind === "gen") st.phase = x.team + " · seed " + x.seed + " · restart " + x.restart + " (" + x.restart_kind + ") · gen " + x.gen + " · " + x.legal_in_batch + "/" + x.batch + " legal";
+    else if (x.kind === "refine") st.phase = x.team + " · refinement · " + x.stage + " · " + x.refine_laps + " laps";
     if (x.best) { st.best[x.team] = x.best; (st.trace[x.team] = st.trace[x.team] || []).push([x.laps, x.best.lap_s]); }
   }
   function leftSpeed() {
@@ -254,7 +258,7 @@
     const elapsed = st.t0 && busy ? ((Date.now() - st.t0) / 1000).toFixed(0) + " s" : st.final ? st.final.runtime_s + " s" : "—";
     const kp = el("div", { class: "eng-kpis" },
       kpi("laps evaluated", fmtInt(st.laps), "physics laps run on the worker threads"),
-      kpi("laps / s", isNum(st.rate) ? st.rate.toFixed(0) : "—", "finished physics laps per second over the last 3 s"),
+      kpi(st.rateAvg ? "laps / s (avg)" : "laps / s", isNum(st.rate) ? st.rate.toFixed(0) : "—", st.rateAvg ? "physics laps ÷ wall time of the whole run" : "finished physics laps per second over the last 3 s"),
       kpi("best lap", b ? fmtT(b.lap_s) : "—", SIM, "purple"),
       kpi("vs baseline", b && base ? fmtD(b.lap_s - base.lap_s) : "—", SIM, b && base ? dcls(b.lap_s - base.lap_s) : ""),
       kpi("vs real pole", b ? fmtD(b.lap_s - pole()) : "—", "model lap − real 2026 pole " + pole() + " s (" + REAL + ")", b ? dcls(b.lap_s - pole()) : ""),
@@ -313,7 +317,7 @@
       kpi("iterations", fmtInt(st.trace.length ? st.trace[st.trace.length - 1][0] : 0), "Mubit calls answered and measured"),
       kpi("designer calls", fmtInt(st.calls), "calls through server/mubit.js (mock: scripted stand-in)"),
       kpi("physics laps", fmtInt(st.laps), "laps of the local search + measurement, worker threads"),
-      kpi("laps / s", isNum(st.rate) ? st.rate.toFixed(0) : "—", "finished physics laps per second over the last 3 s"),
+      kpi(st.rateAvg ? "laps / s (avg)" : "laps / s", isNum(st.rate) ? st.rate.toFixed(0) : "—", st.rateAvg ? "physics laps ÷ wall time of the whole run" : "finished physics laps per second over the last 3 s"),
       kpi("best lap", b ? fmtT(b.lap_s) : "—", SIM, "purple"),
       kpi("vs baseline", b && base ? fmtD(b.lap_s - base.lap_s) : "—", SIM, b && base ? dcls(b.lap_s - base.lap_s) : ""));
     const budgetLine = bud ? el("div", { class: "eng-budget", title: bud.rule + (bud.by_source.length ? " · " + bud.by_source.map(x => x.source + ": " + x.trained_calls).join(", ") : "") },
@@ -330,7 +334,7 @@
     return el("div", { class: "eng-feed" }, rows.map(r => {
       const p = r.proposal || {}, s = r.search, res = r.result, m = res && res.measured || {}, kept = res && res.kept;
       return el("div", { class: "efr" + (kept ? " kept" : res ? " rej" : "") },
-        el("div", { class: "efr1" }, el("b", null, "#" + r.k), el("code", { class: "rid", title: "x-middleware-request-id of this iteration's call (mock ids start mreq_mock)" }, (r.response && r.response.mubit_request_id) || "…"),
+        el("div", { class: "efr1" }, el("b", null, "#" + r.k), el("code", { class: "rid", title: "x-middleware-request-id of this iteration's call (mock ids start mreq_mock)" }, (r.response && r.response.mubit_request_id) || (res ? "no call (" + ((res.designer && res.designer.reason) || "fallback") + ")" : "…")),
           p.proposer ? el("span", { class: "badge sm " + (p.proposer === "llm" ? "mubit" : "amber") }, p.proposer === "llm" ? "proposal" : "fallback") : null,
           res ? el("span", { class: "badge sm " + (kept ? "green" : res.legal ? "" : "red") }, kept ? "kept" : res.legal ? "not faster" : "illegal") : null,
           m.d_lap_s != null ? delta(m.d_lap_s, " s") : null),
@@ -413,26 +417,34 @@
   }
 
   // ---------------------------------------------------------------- centre panels
+  function viewModes() {
+    if (!S.view) return null;
+    const b = (m, t) => el("button", { type: "button", class: "btn small" + ((S.viewMode || "solid") === m ? " primary" : ""), onclick: () => { S.viewMode = m; try { S.view.setMode(m); } catch (e) { /* older view without this mode */ } schedule(); } }, t);
+    const rb = S.lastRebuild;
+    return el("span", { class: "eng-vm" }, b("solid", "solid"), b("xray-mass", "x-ray mass"), b("materials", "materials"),
+      rb ? el("span", { class: "src", title: "parts the 3D view rebuilt on the last change (EI.conceptView setDesign)" }, " 3D " + fmtMs(rb.ms) + " ms" + (rb.rebuilt.length ? " · rebuilt " + rb.rebuilt.slice(0, 4).join(", ") + (rb.rebuilt.length > 4 ? " +" + (rb.rebuilt.length - 4) : "") : "")) : null);
+  }
   function renderMid() {
     const tl = $("#engHeroTL", root), bl = $("#engHeroBL", root), mb = midBottom;
+    const tlAdd = () => { const v = viewModes(); if (v) tl.append(v); };
     if (S.tab === "speed") {
       const st = S.speed, team = Object.keys(st.best)[0] || "redbull", b = st.best[team];
       if (b && b.params) show3d(b.params, team === "generic" ? null : team);
-      tl.replaceChildren(el("span", { class: "badge " + (st.status === "running" ? "purple" : "") }, st.status === "running" ? "speed run · best car so far" : st.final ? "speed run · final" : "RB22 baseline"), el("span", { class: "badge" }, "ghost = baseline"));
+      tl.replaceChildren(el("span", { class: "badge " + (st.status === "running" ? "purple" : "") }, st.status === "running" ? "speed run · best car so far" : st.final ? "speed run · final" : "RB22 baseline"), el("span", { class: "badge" }, "ghost = baseline")); tlAdd();
       bl.replaceChildren(finalCard("speed"));
       mb.replaceChildren(el("div", { class: "ph" }, el("span", { class: "label" }, "Convergence · best legal lap vs physics laps"), el("span", { class: "src" }, SIM)), el("div", { class: "svgwrap", id: "engChart" }));
       chartSpeed($("#engChart", mb));
     } else if (S.tab === "auto") {
       const st = S.auto;
       if (st.best && st.best.params) show3d(st.best.params, "redbull"); else if (S.auto.startParams && st.status !== "running") show3d(S.auto.startParams, "redbull");
-      tl.replaceChildren(el("span", { class: "badge " + (st.status === "running" ? "purple" : "") }, st.status === "running" ? "autonomous · best kept car" : st.final ? "autonomous · final" : "start car"), el("span", { class: "badge" }, "ghost = baseline"));
+      tl.replaceChildren(el("span", { class: "badge " + (st.status === "running" ? "purple" : "") }, st.status === "running" ? "autonomous · best kept car" : st.final ? "autonomous · final" : "start car"), el("span", { class: "badge" }, "ghost = baseline")); tlAdd();
       bl.replaceChildren(finalCard("auto"));
       mb.replaceChildren(el("div", { class: "ph" }, el("span", { class: "label" }, "Best lap per iteration"), el("span", { class: "src" }, "x: iteration (Mubit call) · " + SIM)), el("div", { class: "svgwrap", id: "engChart" }));
       chartAuto($("#engChart", mb));
     } else if (S.tab === "garage") {
       const g = S.garage, res = g.res;
       if (g.params) show3d(g.params, "redbull", res && res.diff ? Array.from(new Set(res.diff.map(d => d.part))) : []);
-      tl.replaceChildren(el("span", { class: "badge purple" }, "garage car"), el("span", { class: "badge" }, "ghost = RB22 baseline"));
+      tl.replaceChildren(el("span", { class: "badge purple" }, "garage car"), el("span", { class: "badge" }, "ghost = RB22 baseline")); tlAdd();
       bl.replaceChildren(garageCard());
       mb.replaceChildren(el("div", { class: "ph" }, el("span", { class: "label" }, "Per corner · garage car − baseline"), el("span", { class: "src one", title: res && res.segments_label || "" }, res && res.segments_label ? "physics lap sim contributions · sum = lap Δ" : "")), el("div", { class: "segs", id: "engSegs" }, segBars(res)));
     }
@@ -477,7 +489,7 @@
     const iw = W - pad.l - pad.r, ih = H - pad.t - pad.b, X = v => pad.l + (v / Math.max(1e-9, xmax)) * iw, Y = v => pad.t + ((v - lo) / Math.max(1e-9, hi - lo)) * ih;
     const nodes = [], step = nice((hi - lo) / 4);
     for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) nodes.push(sv("line", { class: "grid", x1: pad.l, x2: W - pad.r, y1: Y(v), y2: Y(v) }), sv("text", { class: "ax", x: pad.l - 6, y: Y(v) + 3, "text-anchor": "end", text: v.toFixed(step < 0.1 ? 2 : 1) }));
-    const sx = nice(xmax / 5); for (let v = 0; v <= xmax + 1e-9; v += sx) nodes.push(sv("text", { class: "ax", x: X(v), y: H - 6, "text-anchor": "middle", text: v >= 10000 ? (v / 1000).toFixed(0) + "k" : String(Math.round(v)) }));
+    const sx = nice(xmax / 5); for (let v = 0; v <= xmax + 1e-9; v += sx) if (X(v) < W - pad.r - 100) nodes.push(sv("text", { class: "ax", x: X(v), y: H - 6, "text-anchor": "middle", text: v >= 10000 ? (v / 1000).toFixed(0) + "k" : String(Math.round(v)) }));
     nodes.push(sv("text", { class: "ax ttl", x: W - pad.r, y: H - 6, "text-anchor": "end", text: xlab }));
     const ref = (v, label, cls) => { if (isNum(v) && v >= lo && v <= hi) nodes.push(sv("line", { class: "ref " + cls, x1: pad.l, x2: W - pad.r, y1: Y(v), y2: Y(v) }), sv("text", { class: "reft", x: W - pad.r - 4, y: Y(v) - 3, "text-anchor": "end", text: label })); };
     return { W, H, X, Y, nodes, ref, pad, ih };
@@ -495,7 +507,7 @@
       let d = "M" + f.X(p[0][0]) + "," + f.Y(p[0][1]); for (let i = 1; i < p.length; i++) d += " H" + f.X(p[i][0]) + " V" + f.Y(p[i][1]); d += " H" + f.X(Math.max(p[p.length - 1][0], st.laps || 0));
       f.nodes.push(sv("path", { class: "bestline", d, style: "stroke:" + (col[t] || "var(--purple)") }));
       for (const q of p.slice(1)) f.nodes.push(sv("circle", { class: "kept", cx: f.X(q[0]), cy: f.Y(q[1]), r: 2.4, style: "fill:" + (col[t] || "var(--purple)") }));
-      f.nodes.push(sv("text", { class: "reft", x: f.pad.l + 6, y: f.pad.t + 12 + teams.indexOf(t) * 12, text: (t === "redbull" ? "RB22 · DM01" : "generic 2026") + " best " + fmtT(p[p.length - 1][1]) }));
+      f.nodes.push(sv("text", { class: "reft", x: f.pad.l + 6, y: f.H - f.pad.b - 6 - teams.indexOf(t) * 12, text: (t === "redbull" ? "RB22 · DM01" : "generic 2026") + " best " + fmtT(p[p.length - 1][1]) }));
     }
     if (!pts.length) f.nodes.push(sv("text", { class: "ax hint", x: f.W / 2, y: f.H / 2, "text-anchor": "middle", text: "the best legal lap so far appears here as the campaign runs" }));
     host.replaceChildren(sv("svg", { width: f.W, height: f.H, viewBox: "0 0 " + f.W + " " + f.H, role: "img", "aria-label": "convergence: best legal lap vs physics laps" }, f.nodes));
@@ -545,7 +557,7 @@
     const leg = legal === "live" ? el("div", { class: "ok src" }, "legal: a car is only ever kept after the bench passed it (FIA 2026 rules in concept/regs.js, same-engine DM01, permitted materials, energy limits)")
       : legal && legal.pass != null ? el("div", { class: legal.fail.length ? "warn" : "ok" }, (legal.fail.length ? legal.fail.length + " FAIL: " + legal.fail.join(", ") : "legal: every check passes") + " · " + legal.pass + " pass, " + legal.info + " info" + (legal.not_enforced.length ? " · not enforced / not checkable yet: " + legal.not_enforced.join(", ") : "")) : null;
     return el("div", { class: "panel eng-card carp" }, el("div", { class: "ph" }, el("span", { class: "label" }, "Parameters · " + (title || "car")), el("span", { class: "src" }, ch.length + " changed vs RB22")),
-      el("div", { class: "chl" }, ch.length ? ch.map(c => el("div", { class: "chr" }, el("span", { class: "src" }, (PARTN[c.p] || c.p) + " · " + (SHORT[c.p + "." + c.k] || c.k)), el("span", { class: "num" }, String(c.a) + " → " + String(c.b)))) : el("div", { class: "src pad" }, "baseline car (no change yet)")),
+      el("div", { class: "chl" }, ch.length ? ch.map(c => el("div", { class: "chr" }, el("span", { class: "src" }, (PARTN[c.p] || c.p) + " · " + (SHORT[c.p + "." + c.k] || c.k)), el("span", { class: "num" }, (c.a === undefined ? "baseline" : String(c.a)) + " → " + (c.b === undefined ? "baseline" : String(c.b))))) : el("div", { class: "src pad" }, "baseline car (no change yet)")),
       leg);
   }
   function renderRight() {
@@ -565,11 +577,11 @@
   function renderSheet() {
     const x = S.sheet; if (!x) return;
     const groups = { mass: "Mass and geometry", pu: "Power unit · " + x.pu, driveline: "Gearbox and driveline", tyres: "Tyres and brakes", aero: "Aero (effective coefficients)", sim: "Sim constants" };
-    const t1 = el("table", { class: "stab" }, el("thead", null, el("tr", null, el("th", null, "Quantity"), el("th", null, "Value"), el("th", null, "Flag"), el("th", null, "Source"))),
-      el("tbody", null, Object.keys(groups).flatMap(gk => [el("tr", { class: "sg" }, el("td", { colspan: "4" }, groups[gk]))].concat(x.rows.filter(r => r.group === gk).map(r => el("tr", null, el("td", null, r.name), el("td", { class: "num" }, String(r.value) + (r.unit ? " " + r.unit : "")), el("td", null, el("span", { class: "flag " + FLAG[r.flag], title: x.flags[r.flag] }, r.flag)), el("td", { class: "src" }, r.source)))))));
+    const t1 = el("table", { class: "stab cs" }, el("colgroup", null, el("col", { style: "width:27%" }), el("col", { style: "width:17%" }), el("col", { style: "width:9%" }), el("col", { style: "width:47%" })), el("thead", null, el("tr", null, el("th", null, "Quantity"), el("th", null, "Value"), el("th", null, "Flag"), el("th", null, "Source"))),
+      el("tbody", null, Object.keys(groups).flatMap(gk => [el("tr", { class: "sgrp" }, el("td", { colspan: "4" }, groups[gk]))].concat(x.rows.filter(r => r.group === gk).map(r => el("tr", null, el("td", null, r.name), el("td", { class: "num" }, String(r.value) + (r.unit ? " " + r.unit : "")), el("td", null, el("span", { class: "flag " + FLAG[r.flag], title: x.flags[r.flag] }, r.flag)), el("td", { class: "src" }, r.source)))))));
     const cp = x.coupling;
     const dl = o => (!o ? "—" : o.na ? el("span", { class: "src" }, o.na) : o.illegal ? el("span", { class: "src", title: o.illegal.join(", ") }, "illegal (" + o.illegal.length + " rule" + (o.illegal.length > 1 ? "s" : "") + ")") : delta(o.d_lap_s, " s"));
-    const t2 = cp ? el("table", { class: "stab cpl" }, el("thead", null, el("tr", null, el("th", null, "Parameter"), el("th", null, "Baseline ± step"), el("th", null, "Mechanism (COUPLING.md)"), el("th", null, "Δlap −"), el("th", null, "Δlap +"))),
+    const t2 = cp ? el("table", { class: "stab cpl" }, el("colgroup", null, el("col", { style: "width:25%" }), el("col", { style: "width:15%" }), el("col", { style: "width:36%" }), el("col", { style: "width:12%" }), el("col", { style: "width:12%" })), el("thead", null, el("tr", null, el("th", null, "Parameter"), el("th", null, "Baseline ± step"), el("th", null, "Mechanism (COUPLING.md)"), el("th", null, "Δlap −"), el("th", null, "Δlap +"))),
       el("tbody", null, cp.rows.map(r => el("tr", null, el("td", null, el("div", null, r.key), el("div", { class: "src" }, r.label)), el("td", { class: "num" }, r.base + " ± " + r.step + " " + r.unit), el("td", { class: "src" }, r.mechanism || "—", r.expected ? el("div", { class: "muted" }, "expected: " + r.expected) : null), el("td", { class: "num" }, dl(r.minus)), el("td", { class: "num" }, dl(r.plus)))))) : null;
     sheetHost.replaceChildren(
       el("div", { class: "panel eng-card" }, el("div", { class: "ph" }, el("span", { class: "label" }, "Red Bull RB22 · Red Bull Ford DM01 · every number the sim uses"), el("span", { class: "src" }, "baseline lap " + fmtT(x.lap.lap_s) + " s · " + x.lap.label)),
