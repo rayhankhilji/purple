@@ -15,7 +15,7 @@ test("concept regs: the baseline car is legal and every rule carries an article,
     assert.ok(r.id && r.article && r.text, r.id); assert.equal(typeof r.verified, "boolean", r.id);
     if (r.kind !== "info" && r.id !== "PKG-WB") assert.ok(typeof r.value === "number" || typeof r.min === "number", r.id);
   }
-  assert.match(regs.SOURCE, /Section C.*Issue 17.*28\/04\/2026/);
+  assert.match(regs.SOURCE, /Section C.*Issue 19.*25\/06\/2026/); assert.equal(regs.DOC.issue, 19);
   assert.equal(regs.NOMINAL_TYRE_MASS.verified, false);
 });
 
@@ -26,9 +26,11 @@ const CASES = {
   "REG-C-FRONT-AXLE": () => ids(withParam("survival_cell", "front_axle_offset_mm", 200)),
   "REG-C-COCKPIT": () => ids(withParam("survival_cell", "cockpit_len_mm", 2050)).concat(ids(withParam("survival_cell", "cockpit_len_mm", 1800))),
   "REG-C-BULKHEAD": () => ids(withParam("survival_cell", "bulkhead_gap_mm", 340)),
+  "REG-C-FLOOR-WIDTH": () => ids(withParam("floor", "width_mm", 1560)),
   "REG-C-FW-ELEMENTS": () => ids(withParam("front_wing", "elements", 4)),
   "REG-C-FW-SPAN": () => ids(withParam("front_wing", "span_mm", 1400)),
-  "REG-C-FW-CHORD": () => ids(withParam("front_wing", "chord_mm", 800)),
+  "REG-C-FW-CHORD": () => ids(withParam("front_wing", "chord_mm", 620)),
+  "REG-C-FW-SM-ENVELOPE": () => { const d = withParam("front_wing", "chord_mm", 590); d.params.front_wing.sm_delta_deg = 20; return ids(d); },
   "REG-C-RW-ELEMENTS": () => ids(withParam("rear_wing", "elements", 4)),
   "REG-C-RW-SPAN": () => ids(withParam("rear_wing", "span_mm", 1200)),
   "REG-C-RW-CHORD": () => ids(withParam("rear_wing", "chord_mm", 500)),
@@ -41,13 +43,15 @@ const CASES = {
   "REG-C-MASS-REAR": () => ids(withOverride("pu_ice", { x_mm: 500 })),
   "REG-C-DRIVER-MASS": () => factsWith(f => { f.mass.driver_kg = 80; }),
   "REG-C-PU-MASS": () => ids(withOverride("pu_ice", { mass_kg: 100 })),
-  "REG-C-ICE-MASS": () => ids(withOverride("pu_ice", { mass_kg: 125 })),
+  "REG-C-ICE-MASS": () => ids(withOverride("pu_ice", { mass_kg: 115 })),
   "REG-C-TC-MASS": () => ids(withOverride("pu_turbo", { mass_kg: 10 })),
   "REG-C-MGUK-MASS": () => ids(withOverride("pu_mguk", { mass_kg: 14 })),
   "REG-C-ES-MASS": () => ids(withOverride("pu_es", { mass_kg: 30 })),
   "REG-C-PU-COG": () => { const d = withOverride("pu_ice", { z_mm: 150 }); d.overrides.pu_turbo = { z_mm: 150 }; return ids(d); },
   "REG-C-DRIVELINE-MASS": () => ids(withOverride("gearbox", { mass_kg: 20 })),
   "PKG-WB": () => ids(withParam("layout", "wheelbase_mm", 3300)),
+  "PKG-COOLING": () => ids(withParam("sidepods", "inlet_cm2", 550)),
+  "PKG-FLOOR-STALL": () => { const d = withParam("floor", "ride_height_mm", 30); d.params.floor.throat_mm = 80; return ids(d); },
 };
 test("concept regs: check() catches every checkable violation type, with its article in the message", () => {
   const checkable = regs.RULES.concat(regs.MODEL_RULES).filter(r => r.kind !== "info").map(r => r.id);
@@ -71,7 +75,7 @@ test("concept mass: the parts sum, ballast tops the car up to the C4.1 minimum, 
   // a heavier part eats ballast first (total stays at the minimum), and only then makes the car heavier
   const heavy = d => design.facts(d).mass;
   const gb = m.parts.find(p => p.id === "gearbox").mass_kg;
-  const h5 = heavy(withOverride("gearbox", { mass_kg: gb + 5 })); assert.equal(h5.total_kg, 770); assert.ok(Math.abs(h5.ballast_kg - (m.ballast_kg - 5)) < 0.02);
+  const h1 = heavy(withOverride("gearbox", { mass_kg: gb + 1 })); assert.equal(h1.total_kg, 770); assert.ok(Math.abs(h1.ballast_kg - (m.ballast_kg - 1)) < 0.02);
   const h20 = heavy(withOverride("gearbox", { mass_kg: gb + 20 })); assert.equal(h20.ballast_kg, 0); assert.ok(Math.abs(h20.total_kg - (m.parts_kg + 20)) < 0.02);
   // the minimum can never be undercut by a design (ballast is automatic): lighter wings -> more ballast, same total
   const light = heavy(Object.assign(withParam("rear_wing", "chord_mm", 300), {})); assert.equal(light.total_kg, 770); assert.ok(light.ballast_kg > m.ballast_kg);

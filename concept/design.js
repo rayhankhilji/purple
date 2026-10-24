@@ -20,7 +20,10 @@
   }
   function gauss(rng) { const u = Math.max(rng(), 1e-12), v = rng(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
 
-  const spec = (part, param) => { const p = parts.BY_ID[part]; return p && p.params[param] ? Object.assign({ part, param }, p.params[param]) : null; };
+  // own-property lookups only: "toString", "constructor", "__proto__" and friends are never parts or parameters (the proposer may
+  // be an LLM; its strings are data)
+  const own = (o, k) => o != null && typeof k === "string" && Object.prototype.hasOwnProperty.call(o, k);
+  const spec = (part, param) => { const p = own(parts.BY_ID, part) ? parts.BY_ID[part] : null; return p && own(p.params, param) ? Object.assign({ part, param }, p.params[param]) : null; };
   const quant = (s, v) => { const q = Math.round((v - s.min) / s.step) * s.step + s.min; return +Math.min(s.max, Math.max(s.min, q)).toFixed(6); };
 
   function baseline() {
@@ -33,26 +36,40 @@
   // domain validation (types and model bounds; NOT legality, which is concept/regs.js). Returns { ok, errors: [string] }.
   function validate(d) {
     const errors = [];
-    if (!d || typeof d !== "object" || !d.params) return { ok: false, errors: ["design: missing params"] };
+    if (!d || typeof d !== "object" || !d.params || typeof d.params !== "object") return { ok: false, errors: ["design: missing params"] };
     for (const s of parts.PARAMS) {
-      const v = d.params[s.part] && d.params[s.part][s.param];
+      const v = own(d.params, s.part) && own(d.params[s.part], s.param) ? d.params[s.part][s.param] : undefined;
       if (typeof v !== "number" || !isFinite(v)) { errors.push(s.part + "." + s.param + ": not a number"); continue; }
       if (v < s.min - 1e-9 || v > s.max + 1e-9) errors.push(s.part + "." + s.param + ": " + v + " outside the model domain " + s.min + "-" + s.max);
       if (s.int && Math.round(v) !== v) errors.push(s.part + "." + s.param + ": must be an integer");
     }
-    for (const part of Object.keys(d.params)) if (!parts.BY_ID[part]) errors.push("unknown part " + part);
+    // every key present must be a known part / parameter with a finite value (NaN or a stray inherited name never validates)
+    for (const part of Object.getOwnPropertyNames(d.params)) {
+      if (!own(parts.BY_ID, part)) { errors.push("unknown part " + part); continue; }
+      const ps = d.params[part];
+      if (!ps || typeof ps !== "object") { errors.push(part + ": not an object"); continue; }
+      for (const k of Object.getOwnPropertyNames(ps)) {
+        if (!own(parts.BY_ID[part].params, k)) errors.push("unknown parameter " + part + "." + k);
+        else if (typeof ps[k] !== "number" || !isFinite(ps[k])) { const e = part + "." + k + ": not a number"; if (!errors.includes(e)) errors.push(e); }
+      }
+    }
     return { ok: errors.length === 0, errors };
   }
 
   // changes: [{ part, param, to }] -> new design (values clamped to the domain and quantised; `clamped` marks a clipped value)
   function applyChanges(d, changes, meta) {
     const out = clone(d), applied = [];
+    if (changes != null && !Array.isArray(changes)) throw new Error("concept: changes must be an array");
     for (const c of changes || []) {
-      const s = spec(c.part, c.param); if (!s) throw new Error("concept: unknown parameter " + c.part + "." + c.param);
-      const from = out.params[c.part][c.param], to = quant(s, +c.to);
+      if (!c || typeof c !== "object") throw new Error("concept: a change must be an object { part, param, to }");
+      const s = spec(c.part, c.param); if (!s) throw new Error("concept: unknown parameter " + String(c.part) + "." + String(c.param));
+      const num = typeof c.to === "number" ? c.to : typeof c.to === "string" && c.to.trim() !== "" ? Number(c.to) : NaN;
+      if (!Number.isFinite(num)) throw new Error("concept: non-finite value for " + c.part + "." + c.param + ": " + String(c.to));
+      if (!own(out.params, c.part)) out.params[c.part] = {};
+      const from = out.params[c.part][c.param], to = quant(s, num);
       if (to === from) continue;
       out.params[c.part][c.param] = to;
-      applied.push({ part: c.part, param: c.param, from, to, clamped: Math.abs(to - +c.to) > s.step / 2 + 1e-9 });
+      applied.push({ part: c.part, param: c.param, from, to, clamped: Math.abs(to - num) > s.step / 2 + 1e-9 });
     }
     Object.assign(out, meta || {});
     return { design: out, changes: applied };
@@ -89,7 +106,7 @@
   function describe(d) {
     const f = facts(d), lines = [];
     for (const p of parts.CATALOGUE) { const ks = Object.keys(p.params); if (!ks.length) continue; lines.push(p.name.split(" (")[0] + ": " + ks.map(k => p.params[k].label.toLowerCase() + " " + fmt(d.params[p.id][k], p.params[k].unit)).join(", ")); }
-    lines.push("Mass " + f.mass.total_kg + " kg (parts " + f.mass.parts_kg + ", ballast " + f.mass.ballast_kg + "), front " + (f.mass.front_share * 100).toFixed(1) + " %, CoG height " + f.mass.cog_z_mm + " mm, Izz " + f.mass.izz_kgm2 + " kg·m²");
+    lines.push("Mass " + f.mass.total_kg + " kg (parts " + f.mass.parts_kg + ", ballast " + f.mass.ballast_kg + "), front " + (f.mass.front_share * 100).toFixed(1) + " %, CoG height " + f.mass.cog_height_mm + " mm above the ground, Izz " + f.mass.izz_kgm2 + " kg·m²");
     lines.push("Aero (" + aeromap.VERSION + "): downforce ×" + f.aero.df.toFixed(3) + ", drag ×" + f.aero.cd.toFixed(3) + " (straight mode ×" + f.aero.cd_sm.toFixed(3) + "), balance " + (f.aero.balance * 100).toFixed(1) + " % front");
     return lines;
   }
@@ -105,7 +122,7 @@
     };
   }
 
-  const api = { seededRng, gauss, spec, baseline, clone, validate, applyChanges, mutate, diff, describe, describeChange, facts };
+  const api = { seededRng, gauss, own, spec, baseline, clone, validate, applyChanges, mutate, diff, describe, describeChange, facts };
   C.design = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();

@@ -87,7 +87,10 @@ test("bench v0: straight mode on every sample equals a whole-lap lower drag (exa
 test("bench v0: physics directions (mass, rear wing, cooling) and the lab's rear-wing premise", () => {
   const lap = d => { const r = bench.bench(d); assert.equal(r.legal, true, JSON.stringify(r.violations)); return r.circuits.silverstone; };
   const hotD = withParam("sidepods", "inlet_cm2", 350); hotD.params.ballast.x_frac = 0.4;   // more ballast from lighter radiators: keep the C4.2 split
-  const base = lap(B), heavy = lap(withParam("ballast", "extra_kg", 10)), rw = lap(withParam("rear_wing", "aoa_deg", 28)), hot = lap(hotD);
+  const base = lap(B), heavy = lap(withParam("ballast", "extra_kg", 10)), rw = lap(withParam("rear_wing", "aoa_deg", 28));
+  // an under-cooled car is illegal (PKG-COOLING); measured anyway through the sim, its PU derates and it is slower
+  const hotR = bench.bench(hotD); assert.equal(hotR.legal, false); assert.ok(hotR.violations.some(v => v.id === "PKG-COOLING"));
+  const hot = bench.simV0(physical.physical(hotD), "silverstone"); assert.ok(physical.physical(hotD).pu.ice_kw < 400);
   assert.ok(heavy.lap_s > base.lap_s, "10 kg extra is slower"); assert.ok(heavy.lap_s - base.lap_s < 0.5);
   assert.ok(rw.lap_s > base.lap_s, "rear wing +8 is slower at Silverstone (the lab's demo premise holds in the concept too)");
   assert.ok(rw.vmin_kmh > base.vmin_kmh && rw.vmax_kmh < base.vmax_kmh);
@@ -145,8 +148,8 @@ test("optimize: pluggable proposers (sync, async, bad output, illegal-only) and 
   assert.deepEqual(seen.map(s => s.slice(0, 2)), [[0, 1], [1, 2], [2, 3]]); assert.ok(seen.every(s => s[2] && s[3] && s[4] === "number"));
   assert.equal(r.best.params.rear_wing.sm_delta_deg, 6); assert.equal(r.lineage[0].hypothesis, "flatter flap on straights"); assert.equal(r.kept, 3);
   assert.throws(() => optimize.optimize({ gens: 1, proposer: { name: "async", propose: async () => ({ changes: [] }) } }), /optimizeAsync/);
-  const ra = await optimize.optimizeAsync({ gens: 2, proposer: { name: "async", propose: async (h, d) => ({ changes: [{ part: "floor", param: "ride_height_mm", to: d.params.floor.ride_height_mm - 1 }] }) } });
-  assert.equal(ra.best.params.floor.ride_height_mm, 33);
+  const ra = await optimize.optimizeAsync({ gens: 2, proposer: { name: "async", propose: async (h, d) => ({ changes: [{ part: "rear_wing", param: "sm_delta_deg", to: d.params.rear_wing.sm_delta_deg + 3 }] }) } });
+  assert.equal(ra.best.params.rear_wing.sm_delta_deg, 6);
   const junk = optimize.optimize({ gens: 2, proposer: { name: "junk", propose: () => [{ changes: [{ part: "floor", param: "nope", to: 1 }] }, { changes: [] }, null] } });
   assert.equal(junk.kept, 0); assert.match(junk.lineage[0].candidates[0].error, /unknown parameter/); assert.equal(junk.lineage[0].candidates[1].error, "no change");
   const illegal = optimize.optimize({ gens: 3, proposer: { name: "illegal", propose: () => ({ changes: [{ part: "layout", param: "wheelbase_mm", to: 3600 }] }) } });

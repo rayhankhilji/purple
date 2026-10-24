@@ -24,6 +24,7 @@ function parseArgs(argv) {
   if (!Number.isInteger(a.seed)) throw new Error("--seed must be an integer");
   if (!["gens", "converged"].includes(a.until)) throw new Error("--until gens|converged");
   for (const c of a.circuits) if (!["silverstone", "monza"].includes(c)) throw new Error("circuit " + c + ": silverstone or monza");
+  if (!["silverstone", "monza"].includes(a.score)) throw new Error("--score " + a.score + ": silverstone or monza");
   if (!a.circuits.includes(a.score)) a.circuits.unshift(a.score);
   a.out = path.resolve(a.out || path.join(os.tmpdir(), "purple-concept", "seed-" + a.seed));
   return a;
