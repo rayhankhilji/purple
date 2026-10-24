@@ -143,6 +143,7 @@
   function buildTables(car, rho, cal, muWet, crrMul) {
     const NU = Math.round(MODEL.u_max / MODEL.du) + 1, m = car.mass_kg + car.fuel_kg;
     const wf = car.weight_dist_front, wr = 1 - wf, h = car.cog_height_m, ls = car.tyres.load_sens;
+    const wb = isFinite(+car.wheelbase_m) && +car.wheelbase_m > 1 ? +car.wheelbase_m : REGS.wheelbase_max_m;
     const mux = car.tyres.mu_x * cal.grip_scale * muWet, muy = car.tyres.mu_y * cal.grip_scale * muWet;
     // CLA values are taken AT aero.ride_height_mm (the design layer, concept/aeromap.js, already evaluates them there);
     // ride_sens_per_mm is carried for reporting only - the sim has no heave / ride-height-vs-speed model (SIM.md §7)
@@ -169,11 +170,18 @@
         };
         const ayf = axle(Fzf, Fz0f, m * wf, car.track_front_m, muy), ayr = axle(Fzr, Fz0r, m * wr, car.track_rear_m, muy);
         AY[k] = Math.min(ayf, ayr); AYR[k] = ayr;
-        const cap = (Fz, Fz0) => Math.max(0, Fz * (1 + ls) - (ls * Fz * Fz) / (2 * Fz0));
-        TR[k] = mux * cap(Fzr, Fz0r);                       // rear-wheel drive
-        BR[k] = mux * (cap(Fzf, Fz0f) + cap(Fzr, Fz0r));    // ideal brake balance assumed
+        const cap = (Fz, Fz0) => (Fz > 0 ? Math.max(0, Fz * (1 + ls) - (ls * Fz * Fz) / (2 * Fz0)) : 0);
         DR[k] = q * a.CDA_m2 * cal.drag_scale;
         RR[k] = MODEL.crr * crrMul * (m * G + q * (a.CLA_front_m2 + a.CLA_rear_m2) * rhf);
+        // longitudinal load transfer dF = m a_x h / wheelbase (v2): under braking the front axle gains what the rear loses, under
+        // traction the driven rear axle gains. With load-sensitive tyres this lowers the braking capacity a little and raises
+        // low-speed traction; fixed point (4 iterations) on the car's own deceleration / acceleration. Ideal brake balance.
+        let ab = (mux * (cap(Fzf, Fz0f) + cap(Fzr, Fz0r)) + DR[k] + RR[k]) / m, Fb = 0;
+        for (let it = 0; it < 4; it++) { const d = Math.min(Fzr, (m * ab * h) / wb); Fb = mux * (cap(Fzf + d, Fz0f) + cap(Fzr - d, Fz0r)); ab = (Fb + DR[k] + RR[k]) / m; }
+        BR[k] = Fb;
+        let at = (mux * cap(Fzr, Fz0r)) / m, Ft = 0;
+        for (let it = 0; it < 4; it++) { const d = Math.min(Fzf, (m * Math.max(0, at) * h) / wb); Ft = mux * cap(Fzr + d, Fz0r); at = (Ft - DR[k] - RR[k]) / m; }
+        TR[k] = Ft;                                          // rear-wheel drive
       }
       out.push({ AY, AYR, TR, BR, DR, RR });
     }
