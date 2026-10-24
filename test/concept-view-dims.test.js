@@ -32,8 +32,12 @@ function designs() {
   set("short-low", [{ part: "layout", param: "wheelbase_mm", to: 3250 }, { part: "floor", param: "ride_height_mm", to: 28 }, { part: "floor", param: "width_mm", to: 1300 }, { part: "floor", param: "throat_mm", to: 118 }, { part: "diffuser", param: "expansion_deg", to: 18.5 }]);
   set("pods", [{ part: "sidepods", param: "inlet_cm2", to: 900 }, { part: "sidepods", param: "undercut_mm", to: 180 }, { part: "survival_cell", param: "cockpit_len_mm", to: 1990 }, { part: "survival_cell", param: "front_axle_offset_mm", to: 140 }]);
   set("small", [{ part: "sidepods", param: "inlet_cm2", to: 420 }, { part: "sidepods", param: "undercut_mm", to: 20 }, { part: "front_wing", param: "elements", to: 1 }, { part: "rear_wing", param: "elements", to: 1 }, { part: "front_wing", param: "span_mm", to: 1100 }, { part: "rear_wing", param: "span_mm", to: 960 }]);
+  // mutants move only the parameters this test measures: the more-factors v1 set-up / gearing values have no geometry, and the
+  // redesigns v1 concept families (parts.CONCEPTS) are measured by the view's own concept tests; locking them keeps the seeded
+  // mutants identical to the ones this test was written for
+  const locked = ["gearbox.top_kmh", "gearbox.step", "setup.roll_front", "setup.heave_n_mm", "setup.brake_bias"].concat(Object.keys(parts.CONCEPTS || {}));
   const rng = design.seededRng(2026); let d = B;
-  for (let i = 0; i < 4; i++) { for (let k = 0; k < 6; k++) d = design.mutate(d, rng, 0.15).design; out.push(["mutant" + i, design.clone(d)]); }
+  for (let i = 0; i < 4; i++) { for (let k = 0; k < 6; k++) d = design.mutate(d, rng, 0.15, { locked }).design; out.push(["mutant" + i, design.clone(d)]); }
   // every concept-family variant (docs/concept/REDESIGNS.md §1) on the RB22 baseline, plus all of them at once on the "pods" extreme
   for (const [label, d2] of conceptDesigns()) out.push([label, d2]);
   return out;
