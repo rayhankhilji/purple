@@ -10,7 +10,7 @@ Living document. Owned by the **integrator** (whoever merges lane branches). Lan
 
 **Phase state.** P0 done (console: task "Research engineer of F1", Training v1, 43 kept of 57 at 23:58). P1 exit met (demo experiment `01M5NHXH4RSEQ50VM955FK20B7`: rear wing +8°, predicted +0.436 s, measured +0.518 s, agreement 19 %, in the ledger). v2 collected 01:50 (40 scenarios, rule R-01 active, promote_bias 0.3; truth promote 14 / retest 12 / reject 14; agent verdicts agreed 38/39; next_parameter now spread). 99 trained + 21 untrained calls. Provider exam: 20/20 verdicts, 10/20 next-step. **The story is the next experiment, not the verdict** (the prompt states the thresholds). v1 candidates were 94 % front-wing (PRNG seeding defect, fixed; one canonical `scenarios.seededRng`).
 
-**Merged into the integration branch (91 tests at ffd0c66):** SERVER #2 #3 #5 #6 #10 #13 #20 #21 #23 #34 #37 + cache fix; EVAL #4 #9 #15 #19 #25 #32 #33 #36; GAME #7 #8 #11 #14 #27 #31; CAR3D #12 #18 #22; UI #16 #17 #29; DEMO #24 #26 #28 #30 #35. Hardening is in: /api/* needs loopback Host + application/json on non-GET, MUBIT_MOCK strict, static allowlist, scenario length guard, untrained parse retry, 2-slot semaphore, collect needs `--confirm-trained`. Provider exam: 20/20 · 10/20; sheet (hardest 8): 8/8 · **2/8**.
+**Merged into the integration branch (97 tests at 0a8b6c5):** SERVER #2 #3 #5 #6 #10 #13 #20 #21 #23 #34 #37 + cache fix; EVAL #4 #9 #15 #19 #25 #32 #33 #36; GAME #7 #8 #11 #14 #27 #31; CAR3D #12 #18 #22; UI #16 #17 #29; DEMO #24 #26 #28 #30 #35. Hardening is in: /api/* needs loopback Host + application/json on non-GET, MUBIT_MOCK strict, static allowlist, scenario length guard, untrained parse retry, 2-slot semaphore, collect needs `--confirm-trained`. Provider exam: 20/20 · 10/20; sheet (hardest 8): 8/8 · **2/8**.
 
 **Ledger (latest snapshot: docs/ledger-snapshot/*-0530-windcap-exam; 91 experiments, 160 calls: 99 trained, 61 untrained):** `npm run snapshot -- --label <x>` (SERVER PR #13) freezes it properly; runtime `data/` is gitignored; the frozen copy is `docs/ledger-snapshot/2026-10-24T0215-after-v2/` (93 ledger rows, 120 calls, R-01, status, state). Restore it first thing. Re-snapshot after any new rows.
 
@@ -19,9 +19,9 @@ Living document. Owned by the **integrator** (whoever merges lane branches). Lan
 | Lane | Session | Status / next |
 |---|---|---|
 | GAME | `session_019VA5sAvTHuQ3bGbWV5CX4M` | everything merged incl. #27 (60 s grace, audio) and #31 (targetOrigin). Idle |
-| SERVER | `session_01Tq3p158ophv4wuU2ibcJbj` | audit batch merged (#34 #37, cache fix). Owes the last correctness items: promote keeps last_plan; illegal plan clears last_plan; exam error rows; no-op/zero-delta candidates; torn-line guard; baseline validation 400/422; `status` SSE after every calls append |
+| SERVER | `session_01Tq3p158ophv4wuU2ibcJbj` | everything merged incl. the final correctness PR (06:20). Idle |
 | EVAL | `session_01Ma6U13odw1SA1vFhepRj8u` | everything merged incl. wind-cap fix (#33), newest-3 rules (#32), README for the new sheet (#36). Idle until v2 trains |
-| UI | `session_01LerQvr7T9YvRQxL76EErVH` | PR #29 merged (SERVER review fixes, 6-min timer, incomplete race, budget line, liveries). **Owes round 2**: keep the broadcast iframe after the flag; still-air note when wind_ms > 0; mubit_code in the trace; ledger Δ source line; widget footers (exam.ran_at / last_console_read_at); ev.source check; favicon `data:,`; allow="autoplay"; optional purple:grid branch. Human item D-U7: one real 3-lap race on a GPU laptop |
+| UI | `session_01LerQvr7T9YvRQxL76EErVH` | round 2 merged 06:20 (QA blockers B1–B3, should-fix list, grid-race branch). Remaining: whatever the next QA re-run finds; human item D-U7 (one real 3-lap race on a GPU laptop) |
 | CAR3D | `session_01DoxHh5Ynx2BDWZsPvLCyDR` | P2.T2 + P3.T2 done (#12 #18 #22, self-loading liveries). Idle |
 | DEMO | `session_01UAY6ykh3dQkf9GfJoZ9BTy` | all merged incl. #35 (2/8 on the new sheet). Owes only the numbers from the console (kept count after v2, v1/v2 adapter results, v1/v2 n/8 cells), screenshots, then the PDF export and P3.T6 |
 
