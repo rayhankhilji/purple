@@ -8,6 +8,7 @@
   const LAPS = 3;                                   // F-04.AC1: three laps, no input
   const FLAT = 0.03;                                // DeltaCell: |Δ| ≤ 0.03 s is grey (the prompt's own retest band)
   const TRACE_MAX = 200, BACKFILL = 12;
+  const RACE_TIMEOUT_MS = 6 * 60 * 1000;             // EVAL_GUARDRAILS §6: no purple:result within 6 minutes -> "No result received"
   const $ = (s, root) => (root || document).querySelector(s);
   const isNum = v => typeof v === "number" && Number.isFinite(v);
   const reduced = () => window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -151,8 +152,9 @@
   function renderRace() {
     const x = S.current, e = S.err.race, m = x && x.measured;
     if (S.busy.raceResult) return card("race", { state: "loading", stateLabel: "posting result", body: [el("p", { text: "POST /api/race/result" })] });
-    if (e) return card("race", { state: "error", body: errBody(e), foot: [btn("Retry", e.retry, { cls: "primary" }), btn("Back to 3D view", cancelRace, { cls: "small" })] });
+    if (e) return card("race", { state: "error", body: errBody(e), foot: [e.again ? btn("Race again", raceIt, { cls: "primary" }) : btn("Retry", e.retry, { cls: "primary" }), btn("Back to 3D view", cancelRace, { cls: "small" })] });
     if (S.racing) return card("race", { state: "loading", stateLabel: "racing", body: [
+      el("div", { class: "row" }, el("span", { class: "big num", id: "raceClock", text: fmtClock(Date.now() - S.racing.started) }), el("span", { class: "label", text: "elapsed" }), el("span", { class: "muted sans", text: "a " + LAPS + "-lap race takes about 4½ minutes" })),
       el("p", { text: "Waiting for result · baseline vs candidate · same neutral driver · " + LAPS + " laps · seed " + S.racing.seed + "." }),
       el("div", { class: "src", text: "the game posts purple:result when the chequered flag falls" })], foot: [btn("Cancel", cancelRace, { cls: "small" })] });
     if (!m) return card("race", { state: "empty", body: [el("p", { text: "Race the candidate against the baseline in the game: same neutral driver, same seed, broadcast camera." })], foot: [btn("Race it", raceIt, { cls: "primary", disabled: !(x && x.evaluation && isNum(x.evaluation.lap)) })] });
@@ -197,19 +199,21 @@
     game.hidden = !racing; car.hidden = racing;
     if (!racing && game.getAttribute("src")) game.removeAttribute("src");
     const corner = $("#mainCorner");
-    corner.replaceChildren(...(racing ? [el("span", { class: "badge green", text: "RACE · baseline vs candidate" }), el("span", { class: "src", text: "seed " + S.racing.seed + " · " + LAPS + " laps · broadcast camera · neutral driver" })]
-      : [el("span", { class: "badge", text: x ? "candidate · " + (x.change || "no change") : "baseline" })]));
+    corner.replaceChildren(...(racing ? [] : [el("span", { class: "badge", text: x ? "candidate · " + (x.change || "no change") : "baseline" })]));
     const setup = x ? x.candidate : (S.illegalCandidate || (S.state && S.state.baseline));
     if (EI.labCar3D && !racing) {
       try {
         if (!S.car3dMounted) { EI.labCar3D.mount(car); S.car3dMounted = true; }
         const key = JSON.stringify(setup || null);
-        if (setup && key !== S.car3dSetupKey) { S.car3dSetupKey = key; EI.labCar3D.setSetup(setup); if (x && EI.labCar3D.hero) EI.labCar3D.hero(); }
-      } catch (e) { /* the 3D view is decorative; the numbers below are the product */ }
-      empty.hidden = true;
+        if (setup && key !== S.car3dSetupKey) { S.car3dSetupKey = key; if (EI.labCar3D.setBaseline) EI.labCar3D.setBaseline(x ? x.baseline : null); EI.labCar3D.setSetup(setup); }
+      } catch (e) {   // the 3D view is decorative; the numbers below are the product. Say why it is missing rather than hide it.
+        S.car3dError = String(e && e.message || e);
+        $("#mainEmpty .inner").replaceChildren(el("div", { class: "h", text: "3D car view unavailable" }), el("span", { text: S.car3dError }));
+      }
+      empty.hidden = S.car3dMounted && !S.car3dError;
     } else empty.hidden = racing;
     $("#mainSrc").textContent = racing ? "Equation I · ?lab=1 broadcast mode" : S.car3dMounted ? "procedural car · wing angles and ride height from the setup · aero map v1" : "aero map v1 · regulation subset ranges";
-    $("#setupBox").replaceChildren(setupTable());
+    $("#setupBox").replaceChildren(racing ? el("span") : setupTable());   // while racing the game's HUD owns the frame
   }
   function setupTable() {
     const aero = EI.aero; if (!aero) return el("span");
@@ -229,7 +233,7 @@
 
   // ---- MubitWidget: GET /api/status; edit form POSTs partial values (the console is the source, this is the copy)
   function renderWidget(editing) {
-    const w = $("#widget"), s = S.status || {}, ex = s.exam || {}, total = ex.total || 20;
+    const w = $("#widget"), s = S.status || {}, ex = s.exam || {}, total = ex.total || 20, b = s.budget;
     const examLine = (who, v, p) => (isNum(v) || isNum(p) ? el("div", { class: "exam" }, el("b", { text: who }), " " + (isNum(v) ? v + "/" + total + " verdicts" : "—") + (isNum(p) ? " · " + p + "/" + total + " next-step" : "")) : null);
     const head = el("div", { class: "head" }, el("span", { class: "label", text: "Mubit · task" }), el("button", { class: "btn icon", type: "button", "aria-label": editing ? "cancel editing" : "edit status (values from the console)", title: "edit values copied from the console", onclick: () => renderWidget(!editing) }, editing ? "✕" : "✎"));
     if (editing) {
@@ -250,16 +254,18 @@
         el("div", { class: "fact" }, el("div", { class: "label", text: "calls" }), el("div", { class: "v num", text: isNum(s.calls_total) ? s.calls_total + " · " + s.calls_trained + " trained" : "—" }))),
       examLine("provider", ex.provider, ex.provider_param) || el("div", { class: "exam muted sans", text: "exam not run yet (20 held-out scenarios, truth from the evaluator)" }),
       examLine("v1", ex.v1, ex.v1_param), examLine("v2", ex.v2, ex.v2_param),
-      el("div", { class: "src upd", text: (s.updated_at ? "updated from console " + hhmm(s.updated_at) : "not yet read from the console") + " · " + (s.model || "") + (s.prompt_version ? " · prompt v" + s.prompt_version : "") })].filter(Boolean));
+      el("div", { class: "src upd" },
+        el("span", { text: (s.last_console_read_at ? "updated from console " + hhmm(s.last_console_read_at) : s.updated_at ? "status written " + hhmm(s.updated_at) + " · console not read yet" : "not yet read from the console") + " · " + (s.model || "") + (s.prompt_version ? " · prompt v" + s.prompt_version : "") + (s.prompt_hash ? " " + String(s.prompt_hash).slice(0, 8) : "") }),
+        b ? el("span", { class: "budget", title: "Mubit daily budget: calls today by UTC day; resets " + (b.resets_at ? hhmm(b.resets_at) + " local (" + (b.boundary || "00:00 UTC") + ")" : "00:00 UTC"), text: "budget today (UTC) · trained " + (b.trained_today_utc ?? "—") + " · untrained " + (b.untrained_today_utc ?? "—") + (b.resets_at ? " · resets " + hhmm(b.resets_at) : "") }) : null)].filter(Boolean));
   }
   async function saveStatus(fd) {
-    const patch = {}, exam = Object.assign({}, (S.status && S.status.exam) || {});
+    const patch = {}, exam = {}, cur = (S.status && S.status.exam) || {};
     const num = v => (v === "" || v == null ? undefined : Number(v));
     for (const k of ["task_name", "adapter_version", "test_result"]) { const v = fd.get(k); if (v != null && String(v).trim() !== "" && v !== (S.status || {})[k]) patch[k] = String(v).trim(); }
     const ke = num(fd.get("kept_examples")); if (isNum(ke)) patch.kept_examples = ke;
     let examChanged = false;
-    for (const k of ["provider", "provider_param", "v1", "v1_param", "v2", "v2_param"]) { const v = num(fd.get(k)); if (isNum(v) && exam[k] !== v) { exam[k] = v; examChanged = true; } }
-    if (examChanged) patch.exam = Object.assign({ total: 20 }, exam);
+    for (const k of ["provider", "provider_param", "v1", "v1_param", "v2", "v2_param"]) { const v = num(fd.get(k)); if (isNum(v) && cur[k] !== v) { exam[k] = v; examChanged = true; } }
+    if (examChanged) patch.exam = isNum(cur.total) ? exam : Object.assign({ total: 20 }, exam);   // POST /api/status merges one level deep (D-S15)
     try { S.status = await api("POST", "/api/status", patch); clearBanner(); renderWidget(false); }
     catch (e) { banner(e); renderWidget(false); }
   }
@@ -326,7 +332,7 @@
     on("race", d => {
       const m = d.measured || {};
       trace({ kind: "race", key: "race:" + d.id + ":" + m.at, at: m.at, session: d.session_id, verdict: "Δ " + fmtD(m.measured_delta), note: "predicted " + fmtD(m.predicted_delta) + " · agreement " + fmtPct(m.agreement_pct) + " · seed " + m.seed });
-      if (S.racing && S.racing.id === d.id) { S.racing = null; S.busy.raceResult = false; S.active = "race"; }
+      if (S.racing && S.racing.id === d.id) { stopRaceClock(); S.racing = null; S.busy.raceResult = false; S.active = "race"; }
       if (!S.current || S.current.id === d.id) S.current = d;
       renderAll();
     });
@@ -347,10 +353,10 @@
   async function refreshRules() { try { S.rules = await api("GET", "/api/rules"); renderLearn(); } catch (e) { /* same */ } }
 
   // ---- actions
-  async function runPlan(o) {
+  async function runPlan(o, clientId) {
     o = o || {};
     if (S.busy.plan) return;
-    const clientId = uuid();
+    clientId = clientId || uuid();   // a retry after NETWORK/BAD_RESPONSE reuses the id: the server dedupes x-client-id for 10 s, so a lost response never costs a second trained call
     const body = {}; if (o.random) body.random = true;
     if (o.candidate || o.conditions || o.seed != null || o.circuit) body.scenario_overrides = Object.assign({}, o.candidate ? { candidate: o.candidate } : {}, o.conditions ? { conditions: o.conditions } : {}, o.seed != null ? { seed: o.seed } : {}, o.circuit ? { circuit: o.circuit } : {});
     S.busy.plan = true; delete S.err.design; S.illegalCandidate = null; S.active = "design"; clearBanner(); renderAll();
@@ -359,7 +365,7 @@
       const x = await api("POST", "/api/plan", body, { "x-client-id": clientId });
       S.current = x; S.active = "evaluate"; traceExperiment(x);
     } catch (e) {
-      e.retry = () => runPlan(o);
+      e.retry = () => runPlan(o, e.code === "NETWORK" || e.code === "BAD_RESPONSE" ? clientId : undefined);
       if (e.code === "ILLEGAL_SETUP") { S.illegalCandidate = e.extra.candidate || null; trace({ kind: "error", session: "client " + clientId.slice(0, 8), error: "ILLEGAL_SETUP", note: (e.extra.violations || []).map(id => EI.aero && EI.aero.describeViolation ? EI.aero.describeViolation(id) : id).join(" · ") || e.message }); }
       else if (e.extra && e.extra.experiment) { S.current = e.extra.experiment; }
       else if (e.code === "NETWORK" || e.code === "BAD_RESPONSE") trace({ kind: "error", session: "client " + clientId.slice(0, 8), error: e.code, note: e.endpoint });
@@ -373,22 +379,46 @@
     const q = new URLSearchParams({ lab: "1", exp: x.id, seed: String(x.seed), laps: String(LAPS), circuit, baseline: b64(x.baseline), candidate: b64(x.candidate),
       mult_baseline: b64(EI.aero.toMultipliers(x.baseline, c)), mult_candidate: b64(EI.aero.toMultipliers(x.candidate, c)) });
     S.racing = { id: x.id, seed: x.seed, started: Date.now() }; delete S.err.race; S.active = "race"; clearBanner();
-    renderAll();
+    renderAll(); startRaceClock();
     $("#game").src = "../index.html?" + q.toString();
   }
-  function cancelRace() { S.racing = null; delete S.err.race; S.busy.raceResult = false; renderAll(); }
+  function cancelRace() { stopRaceClock(); S.racing = null; delete S.err.race; S.busy.raceResult = false; renderAll(); }
   function carsFrom(d) {   // tolerate { baseline: {…}, candidate: {…} } as well as the contract's cars[] (SERVER lane, P1.T3 entry)
     if (Array.isArray(d.cars)) return d.cars;
     if (d.baseline && d.candidate) return ["baseline", "candidate"].map(role => Object.assign({ role }, d[role]));
     return undefined;
   }
+  // a car that never completed a lap posts null lap/sectors/speeds; the server would 400 on the field, so say "race incomplete" instead of relaying
+  const carIncomplete = k => !k || !isNum(k.lap) || !Array.isArray(k.sectors) || k.sectors.length !== 3 || !k.sectors.every(isNum) || !isNum(k.vmax_kmh) || !isNum(k.vmin_becketts_kmh);
   window.addEventListener("message", ev => {   // ARCHITECTURE §10: same-origin game iframe only, and only the result message
     if (ev.origin !== location.origin) return;
     const d = ev.data; if (!d || typeof d !== "object" || d.type !== "purple:result") return;
     const cars = carsFrom(d);
     const payload = { experiment_id: d.experiment_id || d.exp || (S.racing && S.racing.id), seed: Number.isInteger(d.seed) ? d.seed : Number.isInteger(+d.seed) ? +d.seed : (S.racing ? S.racing.seed : undefined), cars };
-    postRaceResult(payload);
+    if (!Array.isArray(cars) || cars.length !== 2 || cars.some(carIncomplete)) {
+      const who = Array.isArray(cars) ? cars.filter(carIncomplete).map(k => (k && k.role) || "car").join(", ") : "both cars";
+      stopRaceClock(); S.racing = null; S.err.race = Object.assign(new ApiErr("RACE_INCOMPLETE", "purple:result (game iframe)", "race incomplete: no completed lap for " + who + "; nothing was posted"), { again: true });
+      trace({ kind: "error", session: payload.experiment_id ? "exp-" + payload.experiment_id : null, error: "RACE_INCOMPLETE", note: who }); renderAll(); return;
+    }
+    stopRaceClock(); postRaceResult(payload);
   });
+  // the race clock: elapsed time on the RACE card while the game runs; "No result received" after RACE_TIMEOUT_MS
+  let raceTimer = null;
+  function startRaceClock() {
+    stopRaceClock();
+    raceTimer = setInterval(() => {
+      if (!S.racing) return stopRaceClock();
+      const ms = Date.now() - S.racing.started;
+      if (ms >= RACE_TIMEOUT_MS) {
+        stopRaceClock(); S.racing = null;
+        S.err.race = Object.assign(new ApiErr("NO_RESULT", "purple:result (game iframe)", "No result received within " + Math.round(RACE_TIMEOUT_MS / 60000) + " minutes; the ledger row stays as it was"), { again: true });
+        trace({ kind: "error", session: "exp-" + (S.current && S.current.id), error: "NO_RESULT", note: "no purple:result in " + Math.round(RACE_TIMEOUT_MS / 60000) + " min" }); renderAll(); return;
+      }
+      const n = $("#raceClock"); if (n) n.textContent = fmtClock(ms);
+    }, 1000);
+  }
+  function stopRaceClock() { if (raceTimer) clearInterval(raceTimer); raceTimer = null; }
+  const fmtClock = ms => { const t = Math.floor(ms / 1000); return String(Math.floor(t / 60)).padStart(2, "0") + ":" + String(t % 60).padStart(2, "0"); };
   async function postRaceResult(payload) {
     S.lastRacePayload = payload; S.busy.raceResult = true; delete S.err.race; renderAll();
     try { const row = await api("POST", "/api/race/result", payload); S.current = row; S.racing = null; S.active = "race"; clearBanner(); }
@@ -406,7 +436,7 @@
   async function overrule(verdict, reason) {
     const x = S.current; if (!x || S.busy.learn) return;
     S.busy.learn = "overruling"; delete S.err.learn; clearBanner(); renderAll();
-    try { const r = await api("POST", "/api/overrule", { experiment_id: x.id, verdict, reason }); S.current = Object.assign({}, x, { status: "overruled", overrule: { verdict, reason, rule_id: r.rule.id, by: "engineer", at: r.rule.created_at } }); S.active = "learn"; await refreshRules(); }
+    try { const r = await api("POST", "/api/overrule", { experiment_id: x.id, verdict, reason }); S.current = r.experiment || Object.assign({}, x, { status: "overruled", overrule: { verdict, reason, rule_id: r.rule.id, by: "engineer", at: r.rule.created_at } }); S.active = "learn"; await refreshRules(); }
     catch (e) { e.retry = () => overrule(verdict, reason); S.err.learn = e; banner(e); }
     finally { S.busy.learn = false; renderAll(); scheduleLedger(); }
   }
