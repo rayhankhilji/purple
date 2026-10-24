@@ -4,10 +4,10 @@ This is the Red Bull baseline car for PURPLE's physics lap simulator at Silverst
 
 The rule from the owner is that **lap speeds must come out of the physics**. Telemetry is used only for two jobs: measuring what is not public (drag and downforce areas, tyre friction, gearing, how the MGU-K is deployed) and holding laps out for checks.
 
-- **Tool**: `concept/tools/derive-car.js` (Node, no dependencies). Run `node concept/tools/derive-car.js --write` to regenerate everything. Add `--tel <dir>` to read lap files from another copy of the telemetry folder.
+- **Tool**: `concept/tools/derive-car.js` (Node, no dependencies). Run `node concept/tools/derive-car.js --write` to regenerate everything for Red Bull. `--all --write` does every team (see "All 11 teams" below). Add `--tel <dir>` to read lap files from another copy of the telemetry folder.
 - **Output**: `concept/data/redbull-2026-derived.json` contains a full `PhysicalCar` (current contract, including `session`, `aero.floor_stalled` and `aero.stall_margin_mm`). Every field carries a kind (`regulation`, `derived-from-telemetry` with sd, or `assumption`). The file also holds `gearing`, `pu_curve`, the residuals, the sensitivity runs and the held-out checks.
 - **Plots**: in `docs/concept/redbull-derived/` (SVG, light and dark).
-- **Data**: OpenF1 qualifying session 11322 (4 July 2026). The fit lap is HAD's 88.746 s lap (lap 17, SOFT). The run that produced the committed JSON used all 22 qualifying laps from telemetry commit `bae7a51`. VER's 88.893 s lap is held out. LAW and LIN (Racing Bulls, the same DM01 power unit) and the other 18 laps are further checks.
+- **Data**: OpenF1 qualifying session 11322 (4 July 2026). The fit lap is HAD's 88.746 s lap (lap 17, SOFT). The run that produced the committed JSON used all 22 qualifying laps from telemetry commit `bae7a51`. VER's 88.893 s lap is held out. With only the 11 laps on the base commit, the Straight Mode step has fewer samples and the run gives CdA_c 1.15 / CdA_s 0.99 (both well inside the ±1 sd). Regenerate once the 22-lap folder is merged. LAW and LIN (Racing Bulls, the same DM01 power unit) and the other 18 laps are further checks.
 - **Air density**: taken from the weather samples during the lap (25.6 °C, 1007.4 hPa, 49 % relative humidity, Magnus vapour pressure), giving **ρ = 1.168 kg/m³**. Mean wind was 2.2 m/s from a variable direction. Wind is not modelled.
 
 ## Results
@@ -157,17 +157,16 @@ Speed, throttle and x/y carry no axle information, so front and rear ClA cannot 
 |---|---|---|---|---|---|---|
 | HAD | fit lap | 88.746 | 88.312 | −0.43 (−0.49 %) | 8.0 | 316 / 310 |
 | **VER** | **held out, same car, nothing refit** | 88.893 | 88.885 | **−0.01** | 9.9 | 316 / 311 |
-| **LAW** | **held out, Racing Bulls DM01: PU frozen, ClA, μ_y, CdA, μ_x refit on LAW's lap** | 89.300 | 88.448 | **−0.85 (−0.95 %)** | 9.4 | 316 / 318 |
-| LIN | same as LAW | 89.305 | 87.852 | −1.45 (−1.6 %) | 9.8 | 315 / 320 |
-| 17 other laps (other PUs, PU frozen at DM01) | indicative only | | | median −0.60, mean abs 1.05 | 8 to 22 | |
-| STR | fails | 92.863 | 106.6 | | | |
+| **LAW** | **held out, Racing Bulls DM01: PU frozen, ClA, μ_y, CdA, μ_x refit on LAW's lap (own mass)** | 89.300 | 88.643 | **−0.66 (−0.74 %)** | 9.2 | 316 / 316 |
+| LIN | same as LAW | 89.305 | 88.054 | −1.25 (−1.4 %) | 9.2 | 315 / 318 |
+| 18 other laps (other PUs, PU frozen at DM01) | indicative only | | | median 0.00, mean abs 1.16 (STR +3.7) | 8 to 22 | |
 
 **Reading the table.**
 
 - **VER**: the near-zero lap-time error is partly luck. Corner by corner the simulator is 4 to 17 km/h off (below), and the errors cancel. The speed RMS of ~10 km/h is the honest figure.
 - **HAD**: the QSS lap is 0.4 s quicker than the real one, as expected from an ideal-driver model. The real lap spends 36 % of its time at part throttle.
-- **LAW and LIN**: the refit Racing Bulls cars are 0.85 to 1.45 s quick for the same reason. Their fitted ClA and μ_y trade against each other (LAW 2.12 / 2.61, LIN 2.66 / 2.55).
-- **Other teams**: with the PU frozen at Red Bull's, a different ICE ends up in their CdA. STR's CdA anchor hits its 2.5 m² bound and the check fails, because a car that never deploys 350 kW breaks the anchor. These laps are indicative only.
+- **LAW and LIN**: the refit Racing Bulls cars are 0.66 to 1.25 s quick for the same reason. Their fitted ClA and μ_y trade against each other (LAW 2.10 / 2.61, LIN 2.64 / 2.55).
+- **Other teams**: with the PU frozen at Red Bull's, a different ICE ends up in their CdA, so these laps are indicative only. STR's lap carries a trace glitch (a 1045 kW "deployment peak"). Peaks above 700 kW are discarded as glitches, and the lap still sims 3.7 s slow.
 
 Corner minima on HAD's lap, real vs sim (km/h):
 
@@ -188,6 +187,45 @@ The mid-speed corners come out slow and Copse and Vale–Club fast, which is the
 ![MGU-K along the lap](redbull-derived/mguk-vs-distance.svg)
 ![braking deceleration vs speed](redbull-derived/decel-vs-speed.svg)
 ![lateral g vs speed](redbull-derived/lateral-vs-speed.svg)
+
+## All 11 teams (`concept/data/cars-2026-derived.json`)
+
+`node concept/tools/derive-car.js --all --write` runs the same derivation for every team on its two qualifying laps. `--driver CODE` or `--team <id>` prints one car. For each team the run produces:
+
+- **A central fit** on the faster driver's lap.
+- **300 bootstrap replicates.** Each replicate takes one of the team's two laps at random, then resamples that lap's grip-limited corners, full-throttle straights and brake zones with replacement.
+- **A teammate held-out check**: fit on one driver, then simulate the other driver's lap with that car and that driver's MGU-K profile, in both directions.
+- **A PhysicalCar-shaped estimate**, with central, mean ± sd, median, robust sd (half the 16 to 84 % range) and the 5 to 95 % range for every parameter.
+
+A resample of 8 corners can be ill-conditioned, so the table below gives the central value ± the robust sd. ΔCdA (Straight Mode, 0.27 m²) is shared by all cars.
+
+| Team | PU | Fit lap | Mass kg | CdA_c m² | ClA m² | μ_y | a_y at 150 km/h, g | a_y at 250 km/h, g | μ_x | Fit-lap sim Δ s | Teammate held out Δ s |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Mercedes | Mercedes M17 | ANT 88.111 | 770 | 1.08 ± 0.18 | 3.4 ± 1.4 | 2.58 ± 0.38 | 3.73 ± 0.23 | 5.79 ± 0.68 | 1.79 ± 0.36 | −1.23 | ANT→RUS −2.00, RUS→ANT +0.75 |
+| Ferrari | Ferrari 067/6 | LEC 88.286 | 770 | 1.21 ± 0.14 | 5.2 ± 1.7 | 2.15 ± 0.30 | 3.66 ± 0.18 | 6.34 ± 0.44 | 1.50 ± 0.30 | +0.24 | LEC→HAM −0.10, HAM→LEC +0.81 |
+| McLaren | Mercedes M17 | NOR 88.877 | 770 | 1.30 ± 0.14 | 2.8 ± 1.2 | 2.42 ± 0.49 | 3.35 ± 0.31 | 4.99 ± 0.49 | 1.89 ± 0.46 | +0.17 | NOR→PIA +1.71, PIA→NOR −1.56 |
+| **Red Bull** | **Red Bull Ford DM01** | **HAD 88.746** | **779.5** | **1.23 ± 0.11** | **2.9 ± 1.2** | **2.54 ± 0.30** | **3.49 ± 0.16** | **5.19 ± 0.49** | **2.09 ± 0.33** | **−0.43** | **HAD→VER −0.01, VER→HAD +0.77** |
+| Racing Bulls | Red Bull Ford DM01 | LAW 89.300 | 774.5 | 1.11 ± 0.16 | 2.1 ± 1.1 | 2.61 ± 0.36 | 3.34 ± 0.16 | 4.64 ± 0.50 | 2.18 ± 0.34 | −0.29 | LAW→LIN +0.52, LIN→LAW −1.35 |
+| Alpine | Mercedes M17 | GAS 90.063 | 772 | 0.90 ± 0.28 | 2.3 ± 1.0 | 2.43 ± 0.30 | 3.18 ± 0.21 | 4.52 ± 0.48 | 2.08 ± 0.43 | +0.53 | GAS→COL +0.11, COL→GAS +0.53 |
+| Haas | Ferrari 067/6 | BEA 90.501 | 771 | 1.15 ± 0.12 | 2.2 ± 1.1 | 2.67 ± 0.47 | 3.44 ± 0.24 | 4.82 ± 0.37 | 2.14 ± 0.42 | −0.23 | BEA→OCO +3.38, OCO→BEA −1.61 |
+| Audi | Audi AFR 26 | BOR 89.461 | 770 | 1.16 ± 0.12 | 2.3 ± 1.3 | 2.54 ± 0.29 | 3.33 ± 0.17 | 4.74 ± 0.60 | 1.99 ± 0.29 | +1.15 | BOR→HUL +0.77, HUL→BOR +0.34 |
+| Williams | Mercedes M17 | SAI 90.562 | 796 | 1.23 ± 0.26 | 2.9 ± 2.0 | 2.54 ± 0.41 | 3.50 ± 0.21 | 5.21 ± 0.61 | 1.71 ± 0.38 | +0.35 | SAI→ALB −0.53, ALB→SAI +1.46 |
+| Aston Martin | Honda RA626H | STR 92.863 | 779.5 | 1.59 ± 0.10 | 2.0 ± 0.9 | 2.64 ± 0.34 | 3.32 ± 0.19 | 4.54 ± 0.24 | 1.40 ± 0.34 | +3.19 | STR→ALO +2.54, ALO→STR +0.72 |
+| Cadillac | Ferrari 067/6 | BOT 91.227 | 776.5 | 0.88 ± 0.27 | 3.2 ± 1.6 | 2.16 ± 0.38 | 3.08 ± 0.16 | 4.72 ± 0.58 | 1.68 ± 0.44 | +0.34 | BOT→PER +0.22, PER→BOT +0.34 |
+
+**Teammate held-out check** (22 checks): median absolute lap-time error 0.77 s, mean +0.35 s, RMS 1.31 s, median speed-trace RMS 10.5 km/h. The largest misses are BEA→OCO +3.4 s (OCO's distance axis is the known outlier, 5885 m) and STR→ALO +2.5 s (STR's lap carries a 1045 kW trace glitch).
+
+**What the table supports:**
+
+- **Fast-corner grip** (lateral limit at 250 km/h): Ferrari 6.3 g and Mercedes 5.8 g sit above Red Bull 5.2 g. That matches HAD losing his time to pole in Becketts and Stowe at an equal top speed.
+- **Slow-corner grip** (at 150 km/h) is much closer across teams: 3.1 to 3.7 g.
+- **ClA and μ_y separately** are poorly determined (ClA ± 1 to 2 m²). Their product and the lateral limits at given speeds are the robust numbers.
+- **CdA_c is conditional on one ICE assumption for all power units** (η_th 0.475). An ICE weaker than assumed shows up as a higher CdA_c, because the 350 kW anchor then needs more drag to explain the same acceleration. Aston Martin's 1.59 m² (ALO's lap gives 1.54 m²) is best read as "weaker PU and/or more drag", not as drag alone. Compare CdA_c directly only within a PU family.
+- **Mass** uses the reported April over-minimum figures (Williams +26 kg).
+
+**Multi-circuit.** Everything circuit-specific is in the tool's `CIRCUITS` registry: lap files, corner markers, weather, Straight Mode activation points, corner names and the recharge limit. New circuits (`concept/data/telemetry/<circuit>/`, same file conventions) can be added there. The next step is a joint fit that shares μ, the PU and each car's ClA/CdA efficiency, with a per-circuit wing level (ClA and CdA scale).
+
+**Priors.** No priors file was present during this run (`concept/data/priors-2026.json`). When it lands, its ranges should replace the fixed assumption bands: η_th per PU, mass, tyre radius and aero balance.
 
 ## Limitations
 

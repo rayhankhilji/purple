@@ -56,7 +56,7 @@
 <circle cx="521.1" cy="140.3" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
 <circle cx="523.1" cy="143.8" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
 <circle cx="525.1" cy="147.4" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
-<circle cx="527.1" cy="150.5" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="527.1" cy="150.6" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
 <circle cx="529.1" cy="152.9" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
 <circle cx="529.6" cy="155.6" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
 <circle cx="530.2" cy="157.9" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
@@ -160,7 +160,7 @@
 <circle cx="479.4" cy="217.1" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
 <circle cx="479.6" cy="218.8" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
 <circle cx="479.3" cy="220.0" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
-<circle cx="478.7" cy="220.9" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="478.7" cy="221.0" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
 <circle cx="478.0" cy="221.5" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
 <circle cx="477.3" cy="221.9" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
 <circle cx="476.7" cy="222.4" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
@@ -172,7 +172,7 @@
 <circle cx="471.2" cy="237.4" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
 <circle cx="460.7" cy="246.2" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
 <circle cx="450.1" cy="256.3" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
-<circle cx="439.6" cy="266.5" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="439.6" cy="266.6" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
 <circle cx="429.1" cy="276.6" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
 <circle cx="427.9" cy="286.1" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
 <circle cx="430.9" cy="295.7" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
@@ -255,7 +255,7 @@
 <circle cx="493.8" cy="230.4" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
 <circle cx="491.7" cy="232.8" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
 <circle cx="489.1" cy="234.6" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
-<circle cx="486.5" cy="237.3" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="486.5" cy="237.4" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
 <circle cx="484.0" cy="240.6" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
 <circle cx="481.6" cy="244.8" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
 <circle cx="479.6" cy="249.0" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
@@ -537,7 +537,7 @@
 <circle cx="488.4" cy="221.5" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
 <circle cx="495.1" cy="219.9" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
 <circle cx="501.6" cy="213.2" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
-<circle cx="507.3" cy="207.4" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="507.3" cy="207.5" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
 <rect x="72" y="38" width="12" height="8" fill="#2a6fdb"/><text class="fg" x="88" y="46">measured</text>
 <path d="M64.0,231.1L71.1,230.5L78.2,229.9L85.3,229.3L92.4,228.8L99.6,228.2L106.7,227.6L113.8,227.0L120.9,226.4L128.0,225.8L135.1,225.2L142.2,224.7L149.3,224.1L156.4,223.5L163.6,222.9L170.7,222.3L177.8,221.7L184.9,221.1L192.0,220.6L199.1,220.0L206.2,219.4L213.3,218.8L220.4,218.2L227.6,217.6L234.7,217.0L241.8,216.5L248.9,215.9L256.0,215.3L263.1,214.7L270.2,214.1L277.3,213.5L284.4,212.9L291.6,212.4L298.7,211.8L305.8,211.2L312.9,210.6L320.0,210.0L327.1,209.4L334.2,208.8L341.3,208.3L348.4,207.7L355.6,207.1L362.7,206.5L369.8,205.9L376.9,205.3L384.0,204.7L391.1,204.2L398.2,203.6L405.3,203.0L412.4,202.4L419.6,201.8L426.7,201.8L433.8,201.8L440.9,201.8L448.0,201.8L455.1,201.8L462.2,201.8L469.3,201.8L476.4,201.8L483.6,201.8L490.7,201.8L497.8,201.8L504.9,201.8L512.0,201.8L519.1,201.8L526.2,201.8L533.3,201.8L540.4,201.8L547.6,201.8L554.7,201.8L561.8,201.8L568.9,201.8L576.0,201.8L583.1,201.8L590.2,201.8L597.3,201.8L604.4,201.8L611.6,201.8L618.7,201.8L625.8,201.8L632.9,201.8L640.0,201.8L647.1,201.8L654.2,201.8L661.3,201.8L668.4,201.8L675.6,201.8L682.7,201.8L689.8,201.8L696.9,201.8L704.0,201.8" fill="none" stroke="#9a9aa5" stroke-width="1.8" stroke-dasharray="5 4"/>
 <rect x="145.2" y="38" width="12" height="3" fill="#9a9aa5"/><text class="fg" x="161.2" y="46">ICE: 0.475 × fuel-flow limit</text>

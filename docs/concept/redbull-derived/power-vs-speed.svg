@@ -66,7 +66,7 @@
 <circle cx="606.8" cy="151.2" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
 <circle cx="607.7" cy="152.7" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
 <circle cx="608.5" cy="153.5" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
-<circle cx="609.4" cy="153.7" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="609.4" cy="153.8" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
 <circle cx="610.2" cy="153.5" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
 <circle cx="611.0" cy="152.6" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
 <circle cx="611.9" cy="152.4" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
@@ -142,7 +142,7 @@
 <circle cx="490.6" cy="124.9" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
 <circle cx="498.0" cy="131.7" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
 <circle cx="500.9" cy="135.9" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
-<circle cx="430.5" cy="177.6" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
+<circle cx="430.5" cy="177.7" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
 <circle cx="433.8" cy="181.6" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
 <circle cx="437.0" cy="184.5" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
 <circle cx="440.1" cy="185.9" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
@@ -188,7 +188,7 @@
 <circle cx="178.6" cy="133.0" r="2.2" fill="#2a6fdb" fill-opacity="0.75"/>
 <rect x="72" y="38" width="12" height="8" fill="#2a6fdb"/><text class="fg" x="88" y="46">Corner Mode</text>
 <circle cx="552.5" cy="70.7" r="2.2" fill="#e0662f" fill-opacity="0.75"/>
-<circle cx="557.9" cy="76.5" r="2.2" fill="#e0662f" fill-opacity="0.75"/>
+<circle cx="557.9" cy="76.6" r="2.2" fill="#e0662f" fill-opacity="0.75"/>
 <circle cx="563.4" cy="80.6" r="2.2" fill="#e0662f" fill-opacity="0.75"/>
 <circle cx="568.7" cy="81.6" r="2.2" fill="#e0662f" fill-opacity="0.75"/>
 <circle cx="574.0" cy="84.5" r="2.2" fill="#e0662f" fill-opacity="0.75"/>
@@ -325,7 +325,7 @@
 <circle cx="650.5" cy="230.9" r="2.2" fill="#e0662f" fill-opacity="0.75"/>
 <circle cx="650.0" cy="240.3" r="2.2" fill="#e0662f" fill-opacity="0.75"/>
 <circle cx="649.1" cy="251.1" r="2.2" fill="#e0662f" fill-opacity="0.75"/>
-<circle cx="647.6" cy="262.0" r="2.2" fill="#e0662f" fill-opacity="0.75"/>
+<circle cx="647.6" cy="262.1" r="2.2" fill="#e0662f" fill-opacity="0.75"/>
 <circle cx="645.6" cy="272.8" r="2.2" fill="#e0662f" fill-opacity="0.75"/>
 <circle cx="643.2" cy="282.9" r="2.2" fill="#e0662f" fill-opacity="0.75"/>
 <circle cx="640.4" cy="293.2" r="2.2" fill="#e0662f" fill-opacity="0.75"/>
@@ -484,7 +484,7 @@
 <circle cx="650.7" cy="203.1" r="2.2" fill="#e0662f" fill-opacity="0.75"/>
 <circle cx="650.7" cy="203.1" r="2.2" fill="#e0662f" fill-opacity="0.75"/>
 <circle cx="650.7" cy="203.1" r="2.2" fill="#e0662f" fill-opacity="0.75"/>
-<circle cx="650.7" cy="203.9" r="2.2" fill="#e0662f" fill-opacity="0.75"/>
+<circle cx="650.7" cy="204.0" r="2.2" fill="#e0662f" fill-opacity="0.75"/>
 <circle cx="650.8" cy="205.6" r="2.2" fill="#e0662f" fill-opacity="0.75"/>
 <circle cx="650.9" cy="207.9" r="2.2" fill="#e0662f" fill-opacity="0.75"/>
 <circle cx="650.7" cy="209.6" r="2.2" fill="#e0662f" fill-opacity="0.75"/>

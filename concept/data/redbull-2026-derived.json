@@ -520,7 +520,7 @@
    },
    {
     "kmh": 205,
-    "kdc_kw": 250.9,
+    "kdc_kw": 250.8,
     "n": 10
    },
    {
@@ -2363,75 +2363,75 @@
     "mu_x"
    ],
    "params": {
-    "ClA": 5.316,
+    "ClA": 5.427,
     "mu_y": 1.993,
-    "CdA_c": 1.202,
-    "CdA_s": 0.929,
-    "mu_x": 1.395
+    "CdA_c": 1.147,
+    "CdA_s": 0.874,
+    "mu_x": 1.397
    },
    "redbull_car_on_this_line_s": 89.353,
    "lap_time_real_s": 90.638,
-   "lap_time_sim_s": 89.93,
-   "delta_s": -0.708,
-   "delta_pct": -0.78,
-   "speed_rms_kmh": 12.4,
-   "speed_bias_kmh": 3,
+   "lap_time_sim_s": 89.07,
+   "delta_s": -1.568,
+   "delta_pct": -1.73,
+   "speed_rms_kmh": 14,
+   "speed_bias_kmh": 5.8,
    "vmax_real_kmh": 313.1,
-   "vmax_sim_kmh": 311.7,
+   "vmax_sim_kmh": 314.8,
    "corner_minima": [
     {
      "corner": "T3 Village",
      "real_kmh": 107.3,
-     "sim_kmh": 114.6
+     "sim_kmh": 115.1
     },
     {
      "corner": "T4 The Loop",
      "real_kmh": 82.9,
-     "sim_kmh": 69.5
+     "sim_kmh": 69.6
     },
     {
      "corner": "T6 Brooklands",
      "real_kmh": 159,
-     "sim_kmh": 159.4
+     "sim_kmh": 160.8
     },
     {
      "corner": "T7 Luffield",
      "real_kmh": 105.4,
-     "sim_kmh": 103.6
+     "sim_kmh": 104
     },
     {
      "corner": "T9 Copse",
      "real_kmh": 273.8,
-     "sim_kmh": 258.4
+     "sim_kmh": 264.2
     },
     {
      "corner": "T13 Becketts",
      "real_kmh": 198.3,
-     "sim_kmh": 239.2
+     "sim_kmh": 243.6
     },
     {
      "corner": "T15 Stowe",
      "real_kmh": 212.8,
-     "sim_kmh": 200.2
+     "sim_kmh": 203
     },
     {
      "corner": "T16 Vale",
      "real_kmh": 99.4,
-     "sim_kmh": 111.6
+     "sim_kmh": 112.1
     },
     {
      "corner": "T17 Vale-Club",
      "real_kmh": 127.1,
-     "sim_kmh": 116.2
+     "sim_kmh": 116.8
     }
    ],
-   "sim_deploy_mj": 5.91,
-   "sim_harvest_drive_mj": 1.95,
+   "sim_deploy_mj": 5.88,
+   "sim_harvest_drive_mj": 1.92,
    "sim_time_share": {
     "corner": 0.021,
     "brake": 0.125,
-    "traction": 0.134,
-    "power": 0.72
+    "traction": 0.13,
+    "power": 0.724
    }
   },
   {
@@ -2526,70 +2526,70 @@
     "mu_x"
    ],
    "params": {
-    "ClA": 3.407,
+    "ClA": 3.366,
     "mu_y": 2.577,
-    "CdA_c": 1.05,
-    "CdA_s": 0.777,
-    "mu_x": 1.789
+    "CdA_c": 1.079,
+    "CdA_s": 0.806,
+    "mu_x": 1.786
    },
    "redbull_car_on_this_line_s": 88.726,
    "lap_time_real_s": 88.111,
-   "lap_time_sim_s": 85.623,
-   "delta_s": -2.488,
-   "delta_pct": -2.82,
-   "speed_rms_kmh": 13.7,
-   "speed_bias_kmh": 7.4,
+   "lap_time_sim_s": 86.012,
+   "delta_s": -2.099,
+   "delta_pct": -2.38,
+   "speed_rms_kmh": 12.5,
+   "speed_bias_kmh": 6,
    "vmax_real_kmh": 316.5,
-   "vmax_sim_kmh": 321.3,
+   "vmax_sim_kmh": 319.3,
    "corner_minima": [
     {
      "corner": "T3 Village",
      "real_kmh": 108.4,
-     "sim_kmh": 124.2
+     "sim_kmh": 124
     },
     {
      "corner": "T4 The Loop",
      "real_kmh": 87.3,
-     "sim_kmh": 79.4
+     "sim_kmh": 79.3
     },
     {
      "corner": "T6 Brooklands",
      "real_kmh": 166.9,
-     "sim_kmh": 151.4
+     "sim_kmh": 150.9
     },
     {
      "corner": "T7 Luffield",
      "real_kmh": 114.1,
-     "sim_kmh": 103.3
+     "sim_kmh": 103.1
     },
     {
      "corner": "T9 Copse",
      "real_kmh": 282.5,
-     "sim_kmh": 300.9
+     "sim_kmh": 298.4
     },
     {
      "corner": "T13 Becketts",
      "real_kmh": 219.1,
-     "sim_kmh": 212.1
+     "sim_kmh": 210.9
     },
     {
      "corner": "T15 Stowe",
      "real_kmh": 235.9,
-     "sim_kmh": 212.9
+     "sim_kmh": 211.7
     },
     {
      "corner": "T17 Vale-Club",
      "real_kmh": 102.5,
-     "sim_kmh": 124.1
+     "sim_kmh": 123.9
     }
    ],
-   "sim_deploy_mj": 5.83,
-   "sim_harvest_drive_mj": 1.86,
+   "sim_deploy_mj": 5.85,
+   "sim_harvest_drive_mj": 1.88,
    "sim_time_share": {
     "corner": 0.016,
-    "brake": 0.133,
-    "traction": 0.072,
-    "power": 0.78
+    "brake": 0.132,
+    "traction": 0.076,
+    "power": 0.776
    }
   },
   {
@@ -2605,70 +2605,70 @@
     "mu_x"
    ],
    "params": {
-    "ClA": 2.204,
+    "ClA": 2.18,
     "mu_y": 2.669,
-    "CdA_c": 1.114,
-    "CdA_s": 0.841,
-    "mu_x": 2.17
+    "CdA_c": 1.153,
+    "CdA_s": 0.88,
+    "mu_x": 2.138
    },
    "redbull_car_on_this_line_s": 88.828,
    "lap_time_real_s": 90.501,
-   "lap_time_sim_s": 89.067,
-   "delta_s": -1.434,
-   "delta_pct": -1.58,
-   "speed_rms_kmh": 11.8,
-   "speed_bias_kmh": 2.4,
+   "lap_time_sim_s": 89.493,
+   "delta_s": -1.008,
+   "delta_pct": -1.11,
+   "speed_rms_kmh": 11.5,
+   "speed_bias_kmh": 0.9,
    "vmax_real_kmh": 311.1,
-   "vmax_sim_kmh": 316.3,
+   "vmax_sim_kmh": 313.8,
    "corner_minima": [
     {
      "corner": "T3 Village",
      "real_kmh": 109.8,
-     "sim_kmh": 120.9
+     "sim_kmh": 120.8
     },
     {
      "corner": "T4 The Loop",
      "real_kmh": 84.9,
-     "sim_kmh": 77.2
+     "sim_kmh": 77.1
     },
     {
      "corner": "T6 Brooklands",
      "real_kmh": 158.3,
-     "sim_kmh": 158.4
+     "sim_kmh": 158.1
     },
     {
      "corner": "T7 Luffield",
      "real_kmh": 113.4,
-     "sim_kmh": 109.6
+     "sim_kmh": 109.5
     },
     {
      "corner": "T9 Copse",
      "real_kmh": 274.9,
-     "sim_kmh": 271.2
+     "sim_kmh": 269.6
     },
     {
      "corner": "T13 Becketts",
      "real_kmh": 201.6,
-     "sim_kmh": 194
+     "sim_kmh": 193.4
     },
     {
      "corner": "T15 Stowe",
      "real_kmh": 212.3,
-     "sim_kmh": 181.2
+     "sim_kmh": 180.7
     },
     {
      "corner": "T16 Vale",
      "real_kmh": 106.8,
-     "sim_kmh": 118.6
+     "sim_kmh": 118.5
     }
    ],
-   "sim_deploy_mj": 5.89,
-   "sim_harvest_drive_mj": 1.91,
+   "sim_deploy_mj": 5.91,
+   "sim_harvest_drive_mj": 1.92,
    "sim_time_share": {
-    "corner": 0.026,
+    "corner": 0.025,
     "brake": 0.149,
-    "traction": 0.068,
-    "power": 0.757
+    "traction": 0.073,
+    "power": 0.753
    }
   },
   {
@@ -2684,26 +2684,26 @@
     "mu_x"
    ],
    "params": {
-    "ClA": 2.357,
+    "ClA": 2.328,
     "mu_y": 2.543,
-    "CdA_c": 1.124,
-    "CdA_s": 0.851,
-    "mu_x": 1.997
+    "CdA_c": 1.159,
+    "CdA_s": 0.886,
+    "mu_x": 1.994
    },
    "redbull_car_on_this_line_s": 88.879,
    "lap_time_real_s": 89.461,
-   "lap_time_sim_s": 89.607,
-   "delta_s": 0.146,
-   "delta_pct": 0.16,
-   "speed_rms_kmh": 12.8,
-   "speed_bias_kmh": 0.2,
+   "lap_time_sim_s": 90.006,
+   "delta_s": 0.545,
+   "delta_pct": 0.61,
+   "speed_rms_kmh": 12.5,
+   "speed_bias_kmh": -1.2,
    "vmax_real_kmh": 314.1,
-   "vmax_sim_kmh": 315.5,
+   "vmax_sim_kmh": 313.2,
    "corner_minima": [
     {
      "corner": "T3 Village",
      "real_kmh": 106.8,
-     "sim_kmh": 115.8
+     "sim_kmh": 115.6
     },
     {
      "corner": "T4 The Loop",
@@ -2713,41 +2713,41 @@
     {
      "corner": "T6 Brooklands",
      "real_kmh": 152.8,
-     "sim_kmh": 146.7
+     "sim_kmh": 146.4
     },
     {
      "corner": "T7 Luffield",
      "real_kmh": 111.5,
-     "sim_kmh": 111.2
+     "sim_kmh": 111.1
     },
     {
      "corner": "T9 Copse",
      "real_kmh": 280.8,
-     "sim_kmh": 292.7
+     "sim_kmh": 290
     },
     {
      "corner": "T13 Becketts",
      "real_kmh": 208.9,
-     "sim_kmh": 186.2
+     "sim_kmh": 185.7
     },
     {
      "corner": "T15 Stowe",
      "real_kmh": 217,
-     "sim_kmh": 187.4
+     "sim_kmh": 186.8
     },
     {
      "corner": "T17 Vale-Club",
      "real_kmh": 104.8,
-     "sim_kmh": 119.6
+     "sim_kmh": 119.5
     }
    ],
-   "sim_deploy_mj": 5.86,
-   "sim_harvest_drive_mj": 1.9,
+   "sim_deploy_mj": 5.88,
+   "sim_harvest_drive_mj": 1.92,
    "sim_time_share": {
     "corner": 0.023,
     "brake": 0.139,
-    "traction": 0.095,
-    "power": 0.743
+    "traction": 0.096,
+    "power": 0.742
    }
   },
   {
@@ -2763,21 +2763,21 @@
     "mu_x"
    ],
    "params": {
-    "ClA": 3.244,
+    "ClA": 3.232,
     "mu_y": 2.158,
-    "CdA_c": 0.855,
-    "CdA_s": 0.582,
-    "mu_x": 1.685
+    "CdA_c": 0.876,
+    "CdA_s": 0.603,
+    "mu_x": 1.684
    },
    "redbull_car_on_this_line_s": 88.112,
    "lap_time_real_s": 91.227,
-   "lap_time_sim_s": 89.212,
-   "delta_s": -2.015,
-   "delta_pct": -2.21,
-   "speed_rms_kmh": 16.8,
-   "speed_bias_kmh": 8.9,
+   "lap_time_sim_s": 89.411,
+   "delta_s": -1.816,
+   "delta_pct": -1.99,
+   "speed_rms_kmh": 16.1,
+   "speed_bias_kmh": 8.1,
    "vmax_real_kmh": 314.9,
-   "vmax_sim_kmh": 334.4,
+   "vmax_sim_kmh": 332.4,
    "corner_minima": [
     {
      "corner": "T3 Village",
@@ -2792,40 +2792,40 @@
     {
      "corner": "T6 Brooklands",
      "real_kmh": 153.2,
-     "sim_kmh": 136.1
+     "sim_kmh": 136
     },
     {
      "corner": "T7 Luffield",
      "real_kmh": 107.3,
-     "sim_kmh": 109.1
+     "sim_kmh": 109
     },
     {
      "corner": "T9 Copse",
      "real_kmh": 260.9,
-     "sim_kmh": 283.2
+     "sim_kmh": 282.3
     },
     {
      "corner": "T13 Becketts",
      "real_kmh": 186.9,
-     "sim_kmh": 176.3
+     "sim_kmh": 176.1
     },
     {
      "corner": "T15 Stowe",
      "real_kmh": 200.5,
-     "sim_kmh": 188.4
+     "sim_kmh": 188.2
     },
     {
      "corner": "T16 Vale",
      "real_kmh": 97.6,
-     "sim_kmh": 102
+     "sim_kmh": 101.9
     }
    ],
-   "sim_deploy_mj": 5.73,
-   "sim_harvest_drive_mj": 1.78,
+   "sim_deploy_mj": 5.74,
+   "sim_harvest_drive_mj": 1.79,
    "sim_time_share": {
-    "corner": 0.032,
-    "brake": 0.176,
-    "traction": 0.127,
+    "corner": 0.034,
+    "brake": 0.174,
+    "traction": 0.128,
     "power": 0.664
    }
   },
@@ -2842,70 +2842,70 @@
     "mu_x"
    ],
    "params": {
-    "ClA": 2.783,
+    "ClA": 2.756,
     "mu_y": 2.453,
-    "CdA_c": 1.227,
-    "CdA_s": 0.954,
-    "mu_x": 1.519
+    "CdA_c": 1.261,
+    "CdA_s": 0.987,
+    "mu_x": 1.515
    },
    "redbull_car_on_this_line_s": 88.965,
    "lap_time_real_s": 91.321,
-   "lap_time_sim_s": 91.575,
-   "delta_s": 0.254,
-   "delta_pct": 0.28,
-   "speed_rms_kmh": 9.1,
-   "speed_bias_kmh": -0.9,
+   "lap_time_sim_s": 91.977,
+   "delta_s": 0.656,
+   "delta_pct": 0.72,
+   "speed_rms_kmh": 9.2,
+   "speed_bias_kmh": -2.3,
    "vmax_real_kmh": 314.9,
-   "vmax_sim_kmh": 308.7,
+   "vmax_sim_kmh": 306.9,
    "corner_minima": [
     {
      "corner": "T3 Village",
      "real_kmh": 104.7,
-     "sim_kmh": 112
+     "sim_kmh": 111.9
     },
     {
      "corner": "T4 The Loop",
      "real_kmh": 85.5,
-     "sim_kmh": 75.3
+     "sim_kmh": 75.2
     },
     {
      "corner": "T6 Brooklands",
      "real_kmh": 154.2,
-     "sim_kmh": 145.9
+     "sim_kmh": 145.6
     },
     {
      "corner": "T7 Luffield",
      "real_kmh": 103.1,
-     "sim_kmh": 104.2
+     "sim_kmh": 104.1
     },
     {
      "corner": "T9 Copse",
      "real_kmh": 267.7,
-     "sim_kmh": 283.8
+     "sim_kmh": 281.5
     },
     {
      "corner": "T13 Becketts",
      "real_kmh": 198.2,
-     "sim_kmh": 175
+     "sim_kmh": 174.6
     },
     {
      "corner": "T15 Stowe",
      "real_kmh": 200.7,
-     "sim_kmh": 191.6
+     "sim_kmh": 191
     },
     {
      "corner": "T16 Vale",
      "real_kmh": 104,
-     "sim_kmh": 121
+     "sim_kmh": 120.8
     }
    ],
    "sim_deploy_mj": 5.69,
-   "sim_harvest_drive_mj": 1.91,
+   "sim_harvest_drive_mj": 1.92,
    "sim_time_share": {
     "corner": 0.02,
-    "brake": 0.148,
-    "traction": 0.172,
-    "power": 0.66
+    "brake": 0.146,
+    "traction": 0.178,
+    "power": 0.656
    }
   },
   {
@@ -2921,26 +2921,26 @@
     "mu_x"
    ],
    "params": {
-    "ClA": 2.353,
+    "ClA": 2.331,
     "mu_y": 2.429,
-    "CdA_c": 0.871,
-    "CdA_s": 0.598,
-    "mu_x": 2.083
+    "CdA_c": 0.898,
+    "CdA_s": 0.625,
+    "mu_x": 2.082
    },
    "redbull_car_on_this_line_s": 88.084,
    "lap_time_real_s": 90.063,
-   "lap_time_sim_s": 88.315,
-   "delta_s": -1.748,
-   "delta_pct": -1.94,
-   "speed_rms_kmh": 17.4,
-   "speed_bias_kmh": 6.8,
+   "lap_time_sim_s": 88.608,
+   "delta_s": -1.455,
+   "delta_pct": -1.62,
+   "speed_rms_kmh": 16.7,
+   "speed_bias_kmh": 5.7,
    "vmax_real_kmh": 322.3,
-   "vmax_sim_kmh": 334.4,
+   "vmax_sim_kmh": 331.6,
    "corner_minima": [
     {
      "corner": "T3 Village",
      "real_kmh": 102.8,
-     "sim_kmh": 121.1
+     "sim_kmh": 121
     },
     {
      "corner": "T4 The Loop",
@@ -2950,46 +2950,46 @@
     {
      "corner": "T6 Brooklands",
      "real_kmh": 158.8,
-     "sim_kmh": 132.7
+     "sim_kmh": 132.5
     },
     {
      "corner": "T7 Luffield",
      "real_kmh": 108.4,
-     "sim_kmh": 108.1
+     "sim_kmh": 108
     },
     {
      "corner": "T9 Copse",
      "real_kmh": 276.5,
-     "sim_kmh": 264
+     "sim_kmh": 262.7
     },
     {
      "corner": "T9 Copse",
      "real_kmh": 275.8,
-     "sim_kmh": 264.2
+     "sim_kmh": 262.9
     },
     {
      "corner": "T13 Becketts",
      "real_kmh": 198.1,
-     "sim_kmh": 191.8
+     "sim_kmh": 191.3
     },
     {
      "corner": "T15 Stowe",
      "real_kmh": 208.9,
-     "sim_kmh": 197.7
+     "sim_kmh": 197.2
     },
     {
      "corner": "T16 Vale",
      "real_kmh": 103,
-     "sim_kmh": 118.3
+     "sim_kmh": 118.2
     }
    ],
-   "sim_deploy_mj": 5.75,
-   "sim_harvest_drive_mj": 1.72,
+   "sim_deploy_mj": 5.77,
+   "sim_harvest_drive_mj": 1.73,
    "sim_time_share": {
-    "corner": 0.03,
-    "brake": 0.17,
+    "corner": 0.029,
+    "brake": 0.169,
     "traction": 0.088,
-    "power": 0.713
+    "power": 0.714
    }
   },
   {
@@ -3005,65 +3005,65 @@
     "mu_x"
    ],
    "params": {
-    "ClA": 4.56,
+    "ClA": 4.505,
     "mu_y": 2.237,
-    "CdA_c": 1.282,
-    "CdA_s": 1.009,
-    "mu_x": 1.66
+    "CdA_c": 1.316,
+    "CdA_s": 1.043,
+    "mu_x": 1.659
    },
    "redbull_car_on_this_line_s": 88.77,
    "lap_time_real_s": 88.458,
-   "lap_time_sim_s": 88.934,
-   "delta_s": 0.476,
-   "delta_pct": 0.54,
-   "speed_rms_kmh": 8,
-   "speed_bias_kmh": -1.6,
+   "lap_time_sim_s": 89.377,
+   "delta_s": 0.919,
+   "delta_pct": 1.04,
+   "speed_rms_kmh": 8.2,
+   "speed_bias_kmh": -3.1,
    "vmax_real_kmh": 315.1,
-   "vmax_sim_kmh": 307.6,
+   "vmax_sim_kmh": 305.8,
    "corner_minima": [
     {
      "corner": "T3 Village",
      "real_kmh": 112.4,
-     "sim_kmh": 125.9
+     "sim_kmh": 125.5
     },
     {
      "corner": "T4 The Loop",
      "real_kmh": 84.9,
-     "sim_kmh": 75.9
+     "sim_kmh": 75.8
     },
     {
      "corner": "T6 Brooklands",
      "real_kmh": 170.5,
-     "sim_kmh": 171.7
+     "sim_kmh": 170.9
     },
     {
      "corner": "T7 Luffield",
      "real_kmh": 117.5,
-     "sim_kmh": 104.1
+     "sim_kmh": 103.9
     },
     {
      "corner": "T13 Becketts",
      "real_kmh": 207.5,
-     "sim_kmh": 187.5
+     "sim_kmh": 186.4
     },
     {
      "corner": "T15 Stowe",
      "real_kmh": 226.3,
-     "sim_kmh": 214.4
+     "sim_kmh": 212.8
     },
     {
      "corner": "T16 Vale",
      "real_kmh": 109.2,
-     "sim_kmh": 119
+     "sim_kmh": 118.7
     }
    ],
-   "sim_deploy_mj": 5.99,
-   "sim_harvest_drive_mj": 1.97,
+   "sim_deploy_mj": 6.01,
+   "sim_harvest_drive_mj": 1.98,
    "sim_time_share": {
     "corner": 0.018,
-    "brake": 0.118,
-    "traction": 0.082,
-    "power": 0.782
+    "brake": 0.116,
+    "traction": 0.084,
+    "power": 0.781
    }
   },
   {
@@ -3079,26 +3079,26 @@
     "mu_x"
    ],
    "params": {
-    "ClA": 3.162,
+    "ClA": 3.124,
     "mu_y": 2.444,
-    "CdA_c": 1.181,
-    "CdA_s": 0.908,
-    "mu_x": 1.808
+    "CdA_c": 1.212,
+    "CdA_s": 0.939,
+    "mu_x": 1.806
    },
    "redbull_car_on_this_line_s": 88.557,
    "lap_time_real_s": 89.539,
-   "lap_time_sim_s": 88.565,
-   "delta_s": -0.974,
-   "delta_pct": -1.09,
-   "speed_rms_kmh": 9.5,
-   "speed_bias_kmh": 2.6,
+   "lap_time_sim_s": 88.959,
+   "delta_s": -0.58,
+   "delta_pct": -0.65,
+   "speed_rms_kmh": 9,
+   "speed_bias_kmh": 1.2,
    "vmax_real_kmh": 313.9,
-   "vmax_sim_kmh": 313.7,
+   "vmax_sim_kmh": 311.7,
    "corner_minima": [
     {
      "corner": "T3 Village",
      "real_kmh": 110.7,
-     "sim_kmh": 124.8
+     "sim_kmh": 124.6
     },
     {
      "corner": "T4 The Loop",
@@ -3108,41 +3108,41 @@
     {
      "corner": "T6 Brooklands",
      "real_kmh": 162.8,
-     "sim_kmh": 158.9
+     "sim_kmh": 158.4
     },
     {
      "corner": "T7 Luffield",
      "real_kmh": 113.2,
-     "sim_kmh": 99.8
+     "sim_kmh": 99.7
     },
     {
      "corner": "T9 Copse",
      "real_kmh": 281.2,
-     "sim_kmh": 291.2
+     "sim_kmh": 288.6
     },
     {
      "corner": "T13 Becketts",
      "real_kmh": 203,
-     "sim_kmh": 191.7
+     "sim_kmh": 190.9
     },
     {
      "corner": "T15 Stowe",
      "real_kmh": 213.6,
-     "sim_kmh": 202.1
+     "sim_kmh": 201.2
     },
     {
      "corner": "T16 Vale",
      "real_kmh": 107.9,
-     "sim_kmh": 123.1
+     "sim_kmh": 122.9
     }
    ],
-   "sim_deploy_mj": 5.87,
-   "sim_harvest_drive_mj": 1.84,
+   "sim_deploy_mj": 5.89,
+   "sim_harvest_drive_mj": 1.85,
    "sim_time_share": {
     "corner": 0.018,
     "brake": 0.13,
-    "traction": 0.098,
-    "power": 0.754
+    "traction": 0.1,
+    "power": 0.753
    }
   },
   {
@@ -3158,36 +3158,36 @@
     "mu_x"
    ],
    "params": {
-    "ClA": 2.117,
+    "ClA": 2.104,
     "mu_y": 2.613,
-    "CdA_c": 1.094,
-    "CdA_s": 0.821,
-    "mu_x": 2.186
+    "CdA_c": 1.112,
+    "CdA_s": 0.838,
+    "mu_x": 2.184
    },
    "redbull_car_on_this_line_s": 88.171,
    "lap_time_real_s": 89.3,
-   "lap_time_sim_s": 88.448,
-   "delta_s": -0.852,
-   "delta_pct": -0.95,
-   "speed_rms_kmh": 9.4,
-   "speed_bias_kmh": 1.5,
+   "lap_time_sim_s": 88.643,
+   "delta_s": -0.657,
+   "delta_pct": -0.74,
+   "speed_rms_kmh": 9.2,
+   "speed_bias_kmh": 0.8,
    "vmax_real_kmh": 316.1,
-   "vmax_sim_kmh": 317.5,
+   "vmax_sim_kmh": 316.4,
    "corner_minima": [
     {
      "corner": "T3 Village",
      "real_kmh": 106.3,
-     "sim_kmh": 125.1
+     "sim_kmh": 125
     },
     {
      "corner": "T4 The Loop",
      "real_kmh": 86.8,
-     "sim_kmh": 77.7
+     "sim_kmh": 77.6
     },
     {
      "corner": "T6 Brooklands",
      "real_kmh": 158.1,
-     "sim_kmh": 150.5
+     "sim_kmh": 150.4
     },
     {
      "corner": "T7 Luffield",
@@ -3197,31 +3197,31 @@
     {
      "corner": "T9 Copse",
      "real_kmh": 274.1,
-     "sim_kmh": 283.3
+     "sim_kmh": 282.2
     },
     {
      "corner": "T13 Becketts",
      "real_kmh": 202.9,
-     "sim_kmh": 186.5
+     "sim_kmh": 186.2
     },
     {
      "corner": "T15 Stowe",
      "real_kmh": 217.7,
-     "sim_kmh": 199.8
+     "sim_kmh": 199.4
     },
     {
      "corner": "T17 Vale-Club",
      "real_kmh": 105.7,
-     "sim_kmh": 124.9
+     "sim_kmh": 124.8
     }
    ],
-   "sim_deploy_mj": 5.89,
-   "sim_harvest_drive_mj": 1.9,
+   "sim_deploy_mj": 5.9,
+   "sim_harvest_drive_mj": 1.93,
    "sim_time_share": {
-    "corner": 0.025,
-    "brake": 0.145,
+    "corner": 0.024,
+    "brake": 0.144,
     "traction": 0.076,
-    "power": 0.755
+    "power": 0.756
    }
   },
   {
@@ -3237,64 +3237,64 @@
     "mu_x"
    ],
    "params": {
-    "ClA": 5.311,
+    "ClA": 5.247,
     "mu_y": 2.153,
-    "CdA_c": 1.176,
-    "CdA_s": 0.903,
-    "mu_x": 1.505
+    "CdA_c": 1.21,
+    "CdA_s": 0.937,
+    "mu_x": 1.504
    },
    "redbull_car_on_this_line_s": 88.97,
    "lap_time_real_s": 88.286,
-   "lap_time_sim_s": 87.69,
-   "delta_s": -0.596,
-   "delta_pct": -0.68,
-   "speed_rms_kmh": 10,
-   "speed_bias_kmh": 3.6,
+   "lap_time_sim_s": 88.18,
+   "delta_s": -0.106,
+   "delta_pct": -0.12,
+   "speed_rms_kmh": 9,
+   "speed_bias_kmh": 1.9,
    "vmax_real_kmh": 316.1,
-   "vmax_sim_kmh": 313.2,
+   "vmax_sim_kmh": 311.4,
    "corner_minima": [
     {
      "corner": "T3 Village",
      "real_kmh": 112.8,
-     "sim_kmh": 121.2
+     "sim_kmh": 120.9
     },
     {
      "corner": "T4 The Loop",
      "real_kmh": 86.2,
-     "sim_kmh": 79.1
+     "sim_kmh": 79
     },
     {
      "corner": "T6 Brooklands",
      "real_kmh": 168.6,
-     "sim_kmh": 148.3
+     "sim_kmh": 147.7
     },
     {
      "corner": "T7 Luffield",
      "real_kmh": 110.6,
-     "sim_kmh": 112.2
+     "sim_kmh": 112
     },
     {
      "corner": "T13 Becketts",
      "real_kmh": 210.2,
-     "sim_kmh": 196.7
+     "sim_kmh": 195.3
     },
     {
      "corner": "T15 Stowe",
      "real_kmh": 224.8,
-     "sim_kmh": 247.2
+     "sim_kmh": 244.5
     },
     {
      "corner": "T17 Vale-Club",
      "real_kmh": 108.6,
-     "sim_kmh": 115.6
+     "sim_kmh": 115.3
     }
    ],
-   "sim_deploy_mj": 5.91,
-   "sim_harvest_drive_mj": 1.91,
+   "sim_deploy_mj": 5.94,
+   "sim_harvest_drive_mj": 1.93,
    "sim_time_share": {
     "corner": 0.021,
-    "brake": 0.12,
-    "traction": 0.096,
+    "brake": 0.119,
+    "traction": 0.097,
     "power": 0.763
    }
   },
@@ -3311,26 +3311,26 @@
     "mu_x"
    ],
    "params": {
-    "ClA": 2.661,
+    "ClA": 2.644,
     "mu_y": 2.549,
-    "CdA_c": 1.063,
-    "CdA_s": 0.79,
-    "mu_x": 2.035
+    "CdA_c": 1.08,
+    "CdA_s": 0.807,
+    "mu_x": 2.034
    },
    "redbull_car_on_this_line_s": 88.857,
    "lap_time_real_s": 89.305,
-   "lap_time_sim_s": 87.852,
-   "delta_s": -1.453,
-   "delta_pct": -1.63,
-   "speed_rms_kmh": 9.8,
-   "speed_bias_kmh": 4.2,
+   "lap_time_sim_s": 88.054,
+   "delta_s": -1.251,
+   "delta_pct": -1.4,
+   "speed_rms_kmh": 9.2,
+   "speed_bias_kmh": 3.5,
    "vmax_real_kmh": 315,
-   "vmax_sim_kmh": 319.5,
+   "vmax_sim_kmh": 318.3,
    "corner_minima": [
     {
      "corner": "T3 Village",
      "real_kmh": 110.2,
-     "sim_kmh": 117
+     "sim_kmh": 116.9
     },
     {
      "corner": "T4 The Loop",
@@ -3340,40 +3340,40 @@
     {
      "corner": "T6 Brooklands",
      "real_kmh": 157.8,
-     "sim_kmh": 149.2
+     "sim_kmh": 149
     },
     {
      "corner": "T7 Luffield",
      "real_kmh": 109.8,
-     "sim_kmh": 106.3
+     "sim_kmh": 106.2
     },
     {
      "corner": "T9 Copse",
      "real_kmh": 276.7,
-     "sim_kmh": 297.7
+     "sim_kmh": 296.3
     },
     {
      "corner": "T13 Becketts",
      "real_kmh": 199.5,
-     "sim_kmh": 183.9
+     "sim_kmh": 183.6
     },
     {
      "corner": "T15 Stowe",
      "real_kmh": 221.1,
-     "sim_kmh": 203.8
+     "sim_kmh": 203.4
     },
     {
      "corner": "T16 Vale",
      "real_kmh": 99.2,
-     "sim_kmh": 116.4
+     "sim_kmh": 116.3
     }
    ],
-   "sim_deploy_mj": 5.9,
-   "sim_harvest_drive_mj": 1.88,
+   "sim_deploy_mj": 5.92,
+   "sim_harvest_drive_mj": 1.89,
    "sim_time_share": {
-    "corner": 0.027,
-    "brake": 0.139,
-    "traction": 0.078,
+    "corner": 0.026,
+    "brake": 0.138,
+    "traction": 0.079,
     "power": 0.756
    }
   },
@@ -3390,70 +3390,70 @@
     "mu_x"
    ],
    "params": {
-    "ClA": 2.884,
+    "ClA": 2.849,
     "mu_y": 2.424,
-    "CdA_c": 1.264,
-    "CdA_s": 0.991,
-    "mu_x": 1.888
+    "CdA_c": 1.297,
+    "CdA_s": 1.024,
+    "mu_x": 1.887
    },
    "redbull_car_on_this_line_s": 87.689,
    "lap_time_real_s": 88.877,
-   "lap_time_sim_s": 89.259,
-   "delta_s": 0.382,
-   "delta_pct": 0.43,
-   "speed_rms_kmh": 8,
-   "speed_bias_kmh": -2.2,
+   "lap_time_sim_s": 89.669,
+   "delta_s": 0.792,
+   "delta_pct": 0.89,
+   "speed_rms_kmh": 8.5,
+   "speed_bias_kmh": -3.6,
    "vmax_real_kmh": 311.1,
-   "vmax_sim_kmh": 307.9,
+   "vmax_sim_kmh": 306.2,
    "corner_minima": [
     {
      "corner": "T3 Village",
      "real_kmh": 106.4,
-     "sim_kmh": 124.8
+     "sim_kmh": 124.6
     },
     {
      "corner": "T4 The Loop",
      "real_kmh": 83.7,
-     "sim_kmh": 76.1
+     "sim_kmh": 76
     },
     {
      "corner": "T6 Brooklands",
      "real_kmh": 161.4,
-     "sim_kmh": 145.3
+     "sim_kmh": 145
     },
     {
      "corner": "T7 Luffield",
      "real_kmh": 113.6,
-     "sim_kmh": 106.7
+     "sim_kmh": 106.6
     },
     {
      "corner": "T9 Copse",
      "real_kmh": 276.6,
-     "sim_kmh": 283.5
+     "sim_kmh": 281.1
     },
     {
      "corner": "T13 Becketts",
      "real_kmh": 208.1,
-     "sim_kmh": 197.9
+     "sim_kmh": 197.1
     },
     {
      "corner": "T15 Stowe",
      "real_kmh": 229.3,
-     "sim_kmh": 212.4
+     "sim_kmh": 211.3
     },
     {
      "corner": "T16 Vale",
      "real_kmh": 106.8,
-     "sim_kmh": 121.2
+     "sim_kmh": 121
     }
    ],
-   "sim_deploy_mj": 5.94,
-   "sim_harvest_drive_mj": 1.98,
+   "sim_deploy_mj": 5.96,
+   "sim_harvest_drive_mj": 1.99,
    "sim_time_share": {
     "corner": 0.019,
-    "brake": 0.133,
-    "traction": 0.089,
-    "power": 0.759
+    "brake": 0.131,
+    "traction": 0.09,
+    "power": 0.76
    }
   },
   {
@@ -3469,26 +3469,26 @@
     "mu_x"
    ],
    "params": {
-    "ClA": 1.765,
+    "ClA": 1.746,
     "mu_y": 2.981,
-    "CdA_c": 1.126,
-    "CdA_s": 0.853,
-    "mu_x": 2.288
+    "CdA_c": 1.169,
+    "CdA_s": 0.896,
+    "mu_x": 2.283
    },
    "redbull_car_on_this_line_s": 92.771,
    "lap_time_real_s": 90.68,
-   "lap_time_sim_s": 91.632,
-   "delta_s": 0.952,
-   "delta_pct": 1.05,
-   "speed_rms_kmh": 21.8,
-   "speed_bias_kmh": -1.5,
+   "lap_time_sim_s": 92.031,
+   "delta_s": 1.351,
+   "delta_pct": 1.49,
+   "speed_rms_kmh": 21.6,
+   "speed_bias_kmh": -2.9,
    "vmax_real_kmh": 313.7,
-   "vmax_sim_kmh": 317.8,
+   "vmax_sim_kmh": 314.9,
    "corner_minima": [
     {
      "corner": "T3 Village",
      "real_kmh": 105.9,
-     "sim_kmh": 128.7
+     "sim_kmh": 128.6
     },
     {
      "corner": "T4 The Loop",
@@ -3498,41 +3498,41 @@
     {
      "corner": "T6 Brooklands",
      "real_kmh": 159.2,
-     "sim_kmh": 157.4
+     "sim_kmh": 157.1
     },
     {
      "corner": "T7 Luffield",
      "real_kmh": 106.8,
-     "sim_kmh": 106.4
+     "sim_kmh": 106.3
     },
     {
      "corner": "T9 Copse",
      "real_kmh": 270.2,
-     "sim_kmh": 266.4
+     "sim_kmh": 265.2
     },
     {
      "corner": "T13 Becketts",
      "real_kmh": 182.5,
-     "sim_kmh": 191
+     "sim_kmh": 190.5
     },
     {
      "corner": "T15 Stowe",
      "real_kmh": 215.4,
-     "sim_kmh": 206.5
+     "sim_kmh": 205.9
     },
     {
      "corner": "T17 Vale-Club",
      "real_kmh": 94.8,
-     "sim_kmh": 79
+     "sim_kmh": 78.9
     }
    ],
-   "sim_deploy_mj": 5.83,
-   "sim_harvest_drive_mj": 1.84,
+   "sim_deploy_mj": 5.85,
+   "sim_harvest_drive_mj": 1.87,
    "sim_time_share": {
     "corner": 0.026,
-    "brake": 0.149,
+    "brake": 0.146,
     "traction": 0.074,
-    "power": 0.75
+    "power": 0.753
    }
   },
   {
@@ -3548,26 +3548,26 @@
     "mu_x"
    ],
    "params": {
-    "ClA": 1.737,
+    "ClA": 1.731,
     "mu_y": 2.626,
-    "CdA_c": 1.276,
-    "CdA_s": 1.003,
+    "CdA_c": 1.286,
+    "CdA_s": 1.013,
     "mu_x": 2.225
    },
    "redbull_car_on_this_line_s": 88.83,
    "lap_time_real_s": 91.94,
-   "lap_time_sim_s": 92.201,
-   "delta_s": 0.261,
-   "delta_pct": 0.28,
-   "speed_rms_kmh": 14.5,
-   "speed_bias_kmh": -3.5,
+   "lap_time_sim_s": 92.301,
+   "delta_s": 0.361,
+   "delta_pct": 0.39,
+   "speed_rms_kmh": 14.6,
+   "speed_bias_kmh": -3.8,
    "vmax_real_kmh": 318.8,
-   "vmax_sim_kmh": 307.1,
+   "vmax_sim_kmh": 306.5,
    "corner_minima": [
     {
      "corner": "T3 Village",
      "real_kmh": 105.9,
-     "sim_kmh": 119.9
+     "sim_kmh": 119.8
     },
     {
      "corner": "T4 The Loop",
@@ -3577,7 +3577,7 @@
     {
      "corner": "T6 Brooklands",
      "real_kmh": 152.9,
-     "sim_kmh": 149.7
+     "sim_kmh": 149.6
     },
     {
      "corner": "T7 Luffield",
@@ -3587,17 +3587,17 @@
     {
      "corner": "T9 Copse",
      "real_kmh": 252.2,
-     "sim_kmh": 254.1
+     "sim_kmh": 253.7
     },
     {
      "corner": "T13 Becketts",
      "real_kmh": 186.3,
-     "sim_kmh": 168.6
+     "sim_kmh": 168.5
     },
     {
      "corner": "T15 Stowe",
      "real_kmh": 199,
-     "sim_kmh": 191.5
+     "sim_kmh": 191.3
     },
     {
      "corner": "T17 Vale-Club",
@@ -3609,9 +3609,9 @@
    "sim_harvest_drive_mj": 2.03,
    "sim_time_share": {
     "corner": 0.027,
-    "brake": 0.147,
+    "brake": 0.146,
     "traction": 0.086,
-    "power": 0.74
+    "power": 0.741
    }
   },
   {
@@ -3627,36 +3627,36 @@
     "mu_x"
    ],
    "params": {
-    "ClA": 1.488,
+    "ClA": 1.47,
     "mu_y": 3.176,
-    "CdA_c": 1.129,
-    "CdA_s": 0.856,
-    "mu_x": 2.586
+    "CdA_c": 1.176,
+    "CdA_s": 0.903,
+    "mu_x": 2.583
    },
    "redbull_car_on_this_line_s": 89.37,
    "lap_time_real_s": 89.032,
-   "lap_time_sim_s": 87.219,
-   "delta_s": -1.813,
-   "delta_pct": -2.04,
-   "speed_rms_kmh": 9.7,
-   "speed_bias_kmh": 3,
+   "lap_time_sim_s": 87.662,
+   "delta_s": -1.37,
+   "delta_pct": -1.54,
+   "speed_rms_kmh": 9.2,
+   "speed_bias_kmh": 1.4,
    "vmax_real_kmh": 312.7,
-   "vmax_sim_kmh": 316.1,
+   "vmax_sim_kmh": 313.5,
    "corner_minima": [
     {
      "corner": "T3 Village",
      "real_kmh": 110.9,
-     "sim_kmh": 119.9
+     "sim_kmh": 119.8
     },
     {
      "corner": "T4 The Loop",
      "real_kmh": 85.2,
-     "sim_kmh": 89.8
+     "sim_kmh": 89.7
     },
     {
      "corner": "T6 Brooklands",
      "real_kmh": 161.1,
-     "sim_kmh": 160.5
+     "sim_kmh": 160.3
     },
     {
      "corner": "T7 Luffield",
@@ -3666,31 +3666,31 @@
     {
      "corner": "T9 Copse",
      "real_kmh": 277.1,
-     "sim_kmh": 285.9
+     "sim_kmh": 283.9
     },
     {
      "corner": "T13 Becketts",
      "real_kmh": 208.7,
-     "sim_kmh": 196.2
+     "sim_kmh": 195.7
     },
     {
      "corner": "T15 Stowe",
      "real_kmh": 229.4,
-     "sim_kmh": 205.1
+     "sim_kmh": 204.6
     },
     {
      "corner": "T17 Vale-Club",
      "real_kmh": 107.2,
-     "sim_kmh": 100.2
+     "sim_kmh": 100.1
     }
    ],
-   "sim_deploy_mj": 5.84,
-   "sim_harvest_drive_mj": 1.91,
+   "sim_deploy_mj": 5.87,
+   "sim_harvest_drive_mj": 1.93,
    "sim_time_share": {
     "corner": 0.025,
-    "brake": 0.132,
+    "brake": 0.13,
     "traction": 0.042,
-    "power": 0.801
+    "power": 0.803
    }
   },
   {
@@ -3706,26 +3706,26 @@
     "mu_x"
    ],
    "params": {
-    "ClA": 1.978,
+    "ClA": 1.954,
     "mu_y": 2.848,
-    "CdA_c": 0.977,
-    "CdA_s": 0.704,
-    "mu_x": 2.231
+    "CdA_c": 1.009,
+    "CdA_s": 0.736,
+    "mu_x": 2.23
    },
    "redbull_car_on_this_line_s": 88.266,
    "lap_time_real_s": 88.481,
-   "lap_time_sim_s": 86.171,
-   "delta_s": -2.31,
-   "delta_pct": -2.61,
-   "speed_rms_kmh": 13.1,
-   "speed_bias_kmh": 6.4,
+   "lap_time_sim_s": 86.518,
+   "delta_s": -1.963,
+   "delta_pct": -2.22,
+   "speed_rms_kmh": 12.2,
+   "speed_bias_kmh": 5.1,
    "vmax_real_kmh": 317.1,
-   "vmax_sim_kmh": 325.9,
+   "vmax_sim_kmh": 323.7,
    "corner_minima": [
     {
      "corner": "T3 Village",
      "real_kmh": 110.3,
-     "sim_kmh": 116.5
+     "sim_kmh": 116.3
     },
     {
      "corner": "T4 The Loop",
@@ -3735,41 +3735,41 @@
     {
      "corner": "T6 Brooklands",
      "real_kmh": 166.8,
-     "sim_kmh": 150.4
+     "sim_kmh": 150.2
     },
     {
      "corner": "T7 Luffield",
      "real_kmh": 115.1,
-     "sim_kmh": 107.4
+     "sim_kmh": 107.3
     },
     {
      "corner": "T9 Copse",
      "real_kmh": 283.9,
-     "sim_kmh": 267.3
+     "sim_kmh": 265.8
     },
     {
      "corner": "T13 Becketts",
      "real_kmh": 211.8,
-     "sim_kmh": 192.5
+     "sim_kmh": 192
     },
     {
      "corner": "T15 Stowe",
      "real_kmh": 238,
-     "sim_kmh": 221.9
+     "sim_kmh": 221.1
     },
     {
      "corner": "T17 Vale-Club",
      "real_kmh": 104.1,
-     "sim_kmh": 126.6
+     "sim_kmh": 126.5
     }
    ],
-   "sim_deploy_mj": 5.85,
-   "sim_harvest_drive_mj": 1.85,
+   "sim_deploy_mj": 5.87,
+   "sim_harvest_drive_mj": 1.86,
    "sim_time_share": {
     "corner": 0.021,
     "brake": 0.143,
-    "traction": 0.073,
-    "power": 0.763
+    "traction": 0.075,
+    "power": 0.761
    }
   },
   {
@@ -3785,70 +3785,70 @@
     "mu_x"
    ],
    "params": {
-    "ClA": 2.854,
+    "ClA": 2.914,
     "mu_y": 2.545,
-    "CdA_c": 1.291,
-    "CdA_s": 1.018,
-    "mu_x": 1.707
+    "CdA_c": 1.226,
+    "CdA_s": 0.953,
+    "mu_x": 1.714
    },
    "redbull_car_on_this_line_s": 90.005,
    "lap_time_real_s": 90.562,
-   "lap_time_sim_s": 91.293,
-   "delta_s": 0.731,
-   "delta_pct": 0.81,
-   "speed_rms_kmh": 12.2,
-   "speed_bias_kmh": -4.5,
+   "lap_time_sim_s": 90.561,
+   "delta_s": -0.001,
+   "delta_pct": 0,
+   "speed_rms_kmh": 11.5,
+   "speed_bias_kmh": -2.1,
    "vmax_real_kmh": 315.8,
-   "vmax_sim_kmh": 305.8,
+   "vmax_sim_kmh": 309.2,
    "corner_minima": [
     {
      "corner": "T3 Village",
      "real_kmh": 108.1,
-     "sim_kmh": 117.4
+     "sim_kmh": 117.7
     },
     {
      "corner": "T4 The Loop",
      "real_kmh": 84.2,
-     "sim_kmh": 80
+     "sim_kmh": 80.1
     },
     {
      "corner": "T6 Brooklands",
      "real_kmh": 160.1,
-     "sim_kmh": 151.6
+     "sim_kmh": 152.3
     },
     {
      "corner": "T7 Luffield",
      "real_kmh": 105,
-     "sim_kmh": 105.2
+     "sim_kmh": 105.4
     },
     {
      "corner": "T9 Copse",
      "real_kmh": 270.1,
-     "sim_kmh": 247.1
+     "sim_kmh": 249.9
     },
     {
      "corner": "T13 Becketts",
      "real_kmh": 197.1,
-     "sim_kmh": 155.6
+     "sim_kmh": 156.3
     },
     {
      "corner": "T15 Stowe",
      "real_kmh": 205.8,
-     "sim_kmh": 187.8
+     "sim_kmh": 189.2
     },
     {
      "corner": "T16 Vale",
      "real_kmh": 102.6,
-     "sim_kmh": 119.7
+     "sim_kmh": 120
     }
    ],
-   "sim_deploy_mj": 6.04,
-   "sim_harvest_drive_mj": 2,
+   "sim_deploy_mj": 6.02,
+   "sim_harvest_drive_mj": 1.97,
    "sim_time_share": {
     "corner": 0.018,
-    "brake": 0.146,
-    "traction": 0.108,
-    "power": 0.728
+    "brake": 0.147,
+    "traction": 0.105,
+    "power": 0.729
    }
   },
   {
@@ -3866,78 +3866,78 @@
    "params": {
     "ClA": 1.962,
     "mu_y": 2.64,
-    "CdA_c": 2.5,
-    "CdA_s": 2.227,
-    "mu_x": 1.233
+    "CdA_c": 1.595,
+    "CdA_s": 1.321,
+    "mu_x": 1.398
    },
    "redbull_car_on_this_line_s": 88.72,
    "lap_time_real_s": 92.863,
-   "lap_time_sim_s": 106.618,
-   "delta_s": 13.755,
-   "delta_pct": 14.81,
-   "speed_rms_kmh": 41.6,
-   "speed_bias_kmh": -37,
+   "lap_time_sim_s": 96.589,
+   "delta_s": 3.726,
+   "delta_pct": 4.01,
+   "speed_rms_kmh": 14.6,
+   "speed_bias_kmh": -10.8,
    "vmax_real_kmh": 301.1,
-   "vmax_sim_kmh": 253.3,
+   "vmax_sim_kmh": 289.8,
    "corner_minima": [
     {
      "corner": "T3 Village",
      "real_kmh": 109.3,
-     "sim_kmh": 117.9
+     "sim_kmh": 118.9
     },
     {
      "corner": "T4 The Loop",
      "real_kmh": 85.5,
-     "sim_kmh": 75.5
+     "sim_kmh": 75.8
     },
     {
      "corner": "T5 Aintree",
      "real_kmh": 166.3,
-     "sim_kmh": 146.1
+     "sim_kmh": 161.9
     },
     {
      "corner": "T5 Aintree",
      "real_kmh": 201.7,
-     "sim_kmh": 171
+     "sim_kmh": 193.6
     },
     {
      "corner": "T6 Brooklands",
      "real_kmh": 155.1,
-     "sim_kmh": 114.7
+     "sim_kmh": 115.1
     },
     {
      "corner": "T7 Luffield",
      "real_kmh": 104.2,
-     "sim_kmh": 110.5
+     "sim_kmh": 111.8
     },
     {
      "corner": "T9 Copse",
      "real_kmh": 263.9,
-     "sim_kmh": 222
+     "sim_kmh": 257.9
     },
     {
      "corner": "T13 Becketts",
      "real_kmh": 190,
-     "sim_kmh": 185.5
+     "sim_kmh": 188.6
     },
     {
      "corner": "T15 Stowe",
      "real_kmh": 198.2,
-     "sim_kmh": 189.3
+     "sim_kmh": 197
     },
     {
      "corner": "T16 Vale",
      "real_kmh": 104,
-     "sim_kmh": 121.9
+     "sim_kmh": 123.2
     }
    ],
-   "sim_deploy_mj": 3.77,
-   "sim_harvest_drive_mj": 2.51,
+   "sim_deploy_mj": 4.86,
+   "sim_harvest_drive_mj": 2,
    "sim_time_share": {
-    "corner": 0.015,
-    "brake": 0.087,
-    "traction": 0.394,
-    "power": 0.504
+    "corner": 0.018,
+    "brake": 0.132,
+    "traction": 0.298,
+    "power": 0.552
    }
   },
   {

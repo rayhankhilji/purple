@@ -6,6 +6,9 @@
 // Node only, no dependencies.
 //   node concept/tools/derive-car.js            print the results
 //   node concept/tools/derive-car.js --write    also write concept/data/redbull-2026-derived.json and docs/concept/redbull-derived/*.svg
+//   node concept/tools/derive-car.js --driver LEC | --team mclaren    any car: derived set + bootstrap + teammate check (printed)
+//   node concept/tools/derive-car.js --all [--boot 200] [--write]     all 11 teams -> concept/data/cars-2026-derived.json
+//   --tel <dir>                                 read lap files from another copy of the telemetry folder
 // Method, equations and limitations: docs/concept/REDBULL-DERIVED.md.
 "use strict";
 const fs = require("fs"), path = require("path");
@@ -19,8 +22,21 @@ const G0 = 9.80665;
 
 // ================================================================ inputs
 const readJSON = p => JSON.parse(fs.readFileSync(p, "utf8"));
-const WEATHER = readJSON(path.join(TEL_REPO, "silverstone-2026-q-weather.json"));
-const CIRCUIT = readJSON(path.join(TEL_REPO, "silverstone-circuit.json"));
+// Circuit registry. Everything circuit-specific (lap files, corner markers, weather, Straight Mode zones, corner names, recharge
+// limit) lives here, so further circuits (concept/data/telemetry/<circuit>/, same file conventions) can be added and fitted
+// jointly later: shared car parameters (μ, ClA/CdA ratio, PU) with a per-circuit wing level. Only Silverstone exists today.
+const CIRCUITS = {
+  silverstone: {
+    dir: TEL, lapPrefix: "silverstone-2026-q-",
+    corners: readJSON(path.join(TEL_REPO, "silverstone-circuit.json")).corners,
+    weather: readJSON(path.join(TEL_REPO, "silverstone-2026-q-weather.json")),
+    // FIA event map activation points; zone ends are not printed (see straightModeZones)
+    zones: [{ zone: "A1", after: 18, m: 65, endBefore: 1, endOffset: -100 }, { zone: "A2", after: 5, m: 55, endBefore: 6, endOffset: 0 }, { zone: "A3", after: 7, m: 155, endBefore: 9, endOffset: 0 }, { zone: "A4", after: 14, m: 65, endBefore: 15, endOffset: 0 }],
+    corner_names: { 1: "Abbey", 2: "Farm", 3: "Village", 4: "The Loop", 5: "Aintree", 6: "Brooklands", 7: "Luffield", 8: "Woodcote", 9: "Copse", 10: "Maggotts", 11: "Maggotts", 12: "Becketts", 13: "Becketts", 14: "Chapel", 15: "Stowe", 16: "Vale", 17: "Vale-Club", 18: "Club" },
+    recharge_q_mj: 6.5,
+  },
+};
+const CIRCUIT = CIRCUITS.silverstone;
 
 // ================================================================ small numerics
 const mean = a => a.reduce((s, x) => s + x, 0) / a.length;
@@ -47,6 +63,7 @@ function lsq(X, y) { // ordinary least squares with parameter standard errors
   const cov = Array.from({ length: p }, (_, j) => solve(A, Array.from({ length: p }, (_, k) => (k === j ? 1 : 0))).map(x => x * s2));
   return { beta, res, cov, se: beta.map((_, j) => Math.sqrt(Math.max(0, cov[j][j]))), rms: Math.sqrt(res.reduce((s, r) => s + r * r, 0) / res.length) };
 }
+function rng(seed) { let s = seed >>> 0; return () => { s = (s + 0x6d2b79f5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; } // deterministic PRNG (bootstrap)
 function golden(f, lo, hi, tol) { // 1-D minimiser
   const g = (Math.sqrt(5) - 1) / 2; let a = lo, b = hi, c = b - g * (b - a), d = a + g * (b - a), fc = f(c), fd = f(d);
   while (b - a > (tol || 1e-4)) { if (fc < fd) { b = d; d = c; fd = fc; c = b - g * (b - a); fc = f(c); } else { a = c; c = d; fc = fd; d = a + g * (b - a); fd = f(d); } }
@@ -85,7 +102,7 @@ const mEff = (c, G) => c.mass_kg + c.fuel_kg + c.I_wheels_kgm2 / c.r_eff_m ** 2 
 const mTot = c => c.mass_kg + c.fuel_kg;
 
 // ================================================================ air density during the lap (weather samples)
-function airDensity(utcIso, durS) {
+function airDensity(utcIso, durS, WEATHER) {
   const t0 = Date.parse(utcIso), t1 = t0 + durS * 1000, idx = [];
   WEATHER.date_utc.forEach((d, i) => { const t = Date.parse(d); if (t >= t0 - 90e3 && t <= t1 + 90e3) idx.push(i); });
   if (!idx.length) idx.push(WEATHER.date_utc.length - 1);
@@ -95,19 +112,20 @@ function airDensity(utcIso, durS) {
 }
 
 // ================================================================ lap loading and signal conditioning
-function lapFiles() { return fs.readdirSync(TEL).filter(f => /^silverstone-2026-q-[a-z]{3}\.json$/.test(f) && !/index|weather/.test(f)).map(f => f.slice(19, 22).toUpperCase()); }
-function loadLap(code, tau) {
-  const f = path.join(TEL, `silverstone-2026-q-${code.toLowerCase()}.json`);
+function lapFiles(ctx) { ctx = ctx || CIRCUIT; const re = new RegExp("^" + ctx.lapPrefix + "[a-z]{3}\\.json$"); return fs.readdirSync(ctx.dir).filter(f => re.test(f)).map(f => f.slice(ctx.lapPrefix.length, ctx.lapPrefix.length + 3).toUpperCase()); }
+function loadLap(code, tau, ctx) {
+  ctx = ctx || CIRCUIT;
+  const f = path.join(ctx.dir, `${ctx.lapPrefix}${code.toLowerCase()}.json`);
   if (!fs.existsSync(f)) return null;
   const raw = readJSON(f), c = raw.channels, n = c.distance_m.length;
-  const L = { code: raw.driver.code, team: raw.driver.team, lap_time_s: raw.lap.lap_time_s, sector_s: raw.lap.sector_s, speed_trap_kmh: raw.lap.speed_trap_kmh, n, file: path.basename(f) };
+  const L = { ctx, code: raw.driver.code, team: raw.driver.team, lap_time_s: raw.lap.lap_time_s, sector_s: raw.lap.sector_s, speed_trap_kmh: raw.lap.speed_trap_kmh, n, file: path.basename(f) };
   L.s = c.distance_m; L.t = c.time_s; L.v = c.speed_kmh.map(x => x / 3.6); L.thr = c.throttle_pct; L.brk = c.brake.map(b => !!b);
   L.gear = c.gear; L.rpm = c.rpm; L.x = c.x_m; L.y = c.y_m;
   const k1 = kinematics(L.t, L.v, 0.45); L.vs = k1.v; L.a = k1.a;
   L.kappa = curvature(L, tau || BASE.tau_s, 6);
   L.ay = L.kappa.map((k, i) => L.vs[i] ** 2 * Math.abs(k));
-  L.air = airDensity(raw.lap.date_start_utc, raw.lap.lap_time_s);
-  L.cornerIdx = CIRCUIT.corners.map(cn => { let b = 0, bd = 1e9; for (let i = 0; i < n; i++) { const d = Math.hypot(L.x[i] - cn.x_m, L.y[i] - cn.y_m); if (d < bd) { bd = d; b = i; } } return b; });
+  L.air = airDensity(raw.lap.date_start_utc, raw.lap.lap_time_s, ctx.weather);
+  L.cornerIdx = ctx.corners.map(cn => { let b = 0, bd = 1e9; for (let i = 0; i < n; i++) { const d = Math.hypot(L.x[i] - cn.x_m, L.y[i] - cn.y_m); if (d < bd) { bd = d; b = i; } } return b; });
   L.zone = straightModeZones(L);
   return L;
 }
@@ -136,11 +154,10 @@ function curvature(L, tau, smin) {
 }
 // Straight Mode (active aero) zones: activation points from the FIA event map (silverstone-2026-weekend.json); a zone ends at the
 // first lift (< 95 %) or brake, or 50 m before the next point above 4 g lateral (Abbey after A1). The map does not print zone ends.
-const ZONES = [{ zone: "A1", after: 18, m: 65, endBefore: 1, endOffset: -100 }, { zone: "A2", after: 5, m: 55, endBefore: 6, endOffset: 0 }, { zone: "A3", after: 7, m: 155, endBefore: 9, endOffset: 0 }, { zone: "A4", after: 14, m: 65, endBefore: 15, endOffset: 0 }];
 function straightModeZones(L) {
   const z = new Array(L.n).fill(false), n = L.n; L.zones = [];
-  for (const a of ZONES) {
-    const ci = CIRCUIT.corners.findIndex(c => c.number === a.after), start = (L.cornerIdx[ci] + Math.round(a.m / 5)) % n; let k = 0;
+  for (const a of L.ctx.zones) {
+    const ci = L.ctx.corners.findIndex(c => c.number === a.after), start = (L.cornerIdx[ci] + Math.round(a.m / 5)) % n; let k = 0;
     while (k < n) { const j = (start + k) % n; if (L.thr[j] < 95 || L.brk[j]) break; if (k > 10 && L.ay[(j + 10) % n] > 4 * G0) break; z[j] = true; k++; }
     L.zones.push({ zone: a.zone, start_idx: start, start_m: L.s[start], end_m: L.s[(start + k) % n], length_m: k * 5 });
   }
@@ -149,15 +166,14 @@ function straightModeZones(L) {
 // geometric zone flags for the simulator (no throttle needed): activation point to the next corner marker (+ offset)
 function geomZones(L) {
   const z = new Array(L.n).fill(false), n = L.n;
-  for (const a of ZONES) {
-    const s0 = (L.cornerIdx[CIRCUIT.corners.findIndex(c => c.number === a.after)] + Math.round(a.m / 5)) % n;
-    const e = (L.cornerIdx[CIRCUIT.corners.findIndex(c => c.number === a.endBefore)] + Math.round(a.endOffset / 5) + n) % n;
+  for (const a of L.ctx.zones) {
+    const s0 = (L.cornerIdx[L.ctx.corners.findIndex(c => c.number === a.after)] + Math.round(a.m / 5)) % n;
+    const e = (L.cornerIdx[L.ctx.corners.findIndex(c => c.number === a.endBefore)] + Math.round(a.endOffset / 5) + n) % n;
     for (let k = s0; k !== e; k = (k + 1) % n) z[k] = true;
   }
   return z;
 }
-const CORNER_NAMES = { 1: "Abbey", 2: "Farm", 3: "Village", 4: "The Loop", 5: "Aintree", 6: "Brooklands", 7: "Luffield", 8: "Woodcote", 9: "Copse", 10: "Maggotts", 11: "Maggotts", 12: "Becketts", 13: "Becketts", 14: "Chapel", 15: "Stowe", 16: "Vale", 17: "Vale-Club", 18: "Club" };
-function nearestCorner(L, i) { let b = 0, bd = 1e9; L.cornerIdx.forEach((ci, k) => { const d = Math.abs(L.s[ci] - L.s[i]); if (d < bd) { bd = d; b = k; } }); const c = CIRCUIT.corners[b]; return `T${c.number} ${CORNER_NAMES[c.number]}`; }
+function nearestCorner(L, i) { let b = 0, bd = 1e9; L.cornerIdx.forEach((ci, k) => { const d = Math.abs(L.s[ci] - L.s[i]); if (d < bd) { bd = d; b = k; } }); const c = L.ctx.corners[b]; return `T${c.number} ${L.ctx.corner_names[c.number]}`; }
 
 // ================================================================ 1. gearing
 function gearing(laps, c) {
@@ -206,6 +222,7 @@ function cornerPoints(L) {
 // a_y = μ_y·(g + ½ρ·ClA·v²/m): linear in (μ_y, μ_y·ClA)
 function fitCornering(pts, m, rho) {
   const lim = pts.filter(p => p.kind === "limit");
+  if (lim.length < 3) return { mu_y: NaN, ClA: NaN, rms_g: NaN, n: lim.length };
   const f = lsq(lim.map(p => [G0, (0.5 * rho * p.v * p.v) / m]), lim.map(p => p.ay));
   const mu = f.beta[0], cla = f.beta[1] / mu;
   const cov = f.cov, dC_db0 = -f.beta[1] / mu ** 2, dC_db1 = 1 / mu; // delta method
@@ -244,9 +261,11 @@ function phasePeaks(tr) {
 }
 // CdA anchor: in a qualifying lap the MGU-K is assumed to reach its 350 kW cap on the best few corner exits. Given η_th (fuel
 // flow is regulated), solve CdA_c (with CdA_s = CdA_c − ΔCdA) so that the mean of the top-N per-straight peaks equals 350 kW.
-function solveCdA(L, car) {
-  const f = cdac => { const c = Object.assign({}, car, { CdA_c: cdac, CdA_s: cdac - car.dCdA_straight }); const pk = phasePeaks(powerTrace(L, c)).map(p => p.peak_kw).sort((a, b) => b - a); return mean(pk.slice(0, car.k_top_phases)) - REG.mguk_max_dc_kw; };
-  return bisect(f, 0.3, 2.5);
+function solveCdA(L, car, sel) { // sel: optional bootstrap indices into the per-straight peak list; returns NaN when the anchor cannot be met
+  const f = cdac => { const c = Object.assign({}, car, { CdA_c: cdac, CdA_s: cdac - car.dCdA_straight }); let pk = phasePeaks(powerTrace(L, c)).map(p => p.peak_kw); if (sel) pk = sel.filter(i => i < pk.length).map(i => pk[i]);
+    pk = pk.filter(k => k <= 2 * REG.mguk_max_dc_kw); /* a "peak" above 700 kW is a trace glitch (STR has one at 1045 kW), not deployment */ pk.sort((a, b) => b - a); return mean(pk.slice(0, car.k_top_phases)) - REG.mguk_max_dc_kw; };
+  const lo = 0.3, hi = 2.5; if (f(lo) > 0 || f(hi) < 0) return NaN;
+  return bisect(f, lo, hi, 1e-4);
 }
 // Straight Mode drag step: at each activation point the PU output does not change, so a step in the apparent power
 // (m_eff·v·a + ½ρ·v³·CdA_ref + losses) across the flap opening is −ΔCdA·½ρv³. Measured on every lap in the folder, zones A2-A4.
@@ -311,29 +330,40 @@ function brakeSim(L, z, car, mux, cdac) {
   }
   return { sse, vm };
 }
-function fitBraking(L, car) {
-  const zs = brakeZones(L);
-  const per = zs.map(z => { const mu = golden(m => brakeSim(L, z, car, m, car.CdA_c).sse, 0.8, 3.5); return Object.assign({}, z, { mu_x: mu, rms_kmh: Math.sqrt(brakeSim(L, z, car, mu, car.CdA_c).sse / (z.i2 - z.i1)) * 3.6 }); });
+function fitBraking(L, car, sel, noJoint) {
+  let zs = L._bz || (L._bz = brakeZones(L)); if (sel) zs = sel.filter(i => i < zs.length).map(i => zs[i]);
+  if (!zs.length) return { mu_x: NaN, mu_x_sd_zones: NaN, rms_kmh: NaN, zones: [], joint: null };
   const all = m => zs.reduce((s, z) => s + brakeSim(L, z, car, m, car.CdA_c).sse, 0);
   const mu = golden(all, 0.8, 3.5), npts = zs.reduce((s, z) => s + z.i2 - z.i1, 0);
+  if (noJoint) return { mu_x: mu, rms_kmh: Math.sqrt(all(mu) / npts) * 3.6 };
+  const per = zs.map(z => { const m1 = golden(m => brakeSim(L, z, car, m, car.CdA_c).sse, 0.8, 3.5); return Object.assign({}, z, { mu_x: m1, rms_kmh: Math.sqrt(brakeSim(L, z, car, m1, car.CdA_c).sse / (z.i2 - z.i1)) * 3.6 }); });
   // joint (μ_x, CdA_c) grid, to show what braking alone says about drag
   let best = { sse: Infinity }; for (let cd = 0.4; cd <= 2.4001; cd += 0.05) { const m2 = golden(x => zs.reduce((s, z) => s + brakeSim(L, z, car, x, cd).sse, 0), 0.8, 3.5, 1e-3); const e = zs.reduce((s, z) => s + brakeSim(L, z, car, m2, cd).sse, 0); if (e < best.sse) best = { sse: e, mu_x: m2, CdA_c: cd }; }
   return { mu_x: mu, mu_x_sd_zones: sd(per.map(p => p.mu_x)), rms_kmh: Math.sqrt(all(mu) / npts) * 3.6, zones: per, joint: best };
 }
 
 // ================================================================ the derived car (one pass, given assumptions in `opts`)
+const LAPS = new Map(); // lap cache (code|tau)
+function lap(code, tau) { const k = code + "|" + tau; if (!LAPS.has(k)) LAPS.set(k, loadLap(code, tau)); return LAPS.get(k); }
 function derive(opts) {
   const car = Object.assign({}, BASE, opts || {});
-  const laps = (car.laps || lapFiles()).map(c => loadLap(c, car.tau_s)).filter(Boolean);
+  const laps = (car.laps || lapFiles()).map(c => lap(c, car.tau_s)).filter(Boolean);
   const L = laps.find(l => l.code === (car.fit_code || "HAD"));
+  if (opts && opts.mass_kg == null && car.fit_code) { const t = teamOfCode(car.fit_code); if (t) car.mass_kg = t.mass_kg; }
+  const sel = car.sel || {};
   // 4. cornering first (μ_y, ClA): needed by the slip-drag and friction-circle terms
-  const cp = cornerPoints(L), fc = fitCornering(cp, mTot(car), L.air.rho);
+  const cp = L._cp && L._cpTau === car.tau_s ? L._cp : (L._cp = cornerPoints(L)); L._cpTau = car.tau_s;
+  let lim = cp.filter(p => p.kind === "limit"); if (sel.corners) lim = sel.corners.filter(i => i < lim.length).map(i => lim[i]);
+  const fc = fitCornering(lim, mTot(car), L.air.rho);
   car.mu_y = fc.mu_y; car.ClA = fc.ClA;
   // 2a. Straight Mode step (all laps) -> ΔCdA; 2b. CdA_c from the 350 kW deployment anchor
   if (car.dCdA_straight == null) { const st = straightModeStep(laps, Object.assign({}, car, { CdA_c: 1.1, CdA_s: 1.1 })); car.dCdA_straight = st.dCdA; car._step = st; }
-  car.CdA_c = car.CdA_c_fixed != null ? car.CdA_c_fixed : solveCdA(L, car); car.CdA_s = car.CdA_c - car.dCdA_straight;
+  car.CdA_c = car.CdA_c_fixed != null ? car.CdA_c_fixed : solveCdA(L, car, sel.phases);
+  car.anchor_ok = isFinite(car.CdA_c);
+  if (!car.anchor_ok && car.CdA_c_fallback != null) car.CdA_c = car.CdA_c_fallback;
+  car.CdA_s = car.CdA_c - car.dCdA_straight;
   // 3. braking μ_x with ClA and CdA_c known
-  const fb = fitBraking(L, car); car.mu_x = fb.mu_x;
+  const fb = isFinite(car.CdA_c) ? fitBraking(L, car, sel.zones, car.noJoint) : { mu_x: NaN, zones: [] }; car.mu_x = fb.mu_x;
   return { car, L, laps, cp, fc, fb };
 }
 
@@ -391,9 +421,121 @@ function compareTrace(L, sim) {
   return { lap_time_real_s: L.lap_time_s, lap_time_sim_s: rnd(sim.lap_time_s, 3), delta_s: rnd(sim.lap_time_s - L.lap_time_s, 3), delta_pct: rnd((100 * (sim.lap_time_s - L.lap_time_s)) / L.lap_time_s, 2), speed_rms_kmh: rnd(Math.sqrt(mean(d.map(x => x * x))), 1), speed_bias_kmh: rnd(mean(d), 1), vmax_real_kmh: rnd(vmaxR, 1), vmax_sim_kmh: rnd(vmaxS, 1), corner_minima: mins, sim_deploy_mj: rnd(sim.deploy_mj, 2), sim_harvest_drive_mj: rnd(sim.harvest_drive_mj, 2), sim_time_share: Object.fromEntries(["corner", "brake", "traction", "power"].map(k => [k, rnd(sim.limit.reduce((a, x, i) => a + (x === k && i < sim.t.length - 1 ? sim.t[i + 1] - sim.t[i] : 0), 0) / sim.lap_time_s, 3)])) };
 }
 
+// ================================================================ teams (all 11): team-level estimates with bootstrap statistics
+const GRID = readJSON(path.join(ROOT, "concept", "data", "grid-2026.json"));
+// reported "mass vs minimum" strings (RacingNews365, April; grid-2026.json) -> kg over the minimum; "under the limit" counts as 0
+function overweightKg(str) { if (!str || /under|right on/i.test(str)) return 0; const m = String(str).match(/\+\s*(\d+)(?:\s*\/\s*(\d+))?/); return m ? (m[2] ? (+m[1] + +m[2]) / 2 : +m[1]) : 0; }
+const TEAMS = GRID.teams.map(t => { const mv = t.mass_vs_minimum && t.mass_vs_minimum.value; return { id: t.id, name: t.constructor.value, entrant: t.entrant.value, chassis: t.chassis && t.chassis.value, pu: t.power_unit.value, drivers: t.drivers_at_silverstone.map(d => d.code), overweight_kg: overweightKg(mv), overweight_reported: mv, mass_kg: 726 + 44 + overweightKg(mv) }; });
+function teamOfCode(code) { return TEAMS.find(t => t.drivers.includes(String(code).toUpperCase())) || null; }
+function findTeam(q) { q = String(q).toLowerCase(); return TEAMS.find(t => t.id === q || t.name.toLowerCase().includes(q) || (t.entrant || "").toLowerCase().includes(q)) || null; }
+// muClA = μ_y·ClA; ay150 / ay250 = modelled lateral limit (g) at 150 / 250 km/h: better determined than μ_y or ClA alone
+const PKEYS = ["CdA_c", "CdA_s", "ClA", "mu_y", "mu_x", "muClA", "ay150_g", "ay250_g"];
+const derivedKeys = (car, m, rho) => ({ muClA: car.mu_y * car.ClA, ay150_g: (car.mu_y * (G0 + (0.5 * rho * car.ClA * (150 / 3.6) ** 2) / m)) / G0, ay250_g: (car.mu_y * (G0 + (0.5 * rho * car.ClA * (250 / 3.6) ** 2) / m)) / G0 });
+const fastest = (codes, t) => t.drivers.filter(c => codes.includes(c)).map(c => lap(c, BASE.tau_s)).sort((a, b) => a.lap_time_s - b.lap_time_s);
+// One team: central fit on its faster driver's lap; bootstrap B replicates, each picking one of the two drivers at random and
+// resampling (with replacement) that lap's grip-limited corners, full-throttle straights (the 350 kW anchor) and brake zones.
+// Held out: fit on one driver, simulate the teammate's lap with those parameters (both directions).
+function analyseTeam(team, codes, shared, opts) {
+  opts = opts || {}; const B = opts.B || 200, R = rng(opts.seed || 2026);
+  const have = opts.order ? opts.order.map(c => lap(c, BASE.tau_s)) : fastest(codes, team);
+  const common = { laps: codes, dCdA_straight: shared.dCdA, mass_kg: team.mass_kg, CdA_c_fallback: shared.CdA_c_fallback };
+  const fits = have.map(L => derive(Object.assign({}, common, { fit_code: L.code })));
+  const central = fits[0];
+  const gr = gearing(have, central.car);
+  const counts = fits.map(f => ({ L: f.L, nc: f.L._cp.filter(p => p.kind === "limit").length, np: phasePeaks(powerTrace(f.L, f.car)).length, nz: (f.L._bz || brakeZones(f.L)).length }));
+  const reps = []; let fails = 0;
+  for (let b = 0; b < B; b++) {
+    const c = counts[Math.floor(R() * counts.length)], rs = k => Array.from({ length: k }, () => Math.floor(R() * k));
+    const d = derive(Object.assign({}, common, { fit_code: c.L.code, noJoint: true, sel: { corners: rs(c.nc), phases: rs(c.np), zones: rs(c.nz) } })).car;
+    if (!d.anchor_ok) fails++;
+    if ([d.CdA_c, d.ClA, d.mu_y, d.mu_x].every(isFinite)) reps.push(Object.assign({ CdA_c: d.CdA_c, CdA_s: d.CdA_s, ClA: d.ClA, mu_y: d.mu_y, mu_x: d.mu_x }, derivedKeys(d, mTot(d), c.L.air.rho)));
+  }
+  const cen = (car, k) => (k in car ? car[k] : derivedKeys(car, mTot(car), central.L.air.rho)[k]);
+  // mean ± sd as asked; the 8-corner resamples are sometimes ill-conditioned, so the robust spread (p84 − p16)/2 and the median are given too
+  const stats = Object.fromEntries(PKEYS.map(k => { const a = reps.map(r => r[k]).filter(isFinite); return [k, { central: rnd(cen(central.car, k), 3), mean: rnd(mean(a), 3), sd: rnd(sd(a), 3), median: rnd(median(a), 3), sd_robust: rnd((quantile(a, 0.84) - quantile(a, 0.16)) / 2, 3), p05: rnd(quantile(a, 0.05), 3), p95: rnd(quantile(a, 0.95), 3) }]; }));
+  const perDriver = fits.map(f => Object.assign({ code: f.L.code, lap_time_s: f.L.lap_time_s, anchor_ok: f.car.anchor_ok }, Object.fromEntries(PKEYS.map(k => [k, rnd(cen(f.car, k), 3)])), { cornering_rms_g: rnd(f.fc.rms_g, 3), braking_rms_kmh: rnd(f.fb.rms_kmh, 2), n_corners: f.fc.n, n_brake_zones: (f.fb.zones || []).length }));
+  const simOn = (F, T) => { const prof = profileStrategy(F.L, F.car); return compareTrace(T, simulate(T, F.car, gr, prof.forLap(T))); };
+  const fitLap = simOn(central, central.L);
+  const held = fits.length > 1 ? [simOn(fits[0], fits[1].L), simOn(fits[1], fits[0].L)].map((c, k) => Object.assign({ fit_on: fits[k].L.code, checked_on: fits[1 - k].L.code }, c)) : [];
+  const peaks = phasePeaks(powerTrace(central.L, central.car)).map(p => rnd(p.peak_kw, 0)), en = energy(central.L, central.car);
+  return { team, have, central, gr, stats, perDriver, fitLap, held, fails, nrep: reps.length, B, peaks, en };
+}
+function physicalCarFor(team, car, en) {
+  const bal = car.aero_balance_front, cla = car.ClA;
+  return {
+    id: `${team.id}-silverstone-2026-q`, session: "qualifying",
+    label: `${team.name} (${team.pu}), Silverstone 2026 qualifying: derived from telemetry (concept/tools/derive-car.js --all)`,
+    mass_kg: rnd(team.mass_kg, 1), fuel_kg: car.fuel_kg, wheelbase_m: car.wheelbase_m, track_front_m: car.track_front_m, track_rear_m: car.track_rear_m, cog_height_m: car.cog_height_m, weight_dist_front: car.weight_front,
+    aero: { corner: { CLA_front_m2: rnd(cla * bal, 3), CLA_rear_m2: rnd(cla * (1 - bal), 3), CDA_m2: rnd(car.CdA_c, 3) }, straight: { CLA_front_m2: rnd(cla * bal, 3), CLA_rear_m2: rnd(cla * (1 - bal), 3), CDA_m2: rnd(car.CdA_s, 3) }, ride_height_mm: null, ride_sens_per_mm: 0, floor_stalled: false, stall_margin_mm: null },
+    pu: { ice_kw: rnd(car.eta_th * fuelFlowKW(10500), 1), mguk_kw: REG.mguk_max_dc_kw, es_deploy_mj_per_lap: rnd(en.deploy_mj, 2), es_harvest_mj_per_lap: REG.recharge_q_silverstone_mj },
+    tyres: { mu_x: rnd(car.mu_x, 3), mu_y: rnd(car.mu_y, 3), load_sens: 0, radius_m: car.r_eff_m, compound: "soft" },
+    brakes: { max_decel_g_mech: rnd(car.mu_x, 3) }, drivetrain_eff: car.eta_dt, calibration: { cla_scale: 1, cda_scale: 1, power_scale: 1, mu_scale: 1 },
+  };
+}
+function sharedStep(codes) { return straightModeStep(codes.map(c => lap(c, BASE.tau_s)), Object.assign({}, BASE, { CdA_c: 1.1, CdA_s: 1.1, mu_y: 2.5, ClA: 2.8 })); }
+function runAll(write, B) {
+  const codes = lapFiles(), log = (...a) => console.log(...a);
+  const st = sharedStep(codes), shared = { dCdA: st.dCdA };
+  // pass 1: central fits; a team whose 350 kW anchor cannot be met gets the median CdA_c of the others (flagged)
+  const teams = TEAMS.filter(t => t.drivers.some(c => codes.includes(c)));
+  const pass1 = teams.map(t => derive({ laps: codes, fit_code: fastest(codes, t)[0].code, dCdA_straight: st.dCdA, mass_kg: t.mass_kg, noJoint: true }).car);
+  shared.CdA_c_fallback = median(pass1.filter(c => c.anchor_ok).map(c => c.CdA_c));
+  const out = {};
+  for (const t of teams) {
+    const r = analyseTeam(t, codes, shared, { B }), c = r.central.car;
+    const top3 = rnd(mean(phasePeaks(powerTrace(r.central.L, c)).map(p => p.peak_kw).sort((a, b) => b - a).slice(0, c.k_top_phases)), 0);
+    const S = r.stats;
+    log(`${t.id.padEnd(12)} ${t.pu.padEnd(22)} fit ${r.central.L.code} ${r.central.L.lap_time_s.toFixed(3)}  CdA_c ${S.CdA_c.central} (${S.CdA_c.median}±${S.CdA_c.sd_robust})  ClA ${S.ClA.central} (±${S.ClA.sd_robust})  μy ${S.mu_y.central} (±${S.mu_y.sd_robust})  ay150 ${S.ay150_g.central}±${S.ay150_g.sd_robust} ay250 ${S.ay250_g.central}±${S.ay250_g.sd_robust}  μx ${S.mu_x.central}±${S.mu_x.sd_robust}  anchor ${c.anchor_ok ? "ok" : "FAILED (top-3 K " + top3 + " kW at fallback CdA)"} fails ${r.fails}/${r.B}  sim ${r.fitLap.delta_s}  held ${r.held.map(h => h.fit_on + "->" + h.checked_on + " " + h.delta_s).join(", ")}`);
+    out[t.id] = {
+      name: t.name, entrant: t.entrant, chassis: t.chassis, power_unit: t.pu, drivers: r.have.map(L => ({ code: L.code, lap_time_s: L.lap_time_s })), fit_driver: r.central.L.code,
+      mass: { kg: t.mass_kg, basis: `726 + 44 (Nominal Tyre Mass, implied) + ${t.overweight_kg} kg reported over the minimum ("${t.overweight_reported}", RacingNews365 April); fuel ${c.fuel_kg} kg separate`, sd_kg: 10 },
+      physical_car: physicalCarFor(t, c, r.en),
+      stats: S,
+      bootstrap: { replicates: r.B, used: r.nrep, anchor_failures: r.fails, method: "each replicate: one of the team's two laps at random, then that lap's grip-limited corners, full-throttle straights and brake zones resampled with replacement; systematic assumptions (η_th, mass, smoothing) are not in these sd" },
+      cda_anchor: { ok: c.anchor_ok, fallback_CdA_c: c.anchor_ok ? null : rnd(shared.CdA_c_fallback, 3), top3_peak_dc_kw: top3, per_straight_peaks_dc_kw: r.peaks },
+      per_driver: r.perDriver,
+      gearing: { kmh_per_1000rpm: r.gr.rows.map(x => [x.gear, x.kmh_per_1000rpm]), overall_ratio: r.gr.rows.map(x => [x.gear, x.overall_ratio]), rev_max_rpm: r.gr.rev_max_rpm, shift_rpm: r.gr.shift_rpm.median },
+      energy: { deploy_mj: rnd(r.en.deploy_mj, 2), harvest_full_throttle_mj: rnd(r.en.harvest_full_throttle_mj, 2) },
+      residuals: { cornering_rms_g: rnd(r.central.fc.rms_g, 3), braking_rms_kmh: rnd(r.central.fb.rms_kmh, 2), sim_fit_lap: Object.assign({}, r.fitLap, { corner_minima: undefined }) },
+      held_out_teammate: r.held.map(h => Object.assign({}, h, { corner_minima: undefined })),
+    };
+  }
+  const res = {
+    _meta: {
+      what: "Every 2026 team's car derived from its two Silverstone qualifying laps (OpenF1) by the inverse vehicle dynamics of concept/tools/derive-car.js: PhysicalCar-shaped estimates with bootstrap mean ± sd, fit residuals and a teammate held-out check. Red Bull's full write-up: concept/data/redbull-2026-derived.json and docs/concept/REDBULL-DERIVED.md.",
+      generated_by: "node concept/tools/derive-car.js --all --write", built: "2026-10-24", laps_used: codes,
+      shared: { rho_kg_m3: rnd(lap(codes[0], BASE.tau_s).air.rho, 4), dCdA_straight_m2: rnd(st.dCdA, 3), dCdA_se: rnd(st.se, 3), dCdA_n: st.n, eta_th: BASE.eta_th, eta_th_band: [0.45, 0.5], ice_kw: rnd(BASE.eta_th * fuelFlowKW(10500), 1), cda_fallback_median_m2: rnd(shared.CdA_c_fallback, 3) },
+      caveats: [
+        "ICE power is the same assumption for every PU (η_th 0.475 × the regulated 833 kW fuel flow). CdA_c is therefore conditional: an ICE weaker than assumed shows up as a HIGHER CdA_c (the 350 kW deployment anchor needs more drag to explain the same acceleration), a stronger one as lower. Compare CdA_c directly only between teams sharing a PU.",
+        "If a car never reaches 350 kW of deployment on its best exits, the anchor cannot be met: CdA_c is then the median of the other teams (cda_anchor.ok = false) and top3_peak_dc_kw shows the deployment that implies.",
+        "ΔCdA (Straight Mode) is one value for all cars, measured on all laps.",
+        "μ_y and ClA are strongly anti-correlated; μ_y·ClA (muClA) is the better-determined quantity.",
+        "Bootstrap sd covers lap-to-lap and corner/straight/zone sampling only; systematic bands come on top (η_th ±0.025 -> CdA ±0.09; x/y smoothing -> ClA +0.6/-0.4, see redbull-2026-derived.json sensitivity).",
+        "Aero balance, CoG height, tracks, wheelbase, tyre radius and fuel are assumptions, as for Red Bull. Masses use the reported April over-minimum figures.",
+      ],
+      multi_circuit: "Circuit specifics (lap files, corner markers, weather, Straight Mode zones, recharge limit) are in the CIRCUITS registry of the tool. A joint fit across circuits would share μ, the PU and the ClA/CdA efficiency of each car, with a per-circuit wing level (ClA and CdA scale).",
+    },
+    teams: out,
+  };
+  if (write) { const f = path.join(ROOT, "concept", "data", "cars-2026-derived.json"); fs.writeFileSync(f, JSON.stringify(res, null, 1) + "\n"); log("wrote", path.relative(ROOT, f)); }
+  return res;
+}
+// single car, any driver or team: print the derived set and the teammate check
+function singleCar(code) {
+  const t = teamOfCode(code), codes = lapFiles();
+  const order = [code].concat(t.drivers.filter(c => c !== code && codes.includes(c)));
+  const r = analyseTeam(t, codes, { dCdA: sharedStep(codes).dCdA, CdA_c_fallback: null }, { B: 100, order });
+  console.log(JSON.stringify({ team: t.name, pu: t.pu, fit: code, physical_car: physicalCarFor(t, r.central.car, r.en), stats: r.stats, bootstrap_anchor_failures: r.fails, fit_lap: Object.assign({}, r.fitLap, { corner_minima: undefined }), held_out_teammate: r.held.map(h => Object.assign({}, h, { corner_minima: undefined })) }, null, 1));
+}
+
 // ================================================================ main
 function main() {
-  const write = process.argv.includes("--write");
+  const write = process.argv.includes("--write"), arg = k => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : null; };
+  if (process.argv.includes("--all")) return runAll(write, +(arg("--boot") || 200));
+  const drv = arg("--driver"), tq = arg("--team");
+  let fitCode = drv ? drv.toUpperCase() : null;
+  if (!fitCode && tq) { const t = findTeam(tq); if (!t) throw new Error("unknown team " + tq); fitCode = fastest(lapFiles(), t)[0].code; }
+  if (fitCode && fitCode !== "HAD") return singleCar(fitCode);
   const codes = lapFiles(); const log = (...a) => console.log(...a);
   log(`laps in ${path.relative(ROOT, TEL)}: ${codes.join(" ")}`);
   const D = derive({ laps: codes });
@@ -607,5 +749,5 @@ function writePlots(R) {
   console.log("wrote", path.relative(ROOT, OUT_SVG) + "/*.svg");
 }
 
-module.exports = { loadLap, derive, simulate, gearing, cornerPoints, fitCornering, powerTrace, phasePeaks, energy, fitBraking, straightModeStep, kTaper, fuelFlowKW, BASE, REG, lapFiles };
+module.exports = { analyseTeam, runAll, TEAMS, CIRCUITS, teamOfCode, loadLap, derive, simulate, gearing, cornerPoints, fitCornering, powerTrace, phasePeaks, energy, fitBraking, straightModeStep, kTaper, fuelFlowKW, BASE, REG, lapFiles };
 if (require.main === module) main();
