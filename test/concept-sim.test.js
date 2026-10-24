@@ -73,8 +73,8 @@ test("physics: more mass -> slower; more power -> faster with a higher trap", ()
   assert.ok(run(base, { fuel_kg: 40 }).lap_s > BASE.lap_s, "fuel load is mass");
   const strong = clone(base); strong.pu.ice_kw *= 1.1;
   const r = run(strong);
-  // the threshold strategy holds a deploy plateau, so the trap moves less than the lap (SIM.md §3.4)
-  assert.ok(r.lap_s < BASE.lap_s - 0.2 && r.speed_trap_kmh > BASE.speed_trap_kmh, JSON.stringify([r.lap_s, r.speed_trap_kmh]));
+  // the threshold strategy superclips above its deploy ceiling, so more power raises the ceiling and the lap, not the trap plateau
+  assert.ok(r.lap_s < BASE.lap_s - 0.2 && r.energy.deploy_ceiling_kmh > BASE.energy.deploy_ceiling_kmh + 2 && r.speed_trap_kmh > BASE.speed_trap_kmh - 1.5, JSON.stringify([r.lap_s, r.speed_trap_kmh, r.energy.deploy_ceiling_kmh]));
 });
 
 test("physics: smooth response (no jumps) to small parameter changes - the optimiser needs it", () => {

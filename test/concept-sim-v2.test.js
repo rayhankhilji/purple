@@ -81,10 +81,10 @@ test("crosswind yaw (estimate): no effect without aero.yaw_sens or without wind;
 test("upshift torque cut: costs time, capped at 200 ms", () => {
   const keep = sim.MODEL.upshift_cut_s;
   try {
-    sim.MODEL.upshift_cut_s = 0; const none = run(base, undefined, { strategy: "optimal" });
-    sim.MODEL.upshift_cut_s = 0.1; const some = run(base, undefined, { strategy: "optimal" });
-    sim.MODEL.upshift_cut_s = 0.2; const cap = run(base, undefined, { strategy: "optimal" });
-    sim.MODEL.upshift_cut_s = 5; const over = run(base, undefined, { strategy: "optimal" });
+    sim.MODEL.upshift_cut_s = 0; const none = run(base);
+    sim.MODEL.upshift_cut_s = 0.1; const some = run(base);
+    sim.MODEL.upshift_cut_s = 0.2; const cap = run(base);
+    sim.MODEL.upshift_cut_s = 5; const over = run(base);
     assert.ok(some.lap_s > none.lap_s && cap.lap_s > some.lap_s, [none.lap_s, some.lap_s, cap.lap_s].join(" "));
     assert.equal(over.lap_s, cap.lap_s);
   } finally { sim.MODEL.upshift_cut_s = keep; }

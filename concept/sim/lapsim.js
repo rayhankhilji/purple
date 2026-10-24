@@ -65,7 +65,7 @@
     clip_search: 5,             // golden-section evaluations of the superclip amount (phi)
     clip_search_iters: 10,      // bisection iterations inside that search (0.1 m/s on the threshold; the final solve uses lambda_iters)
     // upshift torque cut (s): no drive force for this long after each upshift (assumption: 2026 seamless-shift gearboxes cut very
-    // little; capped at the 200 ms upshift the brief allows). Only with PhysicalCar.gearing, default strategy only.
+    // little; capped at the 200 ms upshift the brief allows). Only with PhysicalCar.gearing (every strategy).
     upshift_cut_s: 0.03, upshift_cut_max_s: 0.2,
     // tyre grip vs track temperature (ESTIMATE, no public 2026 Pirelli number found): mu x (1 - k (T - T_ref)^2), floored; T_ref is
     // the calibration session's track temperature (2026 British GP qualifying 40.4 C), so the calibrated car is unchanged there
@@ -349,8 +349,10 @@
     for (let i = 0; i < n; i++) { gF[i] = m * G * grade[i]; absK[i] = Math.abs(kap[i]); }
     const inv = 1 / du, uTop = NU - 1.001, swS = MODEL.aero_switch_s, latF = MODEL.straight_lat_frac;
     const PclipMax = Math.min(clipKw * 1e3, ETA * Pice), rbs = ETA * eff * MODEL.rear_brake_share, kW = kKw * 1e3;
+    const shiftS = Math.min(MODEL.upshift_cut_max_s, Math.max(0, MODEL.upshift_cut_s));
     function forward(x, record) {   // x < 0: reference lap (deploy everywhere, no superclip)
-      let v = vb[iMin], t = 0, Edep = 0, Eclip = 0, EharvBrake = 0, zoneT = zone[iMin] ? -1e9 : Infinity;
+      let v = vb[iMin], t = 0, Edep = 0, Eclip = 0, EharvBrake = 0, zoneT = zone[iMin] ? -1e9 : Infinity, cut = 0;
+      const cutOn = !!gr && shiftS > 0; let gHeld = cutOn ? gearOf(v * 3.6) : 0;   // upshift torque cut, as in forwardOpt
       if (record) { vf[iMin] = v; tAt[iMin] = 0; }
       const PclipThr = noClip || x < 0 || optimal ? 0 : clipFracOf(x) * PclipMax;
       for (let k = 0, i = iMin; k < n; k++) {
@@ -358,15 +360,16 @@
         let u = v + w[i]; if (u < 0) u = 0;
         let xg = u * inv; if (xg > uTop) xg = uTop;
         const g0 = xg | 0, ft = xg - g0;
+        let gg = g0, gt = ft; if (cw) { let xq = ugOf(i, u) * inv; if (xq > uTop) xq = uTop; gg = xq | 0; gt = xq - gg; }   // yaw-corrected grip index
         const ay = v * v * absK[i];
         // Straight Mode only inside an FIA zone, after the <= 400 ms switch (C3.10.10 o; modelled as Corner Mode until it completes)
         let md = 0;
         if (!zone[i]) zoneT = Infinity;
-        else { if (zoneT === Infinity) zoneT = t; if (t - zoneT >= swS && ay <= latF * (AY1[g0] + ft * (AY1[g0 + 1] - AY1[g0]))) md = 1; }
+        else { if (zoneT === Infinity) zoneT = t; if (t - zoneT >= swS && ay <= latF * (AY1[gg] + gt * (AY1[gg + 1] - AY1[gg]))) md = 1; }
         const AY = md ? AY1 : AY0, TR = md ? TR1 : TR0, RES = md ? RES1 : RES0;
-        const aym = AY[g0] + ft * (AY[g0 + 1] - AY[g0]);
+        const aym = AY[gg] + gt * (AY[gg + 1] - AY[gg]);
         const r = aym > 0 ? (ay < aym ? ay / aym : 1) : 1;
-        const Ftrac = (TR[g0] + ft * (TR[g0 + 1] - TR[g0])) * Math.sqrt(1 - r * r);
+        const Ftrac = (TR[gg] + gt * (TR[gg + 1] - TR[gg])) * Math.sqrt(1 - r * r);
         const vv = v > 3 ? v : 3;
         // deploy (K power limited by the C5.2.8 taper) or superclip
         let PkMech = 0, PclipElec = 0;
@@ -376,7 +379,8 @@
         const PiceN = gr ? Pice * iceFactor(v * 3.6) : Pice;
         if (PclipElec > ETA * PiceN) PclipElec = ETA * PiceN;
         const Fice = (eff * (PiceN - PclipElec / ETA)) / vv, Ffull = Fice + (eff * PkMech) / vv;
-        const Fx = Ffull < Ftrac ? Ffull : Ftrac;
+        const dtE = ds / vv, phi = cut > 0 ? (cut < dtE ? cut / dtE : 1) : 0;
+        const Fx = (1 - phi) * (Ffull < Ftrac ? Ffull : Ftrac);
         const PkUsed = Fx > Fice ? Math.min(PkMech, ((Fx - Fice) * vv) / eff) : 0;
         const a = (Fx - (RES[g0] + ft * (RES[g0 + 1] - RES[g0])) - slipDrag(ay, r) - gF[i]) / me;
         const v2 = v * v + 2 * a * ds;
@@ -393,8 +397,11 @@
             EharvBrake = Math.min(harvCap, EharvBrake + P * dt);
           }
           if (record) { modeAt[i] = 0; brk[i] = 1; }
+          if (cutOn) { const gn = gearOf(vn * 3.6); if (gn < gHeld) gHeld = gn; }
         } else {
           dt = (2 * ds) / (v + vn);
+          if (phi > 0) cut -= phi * dtE;
+          if (cutOn) { const gn = gearOf(vn * 3.6); if (gn > gHeld) { cut += shiftS * (gn - gHeld); gHeld = gn; } }
           Edep += (PkUsed / ETA) * dt;
           if (PclipElec > 0) Eclip += PclipElec * dt;
           if (record) { modeAt[i] = md; brk[i] = 0; }
@@ -412,7 +419,6 @@
     // throttle through a corner) the K harvests for free: the rear-axle share of the brake force, and at part throttle the ICE's
     // surplus over what the corner lets the car use (the ICE stays at full fuel flow; C5.2.10 counts all of it as Recharge).
     const lim = new Uint8Array(n), tl = new Uint8Array(n), pw = new Float64Array(n);
-    const shiftS = Math.min(MODEL.upshift_cut_max_s, Math.max(0, MODEL.upshift_cut_s));
     const partHarv = opts.part_throttle_harvest !== false;
     // per-segment energy flows of the last forward pass (J, electrical): deploy, harvest under braking, at part throttle, superclip
     const eD = new Float64Array(n), eB = new Float64Array(n), eP = new Float64Array(n), eC = new Float64Array(n);

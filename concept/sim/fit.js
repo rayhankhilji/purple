@@ -321,6 +321,9 @@
       }
       if (!accepted || accepted === "converged") break;
     }
+    // the stored scales are rounded to 4 decimals: re-simulate with exactly those, so a stored car reproduces its stored lap
+    const xr = x.map(v => Math.log(+Math.exp(v).toFixed(4)));
+    sims = targets.map((t, i) => sim(t, i, xr));
     const teams = targets.map((t, i) => ({
       team: t.team, name: t.name, chassis: t.chassis, pu: t.pu, driver: t.driver,
       q_real_s: t.q_s, q_sim_s: sims[i].lap_s, residual_lap_s: +(sims[i].lap_s - t.q_s).toFixed(3),
