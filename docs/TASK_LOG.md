@@ -37,6 +37,9 @@ Exit criteria: **all true at 23:58 London** (six verifies, task named from the p
 
 ## Checklist (P3 items already landed)
 
+- [x] P3.T5 deck sources: docs/deck/slides.md (8 Marp slides, speaker notes, figure list) + docs/deck/README.md (PDF export) (DEMO, merged 04:00). PDF itself: Tanuj.
+- [x] P3.T4 prep: docs/demo-script.md v2.1 (3:00, lab actions, grid race, Try-models) + docs/deck/shot-list.md (15 shots) (DEMO). Recording: Tanuj.
+
 - [x] P3.T3 (F-10) grid race: `index.html?lab=1&mode=grid&exp=&driver=<2026 code>&candidate=&mult_candidate=&seed=&laps=2&circuit=silverstone`, candidate car with a real 2026 driver on the 22-car Official-pace grid, on-screen caption "Cinematic · mixes car and driver · …" (G-HON-05), posts `purple:grid` (GAME, merged 02:15 from PR #11; headless: VER rear wing +8°, seed 42, P7 → P14, best 91.215 s, 2 laps, 22 classified)
 
 ## Checklist (P2 items already landed)
@@ -116,6 +119,8 @@ Exit criteria: **all true at 23:58 London** (six verifies, task named from the p
 | 2026-10-24 02:00 | CORS: `app.use("/api/*", cors({ origin: 127.0.0.1/localhost on any port }))` with `x-client-id` allowed | The lab page (:8788) could not call the API (:8787) in a real browser; found by the UI lane | Yes |
 | 2026-10-24 02:15 | **Canonical seeded rng = `scenarios.seededRng(U, seed)`** (murmur3-finaliser mix + 16 discards); app.js imports it, its local copy and the `itemSeed` mixer are gone; per-item seed = seed0·1000 + i. It is byte-identical to the code the v2 collection ran on, so every v2 row replays exactly from its own seed | Three lanes fixed the same defect three ways; one copy, and v2 reproducibility | Yes |
 | 2026-10-24 03:05 | Decisions proposed: D-U6: `wind_from_deg` is quantised to 15° steps in the UI (the evaluator takes any degree; 24 stops are enough for the demo and keep the dial readable). Reversible. | lane decision (UI/CAR3D/DEMO), merged | Yes |
+| 2026-10-24 04:00 | 1. D-D4 The demo narrative states the PRNG finding openly ("v1 learned from our mistake, v2 learns the engineer's rule") rather than omitting it; the exam is the only next-step number quoted as a measure of the agent. | DEMO lane, merged | Yes |
+| 2026-10-24 04:00 | 2. D-D5 Try-models screenshot and live beat use `exam-rw8` (in EVAL's 8) so the deck's one scenario is the same experiment the race measured. | DEMO lane, merged | Yes |
 | 2026-10-24 03:05 | Blockers / questions for Tanuj: none beyond D-U1 (CORS). Note for the demo: the wind/wet controls change the *next* plan's conditions; the current card keeps the conditions it was evaluated under (shown in the ledger row's title). | lane decision (UI/CAR3D/DEMO), merged | Yes |
 | 2026-10-24 03:05 | D-U2: stage rail is `min-height: 180px` and cards may grow to 256 px by content (DESIGN_SYSTEM §4 says 180): at 1440×900 each card is ~215 px wide and the success states did not fit in 180; the main area still keeps > 420 px for the 3D car. | lane decision (UI/CAR3D/DEMO), merged | Yes |
 | 2026-10-24 03:05 | D-U3: `EI.lab.run({ candidate, conditions, seed, circuit, random })` is a public hook (console/Playwright/QA) for the TD-01 demo: there is no setup editor in P2.T1 and the random generator respects TD-01, so a 25° candidate only arrives thr | lane decision (UI/CAR3D/DEMO), merged | Yes |
@@ -209,3 +214,6 @@ Exit criteria: **all true at 23:58 London** (six verifies, task named from the p
 
 ### 2026-10-24 03:50 — integrator — exam re-run with persisted details (20 untrained calls)
 - Same result, deterministic: verdicts 20/20, next-step 10/20. `status.exam.details` now holds every provider answer. **Next-step wrong on exam-02, 03, 05, 09, 10, 11, 14, 15, 16, 20**; of the 8 Try-models sheet scenarios the provider gets the next step right only on `exam-rw8`. That is the bar v1 and v2 are measured against by hand (G-HON-06: show as n/8). Snapshot docs/ledger-snapshot/*-0350-exam-details. Untrained calls today: 41 (21 + 20); trained: 99.
+
+### 2026-10-24 04:00 — integrator — merged DEMO deck/shot list (P3.T4/T5 sources) and GAME UI review
+- GAME's iframe findings forwarded to UI (keep the broadcast after the flag; still-air honesty note for windy experiments; source check; grid-mode branch). GAME doing two follow-ups (end race 60 s after the first lab car; audio resume). 78/78.
