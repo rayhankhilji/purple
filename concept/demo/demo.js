@@ -78,7 +78,7 @@
     for (const dir of ["replays/", "../lab/replays/"]) {
       try {
         const idx = await getJson(dir + "index.json"), runs = (idx && idx.runs || []).filter(r => r.kind === "engineer-v2");
-        const want = qs.get("replay"), pick = runs.find(r => r.name === want) || runs.find(r => /corrections/.test(r.name)) || runs[0];
+        const want = qs.get("replay"), pick = runs.find(r => r.name === want) || runs.find(r => r.record_good) || runs.find(r => /corrections/.test(r.name)) || runs[0];
         if (pick) return { dir, meta: pick };
       } catch (e) { /* next */ }
     }
@@ -97,7 +97,10 @@
     return {
       n: d.decision, by: d.by, id: d.mubit_request_id || null, trained: !!d.trained, hypothesis: d.hypothesis || null, fallback: d.fallback_reason || null,
       change: d.proposal_change || null, as: d.as_proposed || null, kept: !!d.kept, new_peak: !!d.new_peak, d_head: d.d_head_s,
-      lap: d.result ? d.result.lap_s : null, best_change: d.best_change || null, params: d.params || null, train: extra.train || null, trainedId: null,
+      lap: d.result ? d.result.lap_s : null, best_change: d.best_change || null, params: d.params || null, train: extra.train || null, trainedId: extra.trainedId || null, trainErr: extra.trainErr || null,
+      // timings of this decision, as the engine measured them (concept/engineer/engine.js compactDecision)
+      t: { call_ms: isNum(d.latency_ms) ? d.latency_ms : null, versions: d.screen && isNum(d.screen.distinct) ? d.screen.distinct : null, screen_ms: d.screen && isNum(d.screen.ms) ? d.screen.ms : null,
+        laps: isNum(d.physics_laps) ? d.physics_laps : null, laps_ms: isNum(d.physics_ms) ? d.physics_ms : null },
     };
   }
 
@@ -114,8 +117,12 @@
   function replayStep() {
     const R = S.replay; if (!R || S.shown >= R.decisions.length) { S.playing = false; S.status = "done"; clearTimeout(S.timer); renderAll(); return false; }
     const d = R.decisions[S.shown++];
-    const c = norm(d, { train: d.trained ? "recorded" : approved(norm(d)) ? "approved-untrained" : "untrained" });
+    // a run recorded with record_good: the same chips as live ("→ Mubit training example" with the trained call's id / "correction: not trained")
+    const c = R.record_good
+      ? norm(d, d.training_example === "sent" ? { train: "trained", trainedId: d.trained_request_id } : d.training_example === "failed" ? { train: "failed", trainErr: d.training_error } : { train: "rejected" })
+      : norm(d, { train: d.trained ? "recorded" : approved(norm(d)) ? "approved-untrained" : "untrained" });
     S.calls += c.id ? 1 : 0;
+    if (c.train === "trained") S.examples++;
     addDecision(c, c.kept && c.params ? designFromDiff(c.params) : null, peakLapAfter(d));
     return true;
   }
@@ -131,7 +138,8 @@
     tick();
   }
   function pause() { S.playing = false; clearTimeout(S.timer); if (S.status === "playing") S.status = "paused"; renderCtl(); }
-  function skipToEnd() { pause(); while (S.replay && S.shown < S.replay.decisions.length) replayStep(); if (S.replay) { S.status = "done"; renderAll(); } }
+  // to the end in one go: the car is rebuilt once (the last kept car) and the page rendered once, not 117 times
+  function skipToEnd() { pause(); S.bulk = true; S.pendingCar = null; try { while (S.replay && S.shown < S.replay.decisions.length) replayStep(); } finally { S.bulk = false; } if (S.pendingCar) showCar(S.pendingCar); S.pendingCar = null; if (S.replay) { S.status = "done"; renderAll(); } }
 
   // ---------------------------------------------------------------- live (record_good) / offline demo
   async function startRun(llm) {
@@ -197,9 +205,9 @@
     if (S.best < prevBest - 1e-9) S.bestDesign = peakDesign || carDesign || S.bestDesign;
     S.trace.push([c.n, S.best]);
     S.marks.push({ n: c.n, kept: c.kept, lap: c.lap, legal: !(c.as && c.as.legal === false) });
-    if (carDesign) showCar(carDesign);
+    if (carDesign) { if (S.bulk) S.pendingCar = carDesign; else showCar(carDesign); }
     const cards = $("#dmCards"); cards.prepend(card(c)); while (cards.children.length > 40) cards.lastChild.remove();
-    renderAll(true);
+    if (!S.bulk) renderAll(true);
   }
   function showCar(d) {
     if (!d || !S.view) return;
@@ -207,7 +215,7 @@
   }
 
   // ---------------------------------------------------------------- render
-  function renderAll(fromDecision) { renderLap(); renderCounters(); renderBoard(); renderChart(); renderMode(); renderCtl(); renderProgress(); if (!fromDecision) renderFoot(); }
+  function renderAll(fromDecision) { renderLap(); renderCounters(); renderBoard(); renderChart(); renderMode(); renderCtl(); renderProgress(); renderTiming(); if (!fromDecision) renderFoot(); }
   function renderLap() {
     const best = S.final ? S.final.lap_s : S.best, base = S.baseline ? S.baseline.lap_s : RB22;
     $("#dmLap").replaceChildren(
@@ -220,11 +228,12 @@
   function counter(label, value, sub, cls, title) { return el("div", { class: "dm-ctr " + (cls || ""), title: title || null }, el("span", { class: "dm-ctr-v num" }, value), el("span", { class: "dm-ctr-l" }, label), sub ? el("span", { class: "src" }, sub) : null); }
   function renderCounters() {
     const ok = S.cards.filter(approved).length, n = S.cards.length;
-    const calls = S.mode === "mock" ? 0 : S.mode === "live" ? S.calls + S.examples : S.calls;
-    const okSub = S.mode === "live" ? "the physics sim said yes: sent to Mubit as trained calls" : S.mode === "mock" ? "offline demo: nothing is sent to Mubit" : "physics said yes to " + ok + " of " + n + " ideas as proposed · this recorded run trained every call";
+    const rg = S.mode === "live" || (S.mode === "replay" && !!(S.replay && S.replay.record_good));   // untrained calls + one trained re-send per approved idea
+    const calls = S.mode === "mock" ? 0 : rg ? S.calls + S.examples : S.calls;
+    const okSub = S.mode === "mock" ? "offline demo: nothing is sent to Mubit" : rg ? "physics said yes to " + ok + " of " + n + " ideas · each one sent to Mubit" : "physics said yes to " + ok + " of " + n + " · this run trained every call";
     $("#dmCounters").replaceChildren(
-      counter("Mubit calls", int(calls), S.mode === "mock" ? "offline demo: a scripted stand-in, not a model" : "Claude Haiku 4.5 through Mubit · one per decision", "mubit"),
-      counter("approved by physics → training examples", S.mode === "live" ? String(S.examples) : ok + " / " + n, okSub, "good", "an idea counts as approved when the model's change, exactly as proposed, is legal and faster on the physics lap sim"),
+      counter("Mubit calls", int(calls), S.mode === "mock" ? "offline demo: a scripted stand-in, not a model" : rg ? "Claude Haiku 4.5 · one per idea + one per example" : "Claude Haiku 4.5 through Mubit · one per decision", "mubit"),
+      counter("approved by physics → training examples", rg ? String(S.examples) : ok + " / " + n, okSub, "good", "an idea counts as approved when the model's change, exactly as proposed, is legal and faster on the physics lap sim" + (rg ? "; each approved idea is sent to Mubit again as a training example" : "")),
       el("div", { class: "dm-ctr dm-model", title: "source: " + MUBIT_MODEL.source }, el("span", { class: "dm-model-t" }, MUBIT_MODEL.text), el("span", { class: "src" }, "source: " + MUBIT_MODEL.source)));
   }
   function teamOfCode(code) { const seat = RP && RP.seat && RP.seat[code]; if (seat) { const t = TEAMS.find(x => x.id === seat || x.name === seat || x.code === seat); if (t) return t; } return TEAMS.find(t => (t.drivers || []).includes(code)) || null; }
@@ -270,10 +279,13 @@
     const ys = S.trace.map(p => p[1]).concat([POLE, base]), lo = Math.min(...ys) - 0.08, hi = Math.max(...ys) + 0.1;
     const pad = { l: 46, r: 12, t: 10, b: 22 }, iw = W - pad.l - pad.r, ih = H - pad.t - pad.b;
     const X = v => pad.l + v / xmax * iw, Y = v => pad.t + (v - lo) / (hi - lo) * ih;
-    const g = [], step = nice((hi - lo) / 4);
-    for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) g.push(sv("line", { class: "grid", x1: pad.l, x2: W - pad.r, y1: Y(v), y2: Y(v) }), sv("text", { class: "ax", x: pad.l - 6, y: Y(v) + 3, "text-anchor": "end", text: v.toFixed(1) }));
-    const sx = nice(xmax / 6); for (let v = 0; v <= xmax + 1e-9; v += sx) if (X(v) < W - pad.r - 200) g.push(sv("text", { class: "ax", x: X(v), y: H - 6, "text-anchor": "middle", text: String(Math.round(v)) }));
-    g.push(sv("text", { class: "ax ttl", x: W - pad.r, y: H - 6, "text-anchor": "end", text: "decision" }));
+    const g = [];
+    let step = nice((hi - lo) / 4); if (Math.floor(hi / step) - Math.ceil(lo / step) < 2) step = nice(step / 2.5);   // at least three lap labels (0.5 -> 0.2)
+    let ydp = 0; while (ydp < 3 && Math.abs(Math.round(step * 10 ** ydp) - step * 10 ** ydp) > 1e-6) ydp++;   // 0.05 -> 2 decimals, 0.2 -> 1
+    for (let k = Math.ceil(lo / step); k * step <= hi + 1e-9; k++) { const v = k * step; g.push(sv("line", { class: "grid", x1: pad.l, x2: W - pad.r, y1: Y(v), y2: Y(v) }), sv("text", { class: "ax", x: pad.l - 6, y: Y(v) + 3, "text-anchor": "end", text: v.toFixed(ydp) + " s" })); }
+    // x: the idea number; the labels stop short of the axis title
+    const sx = nice(xmax / 6); for (let v = 0; v <= xmax + 1e-9; v += sx) if (X(v) < W - pad.r - 58) g.push(sv("text", { class: "ax", x: X(v), y: H - 6, "text-anchor": "middle", text: String(Math.round(v)) }));
+    g.push(sv("text", { class: "ax ttl", x: W - pad.r, y: H - 6, "text-anchor": "end", text: "idea →" }));
     const ref = (v, label, cls) => g.push(sv("line", { class: "ref " + cls, x1: pad.l, x2: W - pad.r, y1: Y(v), y2: Y(v) }), sv("text", { class: "reft", x: W - pad.r - 4, y: Y(v) - 4, "text-anchor": "end", text: label }));
     ref(POLE, "real 2026 pole " + POLE_CODE + " " + f3(POLE) + " (OpenF1)", "pole"); ref(base, "RB22 baseline " + f3(base) + " (sim)", "base");
     const p = S.trace;
@@ -301,7 +313,7 @@
     }
     $("#dmMode").replaceChildren(...[badge, line, S.error && S.mode !== "replay" ? el("span", { class: "warn src" }, S.error) : null].filter(Boolean));
   }
-  function renderCtl() {
+  function buildCtl() {
     // "Qualifying lap" mode: the best car's sim lap (finishing at exactly the lap shown here) against every real 2026 qualifying lap, one clock
     const raceHref = () => { const R = C.race; return R && S.bestDesign ? R.url(S.bestDesign, { base: "../race/", ref: "redbull", mode: "quali", lap_s: S.final ? S.final.lap_s : S.best }) : "../race/?mode=quali"; };
     const kids = [];
@@ -315,10 +327,22 @@
     }
     kids.push(S.liveOk
       ? el("button", { type: "button", class: "btn dm-golive", id: "dmGoLive", disabled: S.status === "running" ? true : null, title: "start the engine now: " + LIVE_CALLS + " Mubit calls (Claude Haiku 4.5, untrained); every idea the physics sim approves is re-sent by the server as a trained call, a Mubit training example", onclick: () => startRun("live") }, "Go live")
-      : el("a", { class: "btn dm-golive off", id: "dmGoLive", href: S.deploy ? "/api/unlock" : "#", title: "live needs " + (S.liveWhy || "the passcode"), onclick: S.deploy ? null : e => e.preventDefault() }, S.deploy ? "Go live · unlock" : "Go live · off"));
+      : (() => {
+        // locked: this deployment goes live after the passcode (its unlock page); off: no live calls here at all
+        const canUnlock = !!(S.deploy && S.deploy.live && S.deploy.live.available && !S.deploy.live.unlocked);
+        const href = canUnlock ? API + (S.deploy.live.unlock || "/api/unlock") : "#";
+        return el("a", { class: "btn dm-golive off", id: "dmGoLive", href, "aria-disabled": canUnlock ? null : "true", title: canUnlock ? "live Mubit calls need the passcode: unlock in this browser, then come back here" : "live is off: " + (S.liveWhy || "no engine API"), onclick: canUnlock ? null : e => e.preventDefault() }, canUnlock ? "Go live · unlock" : "Go live · off");
+      })());
     kids.push(el("a", { class: "btn dm-race", id: "dmRace", href: raceHref(), title: "every car's best 2026 qualifying lap (OpenF1) and the best car's physics-sim lap, on one clock on the game's 3D Silverstone (ghost laps)", onclick: e => { e.currentTarget.href = raceHref(); } }, "Watch the lap on Silverstone →"),
       el("a", { class: "src dm-full", href: "../lab/" + (qs.get("api") ? "?api=" + encodeURIComponent(qs.get("api")) : "") }, "full lab →"));
     $("#dmCtl").replaceChildren(...kids);
+    S.raceFor = S.bestDesign;
+  }
+  // the controls are rebuilt only when what they show changes: a rebuild on every decision (4×: every 250 ms) swallowed clicks
+  function renderCtl() {
+    const key = JSON.stringify([S.mode, S.playing, S.status, S.shown > 0, S.pace, S.liveOk, S.liveWhy, S.deploy && S.deploy.live || null]);
+    if (key !== S.ctlKey || !$("#dmCtl").firstChild) { S.ctlKey = key; buildCtl(); return; }
+    if (S.raceFor !== S.bestDesign) { const a = $("#dmRace"), R = C.race; if (a && R && S.bestDesign) a.href = R.url(S.bestDesign, { base: "../race/", ref: "redbull" }); S.raceFor = S.bestDesign; }
   }
   function renderProgress() {
     const host = $("#dmProgress");
@@ -327,6 +351,26 @@
     else host.replaceChildren();
   }
   function renderFoot() { $("#dmFoot").textContent = FOOT; }
+  // ---------------------------------------------------------------- timings (per decision, as the engine measured them)
+  const secs = ms => (ms < 1000 ? (ms / 1000).toFixed(2) : (ms / 1000).toFixed(1)) + " s";
+  const who = () => (S.mode === "mock" ? "stand-in" : "Mubit");
+  function callTime(c) {
+    if (!c.t || !isNum(c.t.call_ms)) return null;
+    return el("span", { class: "dm-rid num", title: S.mode === "mock" ? "the scripted stand-in's answer time (no Mubit call)" : "time for this Mubit call (Claude Haiku 4.5 through Mubit), measured by the engine" }, who() + " " + secs(c.t.call_ms));
+  }
+  function renderTiming() {
+    const host = $("#dmTiming"); if (!host) return;
+    const c = S.cards[S.cards.length - 1], t = c && c.t;
+    if (!t) { host.replaceChildren(el("span", null, "timings for each idea appear here: the " + who() + " call, the versions tested, the physics laps")); host.removeAttribute("title"); return; }
+    const parts = [];
+    const seg = (title, ...kids) => parts.push(el("span", { class: "dm-tseg", title }, ...kids));
+    if (isNum(t.call_ms)) seg(S.mode === "mock" ? "the scripted stand-in's answer (no Mubit call)" : "the Mubit call: Claude Haiku 4.5 through Mubit, request to answer", who() + " ", el("b", null, secs(t.call_ms)));
+    if (isNum(t.versions) && isNum(t.screen_ms)) seg("versions of the idea generated around it, each checked against the 2026 rules and given a quick lap estimate (4 worker threads); the best go to the physics lap sim", el("b", null, int(t.versions)), " versions tested in ", el("b", null, secs(t.screen_ms)));
+    if (isNum(t.laps) && isNum(t.laps_ms)) seg("full physics laps of Silverstone on the most promising versions (4 worker threads)", el("b", null, int(t.laps)), " physics laps in ", el("b", null, secs(t.laps_ms)));
+    if (isNum(t.versions) && t.versions > 0 && isNum(t.screen_ms)) { const per = t.screen_ms / t.versions; seg("time per version tested: the 2026 rules check plus the quick lap estimate, so the rules check alone takes at most this", "legality check ", el("b", null, per.toFixed(per < 0.1 ? 2 : 1) + " ms")); }
+    host.replaceChildren(...parts.flatMap((p, i) => (i ? [el("span", { class: "dm-tsep", "aria-hidden": "true" }, " · "), p] : [p])));
+    host.title = "idea #" + c.n + " · measured by the engine during the " + (S.mode === "replay" ? "recorded run" : "run");
+  }
   // ---------------------------------------------------------------- the Mubit feed card
   function verdict(c) {
     if (c.by !== "mubit") return el("span", { class: "dm-chip muted", title: c.fallback || "" }, "no usable answer");
@@ -349,12 +393,13 @@
   }
   function card(c) {
     const n = el("article", { class: "dm-card" + (approved(c) ? " ok" : " no") + (c.new_peak ? " peak" : ""), "data-n": c.n, title: c.id ? "Mubit request " + c.id + (c.trained ? " (trained call)" : " (untrained call)") : null },
-      el("div", { class: "dm-c1" }, el("span", { class: "num dm-n" }, "#" + c.n), " ", c.hypothesis ? "“" + trim(c.hypothesis, 90) + "”" : "the model's answer could not be used"),
+      el("div", { class: "dm-c1" }, callTime(c), el("span", { class: "num dm-n" }, "#" + c.n), " ", c.hypothesis ? "“" + trim(c.hypothesis, 90) + "”" : "the model's answer could not be used"),
       el("div", { class: "dm-c2" }, el("span", { class: "dm-chg" }, c.change ? plainChange(c.change, 2) : "no change"), verdict(c), trainChip(c)));
     c.el = n;
     return n;
   }
-  function refreshCard(c) { if (c.el && c.el.parentNode) { const n = card(c); c.el.replaceWith(n); } }
+  // card(c) re-points c.el at the new node, so keep the old one first (replacing c.el after card(c) was a no-op: the chip stayed "pending")
+  function refreshCard(c) { const old = c.el; if (!old || !old.parentNode) return; const n = card(c); n.style.animation = "none"; old.replaceWith(n); }
 
   // ---------------------------------------------------------------- 3D (EI.conceptView public API only, as the engine drawer mounts it)
   function mountView() {
