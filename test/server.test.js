@@ -350,3 +350,10 @@ test("CORS: the lab page on 127.0.0.1:8788 may call the API on :8787 (preflight 
   const res = await app.request("/api/status", { headers: { origin: "http://localhost:8788" } }); assert.equal(res.headers.get("access-control-allow-origin"), "http://localhost:8788");
   const other = await app.request("/api/status", { headers: { origin: "https://evil.example" } }); assert.equal(other.headers.get("access-control-allow-origin"), null);
 });
+test("MUBIT_MOCK never writes into the real data/: a data dir resolving to <repo>/data is redirected to data-mock/ unless PURPLE_ALLOW_MOCK_IN_DATA=1", () => {
+  const prev = { m: process.env.MUBIT_MOCK, a: process.env.PURPLE_ALLOW_MOCK_IN_DATA }; process.env.MUBIT_MOCK = "1"; delete process.env.PURPLE_ALLOW_MOCK_IN_DATA;
+  try {
+    const a = createApp({ dataDir: path.join(__dirname, "..", "data") }); assert.equal(path.basename(a.db.dir), "data-mock");
+    process.env.PURPLE_ALLOW_MOCK_IN_DATA = "1"; const b = createApp({ dataDir: path.join(__dirname, "..", "data") }); assert.equal(path.basename(b.db.dir), "data");
+  } finally { if (prev.m == null) delete process.env.MUBIT_MOCK; else process.env.MUBIT_MOCK = prev.m; if (prev.a == null) delete process.env.PURPLE_ALLOW_MOCK_IN_DATA; else process.env.PURPLE_ALLOW_MOCK_IN_DATA = prev.a; }
+});
