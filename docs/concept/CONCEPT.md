@@ -3,6 +3,75 @@
 Version 0 · 2026-10-24 · branch `claude/concept-core` · owner Tanuj · label on every number:
 **"concept · reduced-order lap model · calibrated to 2026 pole laps · concept aero map v0"**
 
+## 0. Physics sim integration (2026-10-24, `claude/concept-integrate`)
+
+The bench now laps every legal design on the **physics lap sim** (`concept/sim/`, docs/concept/SIM.md; label "physics lap sim ·
+quasi-steady-state point mass · Silverstone OSM centreline · calibrated to 2026 British GP qualifying"). Sim v0 stays as the
+fallback (no sim loaded, other circuits, `sim: "v0"`) and in the fast tests. The optimiser maximises the **weekend score**
+(concept/weekend/weekend.js, WEEKEND.md §6) on the physics sim, and the demo baseline is the **Red Bull RB22 / Red Bull Ford DM01**.
+
+**Calibration: how a design becomes a sim car** (`concept/physical.js`). The design layer no longer sets absolute levels. Each
+design is mapped onto an **anchor**: the sim's estimated car (`sim.baselineCar()`, the pole-lap estimate) or, for a team
+baseline, that team's inferred car (`sim.baselineCar("redbull")`). The team baseline maps onto its anchor exactly, so
+`physical(baseline)` laps the sim's baseline time (generic 88.312 s; RB22 88.749 s against HAD's real 88.746 s). Everything else
+is the anchor plus relative deltas from the part catalogue and the concept aero map:
+
+| PhysicalCar field | Mapping | Baseline (generic / RB22) |
+|---|---|---|
+| corner CLA, CDA | anchor × df (cd) relative to the baseline design | 5.643 / 5.439 m², 1.349 / 1.359 m² |
+| front share of CLA | anchor share + (balance − baseline balance) | 0.439 |
+| Straight Mode CLA, CDA | `Q_anchor,corner × q_sm − E × φ`, E = the anchor's relief the concept map does not explain, φ = flap deployment vs the reference setting (per wing min(1, angle / reference), weighted by each wing's share of the reference relief). No flap = Corner Mode; the reference = the anchor exactly; past the reference only the concept map's own flap relief counts (conservative) | 2.202 / 2.122 m², 0.742 / 0.747 m² |
+| mass, CoG height, front weight share | anchor + (mass sheet − baseline mass sheet) | 768 kg, 0.28 m, 0.45 |
+| ICE kW | anchor × cooling power factor | 400 / 399.8 kW |
+| tyres (μx, μy, load sensitivity), brakes, tracks, η, gearing | the anchor's (no design parameter moves them) | 1.84 / 1.95 / 0.106, 5 g |
+| energy | regulation, never design: `es_harvest` 8.5 MJ/lap (C5.2.10 cap; the session limit, 6.5 MJ in Silverstone qualifying, comes through the sim's conditions), `es_deploy` 12.5 = 4 MJ window (C5.2.9) + 8.5, ≥ the 10.5 MJ the sim needs; MGU-K 350 kW | |
+
+The **baseline carries a reference Straight Mode flap** (front 4°, the largest whole degree inside RV-FW-PROFILES at the 580 mm
+chord; rear 15°, mid-domain), because every 2026 car runs active aero and the sim's estimate is a car that used it. The baseline's
+flap actuators (1.8 kg) come out of its ballast (now 0.2 kg). Sim v0 measures Straight Mode relative to the baseline's own Straight
+Mode, so its baseline still laps 88.111 s. Without the sim loaded, `physical()` falls back to the v0 levels (`REF_V0`, label
+"PhysicalCar v0"); sim v0 uses ratios only and is unaffected.
+
+**Red Bull baseline.** `design.baseline({ team: "redbull" })` (or `"redbull"`): id `baseline-redbull`, `team`, `livery:
+"redbull-rb22"` (the viewer's id), chassis, PU, driver HAD. Same concept shape (no RB22 geometry is public); the identity is its
+anchor. In the browser the anchor uses the generic gear ratios (HAD's measured ratios are read from disk in Node only): 88.750 s.
+Children of the design keep `team` and `livery`. The concept lab and the CLI default to it; the generic car stays selectable.
+
+**Bench** (`concept/bench.js`). `sim: "auto"` (physics when loaded) | `"physics"` | `"v0"` | a function; `objective: "weekend"`
+(default at Silverstone with the weekend module) | `"quali"`. The physics sim runs Silverstone only (other circuits: v0). Results
+are cached twice: physics laps by the PhysicalCar's numbers + circuit + conditions, bench results by design + options (both LRU,
+6000 entries), so a revisited design or the lab's re-bench of a kept design costs ~0.1 ms. A physics lap is 20-35 ms in Node (the
+RB22 car carries gearing), ~22 ms in Chromium. **Exploit guard:** the energy fields are pinned to the regulation values before a
+lap (`guardEnergy`): a car declaring 6.0 MJ recharge ran 0.001 s faster in the sim (its φ search), now it runs the same lap.
+`weekend_model` on the result carries quali / race position, strategy, fuel slope and the field frame; `score` is the weekend score.
+For a team design the weekend replaces that team's fitted driver (our RB22 takes HAD's place).
+
+**Optimiser** (`concept/optimize.js`). Objective text and `opts.team`; `optimizeAsync` measures candidates one at a time and
+awaits `opts.yield` once `opts.slice_ms` (12) has passed, so the page never blocks for longer than one lap; the lineage is
+identical to `optimize()` (tested).
+
+**Concept lab** (`concept/lab/`). Loads `concept/sim/{track,line-silverstone,lapsim,fitted,fit,index}.js` after
+`js/data/silverstone.js` (browser export `window.EI.conceptSim`); header selects for the baseline (Red Bull RB22 default, generic
+2026) and the sim (physics default, v0); the leaderboard is the real 2026 qualifying order with our sim'd car and the baseline;
+the weekend line under it comes from the bench result. Measured in headless Chromium (120 generations, seed 1, physics, RB22):
+the optimiser alone (3D view blocked) runs 86 ms per generation, frames p50 16.7 ms / p95 33 ms / max 50 ms, one long task
+(55 ms); with the 3D view the software WebGL renderer of headless Chromium (~180 ms a frame idle) dominates. Screenshots:
+`docs/agents/integrator-screens/concept-integrate/`.
+
+**Results, physics sim** (`node concept/cli.js --gens 200 --seed S`, RB22 baseline, weekend objective; real pole ANT 88.111 s):
+
+| Seed | Kept | Best lap | vs real pole | vs RB22 baseline (88.749) | Grid (real Q) | Weekend (Q / race) | Weekend score (baseline −0.667) | Legal |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 42 | 87.570 | −0.541 | −1.179 | P1 | P1 / P1 | 0.549 | yes |
+| 2 | 51 | 87.826 | −0.285 | −0.923 | P1 | P1 / P1 | 0.296 | yes |
+| 3 | 39 | 87.652 | −0.459 | −1.097 | P1 | P1 / P1 | 0.470 | yes |
+
+Top changes in all three seeds: rear Straight Mode flap opened 15° → 25.5-30° (domain edge), floor body width 1450 → 1540 mm (the
+C3.5.1 rule edge), diffuser expansion 14° → 17-17.5°, sidepod undercut 100 → 145-170 mm, rear wing span 1100 → 1150 mm (rule
+edge), endplate up to 870-880 mm. Read these as the concept aero map's direction on the sim's car, not as an RB22 upgrade: the map
+is a component-share model, every gain sits on a domain or rule edge, and the sim's own residuals are 13 km/h (trace RMS) on
+held-out laps.
+
 ## 1. What it is
 
 The lab tunes five setup numbers on a fixed car. The concept module lets an optimiser change the **car itself**, part by part:
@@ -28,12 +97,12 @@ optimize: proposer.propose(history, parent, ctx) ─▶ candidates ─▶ bench 
 - **Reduced-order.** No flow is solved. Downforce and drag come from a documented component-share map (§5). The wing and
   ride-height slopes at the baseline match the lab's aero map v1 by construction (tested); everything away from the baseline is the
   map's assumption. Shapes are parameters, not surfaces.
-- **v0 places the baseline at the real pole by construction.** The game's limit lap (80.800 s) is anchored to the real 2026 pole,
-  so the baseline concept car laps 88.111 s and starts P1. v0 can rank changes; it cannot say where a 2026 car really qualifies.
-  The physics sim (concept/sim/, separate agent) will place the baseline absolutely; it plugs in as `sim` with no other change.
-- **Straight mode is partly double-counted.** The game's car is calibrated to real 2026 pole laps, which already used straight mode,
-  while the concept baseline runs none (so it reproduces 80.800 s exactly). Straight-mode gains are therefore optimistic; read them
-  as "relative to a car without active aero".
+- **Sim v0 places the baseline at the real pole by construction.** The game's limit lap (80.800 s) is anchored to the real 2026
+  pole, so under v0 the baseline laps 88.111 s and starts P1. v0 can rank changes; it cannot say where a 2026 car really qualifies.
+  The physics sim (§0, the default) places the baseline absolutely: generic 88.312 s (P3), RB22 88.749 s (P5 in qualifying).
+- **Straight mode:** the baseline now carries a reference flap (front 4°, rear 15°) that maps onto the sim's estimated Straight
+  Mode (§0); gains from opening the flaps further come only from the concept map's own flap model (conservative). Under v0 the
+  zones are measured relative to the baseline's Straight Mode.
 - **Masses are researched estimates.** Real per-part masses are not public. The catalogue uses "concept part masses v1"
   (`concept/data/parts-mass-2026.json`, `docs/concept/MASS.md`): regulation floors where they exist (ICE group 130.5 kg = ICE +
   Powerbox 118.5 + TC 12, MGU-K 20, ES 35, driver + ballast 82), reported figures where found, engineering estimates reconciled
@@ -73,11 +142,11 @@ optimize: proposer.propose(history, parent, ctx) ─▶ candidates ─▶ bench 
 | `concept/parts.js` | 33-part catalogue (23 shape parameters): shape params with domain bounds, mass estimate + basis, x/z/|y| position | `CATALOGUE`, `PARAMS`, `geometry(params)`, `massSheet(params, opts)` |
 | `concept/aeromap.js` | concept aero map v0: shape → relative df/cd in corner and straight mode, balance, cooling | `evaluate(params)`, `rideSensitivity`, `rideOptimum` |
 | `concept/design.js` | Design = baseline + params; validate / clone / mutate / diff / describe / facts; seeded rng | `baseline`, `validate`, `mutate(d, rng, step)`, `applyChanges`, `diff`, `describe`, `facts`, `seededRng` |
-| `concept/physical.js` | `physical(design, { calibration }) → PhysicalCar` (SI) | `physical`, `REF`, `SOURCES` |
-| `concept/bench.js` | bench + sim v0 + weekend score | `bench(design, { circuit, circuits, sim })`, `simV0(pc, trackId)`, `weekend(lap, circuit)` |
+| `concept/physical.js` | `physical(design, { calibration }) → PhysicalCar` (SI), anchored on the physics sim's car (§0) | `physical`, `anchor`, `ENERGY`, `REF_V0`, `SOURCES` |
+| `concept/bench.js` | bench + physics sim adapter (cached, energy-guarded) + sim v0 + scores | `bench(design, { circuit, circuits, sim, objective })`, `simPhysics`, `simV0(pc, trackId)`, `weekend(lap, circuit)`, `cacheStats` |
 | `concept/optimize.js` | the loop, default ES proposer, lineage | `optimize(opts)`, `optimizeAsync(opts)`, `esProposer`, `hypothesize` |
-| `concept/cli.js` | command line | `node concept/cli.js --gens 200 --seed 1 --circuits silverstone,monza --out DIR` |
-| `test/concept.test.js`, `test/concept-bench.test.js`, `test/concept-guards.test.js` | 32 tests (§9) | |
+| `concept/cli.js` | command line | `node concept/cli.js --gens 200 --seed 1 --baseline redbull --sim physics --objective weekend --out DIR` |
+| `test/concept.test.js`, `test/concept-bench.test.js`, `test/concept-guards.test.js`, `test/concept-integrate.test.js` | concept tests (§9; the physics integration: 10 tests in concept-integrate) | |
 
 Module style matches `lab/aero.js`: each file is an IIFE that attaches to `window.EI.concept.<name>` and to `module.exports`.
 Browser load order: the game scripts the evaluator needs (`vendor/three.min.js`, `js/util.js`, `js/data/silverstone.js`,
@@ -94,8 +163,8 @@ game through `server/game-headless.js` and reads `js/data/racepace2026.js` in a 
 |---|---|---|---|
 | layout.wheelbase_mm | 3000–3700 | 3400 | ≤ 3400 (C2.3.3); ≥ packaging minimum (PKG-WB) |
 | survival_cell.front_axle_offset_mm / cockpit_len_mm / bulkhead_gap_mm | 0–250 / 1750–2100 / 300–600 | 75 / 1930 / 380 | 0–150 (C2.3.4) / 1830–2030 (C2.3.5) / ≥ 360 (C2.3.6) |
-| front_wing.span_mm / chord_mm / aoa_deg / elements / sm_delta_deg | 1000–1500 / 400–900 / 10–40 / 1–4 / 0–20 | 1300 / 580 / 25 / 3 / 0 | ≤ 1350 / mean chord ≤ trimmed RV-FW-PROFILES mean X extent (≈ 594) / — / ≤ 3 (C3.10.1) / ≥ 2 volumes, straight-mode extent inside RV-FW-PROFILES (C3.10.10(a), (s)(i), (u)) |
-| rear_wing.span_mm / chord_mm / aoa_deg / elements / endplate_top_mm / sm_delta_deg | 900–1300 / 300–600 / 5–35 / 1–4 / 760–960 / 0–30 | 1100 / 420 / 20 / 2 / 860 / 0 | ≤ 1150 / ≤ 465 / — / ≤ 3 (C3.11.1) / ≤ 880 / needs ≥ 2 volumes (C3.11.6) |
+| front_wing.span_mm / chord_mm / aoa_deg / elements / sm_delta_deg | 1000–1500 / 400–900 / 10–40 / 1–4 / 0–20 | 1300 / 580 / 25 / 3 / 4 (catalogue 0) | ≤ 1350 / mean chord ≤ trimmed RV-FW-PROFILES mean X extent (≈ 594) / — / ≤ 3 (C3.10.1) / ≥ 2 volumes, straight-mode extent inside RV-FW-PROFILES (C3.10.10(a), (s)(i), (u)) |
+| rear_wing.span_mm / chord_mm / aoa_deg / elements / endplate_top_mm / sm_delta_deg | 900–1300 / 300–600 / 5–35 / 1–4 / 760–960 / 0–30 | 1100 / 420 / 20 / 2 / 860 / 15 (catalogue 0) | ≤ 1150 / ≤ 465 / — / ≤ 3 (C3.11.1) / ≤ 880 / needs ≥ 2 volumes (C3.11.6) |
 | floor.width_mm (floor body, 2 × max \|Y\|) / throat_mm / ride_height_mm | 1200–1700 / 80–130 / 20–70 | 1450 / 100 / 35 | ≤ 1540 (C3.5.1(a), App. C2 §4.9: Y ≤ 770) / — / plank wear ≤ 2 mm (C3.6.1(d)); stall margin (PKG-FLOOR-STALL) |
 | diffuser.expansion_deg | 8–22 | 14 | — |
 | sidepods.inlet_cm2 / undercut_mm | 300–1100 / 0–220 | 650 / 100 | cooling capacity ≥ 1.05 × need (PKG-COOLING, model rule) |
@@ -108,23 +177,26 @@ Wing `aoa_deg` is in the lab's `front_wing_deg` / `rear_wing_deg` units, so the 
 Additive since v0: `session` (the C4.1 session the mass was built for; sim v0 builds its reference car for the same session),
 `aero.floor_stalled` (bool) and `aero.stall_margin_mm` (effective floor gap at the dynamic ride height minus the stall onset; the
 model rule wants ≥ 2). `ride_sens_per_mm` is unchanged (|d ln df / d rh|, ≥ 0). `cog_height_m` is now the height above the ground.
-`physical(design, { calibration: { cla_scale, cda_scale, power_scale, mu_scale } })` scales the absolute levels for the physics
-sim's calibration; the design and the relative map are untouched. Baseline PhysicalCar:
+`physical(design, { calibration: { cla_scale, cda_scale, power_scale, mu_scale } })` scales on top of the anchor (what-if
+studies); the design and the relative map are untouched. Additive since the integration: `team`, `anchor: { id, label }`,
+`pu.es_soc_window_mj`, `gearing` (the anchor's). Baseline PhysicalCar (generic; the mapping is in §0):
 
 ```json
-{ "session": "qualifying", "mass_kg": 770, "fuel_kg": 10, "wheelbase_m": 3.4, "track_front_m": 1.58, "track_rear_m": 1.52, "cog_height_m": 0.325, "weight_dist_front": 0.4492,
-  "aero": { "corner": { "CLA_front_m2": 1.653, "CLA_rear_m2": 2.147, "CDA_m2": 1.1 }, "straight": { "CLA_front_m2": 1.653, "CLA_rear_m2": 2.147, "CDA_m2": 1.1 },
+{ "session": "qualifying", "team": null, "mass_kg": 768, "fuel_kg": 8, "wheelbase_m": 3.4, "track_front_m": 1.6, "track_rear_m": 1.55, "cog_height_m": 0.28, "weight_dist_front": 0.45,
+  "aero": { "corner": { "CLA_front_m2": 2.4775, "CLA_rear_m2": 3.1657, "CDA_m2": 1.3486 }, "straight": { "CLA_front_m2": 1.1011, "CLA_rear_m2": 1.1011, "CDA_m2": 0.7417 },
             "ride_height_mm": 35, "ride_sens_per_mm": 0.006, "floor_stalled": false, "stall_margin_mm": 3.67 },
-  "pu": { "ice_kw": 400, "mguk_kw": 350, "es_deploy_mj_per_lap": 8.5, "es_harvest_mj_per_lap": 8.5 },
-  "tyres": { "mu_x": 1.75, "mu_y": 1.8, "load_sens": 0.04, "radius_m": 0.353, "compound": "soft" }, "brakes": { "max_decel_g_mech": 1.75 }, "drivetrain_eff": 0.95 }
+  "pu": { "ice_kw": 400, "mguk_kw": 350, "es_deploy_mj_per_lap": 12.5, "es_harvest_mj_per_lap": 8.5, "es_soc_window_mj": 4 },
+  "tyres": { "mu_x": 1.8412, "mu_y": 1.9495, "load_sens": 0.1062, "radius_m": 0.36, "compound": "soft" }, "brakes": { "max_decel_g_mech": 5 }, "drivetrain_eff": 0.95,
+  "gearing": { "rpm_per_kmh": [82.97, 73.16, 64.52, 57.93, 49.38, 44.41, 38.54, 34.4], "shift_rpm": 12172 } }
 ```
 
 **Sim contract** `sim(physicalCar, trackId, conditions) → { lap_s, sectors_s: [3], vmax_kmh, speed_trap_kmh, vmin_kmh, energy: { deployed_mj, harvested_mj }, label }` (lap in real seconds).
 
-**BenchResult** `bench(design, { circuit = "silverstone", circuits, sim, conditions, calibration, session, mass_weight })` →
+**BenchResult** `bench(design, { circuit = "silverstone", circuits, sim = "auto", objective = "weekend", conditions, calibration, session, mass_weight, cache = true })` →
 `{ id, label, legal, violations: [{ id, article, value, limit, message }], physical, mass: { total_kg, parts_kg, ballast_kg, min_kg, front_share, cog_x_mm, cog_z_mm, izz_kgm2 }, aero: { df, cd, df_sm, cd_sm, balance, floor_stalled, stall_margin_mm, cooling_power_factor, cooling_capacity_over_need }, circuits: { <id>: SimResult }, weekend: { lap_s, pole_s, gap_to_pole_s, grid_position, field_size, score, label }, score }`.
-An illegal design gets no lap (`circuits: {}`, `score: null`), as in the lab (F-01.AC2). `score = pole_s − lap_s` (s; higher is
-better); `mass_weight` (default 0) can add an explicit penalty per kg above the minimum, off by default because the sim already
+Additive: `sim` ("physics" | "v0" | "custom"), `objective`, `weekend_model` (§0), `team`, `sim_label`.
+An illegal design gets no lap (`circuits: {}`, `score: null`), as in the lab (F-01.AC2). `score` = the weekend score with
+`objective: "weekend"`, else `pole_s − lap_s` (s; higher is better); `weekend.score` is always the pole margin; `mass_weight` (default 0) can add an explicit penalty per kg above the minimum, off by default because the sim already
 charges mass.
 
 **Lineage row** (one per generation; `lineage.jsonl`): `{ gen, id, parent, proposer, changes: [{ part, param, from, to, clamped }], hypothesis, score_before, score_after, delta_score, kept, legal, result: { score, lap_s, gap_to_pole_s, grid_position, mass_kg, ballast_kg, front_share, df, cd, cd_sm, circuits }, outcome, sigma, n_proposed, n_measured, n_illegal, candidates: [{ id, score, legal, violations?, error? }], label }`.
