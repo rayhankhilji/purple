@@ -14,21 +14,21 @@
 <body>
 <header class="top">
   <span class="brand">PURPLE</span>
-  <span class="sub">autonomous F1 research lab · built on Equation I · research agent through Mubit</span>
+  <span class="sub">agent-driven F1 research lab · built on Equation I · research agent through Mubit</span>
+  <div id="banner" role="alert" hidden></div>
   <span class="spacer"></span>
   <span id="tdBadge" class="badge td" hidden>TD-01 active · rear wing ≤ 20°</span>
   <span id="circuitBadge" class="badge" title="objective">silverstone · min lap</span>
   <span id="apiState" class="src"><span class="dot wait"></span>API 127.0.0.1:8787</span>
 </header>
-<div id="banner" role="alert" hidden></div>
 
 <main class="lab">
   <section class="col left">
     <div class="rail" id="rail" aria-label="stages">
-      <article class="card is-empty" id="card-design" data-stage="design"><div class="head"><span class="stage-name">Design</span><span class="state">empty</span></div><div class="body"></div><div class="foot"></div></article>
-      <article class="card is-empty" id="card-evaluate" data-stage="evaluate"><div class="head"><span class="stage-name">Evaluate</span><span class="state">empty</span></div><div class="body"></div><div class="foot"></div></article>
-      <article class="card is-empty" id="card-race" data-stage="race"><div class="head"><span class="stage-name">Race</span><span class="state">empty</span></div><div class="body"></div><div class="foot"></div></article>
-      <article class="card is-empty" id="card-learn" data-stage="learn"><div class="head"><span class="stage-name">Learn</span><span class="state">empty</span></div><div class="body"></div><div class="foot"></div></article>
+      <article class="card is-empty" id="card-design" data-stage="design"><div class="head"><span class="stage-name">Design</span><span class="state">empty</span></div><div class="body"></div><div class="srcbar"></div><div class="foot"></div></article>
+      <article class="card is-empty" id="card-evaluate" data-stage="evaluate"><div class="head"><span class="stage-name">Evaluate</span><span class="state">empty</span></div><div class="body"></div><div class="srcbar"></div><div class="foot"></div></article>
+      <article class="card is-empty" id="card-race" data-stage="race"><div class="head"><span class="stage-name">Race</span><span class="state">empty</span></div><div class="body"></div><div class="srcbar"></div><div class="foot"></div></article>
+      <article class="card is-empty" id="card-learn" data-stage="learn"><div class="head"><span class="stage-name">Learn</span><span class="state">empty</span></div><div class="body"></div><div class="srcbar"></div><div class="foot"></div></article>
     </div>
 
     <form class="panel cond" id="conditions" aria-label="conditions" autocomplete="off">

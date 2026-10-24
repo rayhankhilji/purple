@@ -24,7 +24,9 @@
     "exam:sheet": "node server/scenarios.js --try-sheet docs/try-models/sheet.md",
     "collect:dry": "node server/scripts/collect-dry.js",
     "snapshot": "node server/scripts/snapshot.js",
-    "exam:score": "node server/scenarios.js --score docs/try-models/sheet.md"
+    "exam:score": "node server/scenarios.js --score docs/try-models/sheet.md",
+    "concept": "node concept/cli.js",
+    "test:concept": "node --test test/concept.test.js test/concept-bench.test.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.137.0",

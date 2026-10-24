@@ -3,7 +3,7 @@
 // inside the repo root (real path + separator); a malformed percent-escape is a 400, not a crash.
 const http = require("http"), fs = require("fs"), path = require("path");
 const ROOT = fs.realpathSync(path.join(__dirname, "..")), PORT = parseInt(process.env.PURPLE_STATIC_PORT || "8788", 10);
-const ALLOW_FILES = new Set(["index.html"]), ALLOW_DIRS = new Set(["lab", "js", "css", "vendor", "assets", "docs"]);   // what index.html and lab/ load
+const ALLOW_FILES = new Set(["index.html"]), ALLOW_DIRS = new Set(["lab", "js", "css", "vendor", "assets", "docs", "concept"]);   // what index.html, lab/ and concept/ load
 const MIME = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".json": "application/json", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".svg": "image/svg+xml", ".webp": "image/webp", ".glb": "model/gltf-binary", ".gltf": "model/gltf+json", ".woff2": "font/woff2", ".woff": "font/woff", ".ttf": "font/ttf", ".mp3": "audio/mpeg", ".ogg": "audio/ogg", ".wav": "audio/wav", ".ico": "image/x-icon", ".txt": "text/plain; charset=utf-8", ".md": "text/markdown; charset=utf-8", ".bin": "application/octet-stream", ".hdr": "application/octet-stream" };
 const deny = (res, code, text) => { res.writeHead(code, { "Content-Type": "text/plain; charset=utf-8" }); res.end(text); };
 // url path -> { file, redirect } | { status, text }

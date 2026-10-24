@@ -16,18 +16,18 @@ Fixed facts the script is built on (all measured 2026-10-23/24, London):
 | Mubit task | "Research engineer of F1", `claude-haiku-4-5`, frozen prompt v1 | console Tasks, 23:58 |
 | Collection for v1 | 57 trained requests, 43 kept examples, status Training v1 | console Tasks, 23:58 |
 | Demo experiment | ledger id `01M5NHXH4RSEQ50VM955FK20B7`, rear wing 20° → 28° (+8°), Silverstone, dry | TASK_LOG 01:25 |
-| Predicted | +0.436 s (81.236 vs 80.800); sectors +0.207 / +0.118 / +0.110; top speed 328.2 → 320.3 km/h; Becketts minimum 212.5 → 223.5 km/h | evaluator (EVALUATE card, `integrator-screens/lab-1440-0505-merged.png`) |
-| Measured | +0.518 s (80.742 → 81.260); top speed 325.2 → 315.8; Becketts minimum 201.7 → 211.5; sectors 24.683 / 25.771 / 30.268 → 24.927 / 25.950 / 30.377 | race, seed 42, 3 laps, two identical neutral bots |
+| Predicted | +0.436 s in game seconds (81.236 vs 80.800; game time scale: 80.800 s = real 2026 pole 88.111 s, ×1.09 ≈ +0.475 s real scale); sectors +0.207 / +0.118 / +0.110; top speed 328.2 → 320.3 km/h; Becketts minimum 212.5 → 223.5 km/h | evaluator (EVALUATE card, `integrator-screens/lab-1440-0505-merged.png`) |
+| Measured | +0.518 s in game seconds (80.742 → 81.260); top speed 325.2 → 315.8; Becketts minimum 201.7 → 211.5; sectors 24.683 / 25.771 / 30.268 → 24.927 / 25.950 / 30.377 | race, seed 42, 3 laps, two identical neutral bots |
 | Agreement | 19 % (target ≤ 25 %) | ledger `agreement_pct` |
 | Agent on the demo experiment | verdict reject; next experiment rear_wing_deg decrease 4 | ledger row |
-| v1 collection (Friday) | 50 scenarios, 43 valid plans, 57 trained calls. Verdicts 40 reject / 3 retest / 0 promote; next parameter front_wing 39, rear_wing 4. **94 % of the candidates were themselves front-wing moves** (a PRNG seeding defect, fixed 01:45), so v1 learned from skewed data | TASK_LOG 23:35, 01:45 |
+| v1 collection (Friday) | 50 scenarios, 43 valid plans, 57 trained calls. Verdicts 40 reject / 3 retest / 0 promote; next parameter front_wing 39, rear_wing 4. **50 of 53 candidates were themselves front-wing moves** (a PRNG seeding defect, fixed 01:45), so v1 learned from skewed data | TASK_LOG 23:35, 01:45 |
 | Exam, provider, untrained | verdicts 20/20; next experiment (parameter + direction) 10/20. On the 8 Try-models items (sheet recomposed 04:40 after the wind-cap fix: exam-rw8, -14, -15, -02, -16, -20, -05, -12): verdicts 8/8, next experiment **2/8** (exam-rw8 and exam-12). On all 6 misses the evaluator's truth is a ride-height change; the provider proposed rear wing (5) or brake bias (1) instead | TASK_LOG 00:55, snapshot 0530-windcap-exam |
 | The rule | "Weigh straight-line drag against corner gain; judge on full-lap delta." | P2.T4 |
 | v2 collection (Saturday, 01:50) | 40 scenarios across all five parameters, rule R-01 in every input, promote-biased (0.3): 39 valid, 1 parse error. Evaluator truth promote 14 / retest 12 / reject 14; the agent's verdicts agreed on 38 of 39; its next parameter: ride_height 13, rear_wing 11, front_wing 7, brake_bias 6, ers 2 | TASK_LOG 01:50 |
-| Try-models set (P3.T1) | 8 of the 20 exam items: exam-rw8, -03, -02, -14, -15, -16, -20, -05 (`docs/try-models/sheet.md`); scored verdict n/8 and next-step n/8 by `npm run exam:score` | EVAL |
+| Try-models set (P3.T1) | 8 of the 20 exam items: exam-rw8, -14, -15, -02, -16, -20, -05, -12 (`docs/try-models/sheet.md`); scored verdict n/8 and next-step n/8 by `npm run exam:score` | EVAL |
 | Grid race (F-10) | `index.html?lab=1&mode=grid&driver=VER&…`, VER P7 → P14 at seed 42, caption "Cinematic · mixes car and driver · Max Verstappen in the candidate car · reduced-order lap model" | GAME.md 02:55 |
 | TD-01 | rear wing capped at 20°; label "Technical directive TD-01: rear wing capped at 20°" | `aero.describeViolation` |
-| Monza | rear wing +8° costs +0.757 s there vs +0.436 s at Silverstone | evaluator |
+| Monza | rear wing +8° costs +0.757 game s ≈ +0.808 s there (real 2026 pole 81.786 s = 76.650 s game time) vs +0.436 game s ≈ +0.475 s at Silverstone | evaluator |
 
 ## Running order
 
@@ -46,7 +46,7 @@ Fixed facts the script is built on (all measured 2026-10-23/24, London):
 
 ### 0:00–0:20 — Hook and disclosure (G-HON-04)
 
-**On screen:** `lab/index.html` at 1440×900. Stage rail DESIGN · EVALUATE · RACE · LEARN, all dim. 3D car on the three-quarter rear hero angle, baseline setup (rear wing 20°). Mubit widget top-right (orange rule): task "Research engineer of F1", kept examples [≈ 80 after v2; 43 at 23:58], adapter v1 [+ v2], exam `provider 20/20 verdicts · 10/20 next-step`.
+**On screen:** `lab/index.html` at 1440×900. Stage rail DESIGN · EVALUATE · RACE · LEARN, all dim. 3D car on the three-quarter rear hero angle, baseline setup (rear wing 20°). Mubit widget top-right (orange rule): task "Research engineer of F1", kept examples **FILL kept-after-v2** (43 at 23:58), adapter **FILL v1-result** / **FILL v2-result**, exam `provider 20/20 verdicts · 10/20 next-step`.
 
 **Say:** "Can a model learn from an engineer's correction and make better decisions next time? This is PURPLE, an F1 setup research lab that chases purple sectors. It sits on Equation I, a browser F1 game our team built before this weekend. The lab, the evaluator and the Mubit research agent are new tonight."
 
@@ -62,9 +62,9 @@ Fixed facts the script is built on (all measured 2026-10-23/24, London):
 
 ### 0:45–1:05 — EVALUATE (G-HON-01)
 
-**On screen:** EVALUATE card: lap **+0.436 s** (81.236 vs 80.800), three sector cells all grey-red (+0.207 / +0.118 / +0.110), vmax 320 vs 328 km/h, vmin 224 vs 213 km/h, `legal`. Label under the numbers: "reduced-order lap model · calibrated to 2026 pole laps · aero map v1".
+**On screen:** EVALUATE card: lap **+0.436 s** (81.236 vs 80.800), three sector cells all grey-red (+0.207 / +0.118 / +0.110), vmax 320 vs 328 km/h, vmin 224 vs 213 km/h, `legal`. Label under the numbers: "reduced-order lap model · calibrated to 2026 pole laps · aero map v1 · vmin at … · game time scale · real 2026 pole 88.111 s = 80.800 s (×1.090) · Δ in game seconds".
 
-**Say:** "The evaluator is the game's own lap model, reduced-order, calibrated so the neutral car laps Silverstone in 80.800, the game's pole-anchored limit lap. It says: eleven km/h faster through Becketts, eight slower on the straights, and the lap is four tenths slower. The agent agreed: reject, and try less wing next. Now we check it in the race."
+**Say:** "The evaluator is the game's own lap model, reduced-order, calibrated so the neutral car laps Silverstone in 80.800 game seconds, which the game maps to the real 2026 pole of 88.111. It says: eleven km/h faster through Becketts, eight slower on the straights, and the lap is four tenths slower. The agent agreed: reject, and try less wing next. Now we check it in the race."
 
 **Trigger:** none; the evaluation arrives on the same SSE `plan` event as the DESIGN card.
 
@@ -72,7 +72,7 @@ Fixed facts the script is built on (all measured 2026-10-23/24, London):
 
 **On screen:** Press **Race it**. The game iframe opens in broadcast mode, TV camera, two cars: baseline (Williams livery) and candidate (McLaren livery), identical neutral drivers, seed 42, 3 laps. **Video cut:** start, one pass through Maggotts–Becketts, one pass down the Hangar Straight, then the finish (a real-time 3-lap race is over four minutes). RACE card fills: measured **+0.518 s**, agreement **19 %**, Becketts minimum 201.7 → 211.5 km/h, top speed 325.2 → 315.8 km/h, sectors 24.683 / 25.771 / 30.268 vs 24.927 / 25.950 / 30.377. Label: "measured in race, seed 42". Ledger row `01M5NHXH…` gains the measured column.
 
-**Say:** "Same driver, same seed, baseline against candidate. Measured: half a second slower. The model said four tenths; a nineteen percent gap, inside our twenty-five percent target. Faster through Becketts, as predicted, but every sector slower on the clock: the drag bill comes due on every straight. No purple sector today, and the agent knew that before the race."
+**Say:** "Same driver, same seed, baseline against candidate. Measured: half a second slower. The model said four tenths; a nineteen percent gap, inside our twenty-five percent target. Faster through Becketts, the direction the model predicted, but every sector slower on the clock: the drag bill comes due on every straight. No purple sector today, and the agent knew that before the race."
 
 **Trigger:** **Race it** builds the `?lab=1&exp=01M5NHXH4RSEQ50VM955FK20B7&seed=42&laps=3&circuit=silverstone&…` URL; the game posts `purple:result`; the lab page forwards it to `POST /api/race/result`. For the recording use the race already in the ledger, or re-run it on a laptop GPU (real time); under software GL the game runs at about a tenth of real time.
 
@@ -80,9 +80,9 @@ Fixed facts the script is built on (all measured 2026-10-23/24, London):
 
 ### 1:35–2:10 — LEARN: what v1 learned, the rule, v2 (G-HON-03)
 
-**On screen:** Ledger, newest first, scrolled to the Friday rows: change column shows front-wing moves almost everywhere; verdict column `reject`. Widget exam line: `provider 20/20 verdicts · 10/20 next-step`. Open **Overrule** on the demo experiment: verdict stays **reject**, reason "Weigh straight-line drag against corner gain; judge on full-lap delta." Submit. A rule chip appears on the row (R-01 is already on this experiment from the first overrule at 01:45; a live re-enactment adds a second chip with the same text; say "the rule", not an id). LEARN card lights. Press **Run next**: the new trace line's input carries the rule under `rules`. Cut to the Saturday rows in the ledger: changes across ride height, rear wing, brake bias; verdicts now include `promote`. Then console → Adapters: v1 [result], v2 [status / result].
+**On screen:** Ledger, newest first, scrolled to the Friday rows: change column shows front-wing moves almost everywhere; verdict column `reject`. Widget exam line: `provider 20/20 verdicts · 10/20 next-step`. Open **Overrule** on the demo experiment: verdict stays **reject**, reason "Weigh straight-line drag against corner gain; judge on full-lap delta." Submit. A rule chip appears on the row (R-01 is already on this experiment from the first overrule at 01:45; a live re-enactment adds a second chip with the same text; say "the rule", not an id). LEARN card lights. Press **Run next**: the new trace line's input carries the rule under `rules`. Cut to the Saturday rows in the ledger: changes across ride height, rear wing, brake bias; verdicts now include `promote`. Then console → Adapters: v1 **FILL v1-result**, v2 **FILL v2-result**.
 
-**Say:** "The verdict was right. The next experiment is where the agent is weak: on twenty held-out scenarios it gets twenty of twenty verdicts and ten of twenty next steps. Version one also learned from our mistake: a seeding bug made ninety-four percent of Friday's candidates front-wing moves. We fixed the generator. The engineer kept the verdict and wrote the rule: weigh straight-line drag against corner gain, judge on the full-lap delta. The rule enters every later task input. Forty new scenarios across all five parameters, verdicts agreeing with the evaluator on thirty-eight of thirty-nine. Those kept examples train version two. That is rule-conditioned learning."
+**Say:** "The verdict was right. The next experiment is where the agent is weak: on twenty held-out scenarios it gets twenty of twenty verdicts and ten of twenty next steps. Version one also learned from our mistake: a seeding bug made fifty of Friday's fifty-three candidates front-wing moves. We fixed the generator. The engineer kept the verdict and wrote the rule: weigh straight-line drag against corner gain, judge on the full-lap delta. The rule enters every later task input. Forty new scenarios across all five parameters, verdicts agreeing with the evaluator on thirty-eight of thirty-nine. Those kept examples are what version two trains on. That is rule-conditioned learning."
 
 **Trigger:** `POST /api/overrule { experiment_id, verdict: "reject", reason }` → rule active → next `POST /api/plan` input includes it. v2 was collected at 01:50 with `npm run collect -- --n 40 --with-rules --promote-bias 0.3 --confirm-trained --seed 2` (not live in the video; show the ledger rows and the Adapters page).
 
@@ -92,9 +92,9 @@ Fixed facts the script is built on (all measured 2026-10-23/24, London):
 
 ### 2:10–2:35 — Try models (G-HON-06)
 
-**On screen:** Console → Try models, **Side by side**: provider on the left, the adapter version on the right, the same held-out scenario pasted as the user message only (the task adds its own instructions). Scenario to show: `exam-rw8`, the demo premise itself (truth: reject, next step rear wing decrease), then one of the five retest items (`exam-14`, rear wing −4°, truth retest / ride height decrease). Then the widget score line: next step provider 2/8 · v1 [n/8] · v2 [n/8]; verdict provider 8/8 · v1 [n/8] · v2 [n/8]. Always n/8, never a percentage.
+**On screen:** Console → Try models, **Side by side**: provider on the left, the adapter version on the right, the same exam scenario pasted as the user message only (the task adds its own instructions). Scenario to show: `exam-rw8`, the demo premise itself (truth: reject, next step rear wing decrease), then one of the five retest items (`exam-14`, rear wing −4°, truth retest / ride height decrease). Then the widget score line: next step provider 2/8 · v1 **FILL v1-next** · v2 **FILL v2-next**; verdict provider 8/8 · v1 **FILL v1-verdict** · v2 **FILL v2-verdict**; without exam-rw8: next step provider 1/7 · v1 **FILL v1-next /7** · v2 **FILL v2-next /7**, verdict provider 7/7 · v1 **FILL v1-verdict /7** · v2 **FILL v2-verdict /7**. exam-rw8 is the demo experiment; its call is in v2's recorded data, so it is not held out for v2. Always n/8 and n/7, never a percentage.
 
-**Say:** "Same unseen scenario to provider, version one and version two. Verdicts tie by design, the prompt states the thresholds; the score that matters is the next experiment. On eight hard held-out scenarios the provider gets two next steps in eight: every miss wanted ride height and it reached for the rear wing. Version one: [n of eight]. Version two: [n of eight]."
+**Say:** "Same scenario to provider, version one and version two. This one is our demo experiment, so its call is in version two's recorded data: it is not held out for version two, and we also score the sheet without it. Verdicts tie by design, the prompt states the thresholds; the score that matters is the next experiment. On eight hard exam scenarios the provider gets two next steps in eight: every miss wanted ride height and it reached for the rear wing. Version one: **FILL v1-next** of eight. Version two: **FILL v2-next** of eight, **FILL v2-next /7** of seven without the demo experiment."
 
 **Trigger:** none in the lab; P3.T1 by hand per `docs/try-models/README.md` (sheet `docs/try-models/sheet.md`: exam-rw8, -14, -15, -02, -16, -20, -05, -12; five retests, two rejects, one promote), scored with `npm run exam:score`, which prints the `POST /api/status` body. Only a version marked `Passed` can be tried.
 
@@ -112,7 +112,7 @@ Fixed facts the script is built on (all measured 2026-10-23/24, London):
 
 **On screen:** Grid race (P3.T3, merged): Verstappen in the candidate car on the real 2026 British GP grid, TV camera, lights out; the game's own caption bottom-left "Cinematic · mixes car and driver · Max Verstappen in the candidate car · reduced-order lap model" stays in frame (G-HON-05). URL and settings: `docs/agents/lanes/GAME.md` "How to film it", Shot B. Fallback: hold on the RACE card with the measured numbers and the ledger.
 
-**Say:** "A research agent that proposes experiments, a deterministic evaluator that grades them, a race that checks the evaluator, and an engineer whose corrections become the next version of the model, scored on a held-out exam. PURPLE."
+**Say:** "A research agent that proposes experiments, a deterministic evaluator that grades them, a race that checks the evaluator, and an engineer whose corrections enter every later input as rules, with the recorded calls training the next version, scored on an exam. PURPLE."
 
 **Trigger:** none.
 
@@ -128,8 +128,8 @@ Fixed facts the script is built on (all measured 2026-10-23/24, London):
 ## Self-check against EVAL_GUARDRAILS §5
 
 - G-HON-01: every number shot carries its label (EVALUATE, RACE, Try models, Monza).
-- G-HON-02: the words CFD, wind tunnel, validated, aerodynamically tested do not appear. "Calibrated" is the only quality word, and it describes what was done (80.800 s anchor).
-- G-HON-03: the spoken 1:35 line says rule → every later task input → answers → "those kept examples train version two", and names "rule-conditioned learning".
+- G-HON-02: the words CFD, wind tunnel, validated, aerodynamically tested do not appear. "Calibrated" is the only quality word, and it describes what was done (80.800 s game time = real 2026 pole 88.111 s).
+- G-HON-03: the spoken 1:35 line says rule → every later task input → answers → "those kept examples are what version two trains on", and names "rule-conditioned learning".
 - G-HON-04: disclosure at 0:00–0:20 and on slide 2.
 - G-HON-05: grid footage captioned "cinematic — mixes car and driver"; the result is the baseline-vs-candidate race.
-- G-HON-06: exam scores are spoken and shown as counts (ten of twenty, n/8), never "half" or %.
+- G-HON-06: exam scores are spoken and shown as counts (ten of twenty, n/8, n/7 without exam-rw8), never "half" or %.
