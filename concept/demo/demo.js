@@ -12,7 +12,7 @@
 (function () {
   // ---------------------------------------------------------------- the one place to update the Mubit model status (integrator)
   const MUBIT_MODEL = {
-    text: "Mubit model: v1 trained on 98 examples · failed Mubit's test (5/19) · 751 physics-approved examples sent for v2",
+    text: "Mubit model: v1 trained on 98 examples · failed Mubit's test (5/19) · 2,609 physics-approved examples sent for v2",
     source: "Mubit console, owner screenshots 2026-10-24",
   };
   const LIVE_CALLS = 12;   // designer calls per live run (record_good: up to one trained re-send each; the server checks budget and caps)
@@ -178,7 +178,7 @@
     es.onerror = () => { if (es.readyState === 2 && S.status === "running") { S.status = "done"; S.error = S.error || "the stream closed"; renderAll(); } };
   }
   function setProgress(n, text) { S.progress = { n, text }; renderProgress(); }
-  async function stopRun() { if (S.run && S.status === "running") { try { await getJson(API + "/api/concept/engine/run/" + S.run.run_id + "/stop", { method: "POST" }); } catch (e) { /* the stream ends anyway */ } } }
+  async function stopRun() { if (S.run && S.status === "running") { try { await getJson(API + "/api/concept/engine/run/" + S.run.run_id + "/stop", { method: "POST", headers: { "content-type": "application/json" }, body: "{}" }); } catch (e) { /* the stream ends anyway */ } } }
   function stopAll() { S.playing = false; clearTimeout(S.timer); if (S.es) { try { S.es.close(); } catch (e) { /* closed */ } S.es = null; } S.progress = null; }
   async function probeLive() {
     try {

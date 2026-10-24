@@ -18,24 +18,33 @@ test("mubit-first: the lab loads it after the layout, Mubit is the default view,
   assert.match(html, /id="raceLink" href="\.\.\/race\/\?mode=quali"/, "watch on Silverstone opens the Qualifying lap mode");
 });
 
-test("mubit-first: the browser never calls Mubit; Go live is the demo's record_good engine run with 12 / 40 / 120 calls", () => {
+test("mubit-first: the browser never calls Mubit; Go live is a record_good (kept) engine run of 5 / 10 / 20 parallel rounds × 4 ideas", () => {
   const js = read("concept/lab/mubit-first.js"), lab = read("concept/lab/concept-lab.js");
   for (const [f, s] of [["mubit-first.js", js], ["concept-lab.js", lab]]) assert.doesNotMatch(s, /api\.mubit\.ai|api\.anthropic\.com|@anthropic-ai\/sdk/, f);
   assert.match(js, /\/api\/concept\/engine\/run/);
-  assert.match(js, /llm: "live", record_good: true, confirm: "trained", confirm_text: "TRAIN " \+ n, max_calls: n/);
-  assert.match(js, /const LIVE_CHOICES = \[12, 40, 120\];/);
-  assert.match(js, /liveN: 12/, "12 calls by default");
+  assert.match(js, /const rounds = S\.liveN, n = rounds \* IDEAS;/);
+  assert.match(js, /\{ mode: "engineer", team: "redbull", ideas: IDEAS, rounds, max_calls: n, variants: LIVE_SCREEN\.variants, confirm_k: LIVE_SCREEN\.confirm_k, explore: LIVE_SCREEN\.explore \}/);
+  assert.match(js, /llm: "live", record_good: "kept", confirm: "trained", confirm_text: "TRAIN " \+ n,/);
+  assert.match(js, /const LIVE_CHOICES = \[5, 10, 20\];/);
+  assert.match(js, /const IDEAS = 4;/);
+  assert.match(js, /const LIVE_SCREEN = \{ variants: 600, confirm_k: 8, explore: 2 \};/);
+  assert.match(js, /liveN: 10/, "10 rounds (40 Mubit calls) by default");
+  // the cards: verdict = what physics did with the idea; the as-written lap is secondary; the training chip follows the kept rule
+  for (const s of ["✓ kept ", "✓ faster car ", "✗ no faster car", "✗ illegal: ", "as written: ", "→ Mubit training example", "correction: back to Claude", " ideas from ", "asking ", "testing ", "driving ", "stopped at the time limit after "]) assert.ok(js.includes(s), s);
+  assert.doesNotMatch(js, /correction: not trained|✗ slower /, "the old wording that read as failure is gone");
   assert.match(js, /engine_open/, "no passcode needed when the site opens the engine");
   assert.match(lab, /mode: "quali", lap_s: lapOf\(S\.bestResult\)/, "watch on Silverstone: Qualifying lap with the car and lap on screen");
 });
 
 test("mubit-first: the Mubit numbers match their sources (harvest count, model status), scores as n/N", () => {
   const js = read("concept/lab/mubit-first.js");
-  const good = read("docs/concept/loop-runs/trained-harvest/good.jsonl").split("\n").filter(l => l.trim()).length;
+  const dirs = ["trained-harvest", "trained-harvest-2"];
+  const good = dirs.map(d => read("docs/concept/loop-runs/" + d + "/good.jsonl").split("\n").filter(l => l.trim()).length).reduce((a, b) => a + b, 0);
+  const decisions = dirs.map(d => +(/([\d,]+) Claude decisions/.exec(read("docs/concept/loop-runs/" + d + "/README.md"))[1].replace(/,/g, ""))).reduce((a, b) => a + b, 0);
   const m = /harvest: \{ examples: (\d+), decisions: (\d+)/.exec(js);
   assert.ok(m, "MUBIT.harvest");
-  assert.equal(+m[1], good, "751 physics-approved examples = good.jsonl rows");
-  assert.match(read("docs/concept/loop-runs/trained-harvest/README.md"), new RegExp(Number(m[2]).toLocaleString("en-GB") + " Claude decisions, " + m[1] + " physics-approved"));
+  assert.equal(+m[1], good, "physics-approved examples = good.jsonl rows of both harvests");
+  assert.equal(+m[2], decisions, "Claude decisions = the harvest READMEs");
   assert.match(js, /98 examples · Mubit test 5\/19, not passed/);
   assert.match(js, /model_source: "Mubit console, 24 Oct"/);
   const banned = new RegExp(["\\bC" + "FD\\b", "wind" + " tunnel", "valid" + "ated"].join("|"), "i");

@@ -98,7 +98,7 @@
     if (seat) { const t = TEAMS.find(x => x.id === seat || x.name === seat || x.code === seat); if (t) return t; }
     return TEAMS.find(t => (t.drivers || []).includes(code)) || null;
   }
-  const REAL_LABEL = "real 2026 British GP qualifying (FIA/formula1.com via js/data/racepace2026.js)";
+  const REAL_LABEL = "real 2026 British GP qualifying (OpenF1 / formula1.com)";
 
   // ---- state
   // Two sources share one layout: "mubit" (the default view: the autonomous engineer, driven by Mubit; its data comes from

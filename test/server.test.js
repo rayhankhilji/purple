@@ -244,13 +244,14 @@ test("audit 2: npm run collect requires --confirm-trained, caps --n at 60, print
   assert.equal(fs.readFileSync(path.join(dir, "calls.jsonl"), "utf8").trim().split("\n").length, 251);
   r = run(["--n", "1", "--data", dir, "--confirm-trained"], { PURPLE_TRAINED_BUDGET: "300" }); assert.equal(r.status, 0, r.stderr); assert.match(r.stdout, /trained budget 50 of 300 remaining/);
 });
-test("audit 7: callMubit runs at most 2 calls at once, process-wide (withSlot)", async () => {
-  const { withSlot, SLOTS, inFlight } = require("../server/mubit.js"); assert.equal(SLOTS, 2);
+test("audit 7: callMubit runs at most 8 calls at once, process-wide (withSlot; owner 2026-10-24: ≤ 8 per engine run)", async () => {
+  const { withSlot, SLOTS, inFlight } = require("../server/mubit.js"); assert.equal(SLOTS, 8);
   let now = 0, peak = 0; const order = [];
   const job = i => withSlot(async () => { now++; peak = Math.max(peak, now); order.push("start " + i); await new Promise(r => setTimeout(r, 15)); now--; order.push("end " + i); if (i === 3) throw new Error("boom " + i); return i; });
-  const results = await Promise.allSettled([0, 1, 2, 3, 4].map(job));
-  assert.equal(peak, 2); assert.equal(inFlight(), 0); assert.deepEqual(results.map(r => r.status), ["fulfilled", "fulfilled", "fulfilled", "rejected", "fulfilled"]); assert.equal(results[4].value, 4);
-  assert.deepEqual(order.slice(0, 2), ["start 0", "start 1"]); assert.ok(order.indexOf("start 2") > order.indexOf("end 0") || order.indexOf("start 2") > order.indexOf("end 1"));
+  const ids = Array.from({ length: 10 }, (_, i) => i);
+  const results = await Promise.allSettled(ids.map(job));
+  assert.equal(peak, 8); assert.equal(inFlight(), 0); assert.deepEqual(results.map(r => r.status), ids.map(i => (i === 3 ? "rejected" : "fulfilled"))); assert.equal(results[9].value, 9);
+  assert.deepEqual(order.slice(0, 8), ids.slice(0, 8).map(i => "start " + i)); assert.ok(order.indexOf("start 8") > Math.min(...ids.slice(0, 8).map(i => order.indexOf("end " + i))));
   // a slot survives a throwing job: the queue keeps draining
   assert.equal(await withSlot(async () => "after"), "after"); assert.equal(inFlight(), 0);
 });

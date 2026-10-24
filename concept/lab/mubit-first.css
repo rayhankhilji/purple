@@ -53,6 +53,25 @@ body.exam-on .mubit-only, body.eng2-on .mubit-only { display: none !important; }
 .mu-prog { flex: none; margin: 8px 12px 0; padding: 5px 10px; border: 1px solid rgba(255, 69, 0, .4); border-radius: var(--r); background: rgba(255, 69, 0, .06); font: 500 12px/1.3 var(--sans); color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mu-prog[hidden] { display: none; }
 .mu-prog b { color: var(--mubit); font-weight: 600; }
+/* a parallel round: the stage strip (asking → testing → driving → kept) and one chip per idea */
+.mu-prog.rounds { white-space: normal; padding: 6px 10px 7px; }
+.mu-st-l { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 6px; white-space: nowrap; }
+.mu-st { color: var(--muted); }
+.mu-st.done { color: var(--text); }
+.mu-st.now { color: var(--text); font-weight: 600; }
+.mu-st.now:not(.good):not(.bad)::after { content: ""; display: inline-block; width: 6px; height: 6px; margin-left: 5px; border-radius: 50%; background: var(--mubit); vertical-align: 1px; animation: mu-pulse 1s ease-in-out infinite; }
+.mu-st.good { color: var(--green); font-weight: 600; }
+.mu-st.bad { color: var(--muted); font-weight: 600; }
+.mu-st-arr { color: var(--muted); }
+.mu-ideas { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+.mu-idea { min-width: 0; max-width: 100%; padding: 1px 8px; border: 1px dashed var(--line); border-radius: 999px; font: 500 11px/1.4 var(--sans); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mu-idea.in { border-style: solid; border-color: rgba(255, 69, 0, .45); color: var(--text); }
+.mu-idea.good { border-color: rgba(74, 222, 128, .55); }
+.mu-idea.bad { border-color: var(--line); color: var(--muted); }
+.mu-idea.win { background: rgba(74, 222, 128, .12); border-color: var(--green); }
+.mu-idea-f { color: var(--mubit); font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .mu-st.now::after { animation: none; } }
+.mu-seg-l { font: 500 11px/1 var(--sans); color: var(--muted); }
 
 /* hero: the timing line under the car, the decision badge */
 .hero-bl .mu-time { font: 500 12px/1.35 var(--mono); color: var(--text); pointer-events: auto; }
@@ -72,6 +91,16 @@ body.exam-on .mubit-only, body.eng2-on .mubit-only { display: none !important; }
 .mu-hyp { margin-top: 3px; font: 400 12px/1.38 var(--sans); color: var(--text); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .mu-chg { margin-top: 2px; font: 500 11.5px/1.4 var(--sans); color: #c9c9d2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mu-chg .k { color: var(--muted); }
+.mu-asw { margin-top: 1px; font: 400 11px/1.3 var(--sans); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mu-focus { color: #8f8fa0; }
+/* a round's header on top of its cards (the feed is newest first) */
+.mu-rwrap { border-top: 1px solid rgba(255, 69, 0, .35); }
+.mu-round { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; padding: 5px 12px 3px; font: 500 11.5px/1.3 var(--sans); color: var(--muted); background: rgba(255, 69, 0, .05); }
+.mu-round-t { white-space: nowrap; }
+.mu-round b { color: var(--mubit); font-weight: 600; }
+.mu-round .spacer { flex: 1 1 auto; }
+.mu-round-r { white-space: nowrap; }
+.mu-round-r.good { color: var(--green); font-weight: 600; }
 .mu-l3 { margin-top: 4px; display: flex; align-items: center; gap: 8px; min-width: 0; }
 .mu-eng { min-width: 0; font: 500 11px/1.3 var(--sans); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mu-eng.kept { color: var(--purple); }
@@ -98,5 +127,10 @@ body.exam-on .mubit-only, body.eng2-on .mubit-only { display: none !important; }
 }
 @media (max-width: 560px) {
   .mustrip { grid-template-columns: 1fr; padding: 8px 16px 0; }
+  .mctl { flex: 1 1 100%; min-width: 0; flex-wrap: wrap; }
+  .mu-golive-g { flex-wrap: wrap; padding-left: 0; border-left: none; }
   .mu-ctr-s, .mu-ctr-tot, .mu-model-l { white-space: normal; }
 }
+
+/* the floating part tag repeats the "last kept change" callout and collided with the 3D view caption: hidden in the Mubit view */
+body.mubit-on .cv-tags { display: none !important; }

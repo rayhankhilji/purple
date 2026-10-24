@@ -66,8 +66,10 @@ function deploy(extra) {
 const MAX_DURATION_S = 300;                  // vercel.json functions["api/index.js"].maxDuration (Fluid compute)
 const intEnv = (k, d) => { const v = parseInt(process.env[k], 10); return Number.isInteger(v) && v >= 0 ? v : d; };
 const LIMITS = {
-  live_calls_per_ip_hour: intEnv("PURPLE_LIVE_PER_IP_HOUR", 30),       // Mubit calls (reserved up front: iterations / max_calls / n)
-  live_calls_global_hour: intEnv("PURPLE_LIVE_GLOBAL_HOUR", 120),
+  // Mubit calls (reserved up front: iterations / max_calls / n; an engine run with parallel rounds reserves ideas × rounds). 30 / 120
+  // -> 160 / 800 on 2026-10-24: Go live is 10 rounds × 4 ideas = 40 calls (20 rounds = 80), so one visitor can run it twice an hour
+  live_calls_per_ip_hour: intEnv("PURPLE_LIVE_PER_IP_HOUR", 160),
+  live_calls_global_hour: intEnv("PURPLE_LIVE_GLOBAL_HOUR", 800),
   cpu_runs_per_ip_hour: intEnv("PURPLE_CPU_RUNS_PER_IP_HOUR", 6),      // engine speed / auto runs (each can use a whole function invocation)
   cpu_runs_global_hour: intEnv("PURPLE_CPU_RUNS_GLOBAL_HOUR", 30),
   // exam grades (POST /api/concept/exam/grade): ~1-3 s of one vCPU each, so their own bucket; the defaults are 15x / 10x the engine-run
@@ -301,10 +303,17 @@ function create() {
     // engine v2 resume: the state is too large for a stream ticket, so a resumed run is only served by the instance that took the POST
     if (b.mode === "engineer" && (b.resume_state != null || b.resume_from != null) && live) return envelope(c, 400, "BAD_INPUT", "resuming a LIVE engineer run is not available on Vercel (a live run starts where its stream is opened, and the saved state does not fit in the stream ticket): resume it locally with npm run dev, or start a new live run");
     if (b.mode === "speed" || b.mode === "auto" || b.mode === "engineer") { const no = reserve(c, "cpu", 1); if (no) return no; }
-    // record_good: up to one trained re-send per designer call, so twice the calls are reserved
-    if (live) { const no = reserve(c, "live", (isInt(b.max_calls) ? b.max_calls : b.trained === true || b.record_good === true ? 10 : 20) * (b.mode === "engineer" && b.record_good === true ? 2 : 1)); if (no) return no; }
+    // the engine stops cleanly before a round (or decision) that would end after the time box ("stopped at the time limit after N
+    // rounds"), a few seconds before this instance's own hard stop below (host), so the re-score of the best car still fits
+    if (b.mode === "engineer") b.time_box_s = Math.max(10, LIMITS.time_box_s - 10);
+    // parallel rounds (ideas > 1): ideas × rounds designer calls are reserved (the trained re-sends of kept ideas are counted by the
+    // project's trained-call budget, checked by the engine route). One idea at a time with record_good: up to one trained re-send per
+    // designer call, so twice the calls are reserved
+    const ideas = isInt(b.ideas) && b.ideas > 1 ? b.ideas : 1;
+    const liveCalls = b.mode === "engineer" && ideas > 1 && isInt(b.rounds) ? ideas * b.rounds : (isInt(b.max_calls) ? b.max_calls : b.trained === true || b.record_good ? 10 : 20) * (b.mode === "engineer" && b.record_good && ideas === 1 ? 2 : 1);
+    if (live) { const no = reserve(c, "live", liveCalls); if (no) return no; }
     const tb = b.mode === "engineer" && (b.resume_state != null || b.resume_from != null) ? Object.assign({}, b, { resume_state: undefined, resume_from: undefined, resumed_elsewhere: true }) : b;
-    const res = await forward(c, { body: JSON.stringify(b), edit: withTicket("engine", tb, live), live, note: b.mode === "speed" ? "speed run on one vCPU, time-boxed to " + LIMITS.time_box_s + " s on Vercel (stops cleanly and re-scores the best car so far)" : b.mode === "engineer" ? "engine v2 on one vCPU, time-boxed to " + LIMITS.time_box_s + " s on Vercel: it stops cleanly between decisions; the final event carries a resumable state" : undefined });
+    const res = await forward(c, { body: JSON.stringify(b), edit: withTicket("engine", tb, live), live, note: b.mode === "speed" ? "speed run on one vCPU, time-boxed to " + LIMITS.time_box_s + " s on Vercel (stops cleanly and re-scores the best car so far)" : b.mode === "engineer" ? "engine v2 on one vCPU, time-boxed to " + LIMITS.time_box_s + " s on Vercel: it stops cleanly between rounds (or decisions) before the time limit; the final event carries a resumable state" : undefined });
     const j = await res.clone().json().catch(() => null);
     if (j && j.ok) { const r = api.engine.runs.get(j.data.run_id); if (r) { if (live) defer("engine", r); else host("engine", r, false); } }
     return res;

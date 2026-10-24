@@ -36,7 +36,7 @@ Mubit then takes only the physics-approved decisions and trains a smaller model 
   - the concept designer (Claude Haiku 4.5, frozen prompt);
   - the research engineer from the first night.
 - **Trained calls:** 2,022 designer + 99 research.
-- **Physics-approved training examples:** 751, taken from 8,933 designer decisions. Every call is first made untrained. Only the ones physics approves are sent again as trained calls; the model answers at temperature 0, so it gives the same answer.
+- **Physics-approved training examples:** 2,609, taken from 31,285 designer decisions. Every call is first made untrained. Only the ones physics approves are sent again as trained calls; the model answers at temperature 0, so it gives the same answer.
 
 ## Results
 
@@ -63,7 +63,7 @@ All lap times come from our physics lap sim of Silverstone. They are model predi
 | Version | Trained on | Mubit's own test | Status |
 |---|---|---|---|
 | v1 | 98 examples | 5/19, not passed | Mubit kept Claude answering |
-| v2 | the 751 physics-approved examples | — | examples sent; waiting for Mubit to train |
+| v2 | the 2,609 physics-approved examples | — | examples sent; waiting for Mubit to train |
 
 Source: Mubit console, 24 October.
 

@@ -51,6 +51,8 @@
     drawer.hidden = !S.open; btn.classList.toggle("on", S.open);
     if (S.open) health();
   }
+  // Escape closes the drawer (as the Engine drawer does)
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && S.open) toggle(false); });
   async function api(path, init) {
     const res = await fetch(API + path, init); const j = await res.json().catch(() => null);
     if (!j || !j.ok) throw new Error((j && j.error && j.error.message) || ("HTTP " + res.status));

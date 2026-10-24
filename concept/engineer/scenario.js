@@ -24,6 +24,10 @@
 //                     that is illegal on its own at that head (or the combination), and its legal range for the CURRENT head),
 //     legal_range: { <part>: { <param>: "lo-hi" } }  (every parameter whose legal range for the current head, one parameter at a time
 //                     with the rest held, is narrower than the model domain because of an FIA article or a model rule) }
+// FOCUS (parallel rounds, opts.ideas K > 1 in concept/engineer/engine.js): the K calls of one round share the head car and the state,
+// so at temperature 0 identical text would give identical answers; each call's scenario therefore starts with one more fact,
+// focus: "<area of the car>" (FOCUS below, one per slot). Only the user message changes; the frozen task never does. Without a focus
+// the text is byte for byte what it was.
 // ≤ CORRECTIONS.chars (1,400). Trimmed: legal_range entries already in `near`, illegal lines to 2, the widest legal ranges, rejected
 // lines to 2, illegal / rejected to 1, the least-tried parts. Facts only, like the rest of the scenario (no instruction words).
 "use strict";
@@ -54,7 +58,15 @@ function build(o) {
   const rows = (o.decisions || []).slice(-L.tested).map(testedRow);
   const last = (o.decisions || [])[(o.decisions || []).length - 1], lt = rows[rows.length - 1];
   if (last && lt && last.moves) { if (last.moves.gain && last.moves.gain.length) lt.gain = last.moves.gain.slice(0, 2); if (last.moves.loss && last.moves.loss.length) lt.loss = last.moves.loss.slice(0, 2); }
-  return { best: b.best, tree: o.tree.state(), tested: rows, near: b.near };
+  return Object.assign(o.focus ? { focus: String(o.focus) } : {}, { best: b.best, tree: o.tree.state(), tested: rows, near: b.near });
+}
+// the areas of the car a parallel round spreads its K calls over (slot i -> FOCUS[i]); K ≤ 4 uses the first four, rotated by round
+// so every area comes up; K = 5-8 adds four more, all distinct (identical lines would give identical answers at temperature 0)
+const FOCUS = ["front wing and nose", "rear wing and diffuser", "floor, sidepods and cooling", "suspension, set-up and gearbox", "ballast, wheelbase and survival cell", "engine cover, cooling and sidepods", "front wing and floor", "rear wing and set-up"];
+function focusFor(round, n, K) {
+  const out = [];
+  for (let i = 0; i < n; i++) out.push(K >= 4 ? FOCUS[i % FOCUS.length] : FOCUS[((Math.max(1, round) - 1) * K + i) % 4]);
+  return out;
 }
 const serialize = sc => JSON.stringify(sc);
 function fit(o) {
@@ -167,4 +179,4 @@ function fitCorrections(c, limits, near) {
   return { block: c, chars: text.length, dropped };
 }
 
-module.exports = { LIMITS, CORRECTIONS, build, fit, serialize, testedRow, shortChange, corrections, fitCorrections, culprits };
+module.exports = { LIMITS, CORRECTIONS, FOCUS, focusFor, build, fit, serialize, testedRow, shortChange, corrections, fitCorrections, culprits };
