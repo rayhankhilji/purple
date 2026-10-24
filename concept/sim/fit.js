@@ -235,7 +235,9 @@
       const fs = require("fs"), path = require("path"), dir = path.join(__dirname, "..", "data");
       let out = null;
       const fd = path.join(dir, teamId + "-2026-derived.json");
-      if (fs.existsSync(fd)) { const j = JSON.parse(fs.readFileSync(fd, "utf8")); if (j && typeof j.physical_car === "object") out = j.physical_car; }
+      // The derived file's aero/tyre values are effective values of concept/tools/derive-car.js's own lap model, not of this
+      // sim: merging them blindly made baselineCar("redbull") lap 84.7 s (real 88.746). Opt-in only until the two are reconciled.
+      if (process.env.PURPLE_SIM_USE_DERIVED === "1" && fs.existsSync(fd)) { const j = JSON.parse(fs.readFileSync(fd, "utf8")); if (j && typeof j.physical_car === "object") out = j.physical_car; }
       const fo = path.join(dir, teamId + "-2026.json");
       if (fs.existsSync(fo)) {
         const j = JSON.parse(fs.readFileSync(fo, "utf8")), rows = [].concat(...Object.values((j.driveline || {})).filter(Array.isArray));
