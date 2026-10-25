@@ -4,16 +4,66 @@
 body.exam-on .eng2, body.exam-on main.clab, body.exam-on #genBadge, body.exam-on .noai-only, body.exam-on footer.honest { display: none !important; }
 body:not(.exam-on) .exam { display: none; }
 
-.exam { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; padding: 12px 16px 10px; }
+.exam { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; padding: 12px 16px 10px; overflow: hidden auto; scrollbar-width: thin; }
+.exam > * { flex: none; }
+.exam .label { text-transform: none; letter-spacing: 0; font-size: 12px; }
 .ex-head { flex: none; display: flex; align-items: flex-end; justify-content: space-between; gap: 8px 20px; flex-wrap: wrap; margin-bottom: 12px; }
 .ex-title { min-width: 0; flex: 1 1 520px; }
-.ex-kicker { color: var(--purple); }
+.ex-kicker { font: 600 13px/1.2 var(--sans); color: var(--purple); }
 .ex-h1 { margin: 4px 0 0; font: 600 18px/1.35 var(--sans); color: var(--text); max-width: 900px; text-wrap: balance; }
 .ex-status { flex: 0 1 auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 11.5px; }
 .ex-status .warn { color: var(--amber); }
 
-/* desktop: the two columns scroll on their own (no page scroll, like the rest of the lab) */
-.ex-grid { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(0, 440px) minmax(0, 1fr); gap: 14px; }
+/* the headline: does the harness make every model better? (exam-panel.js renderHero) */
+.exh { padding: 16px 16px 12px; margin-bottom: 20px; }
+.exh-h { margin: 0; font: 600 20px/1.3 var(--sans); color: var(--text); }
+.exh-sub { margin: 4px 0 0; font: 400 13px/1.45 var(--sans); color: var(--muted); max-width: 820px; }
+.exh-take { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 14px 0 0; }
+.exh-take p { margin: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r); background: #0e0e12; font: 400 13px/1.5 var(--sans); color: #c9c9d0; }
+.exh-take b { display: block; margin-bottom: 2px; font-weight: 600; color: var(--text); }
+.exh-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 16px 0 4px; padding: 0; list-style: none; font: 500 13px/1.3 var(--sans); color: var(--text); }
+.exh-legend li { display: inline-flex; align-items: center; gap: 8px; }
+.exh-key { flex: none; display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
+.exh-key.dash { width: 16px; height: 0; border-top: 2px dashed #8a8a94; border-radius: 0; }
+.exh-key.mo { width: 8px; height: 8px; border: 1.5px solid #8a8a94; border-radius: 0; transform: rotate(45deg); margin: 0 1px; }
+.exh-charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.exh-fig { margin: 8px 0 0; min-width: 0; }
+.exh-fig figcaption { display: flex; flex-direction: column; gap: 2px; margin-bottom: 6px; }
+.exh-ft { font: 600 14px/1.3 var(--sans); color: var(--text); }
+.exh-fs { font: 400 12px/1.3 var(--sans); color: var(--muted); }
+.exh-svg { display: block; max-width: 100%; overflow: visible; }
+.exh-svg .exh-grid { stroke: #222229; stroke-width: 1; }
+.exh-svg .exh-base { stroke: #3a3a44; stroke-width: 1; }
+.exh-svg .exh-tick { font: 500 11px var(--mono); fill: #8a8a94; }
+.exh-svg .exh-x { font: 500 12px var(--sans); fill: #b9b9c2; }
+.exh-svg .exh-lab { font: 600 12px var(--sans); fill: var(--text); }
+.exh-svg .exh-lab.sm, .exh-svg .exh-x.sm { font-size: 11px; }
+.exh-svg .exh-line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.exh-svg .exh-none { fill: none; stroke: #8a8a94; stroke-width: 1.5; stroke-dasharray: 5 4; }
+.exh-svg .exh-pt { stroke: var(--panel); stroke-width: 2; }
+.exh-svg .exh-mo { fill: var(--panel); stroke: #8a8a94; stroke-width: 1.5; }
+.exh-tablewrap { margin-top: 16px; overflow-x: auto; }
+.exh-table { width: 100%; max-width: 760px; border-collapse: collapse; font: 400 13px/1.3 var(--sans); }
+.exh-table caption { text-align: left; font: 600 13px/1.3 var(--sans); color: var(--text); padding-bottom: 6px; }
+.exh-table th, .exh-table td { padding: 5px 10px 5px 0; text-align: left; border-bottom: 1px solid #1d1d23; }
+.exh-table thead th { font: 500 12px/1.2 var(--sans); color: var(--muted); border-bottom-color: var(--line); }
+.exh-table .num { text-align: right; font: 500 13px/1.3 var(--mono); font-variant-numeric: tabular-nums; color: #c9c9d0; white-space: nowrap; padding-right: 0; padding-left: 10px; }
+.exh-table thead .num { font: 500 12px/1.2 var(--sans); color: var(--muted); }
+.exh-table tr.first > * { border-top: 1px solid var(--line); }
+.exh-table .exh-who { font-weight: 600; color: var(--text); vertical-align: top; white-space: nowrap; }
+.exh-table .exh-who .exh-key { margin-right: 8px; vertical-align: 0; }
+.exh-table .exh-set { color: #b9b9c2; }
+.exh-table tr.full td { color: var(--text); }
+.exh-table tr.full .num { color: var(--text); font-weight: 600; }
+.exh-table tr.base td { color: var(--muted); }
+.exh-note { margin: 12px 0 0; font: 400 12px/1.5 var(--sans); color: var(--muted); max-width: 900px; }
+.ex-toolhead { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px 20px; flex-wrap: wrap; margin-bottom: 12px; }
+.ex-h2 { margin: 0; font: 600 16px/1.3 var(--sans); color: var(--text); }
+.ex-toolhead .ex-toolsub { margin: 4px 0 0; font-size: 12px; }
+.ex-status .btn.sm { font-size: 11px; padding: 2px 8px; margin-left: 4px; }
+
+/* desktop: the two columns scroll on their own inside a screen-high box */
+.ex-grid { height: max(560px, calc(100vh - 150px)); height: max(560px, calc(100dvh - 150px)); display: grid; grid-template-columns: minmax(0, 440px) minmax(0, 1fr); gap: 14px; }
 .ex-side { display: flex; flex-direction: column; gap: 12px; min-width: 0; min-height: 0; overflow: hidden auto; padding-right: 2px; scrollbar-width: thin; }
 .ex-side > * { flex: none; }
 
@@ -93,7 +143,7 @@ body:not(.exam-on) .exam { display: none; }
 .ex-res { margin-top: 8px; }
 .ex-mini { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 11.5px; }
 .ex-mini th, .ex-mini td { padding: 4px 6px; border-top: 1px solid var(--line); text-align: left; vertical-align: top; overflow-wrap: anywhere; }
-.ex-mini thead th { border-top: none; font: 500 10px/1.3 var(--sans); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.ex-mini thead th { border-top: none; font: 500 11px/1.3 var(--sans); color: var(--muted); }
 .ex-mini thead th:first-child { width: 26%; }
 .ex-mini tbody th { font: 500 11.5px/1.3 var(--sans); color: var(--muted); }
 .ex-mini td { font: 500 11.5px/1.35 var(--mono); color: #b9b9c2; }
@@ -108,13 +158,23 @@ body:not(.exam-on) .exam { display: none; }
 @media (max-width: 1100px) { .ex-grid { grid-template-columns: minmax(0, 380px) minmax(0, 1fr); } }
 @media (max-width: 980px) {
   body.exam-on { overflow: auto; }
-  .exam { flex: none; display: block; }
+  .exam { flex: none; display: block; overflow: visible; }
+  .ex-grid { height: auto; }
+  .exh-take { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .exh-charts { grid-template-columns: minmax(0, 1fr); gap: 16px; }
   .ex-grid { grid-template-columns: minmax(0, 1fr); }
   .ex-side, .ex-qs { overflow: visible; padding-right: 0; }
 }
 @media (max-width: 600px) {
   .exam { padding: 10px 16px 24px; }
   .ex-h1 { font-size: 16px; }
+  .exh { padding: 12px; }
+  .exh-h { font-size: 18px; }
+  .exh-legend { gap: 6px 14px; font-size: 12px; }
+  .exh-table { font-size: 12px; }
+  .exh-table .num { font-size: 12px; padding-left: 6px; }
+  .exh-table th, .exh-table td { padding-right: 6px; }
+  .exh-table .exh-who { white-space: normal; }
   .ex-table th.m { width: 31%; font-size: 11px; }
   .ex-table thead .cn { font-size: 11px; } .ex-table thead .cs { font-size: 9.5px; }
   .ex-table td { font-size: 12px; padding: 6px 3px; }
