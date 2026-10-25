@@ -83,14 +83,18 @@
   // ---------------------------------------------------------------- data
   async function getJson(url, init) { const r = await fetch(url, init); const j = await r.json().catch(() => null); if (!r.ok && !(j && j.ok === false)) throw new Error("HTTP " + r.status); return j; }
   // every recorded engine v2 run bundled with the site, newest first; the default is the newest trained-corrections run
+  // fast first load: both run indexes are fetched at once, and the default run's file is fetched while the rest of the page boots
+  // (the end of this file); loadReplay takes that early fetch once, later loads fetch again as before
+  const early = new Map(), indexP = new Map();
+  let warm = null;
+  const getIndex = dir => { if (!indexP.has(dir)) { const p = getJson(dir + "index.json"); indexP.set(dir, p); p.catch(() => indexP.delete(dir)); } return indexP.get(dir); };
+  const takeEarly = url => { const p = early.get(url); early.delete(url); return p || getJson(url); };
   async function listRuns() {
-    const out = [];
-    for (const dir of ["../demo/replays/", "replays/"]) {
-      try {
-        const idx = await getJson(dir + "index.json");
-        for (const r of (idx && idx.runs) || []) if (r.kind === "engineer-v2" && !out.some(x => x.name === r.name)) out.push(Object.assign({ dir }, r));
-      } catch (e) { /* next */ }
-    }
+    const out = [], dirs = ["../demo/replays/", "replays/"];
+    const idxs = await Promise.all(dirs.map(dir => getIndex(dir).catch(() => null)));
+    dirs.forEach((dir, i) => {
+      for (const r of (idxs[i] && idxs[i].runs) || []) if (r.kind === "engineer-v2" && !out.some(x => x.name === r.name)) out.push(Object.assign({ dir }, r));
+    });
     out.sort((a, b) => String(b.recorded_at).localeCompare(String(a.recorded_at)));
     S.runs = out;
     return out;
@@ -135,7 +139,8 @@
     const meta = S.runs.find(r => r.name === name) || defaultRun();
     S.mode = "replay"; S.error = null;
     if (!meta) { S.error = "no recorded run is bundled with this site"; renderAll(); return; }
-    try { S.replay = await getJson(meta.dir + meta.file); } catch (e) { S.error = "could not load the recorded run: " + e.message; renderAll(); return; }
+    if (warm) { await warm; warm = null; }
+    try { S.replay = await takeEarly(meta.dir + meta.file); } catch (e) { S.error = "could not load the recorded run: " + e.message; renderAll(); return; }
     S.meta = meta; S.status = "ready";
     resetRun(S.replay.decisions.length);
     renderAll();
@@ -374,7 +379,8 @@
     if (S.mode === "replay") {
       const playing = S.playing;
       rep.push(el("select", { class: "mu-run", "aria-label": "recorded run", title: "recorded live Mubit runs bundled with the site", onchange: e => loadReplay(e.target.value).then(play) },
-        S.runs.map(r => el("option", { value: r.name, selected: S.meta && r.name === S.meta.name ? true : null, title: r.name + " · " + r.calls + " Mubit calls · recorded " + when(r.recorded_at) }, runLabel(r)))));
+        S.runs.length ? S.runs.map(r => el("option", { value: r.name, selected: S.meta && r.name === S.meta.name ? true : null, title: r.name + " · " + r.calls + " Mubit calls · recorded " + when(r.recorded_at) }, runLabel(r)))
+          : el("option", { value: "" }, S.error ? "no recorded run" : "loading the run…")));
       rep.push(el("button", { type: "button", class: "btn primary", id: "muPlay", onclick: () => (playing ? pause() : play()) }, playing ? "Pause" : S.status === "done" ? "Play again" : S.shown ? "Resume" : "Play"),
         el("div", { class: "mu-seg", role: "group", "aria-label": "replay speed", title: "replay speed" }, [[1000, "1×"], [250, "4×"]].map(([v, t]) => el("button", { type: "button", class: "btn" + (S.pace === v ? " on" : ""), "aria-pressed": S.pace === v ? "true" : "false", onclick: () => { S.pace = v; renderCtl(); } }, t))),
         el("button", { type: "button", class: "btn", title: "show every decision now", onclick: skipToEnd }, "Skip to end"));
@@ -472,6 +478,7 @@
     document.body.classList.toggle("mubit-on", v === "mubit");
     for (const [k, id] of Object.entries(BTN)) { const b = $(id); if (b) { b.classList.toggle("on", k === v); b.setAttribute("aria-pressed", k === v ? "true" : "false"); } }
     if (EI.conceptLab && (v === "mubit" || v === "noai")) EI.conceptLab.source(v);
+    if (v === "noai") mount3d();
     if (v !== "mubit" && S.playing) pause();
     try { const u = new URL(location.href); if (v === "mubit") u.searchParams.delete("view"); else if (v !== "exam") u.searchParams.set("view", v === "tree" ? "tree" : v); history.replaceState(null, "", u); } catch (e) { /* file:// */ }
     window.dispatchEvent(new Event("resize"));
@@ -491,7 +498,10 @@
     await loadReplay(qs.get("replay"));
     probeLive();
     if (S.view === "mubit") { if (qs.get("autoplay") === "end") skipToEnd(); else if (qs.get("autoplay") !== "0") play(); }
+    // the replay is on screen: now build the 3D car (concept-lab.js waits for this, so its first WebGL frame never holds up the replay)
+    requestAnimationFrame(() => setTimeout(mount3d, 0));
   }
+  function mount3d() { if (EI.conceptLab && EI.conceptLab.mountView) EI.conceptLab.mountView(); }
   // layout helpers: the header's height as --hdr-h (the Engine and Mubit loop overlays open under it), and the one-line honest-limits
   // footer keeps its whole text as a tooltip (concept-lab.js redraws it)
   function tidy() {
@@ -508,5 +518,9 @@
   // test / screenshot hook
   EI.mubitFirst = { state: () => ({ view: S.view, mode: S.mode, status: S.status, shown: S.shown, cards: S.cards.length, calls: S.calls, examples: S.examples, best: S.best, liveOk: S.liveOk, liveN: S.liveN, run: S.meta && S.meta.name, round: S.stage ? S.stage.round : null, step: S.stage ? S.stage.step : null, versions: S.stage ? S.stage.versions : 0, laps: S.stage ? S.stage.laps : 0, stopNote: S.stopNote }), play, pause, skipToEnd, startRun, loadReplay, setView, MUBIT,
     stepTo: n => { pause(); while (S.replay && S.shown < Math.min(n, S.replay.decisions.length)) replayStep(); renderAll(); return S.shown; } };
+  // fetch the run list and the default run now, while the rest of the page boots; concept-lab.js builds the 3D car only when boot()
+  // above asks for it (after the first card), or after a few seconds whatever happens
+  EI.conceptLabDeferView = true;
+  warm = listRuns().then(() => { const m = defaultRun(); if (m) { const p = getJson(m.dir + m.file); p.catch(() => {}); early.set(m.dir + m.file, p); } }).catch(() => {});
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();

@@ -291,6 +291,11 @@
     } catch (e) { viewFailed(e); }
     renderModeButtons();
   }
+  function ensureView() {
+    if (V.mounted) return; V.mounted = true; clearTimeout(V.deferT);
+    const wait = $("#view3d .view-wait"); if (wait) wait.remove();
+    mountView(); if (V.view) showOnView(S);
+  }
   function viewFailed(e) {
     V.viewError = "3D view error: " + String(e && e.message || e);
     try { if (V.view && V.view.dispose) V.view.dispose(); } catch (_) { /* already broken */ }
@@ -618,7 +623,9 @@
     $("#speed").addEventListener("change", () => { NO.delay = +$("#speed").value || 0; fast(); });
     document.addEventListener("keydown", e => { if (isMu() || document.body.classList.contains("exam-on") || document.body.classList.contains("eng2-on")) return; if (e.target.closest && e.target.closest("input,select,textarea,button,a")) return; if (e.key === " ") { e.preventDefault(); $("#btnRun").click(); } else if (e.key === "s") step(); });
     try { reset(); muReset({ total: 12 }); } catch (e) { banner("bench", String(e && e.message || e)); return; }
-    mountView(); markAll(); renderNow(); fast();
+    // the 3D car: at once, or (the Mubit replay, mubit-first.js) when the first card is on screen, at the latest after 6 s
+    if (EI.conceptLabDeferView && S === MU) { V.deferT = setTimeout(ensureView, 6000); $("#view3d").replaceChildren(el("div", { class: "src view-wait" }, "building the car…")); } else ensureView();
+    markAll(); renderNow(); fast();
     if (window.ResizeObserver) new ResizeObserver(() => schedule("row")).observe($("#chartWrap"));
     if (qs.get("run") === "1") run();
   }
@@ -673,7 +680,7 @@
 
   // test / demo hook (read-only state and the same actions as the buttons; state / lineage / best = the no-AI optimiser)
   EI.conceptLab = {
-    run, pause, step, reset, source, raceHref,
+    run, pause, step, reset, source, raceHref, mountView: ensureView,
     source_now: () => S.src,
     mubit: {
       reset: muReset, add: muAdd, parseChange,
