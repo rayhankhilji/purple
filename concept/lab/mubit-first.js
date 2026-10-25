@@ -11,6 +11,10 @@
 //          identical trained call (concept/engineer/record-good.js, rule "kept"). The card's verdict is what physics did with the idea
 //          ("✓ kept −0.021 s" / "✗ no faster car" / "✗ illegal: …"); the idea's lap exactly as written is the small grey line.
 //   OFFLINE DEMO (small button): the same engine with the scripted mock; labelled "not a model". The browser never calls Mubit.
+//   MODEL SWITCHER (next to Go live; concept/lab/model-switch.js): Claude Haiku 4.5 (the default, the only model with record_good),
+//          Sonnet 5.5, Opus 5.5, ChatGPT (GPT-6 Luna) or No AI (the control), read from concept/gp/entrants.json. Any model but the
+//          default is sent as { model, memory: true } without record_good: untrained, not recorded for training (said on screen). The
+//          cards and the strip name the car and the served model (call.model). Disabled while a run is going; ?model=<id> preselects.
 // The layout itself is drawn by concept-lab.js (EI.conceptLab.mubit); this file owns the Mubit strip, the run controls and the Mubit
 // feed cards. Every number carries its source label (G-HON-01); scores as n/N. Tokens: lab/lab.css (docs/DESIGN_SYSTEM.md).
 (function () {
@@ -32,6 +36,7 @@
 
   const EI = (window.EI = window.EI || {});
   const C = EI.concept || {};
+  const MS = EI.modelSwitch;   // concept/lab/model-switch.js (the switcher's list and the run body)
   const qs = new URLSearchParams(location.search);
   const API = (qs.get("api") || "http://127.0.0.1:8787").replace(/\/$/, "");
   const $ = s => document.querySelector(s);
@@ -55,7 +60,20 @@
     view: "mubit", mode: "replay", runs: [], replay: null, meta: null, shown: 0, playing: false, timer: null, pace: 1000, status: "idle", error: null,
     cards: [], calls: 0, examples: 0, total: 12, run: null, es: null, progress: null, liveOk: false, liveWhy: "", deploy: null, apiOk: false, liveN: 10,
     best: null, baseDesign: null, stage: null, rounds: 0, stopNote: null,
+    models: MS.BUILTIN.slice(), model: MS.DEFAULT_ID, runModel: null, untrained: false, modelOf: {},
   };
+  // the model on screen: the replay is the default designer (Haiku); a live / offline run is the model it was started with
+  const pickedModel = () => MS.find(S.models, S.model) || MS.BUILTIN[0];
+  const shownModel = () => (S.mode === "replay" ? MS.find(S.models, MS.DEFAULT_ID) || MS.BUILTIN[0] : S.runModel || pickedModel());
+  const noAi = () => S.mode !== "replay" && MS.isNoAi(shownModel());
+  // the models from the Model GP entrants (concept/gp/entrants.json); the built-in list if it does not load
+  async function loadModels() {
+    try { S.models = MS.fromEntrants(await getJson("../gp/entrants.json")); } catch (e) { S.models = MS.BUILTIN.slice(); }
+    const want = qs.get("model");
+    if (want && MS.find(S.models, want)) S.model = want;
+    else if (!MS.find(S.models, S.model)) S.model = MS.DEFAULT_ID;
+    renderCtl(); renderStrip();
+  }
   const L = () => EI.conceptLab && EI.conceptLab.mubit;
 
   // ---------------------------------------------------------------- plain words (the same wording as the demo page, concept/demo/demo.js)
@@ -79,7 +97,8 @@
   // physics found a faster legal car from the idea (the engine's best version of it beat the car it started from): the "kept" rule of
   // concept/engineer/record-good.js, the one live runs train on
   const fasterCar = c => isNum(c.best_d) && c.best_d < -0.0005;
-  const approved = c => !!(c.by === "mubit" && fasterCar(c));
+  const approved = c => !!((c.by === "mubit" || c.noai) && fasterCar(c));
+  const answered = c => c.by === "mubit" || c.by === "mock" || !!c.noai;   // a model's answer (or, for the no-AI control, the engine's direction)
 
   // ---------------------------------------------------------------- data
   async function getJson(url, init) { const r = await fetch(url, init); const j = await r.json().catch(() => null); if (!r.ok && !(j && j.ok === false)) throw new Error("HTTP " + r.status); return j; }
@@ -115,14 +134,15 @@
       change: d.proposal_change || null, as: d.as_proposed || null, kept: !!d.kept, new_peak: !!d.new_peak, d_head: d.d_head_s, best_d: d.best_d_s,
       lap: d.result ? d.result.lap_s : null, versions: d.screen ? d.screen.distinct : null, laps: d.physics_laps, train: train || null, trainedId: null, el: null,
       bestChange: d.best_change || null, round: d.round == null ? null : d.round, slot: d.slot == null ? null : d.slot, of: d.of == null ? null : d.of, focus: d.focus || null,
+      mock: !!d.mock, model: d.model || (d.call && d.call.model) || S.modelOf[d.decision] || (S.mode === "replay" && S.replay ? S.replay.model || null : null), car: shownModel().car, noai: noAi(),
     };
   }
   function timingOf(d) {
     if (!d || !isNum(d.latency_ms)) return null;
-    const parts = [(S.mode === "mock" ? "stand-in " : "Mubit ") + secs(d.latency_ms) + (d.of > 1 ? " (" + d.of + " at once)" : "")];
+    const parts = [noAi() ? "no model call" : (S.mode === "mock" ? "stand-in " : "Mubit ") + secs(d.latency_ms) + (d.of > 1 ? " (" + d.of + " at once)" : "")];
     if (d.screen && isNum(d.screen.distinct)) parts.push(int(d.screen.distinct) + " versions tested in " + secs(d.screen.ms));
     if (isNum(d.physics_laps)) parts.push(int(d.physics_laps) + " physics laps in " + secs(d.physics_ms));
-    return { parts, title: "Mubit idea #" + d.decision + (d.round != null ? " (round " + d.round + ", idea " + d.slot + " of " + d.of + ")" : "") + ", timed by the engine: the " + (S.mode === "mock" ? "scripted stand-in" : "Mubit call (" + MODEL_NAME + ")") + ", the quick test of every version of the idea, then full physics laps on the best ones" };
+    return { parts, title: "Mubit idea #" + d.decision + (d.round != null ? " (round " + d.round + ", idea " + d.slot + " of " + d.of + ")" : "") + ", timed by the engine: the " + (noAi() ? "engine's own random direction (no AI, no Mubit call)" : S.mode === "mock" ? "scripted stand-in" : "Mubit call (" + shownModel().car + ")") + ", the quick test of every version of the idea, then full physics laps on the best ones" };
   }
   function push(d, opts) {
     const c = norm(d, opts.train);
@@ -189,25 +209,30 @@
     stopAll();
     const rounds = S.liveN, n = rounds * IDEAS;
     S.mode = llm === "live" ? "live" : "mock"; S.status = "starting"; S.error = null; S.replay = null; S.meta = null;
+    S.runModel = pickedModel(); S.modelOf = {};
+    // the model switcher: the default (Haiku) keeps record_good; any other model is sent untrained, with the shared memory
+    const body = MS.runBody({ llm, model: S.runModel.id, rounds, ideas: IDEAS, screen: LIVE_SCREEN, seed: llm === "live" ? +(qs.get("seed") || Math.floor(Math.random() * 1000)) : +(qs.get("seed") || 1) });
+    S.untrained = llm === "live" && !MS.trains(body);
     resetRun(n); S.rounds = rounds; renderAll();
-    const common = { mode: "engineer", team: "redbull", ideas: IDEAS, rounds, max_calls: n, variants: LIVE_SCREEN.variants, confirm_k: LIVE_SCREEN.confirm_k, explore: LIVE_SCREEN.explore };
-    const body = llm === "live"
-      ? Object.assign({ llm: "live", record_good: "kept", confirm: "trained", confirm_text: "TRAIN " + n, seed: +(qs.get("seed") || Math.floor(Math.random() * 1000)) }, common)
-      : Object.assign({ llm: "mock", seed: +(qs.get("seed") || 1) }, common);
     let j;
     try { j = await getJson(API + "/api/concept/engine/run", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }); }
     catch (e) { S.status = "error"; S.error = "the engine API is not reachable (" + API + "): " + e.message; renderAll(); return; }
     if (!j || !j.ok) { S.status = "error"; S.error = (j && j.error && j.error.message) || "the run was refused"; renderAll(); return; }
-    S.run = j.data; S.status = "running"; renderAll();
+    S.run = j.data; S.status = "running";
+    // the server names the entrant it ran (opts.entrant): its car name wins over the switcher's
+    const ent = j.data.opts && j.data.opts.entrant;
+    if (ent && typeof ent === "object") S.runModel = Object.assign({}, S.runModel, ent.car || ent.name ? { car: String(ent.car || ent.name).slice(0, 40) } : {}, ent.model !== undefined ? { model: ent.model } : {});
+    renderAll();
     const es = new EventSource(/^https?:/.test(j.data.stream) ? j.data.stream : API + j.data.stream); S.es = es;
     // an EventSource that reconnects gets the run's events again from the start: each event is handled once (by its seq)
     let lastSeq = -1;
     const on = (t, f) => es.addEventListener(t, ev => { let d; try { d = JSON.parse(ev.data); } catch (e) { return; } if (typeof d.seq === "number") { if (d.seq <= lastSeq) return; lastSeq = d.seq; } try { f(d); } catch (e) { console.error("mubit-first: " + t + ": " + (e && e.stack || e)); } });
-    const who = () => (S.mode === "live" ? "Mubit" : "the stand-in");
+    const who = () => (noAi() ? "the engine" : S.mode === "live" ? shownModel().car : "the stand-in");
     // the stage strip of a round: asking Mubit for 4 ideas… → testing 2,400 versions… → driving 32 laps… → kept −0.02 s
     on("round", d => { S.stage = { round: d.round, ideas: d.ideas, step: "ask", got: 0, list: d.focus.map(f => ({ focus: f, change: null, by: null, d: null, done: false })), scr: {}, versions: 0, laps: 0, result: null, first: d.first_decision }; renderProgress(); });
     on("request", d => { if (d.round == null) setProgress(d.decision, "asking " + who() + "…"); });
     on("proposal", d => {
+      if (d.call && d.call.model) S.modelOf[d.decision] = d.call.model;   // the served model id of this decision's call
       const g = S.stage;
       if (d.round == null || !g || g.round !== d.round) { setProgress(d.decision, who() + " proposes " + plainChange(d.change, 2)); return; }
       const it = g.list[d.slot - 1]; if (it) { it.change = d.change; it.by = d.by; }
@@ -234,7 +259,7 @@
       const peakLap = d.peak && isNum(d.peak.lap_s) ? d.peak.lap_s : null, newBest = isNum(peakLap) && (!isNum(S.best) || peakLap < S.best - 1e-9);
       if (newBest) S.best = peakLap;
       S.calls = isNum(d.calls) ? d.calls : S.calls + 1;
-      push(d.row, { train: S.mode !== "live" ? "mock" : d.training_example === "pending" ? "pending" : "rejected", peakLap, design: newBest && d.peak.params ? designFromParams(d.peak.params) : null });
+      push(d.row, { train: S.mode !== "live" ? "mock" : S.untrained ? "untrained" : d.training_example === "pending" ? "pending" : "rejected", peakLap, design: newBest && d.peak.params ? designFromParams(d.peak.params) : null });
       if (d.row.round == null) S.progress = null;
       renderStrip(); renderProgress();
     });
@@ -279,11 +304,14 @@
   // ---------------------------------------------------------------- state
   function resetRun(total) {
     S.cards = []; S.shown = 0; S.calls = 0; S.examples = 0; S.total = total; S.best = null; S.stage = null; S.stopNote = null; S.rounds = 0;
-    const lab = L(); if (lab) { lab.reset({ total, status: S.status }); lab.set({ feedCard: card, feedNote: feedNote(), emptyText: emptyText(), who: S.mode === "mock" ? "stand-in" : "Mubit" }); }
+    const lab = L(); if (lab) { lab.reset({ total, status: S.status }); lab.set({ feedCard: card, feedNote: feedNote(), emptyText: emptyText(), who: noAi() ? "engine" : S.mode === "mock" ? "stand-in" : "Mubit" }); }
   }
   function setLabStatus() { const lab = L(); if (lab) lab.set({ status: S.status === "playing" || S.status === "running" ? "playing" : S.status }); }
-  const feedNote = () => (S.mode === "mock" ? "scripted stand-in, not a model · verdict: physics lap sim" : "ideas: " + MODEL_NAME + " through Mubit · verdict: physics lap sim");
-  const emptyText = () => (S.mode === "replay" ? "Press Play: each card is one Mubit call. Claude proposes a change to the car, the physics lap sim tests it as proposed, then the engine tests thousands of versions of the idea and keeps only what is faster." : S.mode === "live" ? "Asking Mubit for the first " + IDEAS + " ideas at once… the cards of a round appear when the engine has tested all " + IDEAS + "." : "Asking the scripted stand-in (not a model) for the first " + IDEAS + " ideas…");
+  const feedNote = () => (noAi() ? "no AI: the engine's own random directions · verdict: physics lap sim" : S.mode === "mock" ? "scripted stand-in, not a model · verdict: physics lap sim" : "ideas: " + shownModel().label + " through Mubit · verdict: physics lap sim");
+  const emptyText = () => (S.mode === "replay" ? "Press Play: each card is one Mubit call. Claude proposes a change to the car, the physics lap sim tests it as proposed, then the engine tests thousands of versions of the idea and keeps only what is faster."
+    : noAi() ? "No AI: the engine picks " + IDEAS + " random directions per round itself (no model, no Mubit call)… the cards of a round appear when the engine has tested all " + IDEAS + "."
+    : S.mode === "live" ? "Asking " + shownModel().car + " through Mubit for the first " + IDEAS + " ideas at once… the cards of a round appear when the engine has tested all " + IDEAS + "." + (shownModel().id !== MS.DEFAULT_ID ? " Larger models take a few seconds per idea." : "")
+    : "Asking the scripted stand-in (not a model) for the first " + IDEAS + " ideas…");
 
   // ---------------------------------------------------------------- render
   function renderAll() { renderStrip(); renderCtl(); renderProgress(); const lab = L(); if (lab) lab.set({ feedNote: feedNote(), emptyText: emptyText() }); setLabStatus(); }
@@ -299,7 +327,7 @@
   function renderStrip() {
     const host = $("#muStrip"); if (!host) return;
     const n = S.cards.length, ok = S.cards.filter(approved).length;
-    const calls = S.mode === "mock" ? 0 : S.mode === "live" ? S.calls + S.examples : S.calls;
+    const calls = S.mode === "mock" || noAi() ? 0 : S.mode === "live" ? S.calls + S.examples : S.calls;
     const R = S.replay;
     let modeBadge, modeLine;
     if (S.mode === "replay") {
@@ -308,23 +336,26 @@
       modeLine = el("span", { class: "mu-line", title: R ? R.calls + " Mubit calls · " + (R.model || "") + " · request ids " + ids[0] + " … " + ids[ids.length - 1] : "" }, R ? "recorded live run" + (R.recorded_at ? " · " + when(R.recorded_at) : "") : S.error || "loading the recorded run…");
     } else if (S.mode === "live") {
       modeBadge = el("span", { class: "mu-badge live" }, "Live");
-      modeLine = el("span", { class: "mu-line", title: S.run ? S.run.run_id : "" }, S.status === "error" ? "" : "live run · " + (S.rounds ? S.rounds + " rounds × " + IDEAS + " ideas" : S.total + " Mubit calls"));
+      modeLine = el("span", { class: "mu-line", title: S.run ? S.run.run_id : "" }, S.status === "error" ? "" : (noAi() ? "control run · no Mubit call" : "live run") + " · " + (S.rounds ? S.rounds + " rounds × " + IDEAS + (noAi() ? " directions" : " ideas") : S.total + " Mubit calls") + (S.untrained ? " · untrained" : ""));
     } else {
       modeBadge = el("span", { class: "mu-badge demo" }, "Offline demo");
-      modeLine = el("span", { class: "mu-line" }, "scripted stand-in, not a model · no Mubit call");
+      modeLine = el("span", { class: "mu-line" }, noAi() ? "no AI: the engine's own random directions · no Mubit call" : "scripted stand-in, not a model · no Mubit call");
     }
     const total = S.mode === "replay" && R ? R.decisions.length : S.total;
+    const M = shownModel();
     const callsSub = S.mode === "mock" ? "offline demo: nothing is sent to Mubit"
-      : S.mode === "live" ? MODEL_NAME + " · " + IDEAS + " at once per round" + (S.examples ? " + " + S.examples + " trained re-send" + (S.examples === 1 ? "" : "s") : "") + " · of " + S.total
+      : noAi() ? "no AI: the engine's own directions, no Mubit call"
+      : S.mode === "live" ? M.car + " · " + IDEAS + " at once per round" + (S.examples ? " + " + S.examples + " trained re-send" + (S.examples === 1 ? "" : "s") : "") + " · of " + S.total
       : n + " / " + total + " played · " + MODEL_NAME + " · one per decision";
     // the second counter says what it counts, per mode: live = trained re-sends (kept rule); a replayed record_good run = its trained
     // re-sends; a replayed all-trained run = every call was recorded, so it counts the ideas physics kept a faster car from
     const allTrained = S.mode === "replay" && !!R && (R.trained === true || (S.cards.length > 0 && S.cards.every(c => c.train === "recorded")));
     const sent = S.cards.filter(c => c.train === "trained").length;
-    const exV = S.mode === "live" ? String(S.examples) : S.mode === "mock" ? "0" : R && R.record_good ? sent + " / " + n : ok + " / " + n;
-    const exL = S.mode === "replay" && !(R && R.record_good) ? "ideas physics kept a faster car from" : "physics-approved → Mubit training examples";
+    const exV = S.mode === "live" && S.untrained ? ok + " / " + n : S.mode === "live" ? String(S.examples) : S.mode === "mock" ? "0" : R && R.record_good ? sent + " / " + n : ok + " / " + n;
+    const exL = (S.mode === "replay" && !(R && R.record_good)) || (S.mode === "live" && S.untrained) ? (noAi() ? "directions physics kept a faster car from" : "ideas physics kept a faster car from") : "physics-approved → Mubit training examples";
     // short caption on screen, the full sentence as its tooltip
-    const exSub = S.mode === "live" ? ["this run · " + ok + " approved, re-sent as trained calls", "this run: of " + ok + " ideas physics kept a faster car from, re-sent by the server as trained calls"]
+    const exSub = S.mode === "live" && S.untrained ? ["untrained · not recorded for training", "this run: " + M.car + " is not the trained designer, so nothing from it is sent to Mubit as a training example; " + ok + " of its " + n + (noAi() ? " directions" : " ideas") + " so far gave a faster legal car"]
+      : S.mode === "live" ? ["this run · " + ok + " approved, re-sent as trained calls", "this run: of " + ok + " ideas physics kept a faster car from, re-sent by the server as trained calls"]
       : S.mode === "mock" ? ["offline demo: nothing is sent to Mubit"]
       : R && R.record_good ? ["replayed run · approved ideas were re-sent as trained calls", "replayed run: ideas physics kept a faster car from were re-sent as trained calls"]
       : allTrained ? ["replayed run · every call was recorded in Mubit", "replayed run: every call was recorded in Mubit; " + ok + " of its " + n + " ideas were kept by physics"]
@@ -332,7 +363,10 @@
     const exTitle = "an idea counts as approved when physics kept a faster legal car from it: the engine's best version of the idea (as written, made legal, or a tested variant) beat the car it started from on the physics lap sim. In a live run only those are re-sent as trained calls, Mubit training examples";
     host.replaceChildren(
       el("div", { class: "mu-cell mu-mark", title: "Mubit: the gateway every designer call goes through; it records calls and trains on the kept examples" },
-        el("div", { class: "mu-mark-top" }, el("span", { class: "mu-logo" }, "Mubit"), modeBadge), modeLine),
+        el("div", { class: "mu-mark-top" }, el("span", { class: "mu-logo" }, "Mubit"),
+          el("span", { class: "mu-mname", id: "muModelName", title: "the model on screen: " + M.label + (M.model ? " (" + M.model + ")" : "") + (S.mode === "replay" ? " · the recorded run's designer" : M.id === MS.DEFAULT_ID ? " · the trained designer" : MS.isNoAi(M) ? " · the control: no model, no Mubit call" : " · untrained, not recorded for training") },
+            el("span", { class: "mu-msep", "aria-hidden": "true" }, "·"), M.label)),
+        el("div", { class: "mu-mark-sub" }, modeBadge, modeLine)),
       el("div", { class: "mu-cell mu-mid" },
         counter("mubit", int(calls), "Mubit calls · this run", callsSub, "designer calls sent through Mubit in this run (live: plus the trained re-sends)"),
         el("div", { class: "mu-ctr good", title: exTitle },
@@ -358,7 +392,7 @@
   function stageStrip(g) {
     const order = ["ask", "screen", "drive", "done"], at = order.indexOf(g.step);
     const cls = i => "mu-st" + (i < at ? " done" : i === at ? " now" : "");
-    const r = g.result, who = S.mode === "live" ? "Mubit" : "the stand-in";
+    const r = g.result, who = noAi() ? "the engine" : S.mode === "live" ? shownModel().car : "the stand-in";
     const steps = [
       el("span", { class: cls(0) }, at > 0 ? g.ideas + " ideas from " + who : "asking " + who + " for " + g.ideas + " ideas… " + g.got + "/" + g.ideas),
       el("span", { class: cls(1) }, at > 1 ? int(g.versions) + " versions tested" : (g.versions ? "testing " + int(g.versions) + " versions…" : "testing versions of each idea…")),
@@ -395,11 +429,34 @@
       el("div", { class: "mu-seg", role: "group", "aria-label": "rounds in a live run", title: "rounds in a live run: each round asks Mubit for " + IDEAS + " ideas at once (" + IDEAS + " Mubit calls), the engine tests all of them and keeps the fastest legal car. The public site reserves " + IDEAS + " calls per round of its hourly limit; a run is time-boxed to about 4 minutes there and stops cleanly at the limit" },
         LIVE_CHOICES.map(v => el("button", { type: "button", class: "btn" + (S.liveN === v ? " on" : ""), "aria-pressed": S.liveN === v ? "true" : "false", disabled: running ? true : null, title: v + " rounds × " + IDEAS + " ideas = " + v * IDEAS + " Mubit calls", onclick: () => { S.liveN = v; renderCtl(); } }, String(v)))),
       el("span", { class: "mu-seg-l", title: "rounds in a live run; each round asks Mubit for " + IDEAS + " ideas at once" }, "rounds × " + IDEAS + " ideas"),
+      modelPicker(running),
       S.liveOk
-        ? el("button", { type: "button", class: "btn mu-golive", id: "muGoLive", disabled: running ? true : null, title: "start the engine now: " + S.liveN + " rounds × " + IDEAS + " ideas = " + S.liveN * IDEAS + " Mubit calls (" + MODEL_NAME + ", untrained, " + IDEAS + " at once); every idea from which physics keeps a faster legal car is re-sent by the server as a trained call, a Mubit training example", onclick: () => startRun("live") }, "Go live")
+        ? el("button", { type: "button", class: "btn mu-golive", id: "muGoLive", disabled: running ? true : null, title: goLiveTitle(), onclick: () => startRun("live") }, "Go live")
         : el("button", { type: "button", class: "btn mu-golive off", id: "muGoLive", disabled: true, title: "live is not available here: " + (S.liveWhy || "checking…") }, "Go live"),
-      S.apiOk && !S.liveOk ? el("button", { type: "button", class: "btn mu-demo", title: "run the real engine with a scripted stand-in instead of the model (labelled offline demo, no Mubit call)", disabled: running ? true : null, onclick: () => startRun("mock") }, "Offline demo") : null);
+      S.apiOk && !S.liveOk ? el("button", { type: "button", class: "btn mu-demo", title: "run the real engine with a scripted stand-in instead of the model (labelled offline demo, no Mubit call)", disabled: running ? true : null, onclick: () => startRun("mock") }, "Offline demo") : null,
+      trainNote());
     host.replaceChildren(el("div", { class: "mu-grp", role: "group", "aria-label": "recorded run" }, rep), live);
+  }
+  // the model switcher: one select next to Go live (disabled while a run is going: stop it first)
+  function modelPicker(running) {
+    const M = pickedModel();
+    return el("label", { class: "mu-mpick", title: running ? "stop the run to switch model" : "the model that proposes the ideas in a live run; every model gets the same engine, the same prompt and the same shared memory" },
+      el("span", { class: "mu-mdot", style: "background:" + M.color, "aria-hidden": "true" }),
+      el("span", { class: "mu-gl" }, "Model"),
+      el("select", { id: "muModel", "aria-label": "model for a live run", disabled: running ? true : null, onchange: e => { S.model = e.target.value; renderCtl(); renderStrip(); } },
+        S.models.map(m => el("option", { value: m.id, selected: m.id === S.model ? true : null, title: m.label + " · car name " + m.car + (m.model ? " · " + m.model : "") + (m.id === MS.DEFAULT_ID ? " · the trained designer" : " · untrained") }, m.label))));
+  }
+  // the picked model trains Mubit (the default) or not: said beside Go live
+  function trainNote() {
+    const M = pickedModel();
+    if (M.id === MS.DEFAULT_ID) return null;
+    return el("span", { class: "mu-untr", id: "muUntrained", title: MS.isNoAi(M) ? "the control: the engine picks its own random directions, no model and no Mubit call; nothing is recorded for training" : M.car + " is not the trained designer: its calls go through Mubit untrained and nothing from this run is recorded for training" }, "untrained · not recorded for training");
+  }
+  function goLiveTitle() {
+    const M = pickedModel(), n = S.liveN * IDEAS;
+    if (MS.isNoAi(M)) return "start the control now: " + S.liveN + " rounds × " + IDEAS + " directions = " + n + " decisions, each the engine's own random direction (no AI, no Mubit call); nothing is recorded for training";
+    if (M.id !== MS.DEFAULT_ID) return "start the engine now: " + S.liveN + " rounds × " + IDEAS + " ideas = " + n + " calls to " + M.car + " through Mubit (" + IDEAS + " at once, a few seconds each); untrained, not recorded for training";
+    return "start the engine now: " + S.liveN + " rounds × " + IDEAS + " ideas = " + n + " Mubit calls (" + M.car + ", untrained, " + IDEAS + " at once); every idea from which physics keeps a faster legal car is re-sent by the server as a trained call, a Mubit training example";
   }
 
   // ---------------------------------------------------------------- the Mubit feed card (lineage card style; drawn by concept-lab.js renderFeed)
@@ -410,7 +467,7 @@
   const dp = v => (isNum(v) && Math.abs(v) >= 0.01 ? 2 : 3);
   function roundBest(c) { return c.round == null ? null : S.cards.find(x => x.round === c.round && x.kept) || null; }
   function verdict(c) {
-    if (c.by !== "mubit" && c.by !== "mock") return el("span", { class: "mu-v bad", title: c.fallback || "" }, "✗ no usable answer");
+    if (!answered(c)) return el("span", { class: "mu-v bad", title: c.fallback || "" }, "✗ no usable answer");
     const why = "physics lap sim · Silverstone · the engine's best legal version of this idea vs the car it started from";
     if (c.kept && isNum(c.d_head)) return el("span", { class: "mu-v good", title: why + " · this car was kept" }, "✓ kept " + sg(c.d_head, dp(c.d_head)) + " s");
     if (fasterCar(c)) { const w = roundBest(c); return el("span", { class: "mu-v good", title: why + (w ? " · the round kept idea " + w.slot + " (#" + w.n + "), faster still" : "") }, "✓ faster car " + sg(c.best_d, dp(c.best_d)) + " s"); }
@@ -420,7 +477,7 @@
   }
   // the idea exactly as written (secondary): its own physics lap vs the car it started from
   function asWritten(c) {
-    const a = c.as; if (!a || (c.by !== "mubit" && c.by !== "mock")) return null;
+    const a = c.as; if (!a || !answered(c)) return null;
     const t = a.legal === false ? "illegal (" + ruleWords(a) + ")" : isNum(a.d_lap_s) ? sg(a.d_lap_s, dp(a.d_lap_s)) + " s" : a.note || "—";
     return el("span", { class: "mu-asw", title: "the change exactly as the model wrote it, one physics lap vs the car it started from" }, "as written: " + t);
   }
@@ -432,6 +489,7 @@
       case "failed": return el("span", { class: "mu-chip bad", title: c.trainErr || "" }, "training call failed");
       case "rejected": return el("span", { class: "mu-chip muted", title: "physics found no faster legal car from this idea: it stays an untrained call, and its measured result goes back to Claude in the next scenario" }, "correction: back to Claude");
       case "mock": return el("span", { class: "mu-chip muted" }, "offline demo");
+      case "untrained": return el("span", { class: "mu-chip muted", title: c.noai ? "no AI control: nothing is sent to Mubit" : (c.car || "this model") + " is not the trained designer: this call stays untrained and is not recorded for training" }, "untrained · not recorded for training");
       default: return null;
     }
   }
@@ -445,25 +503,33 @@
   function roundHead(c) {
     const w = roundBest(c), rc = S.cards.filter(x => x.round === c.round), ff = rc.filter(fasterCar).length;
     return el("div", { class: "mu-round" },
-      el("span", { class: "mu-round-t" }, el("b", null, "Round " + c.round), " · " + c.of + " idea" + (c.of === 1 ? "" : "s") + " from " + (c.by === "mock" ? "the stand-in" : "Mubit") + " at once"),
+      el("span", { class: "mu-round-t" }, el("b", null, "Round " + c.round), " · " + c.of + (c.noai ? " random direction" : " idea") + (c.of === 1 ? "" : "s") + " from " + (c.noai ? "the engine (no AI)" : c.by === "mock" ? "the stand-in" : (c.car || "Mubit") + (S.mode === "replay" ? "" : " through Mubit")) + " at once"),
       el("span", { class: "spacer" }),
       el("span", { class: "mu-round-r" }, el("span", { class: w ? "good" : "" }, w ? "kept " + sg(w.d_head, dp(w.d_head)) + " s (idea " + w.slot + ")" : "no faster car"), ff ? " · " + ff + "/" + rc.length + " found a faster car" : ""));
   }
   // card hierarchy: verdict + training first, then Claude's idea, the change in plain words, what physics measured, and a quiet meta
   // line with who answered, the request id and the latency
+  // who answered: the car name and the served model id (call.model from the stream; a replay: the recorded run's model)
+  function whoSpan(c) {
+    if (c.noai) return el("span", { class: "mu-who", title: "no AI control: the engine's own seeded random direction, no model and no Mubit call" }, "No AI (control) · no Mubit call");
+    if (c.by === "mock" || c.mock) return el("span", { class: "mu-who", title: "scripted stand-in, not a model" }, "stand-in (not a model)");
+    const car = c.car || MODEL_NAME;
+    return el("span", { class: "mu-who", title: "one Mubit call · " + car + (c.model ? " · served model " + c.model : "") },
+      el("b", null, car), c.model ? el("span", { class: "mu-mdl-id" }, " " + c.model) : null, " via Mubit");
+  }
   function card(row, inner) {
     const c = row.mubit; if (!c) return el("div", { class: "ln" });
     const ok = approved(c);
     const res = [c.change ? asWritten(c) : null, engineLine(c)].filter(Boolean);
     const meta = [
-      el("span", { class: "mu-who", title: c.by === "mock" ? "scripted stand-in, not a model" : "one Mubit call (" + MODEL_NAME + ")" }, c.by === "mock" ? "stand-in (not a model)" : "Mubit"),
+      whoSpan(c),
       c.id ? el("code", { class: "mu-rid", title: "x-middleware-request-id " + c.id + (c.trained ? " (trained call)" : " (untrained call)") }, shortId(c.id)) : null,
       isNum(c.latency_ms) ? el("span", { class: "num" }, secs(c.latency_ms)) : null,
       c.focus ? el("span", { class: "mu-focus", title: "focus line of this call (round " + c.round + ", idea " + c.slot + " of " + c.of + "): the only difference between the calls of a round" }, "focus: " + c.focus) : null,
     ].filter(Boolean);
     const n = el("div", { class: "ln mu-card" + (c.kept ? " kept" : "") + (ok ? " ok" : "") + (!isNum(c.best_d) && c.as && c.as.legal === false ? " illegal" : ""), "data-n": c.n },
       el("div", { class: "l1" }, el("span", { class: "g num", text: "#" + c.n }), verdict(c), trainChip(c)),
-      el("div", { class: "mu-hyp", title: c.hypothesis || c.fallback || "" }, c.hypothesis ? "“" + trim(c.hypothesis, 150) + "”" : "the model's answer could not be used"),
+      el("div", { class: "mu-hyp", title: c.hypothesis || c.fallback || "" }, c.hypothesis ? "“" + trim(c.hypothesis, 150) + "”" : c.noai ? "No AI: the engine's own random direction" : "the model's answer could not be used"),
       c.change ? el("div", { class: "mu-chg", title: plainChange(c.change, 99) }, el("span", { class: "k" }, "Proposed "), plainChange(c.change, 2)) : null,
       res.length ? el("div", { class: "mu-res" }, res.reduce((a, x, i) => (i ? a.concat([el("span", { class: "sep", "aria-hidden": "true" }, " · "), x]) : [x]), [])) : null,
       el("div", { class: "mu-meta" }, meta.reduce((a, x, i) => (i ? a.concat([el("span", { class: "sep", "aria-hidden": "true" }, " · "), x]) : [x]), [])));
@@ -495,6 +561,7 @@
     tidy();
     document.addEventListener("keydown", e => { if (S.view !== "mubit" || S.mode !== "replay") return; if (e.target.closest && e.target.closest("input,select,textarea,button,a")) return; if (e.key === " ") { e.preventDefault(); S.playing ? pause() : play(); } });
     renderAll();
+    loadModels();
     await listRuns();
     await loadReplay(qs.get("replay"));
     probeLive();
@@ -518,6 +585,8 @@
   }
   // test / screenshot hook
   EI.mubitFirst = { state: () => ({ view: S.view, mode: S.mode, status: S.status, shown: S.shown, cards: S.cards.length, calls: S.calls, examples: S.examples, best: S.best, liveOk: S.liveOk, liveN: S.liveN, run: S.meta && S.meta.name, round: S.stage ? S.stage.round : null, step: S.stage ? S.stage.step : null, versions: S.stage ? S.stage.versions : 0, laps: S.stage ? S.stage.laps : 0, stopNote: S.stopNote }), play, pause, skipToEnd, startRun, loadReplay, setView, MUBIT,
+    model: () => ({ picked: S.model, run: S.runModel && S.runModel.id, untrained: S.untrained, models: S.models.map(m => m.id) }),
+    setModel: id => { if (MS.find(S.models, id) && S.status !== "running" && S.status !== "starting") { S.model = id; renderCtl(); renderStrip(); } return S.model; },
     stepTo: n => { pause(); while (S.replay && S.shown < Math.min(n, S.replay.decisions.length)) replayStep(); renderAll(); return S.shown; } };
   // fetch the run list and the default run now, while the rest of the page boots; concept-lab.js builds the 3D car only when boot()
   // above asks for it (after the first card), or after a few seconds whatever happens

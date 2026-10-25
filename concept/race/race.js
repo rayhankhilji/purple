@@ -4,6 +4,8 @@
 // "Qualifying lap" (?mode=quali, the demo's default): every car's best 2026 qualifying lap (OpenF1) + PURPLE and the RB22 baseline
 // (physics lap sim) on ONE clock from the same line, ghost laps, with a live timing tower beside the view (payload.qualiPayload).
 // "Game race" / "2026 grid" load the game's own ?lab=1 broadcast race instead (game AI + game lap model: cinematic).
+// Several model cars (?cars=, Model GP / the model switcher): ?only=cars hides the RB22 baseline ghost, ?real=ANT,... picks the real
+// laps; the "Models + pole" / "Everyone" toggle flips them (fieldUrl, a reload). The 3D tags carry the cars' names (e.g. "ChatGPT").
 // Messages are same-origin only and must come from the iframe (ARCHITECTURE §10). State for tests: window.__conceptRace.
 (function () {
   const RP = window.EI && EI.concept && EI.concept.race, DR = window.EI && EI.concept && EI.concept.drive, $ = (id) => document.getElementById(id);
@@ -40,7 +42,8 @@
     if (built.errors && built.errors.length) banner(built.errors);
     S.payload = built.payload;
     if (S.mode === "quali") await buildQuali();
-    $("sub").textContent = S.q.cars ? (S.q.title || "Model GP") + " · " + S.q.cars.length + " model cars · physics lap sim · on the game's 3D Silverstone" : "concept race · " + designName(built.design) +(built.design.label ? " · " + built.design.label : "") + " · on the game's 3D Silverstone";
+    if (S.q.cars) fieldToggle();
+    $("sub").textContent = S.q.cars ? (S.q.title || "Model GP") + " · " + S.q.cars.length + " model cars" + (S.q.only === "cars" ? " + " + (S.q.real && S.q.real.length ? S.q.real.join(", ") : "no real car") : "") + " · physics lap sim · on the game's 3D Silverstone" : "concept race · " + designName(built.design) +(built.design.label ? " · " + built.design.label : "") + " · on the game's 3D Silverstone";
     renderLap(); renderCar(); renderCheck();
     setMode(S.mode, true);
   }
@@ -92,10 +95,13 @@
     const rp = EI.RACEPACE && EI.RACEPACE.silverstone;
     if (!rp || !rp.q) { S.quali = { ok: false, errors: ["js/data/racepace2026.js not loaded"] }; return S.quali; }
     const tel = {}; let idx = null;
-    const need = S.q.cars && S.q.field !== "all" ? Object.keys(rp.q).filter((c) => c === ((rp.pole && rp.pole.code) || "ANT")) : Object.keys(rp.q);   // several cars: only the laps shown
+    const poleCode = (rp.pole && rp.pole.code) || "ANT";
+    // several cars: only the laps shown (?real=: those drivers, plus the pole lap whose profile stands in for a missing trace)
+    const need = S.q.cars && Array.isArray(S.q.real) ? Object.keys(rp.q).filter((c) => S.q.real.includes(c) || c === poleCode)
+      : S.q.cars && S.q.field !== "all" ? Object.keys(rp.q).filter((c) => c === poleCode) : Object.keys(rp.q);
     await Promise.all(need.map(async (c) => { try { const r = await fetch("../../" + RP.qualiFile(c)); if (r.ok) tel[c] = await r.json(); } catch (e) { /* that driver drives the pole profile, time-scaled */ } }));
     try { const r = await fetch("../data/telemetry/silverstone-2026-q-index.json"); if (r.ok) idx = await r.json(); } catch (e) { /* no deleted-lap note */ }
-    try { S.quali = RP.qualiPayload(S.payload, { lap_s: S.q.lap_s, racepace: rp, season: EI.SEASON, telemetry: tel, deleted: idx && idx.deleted_lap_times, cars: S.q.cars || undefined, field: S.q.field, title: S.q.title }); }
+    try { S.quali = RP.qualiPayload(S.payload, { lap_s: S.q.lap_s, racepace: rp, season: EI.SEASON, telemetry: tel, deleted: idx && idx.deleted_lap_times, cars: S.q.cars || undefined, field: S.q.field, title: S.q.title, only: S.q.only, real: S.q.real }); }
     catch (e) { S.quali = { ok: false, errors: ["qualifying lap: " + e.message] }; console.error(e); }
     S.qualiP = S.quali.payload || null;
     if (S.quali.errors && S.quali.errors.length) banner(S.quali.errors);
@@ -136,12 +142,44 @@
     const me = d.cars.find((c) => c.id === "concept");
     S.qualiCheck = { same, got, want, worst, purple: me && me.replay_finish_s };
     if (P.gp) {   // several model cars (Model GP): checked against the GP's own lap times, named by entrant (no PURPLE car here)
-      const lead = P.cars.find((c) => c.id === "concept"), slip = d.cars.filter((c) => Math.abs(c.diff_s) > 0.0015).map((c) => c.code);
+      const leadCode = (P.order.find((o) => o.kind === "concept") || {}).code, lead = P.cars.find((c) => c.kind === "concept" && c.code === leadCode), leadFin = d.cars.find((c) => c.code === leadCode), slip = d.cars.filter((c) => Math.abs(c.diff_s) > 0.0015).map((c) => c.code);
       $("towerNote").innerHTML = '<span class="' + (same ? "gr" : "rd") + '">' + (same ? "✓ Finish order matches the Model GP lap times (" + want.length + " of " + want.length + ")" : "✗ Finish order differs from the Model GP lap times: " + esc(got.join(" "))) + "</span>" +
-        " · largest gap between a finish and its lap time: " + f3(worst) + " s" + (slip.length ? " (" + esc(slip.join(", ")) + " off by more than 0.002 s)" : "") + " · fastest: " + esc(lead ? lead.name + " " + f3(me && me.replay_finish_s) + " s" : "n/a") + ". " + esc(P.ghost_line) + "." + (S.quali.notes.length ? " Time-scaled: " + esc(S.quali.notes.join("; ")) + "." : "");
+        " · largest gap between a finish and its lap time: " + f3(worst) + " s" + (slip.length ? " (" + esc(slip.join(", ")) + " off by more than 0.002 s)" : "") + " · fastest model car: " + esc(lead ? lead.name + " " + f3(leadFin && leadFin.replay_finish_s) + " s" : "n/a") + ". " + esc(P.ghost_line) + "." + (S.quali.notes.length ? " Time-scaled: " + esc(S.quali.notes.join("; ")) + "." : "");
       return;
     }
     $("towerNote").innerHTML = '<span class="' + (same ? "gr" : "rd") + '">' + (same ? "✓ finish order = the demo leaderboard (" + want.length + " / " + want.length + ")" : "✗ finish order differs from the leaderboard: " + esc(got.join(" "))) + "</span> · largest |finish − lap| " + f3(worst) + " s · PURPLE " + f3(me && me.replay_finish_s) + " s" + (S.q.lap_s != null ? " (engine " + f3(S.q.lap_s) + " s)" : "") + ". " + esc(P.ghost_line) + "." + (S.quali.notes.length ? " Time-scaled: " + esc(S.quali.notes.join("; ")) + "." : "");
+  }
+
+  // several model cars: the game view's 3D tags (and its dash) show each car's own name ("ChatGPT", "Claude Opus"), not its code; the
+  // timing tower keeps the code column and shows the full name beside it. The finish check reads code / id, never the tag.
+  function gameCars(pl) {
+    if (!pl.gp) return pl;
+    return Object.assign({}, pl, { cars: pl.cars.map((c) => (c.kind === "concept" && c.name ? Object.assign({}, c, { short: c.name.slice(0, 24) }) : c)) });
+  }
+  // the field of a multi-car race as a URL: "pole" = the model cars + the real pole lap only (only=cars&real=<pole>), "all" = everyone
+  // (the RB22 baseline ghost and the whole real 2026 field). Every other parameter is kept.
+  function fieldUrl(href, which, poleCode) {
+    const u = new URL(href);
+    u.searchParams.delete("only"); u.searchParams.delete("real"); u.searchParams.delete("field");
+    if (which === "pole") { u.searchParams.set("only", "cars"); u.searchParams.set("real", poleCode || "ANT"); }
+    else u.searchParams.set("field", "all");
+    return u.toString();
+  }
+  S.fieldUrl = fieldUrl;
+  function fieldToggle() {
+    if ($("fieldSw")) return;
+    const rp = EI.RACEPACE && EI.RACEPACE.silverstone, pole = (rp && rp.pole && rp.pole.code) || "ANT";
+    const on = S.q.only === "cars" ? "pole" : S.q.field === "all" && !S.q.real ? "all" : null;
+    const w = document.createElement("div");
+    w.className = "fieldsw"; w.id = "fieldSw"; w.setAttribute("role", "group"); w.setAttribute("aria-label", "who races");
+    for (const [k, t, tip] of [["pole", "Models + pole", "only the model cars and the real pole lap (" + pole + ", OpenF1 2026)"], ["all", "Everyone", "the model cars, the RB22 baseline and every real 2026 qualifying lap"]]) {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "btn" + (on === k ? " on" : ""); b.id = k === "pole" ? "btnFieldPole" : "btnFieldAll"; b.textContent = t; b.title = tip;
+      b.setAttribute("aria-pressed", String(on === k));
+      b.addEventListener("click", () => { if (on !== k) location.assign(fieldUrl(location.href, k, pole)); });
+      w.appendChild(b);
+    }
+    const ctl = $("ctl"); ctl.parentNode.insertBefore(w, ctl);
   }
 
   // ---------------------------------------------------------------- Drive it yourself (time trial) / Race the grid: the payload, the result cards
@@ -222,7 +260,7 @@
   }
   function renderCar() {
     const b = S.built.bench, pc = b.physical, d = S.built.design, A = pc.aero, me = S.payload.cars[0], rf = S.payload.cars[1];
-    $("carSrc").textContent = S.q.cars ? me.name + " · the fastest model car" + (me.seed != null ? " · seed " + me.seed : "") : (d.team || "generic") + " baseline frame";
+    $("carSrc").textContent = S.q.cars ? me.name + (S.qualiP && (S.qualiP.order.find((o) => o.kind === "concept") || {}).code !== me.code ? " · the first car in the link" : " · the fastest model car") + (me.seed != null ? " · seed " + me.seed : "") : (d.team || "generic") + " baseline frame";
     $("carKv").innerHTML = kv([
       ["design", esc(designName(d))],
       ["legal (concept/regs.js)", b.legal ? "yes" : "no", b.legal ? "gr" : "rd"],
@@ -269,7 +307,7 @@
     if (e.origin !== location.origin || e.source !== game().contentWindow || !e.data || typeof e.data !== "object") return;
     const d = e.data;
     if (d.type === "purple:concept-ready" && S.mode === "replay" && S.payload) send({ type: "purple:concept-race", payload: S.payload });
-    else if (d.type === "purple:concept-ready" && S.mode === "quali" && S.qualiP) { const { tables, ...pl } = S.qualiP; send({ type: "purple:concept-race", payload: pl }); }
+    else if (d.type === "purple:concept-ready" && S.mode === "quali" && S.qualiP) { const { tables, ...pl } = S.qualiP; send({ type: "purple:concept-race", payload: gameCars(pl) }); }
     else if (d.type === "purple:concept-ready" && DRIVE_MODES[S.mode] && S.driveP) send({ type: "purple:concept-race", payload: S.driveP });
     else if (d.type === "purple:concept-started" && d.drive) { S.started = d; $("stageWait").hidden = true; focusGame(); }
     else if (d.type === "purple:drive-state" && DRIVE_MODES[S.mode]) { S.driveState = d; renderDrivePanel(d); $("btnPause").textContent = d.paused ? "Resume" : "Pause"; }

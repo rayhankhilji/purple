@@ -6,6 +6,13 @@ Owns: see `docs/agents/PARALLEL_PLAN.md` §1 (`lab/index.html`, `lab/lab.js`, `l
 
 ## Sessions
 
+### 2026-10-25 06:30 London — helper (claude/model-switcher-ui) — homepage model switcher + race "Models + pole"
+- Status: done, committed on `claude/model-switcher-ui` (merged `claude/great-gauss-sul4cv` 59a3a71, the server switcher). Not pushed, not deployed. `npm test` 494/494 before the race fixes, re-run before the final commit. No Mubit call, no llm "live" sent (the live UI was checked by routing Go live to the mock server as llm "mock").
+- Lab (`concept/lab/model-switch.js` new, `mubit-first.js/.css`, `index.html`): a Model select next to Go live (Claude Haiku 4.5 default, Sonnet 5.5, Opus 5.5, ChatGPT (GPT-6 Luna), No AI (control)) from `concept/gp/entrants.json` (`car` names, built-in list as fallback); `?model=<id>` preselects. Default = today's record_good body, unchanged (no `model`, no `memory`). Any other model: `{ model, memory: true }`, no record_good / confirm / trained; "untrained · not recorded for training" beside Go live, on the strip counter and on every card. The title area reads "Mubit · <model>"; cards name the car and the served model (`row.model`). The select is disabled while a run is going. Replay path untouched.
+- Race (`concept/race/payload.js`, `race.js`, `race.css`): `?only=cars` drops the RB22 ghost, `?real=ANT,...` picks the real laps (replaces `field`); "Models + pole" | "Everyone" toggle in multi-car mode (reload); 3D tags and the dash carry car names ("ChatGPT"); tower names wrap on phones. Finish check passes 5/5 with `only=cars&real=ANT` (headless, rate 32). Fixed: the finish note and the car panel called the link's first car "the fastest" even when it was not.
+- Tests: `test/model-switcher-ui.test.js` (entrants → list, run body per model, lab wiring, only/real round trip, reduced field and its finish order, Everyone, toggle); `test/mubit-first.test.js` points its body checks at model-switch.js.
+- Screens: `docs/concept/switcher-shots/` (1440×900 and 390×844; 0 page errors, no horizontal scroll).
+
 ### 2026-10-24 03:50 London — agent D (Claude) — P3.T2 polish round 2 + P3.T3 UI side (GAME review, integrator audit), same PR #29
 - Status: done, pushed to `claude/ui-p3-polish` (PR #29; synced with the integration branch at dc8c68c). `npm test` 75/75. No Mubit calls.
 - Files changed: `lab/lab.js`, `lab/lab.css`, `lab/index.html`, screenshots (`15-grid-racing.png`, `16-grid-result.png` new; others refreshed), this file.
