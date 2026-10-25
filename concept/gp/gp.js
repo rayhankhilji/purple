@@ -86,6 +86,7 @@
       host.prepend(pane);
       try { ln.view = EI.conceptView.mount(pane, Object.assign({ design: designAt(ln, j), baseline: S.base, parts: C.parts, livery: S.base.livery, ghostColor: parseInt(ln.e.color.slice(1), 16) }, VIEW_OPTS)); }
       catch (e) { pane.remove(); clearWait(); host.prepend(waitNote("3D view unavailable here (" + e.message + "); the numbers still update.")); return next(); }
+      clearWait(); // the view shows its own loading line from here
       ln.shownDesign = j; ln.setAt = performance.now(); tagFor(ln, j);
       const watch = () => { if (settled) return; if (gen !== S.mountGen) return next(); const st = ln.view && ln.view.state(); if (st && st.error) { clearWait(); return next(); } setTimeout(watch, 250); };
       setTimeout(watch, 250);

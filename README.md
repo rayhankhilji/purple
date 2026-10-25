@@ -18,6 +18,8 @@ Built at Night Shift London, 24–25 October 2026.
 
 The goal is the real 2026 Silverstone pole: Antonelli, 88.111 s.
 
+You can watch the best car lap Silverstone against the real 2026 grid, or drive it yourself: **Watch on Silverstone →**, then **Drive it**.
+
 ## Why use AI, and not just an algorithm?
 
 On our simulator, one test takes about 20 milliseconds, so a plain algorithm does fine. We measured it (below). A real team's test takes hours, and it only gets a limited number of them. When every test counts:
@@ -32,9 +34,10 @@ Mubit then takes only the physics-approved decisions and trains a smaller model 
 ## Where Mubit sits
 
 - **Every model call goes through Mubit.** There is exactly one call site, [`server/mubit.js`](server/mubit.js), and a test fails if any other file names Mubit's address. Every decision in the app shows its Mubit request ID.
-- **Two Mubit tasks:**
-  - the concept designer (Claude Haiku 4.5, frozen prompt);
-  - the research engineer from the first night.
+- **Mubit tasks:**
+  - the concept designer (Claude Haiku 4.5, frozen prompt), plus two shorter answer formats for the same job (compact and action);
+  - the research engineer from the first night;
+  - the Model GP and the exams call other models through the same gateway, untrained.
 - **Trained calls:** 2,022 designer + 99 research.
 - **Physics-approved training examples:** 4,115, taken from 48,250 designer decisions. Every call is first made untrained. Only the ones physics approves are sent again as trained calls; the model answers at temperature 0, so it gives the same answer.
 
@@ -58,14 +61,40 @@ All lap times come from our physics lap sim of Silverstone. They are model predi
 
 **The control, which we report because it matters:** with a 20 ms test, our engine plus random ideas reaches pole in fewer laps (about 300) than our engine plus Claude (about 800). Testing is cheap enough that brute force wins. Full numbers: [`docs/concept/TESTS_TO_POLE.md`](docs/concept/TESTS_TO_POLE.md).
 
+**Which model is the best race engineer? The Model GP.** Every model runs through the same harness: the same frozen prompt, the same engine, the same physics corrections and the same shared memory of 8,261 physics-approved decisions (the exam situations are held out). Each one gets 150 physics laps, three times. Then their best cars race on Silverstone. Open it from the homepage: **Model GP →**, then **Race them**.
+
+| | Median best lap | vs real pole |
+|---|---|---|
+| GPT-6 Luna (OpenAI route via Mubit) | **87.818 s** | -0.293 s |
+| Sonnet 5.5 | 87.941 s | -0.170 s |
+| No AI (random directions, same engine) | 87.961 s | -0.150 s |
+| Opus 5.5 | 88.244 s | +0.133 s |
+| Haiku 4.5 | 88.315 s | +0.204 s |
+
+Two models beat the no-AI control, two did not. We show that as it came out. Three seeds is a small sample; the full table, every seed and every call is in [`concept/gp/data/`](concept/gp/data/).
+
+**The exam with shared memory:** the same 30 held-out situations, each answer tested on physics, kept as proposed.
+
+| | Plain | + corrections | + corrections + memory |
+|---|---|---|---|
+| No AI (random change) | 3/30 | | |
+| Haiku 4.5 | 9/30 | 10/30 | **23/30** |
+| Sonnet 5.5 | 19/30 | 19/30 | 22/30 |
+| Opus 5.5 | 16/30 | 22/30 | **23/30** |
+| Memory only, no model | | | 26/30 |
+
+Memory alone picks a safe past change more often, but the models gain 4 to 5 times more lap time per idea (0.063 to 0.070 s against 0.015 s).
+
 **Mubit's models:**
 
-| Version | Trained on | Mubit's own test | Status |
+| Task | Trained on | Mubit's own test | Status |
 |---|---|---|---|
-| v1 | 98 examples | 5/19, not passed | Mubit kept Claude answering |
-| v2 | the 4,115 physics-approved examples | — | examples sent; waiting for Mubit to train |
+| Designer v1 | 98 examples | 5/19 (26%), not passed | Mubit kept Claude answering |
+| Designer v1 | 4,115 physics-approved examples, from 48,250 decisions | not run yet | sent; waiting for Mubit to train |
+| Compact | 6,073 physics-approved, from 24,975 | not run yet | sent; waiting for Mubit to train |
+| Action (one code per answer) | harvest running | not run yet | built so a small model can match Claude exactly |
 
-Source: Mubit console, 24 October.
+Mubit scores its small model by how often it gives exactly Claude's answer. A free-text design answer is hard to match word for word, so we added two shorter answer formats for the same job. Source: Mubit console, 24 and 25 October.
 
 ## Honest limits
 
