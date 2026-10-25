@@ -32,7 +32,10 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 // engine run's parallel round). 2 -> 8 on 2026-10-24 (owner: up to 100 Mubit calls in flight overall, ≤ 8 per engine run; a parallel
 // round sends K ≤ 8 designer calls at once). withSlot(fn) runs fn once a slot is free; the 429 retry inside callMubit keeps its slot.
 // Exported for the test.
-const SLOTS = 8; let inFlight = 0; const waiting = [];
+// 8 -> 40 on Vercel on 2026-10-25 (owner: the live Model GP, one engine run per model at once, may share one instance: 5 runs × 8).
+// PURPLE_MUBIT_SLOTS overrides (1-100).
+const SLOTS = (() => { const v = parseInt(process.env.PURPLE_MUBIT_SLOTS, 10); return Number.isInteger(v) && v >= 1 && v <= 100 ? v : process.env.VERCEL ? 40 : 8; })();
+let inFlight = 0; const waiting = [];
 function withSlot(fn) {
   const run = () => { inFlight++; return Promise.resolve().then(fn).finally(() => { inFlight--; const next = waiting.shift(); if (next) next(); }); };
   if (inFlight < SLOTS) return run();
