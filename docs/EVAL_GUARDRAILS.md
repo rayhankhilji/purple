@@ -1,5 +1,7 @@
 # PURPLE — Guardrails and Definition of Done
 
+> Status: §2 to §5 (Mubit task integrity, security, cost, honesty) still apply to the current product; §1 and §8 were the first night's plan. The current product is in [README.md](../README.md).
+
 Version 1.0 · 2026-10-23 · Short, because a hackathon has exactly three ways to lose: break the Mubit task, overclaim, or miss the upload.
 
 ## 1. Definition of done

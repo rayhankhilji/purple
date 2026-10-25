@@ -1,5 +1,7 @@
 # PURPLE deck: sources and export
 
+> Status: kept for history. The submission is the video ([../video-script.md](../video-script.md)); the current numbers are in [README.md](../../README.md).
+
 `slides.md` is the deck: **12 slides**, [Marp](https://marp.app) markdown with inline HTML (two-column layouts, the flow diagram,
 the per-corner bars), styled with the DESIGN_SYSTEM tokens (black, mono numbers, one purple accent, Mubit orange). Version 2
 (2026-10-24): the story leads with the concept lab and the Mubit designer loop; the 5-knob research lab is slide 10, "first proof".

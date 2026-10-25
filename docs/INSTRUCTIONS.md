@@ -1,5 +1,7 @@
 # PURPLE — Agent Instructions
 
+> Status: written for the first-night research lab; the current product is in [README.md](../README.md), and [README.md](README.md) in this folder maps the docs.
+
 Version 1.0 · 2026-10-23 · Read this first. It is short on purpose; it points at the documents that hold the detail.
 
 ## 0. What this is

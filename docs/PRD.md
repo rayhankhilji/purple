@@ -1,5 +1,7 @@
 # PURPLE — Product Requirements
 
+> Status: describes the first-night research lab (`/lab/`, no longer linked from the site); the current product is in [README.md](../README.md).
+
 Version 1.0 · 2026-10-23 · Profile: AI agent product + simulation, scope **hackathon demo (Night Shift, Mubit)** · Owner: Tanuj
 
 > *Purple sector* = the fastest sector of the session. PURPLE is an autonomous F1 engineering research lab that chases purple sectors: it redesigns a car, measures it, races it, gets corrected by a human engineer, and — through Mubit — learns to choose better experiments.

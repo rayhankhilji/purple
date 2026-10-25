@@ -1,5 +1,7 @@
 # PURPLE · CONCEPT LOOP (the closed learning loop with Mubit)
 
+> Status: written before the loop's first live call; the live runs since are in `docs/concept/loop-runs/`, and the engine in [ENGINE_V2.md](ENGINE_V2.md) replaced this loop on the site. The current product is in [README.md](../../README.md).
+
 Version 1 · 2026-10-24 · branch `claude/mubit-loop` · status: **built and proven with the scripted mock and a dry run only. No
 Mubit or Anthropic call has been made (no `MUBIT_API_KEY` in this environment). The designer prompt is still a DRAFT, so trained
 calls are refused by the code.**
