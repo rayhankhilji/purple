@@ -47,6 +47,29 @@
 
 <div class="gp-banner" id="gpBanner" hidden></div>
 
+<!-- the answer first: the final standings (median seed of each entrant) with the real pole in its place, then the way into the race -->
+<section class="gp-result" id="gpResult" aria-labelledby="gpHeadline" hidden>
+  <div class="gp-result-l">
+    <p class="gp-kicker">Result · median of 3 seeds per entrant</p>
+    <h2 class="gp-headline" id="gpHeadline"></h2>
+    <p class="gp-sub" id="gpSub"></p>
+    <div class="gp-cta">
+      <a class="btn primary gp-race-btn" id="gpRace2" href="#" hidden>Race them on Silverstone <span aria-hidden="true">→</span></a>
+      <a class="btn gp-watch" id="gpWatch" href="#gpReplay">Watch the replay <span aria-hidden="true">↓</span></a>
+    </div>
+    <p class="gp-race-note" id="gpRaceNote"></p>
+  </div>
+  <div class="gp-board-wrap">
+    <table class="gp-board" id="gpBoard" aria-label="final standings"></table>
+    <p class="gp-board-src">Every lap: <b>physics lap sim · Silverstone · model prediction</b>. Real pole: <b>OpenF1 2026</b>, a real lap.</p>
+  </div>
+</section>
+
+<div class="gp-replay-h" id="gpReplay">
+  <h2>The replay</h2>
+  <p>Each card plays back one entrant's run, simulation by simulation, with the best car it had found so far.</p>
+</div>
+
 <section class="cmp-clock" aria-label="physics simulations used">
   <div class="cmp-clock-l"><span class="cmp-clock-v" id="gpLaps">0</span><span class="cmp-clock-of" id="gpOf">of 150 physics simulations</span></div>
   <div class="cmp-bar" aria-hidden="true"><div class="cmp-bar-fill" id="gpBar"></div><div class="cmp-bar-marks" id="gpMarks"></div></div>
@@ -56,14 +79,10 @@
 <main class="cmp-lanes gp-lanes" id="gpLanes" aria-live="off"></main>
 
 <section class="gp-below" id="gpBelow" hidden>
-  <div class="panel gp-podium-panel">
-    <div class="ph"><h2>Podium</h2><span class="src" id="gpPodiumSrc">median seed per entrant · physics lap sim · Silverstone · model prediction</span></div>
-    <div class="gp-podium" id="gpPodium"></div>
-    <div class="gp-race-row"><a class="btn primary" id="gpRace2" href="#">Race them · Qualifying lap</a><span class="gp-race-note" id="gpRaceNote"></span></div>
-  </div>
   <div class="panel gp-table-panel">
     <div class="ph"><h2>Results</h2><span class="src">median seed per entrant, then each seed · real pole · OpenF1 2026</span></div>
     <div class="gp-table-wrap"><table class="gp-table" id="gpTable"></table></div>
+    <p class="gp-swipe">Swipe the table sideways to see every column. The entrant stays in view.</p>
   </div>
   <div class="panel gp-curves-panel">
     <div class="ph"><h2>Best lap so far, every entrant on shared axes</h2><span class="src">median seed bold, other seeds faint</span></div>
