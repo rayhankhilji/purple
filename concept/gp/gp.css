@@ -280,3 +280,13 @@ body.gp-page { overflow-x: hidden; overflow-y: auto; }
   .gp-strip-t { display: none; }
   .gp-replay-h .cmp-seed select { max-width: 44vw; }
 }
+
+/* ---- race length, the replay of a recorded live race and its label */
+.gp-seg { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.gp-seg .btn { padding: 6px 10px; font-size: 12px; }
+.gp-seg .btn.on { border-color: var(--purple); background: var(--purple-dim); color: var(--text); }
+.gp-replay-go { gap: 6px 8px; }
+.btn.gp-replay-btn { padding: 8px 12px; font-size: 13px; }
+.gp-replay-chip { display: inline-block; padding: 1px 8px; border: 1px solid rgba(251, 191, 36, .55); border-radius: 999px; font: 500 11px/1.5 var(--mono); color: var(--amber); white-space: nowrap; vertical-align: 1px; }
+.gp-replay-chip[hidden] { display: none; }
+.gp-strip .gp-replay-chip:empty { display: none; }

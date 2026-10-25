@@ -52,11 +52,16 @@
 <section class="gp-live" id="gpLive" role="tabpanel" aria-labelledby="gpTabLive">
   <div class="gp-live-head">
     <div class="gp-live-ctl">
-      <p class="gp-kicker" id="gpLiveKicker">live · real Mubit calls · untrained</p>
+      <p class="gp-kicker"><span id="gpLiveKicker">live · real Mubit calls · untrained</span> <span class="gp-replay-chip" id="gpReplayChip" hidden></span></p>
       <fieldset class="gp-pick" id="gpPick"><legend class="gp-vh">Entrants</legend></fieldset>
+      <div class="gp-seg gp-len" id="gpLen" role="group" aria-label="race length"></div>
       <div class="gp-live-go">
         <button class="btn primary gp-start" id="gpLiveStart" type="button" disabled>Start the race</button>
         <button class="btn danger" id="gpLiveStop" type="button" hidden>Stop all</button>
+      </div>
+      <div class="gp-live-go gp-replay-go">
+        <button class="btn gp-replay-btn" id="gpReplayBtn" type="button">Replay a live race · 8×</button>
+        <div class="gp-seg" id="gpSpeed" role="group" aria-label="replay speed"></div>
       </div>
       <p class="gp-live-status" id="gpLiveStatus" role="status"></p>
     </div>
