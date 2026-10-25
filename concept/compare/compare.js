@@ -22,7 +22,7 @@
   ];
   const POLE_C = "#4ade80", BASE_C = "#8a8a94", ILLEGAL_C = "rgba(240, 80, 110, .55)";
   const q = new URLSearchParams(location.search);
-  const S = { index: null, data: null, seed: null, t: 0, speed: [1, 4, 16].includes(+q.get("speed")) ? +q.get("speed") : 4, playing: false, last: 0, lanes: [], base: null, y: null };
+  const S = { index: null, data: null, seed: null, t: 0, speed: [1, 4, 16].includes(+q.get("speed")) ? +q.get("speed") : 4, playing: false, last: 0, lanes: [], base: null, y: null, mountGen: 0, t0: performance.now() };
 
   async function getJson(url) { const r = await fetch(url, { cache: "no-cache" }); if (!r.ok) throw new Error(url + ": HTTP " + r.status); return r.json(); }
   const baseDesign = () => { try { return C.design.baseline({ team: "redbull" }); } catch (e) { return null; } };
@@ -40,11 +40,11 @@
     S.lanes = [];
     for (const spec of LANES) {
       const L = S.data.lanes[spec.id]; if (!L) continue;
-      const car = el("div", { class: "cmp-car-view" }), canvas = el("canvas", { role: "img", "aria-label": L.title + ": lap time of every car tested and the best so far, against test laps used" });
+      const car = el("div", { class: "cmp-car" }), canvas = el("canvas", { role: "img", "aria-label": L.title + ": lap time of every car tested and the best so far, against test laps used" });
       const best = el("span", { class: "cmp-best-v" }), gap = el("div", { class: "cmp-gap" }), last = el("div", { class: "cmp-last" }), badge = el("div", { class: "cmp-badge" }), tag = el("div", { class: "cmp-car-tag" });
       const lane = el("section", { class: "panel cmp-lane " + spec.cls, "aria-label": L.title },
         el("div", { class: "cmp-lh" }, el("div", { class: "cmp-lt" }, el("i"), L.title), el("div", { class: "cmp-lw", text: spec.who })),
-        el("div", { class: "cmp-car" }, car, tag),
+        car,
         el("div", { class: "cmp-stats" },
           el("div", { class: "cmp-best" }, el("span", { class: "cmp-best-l", text: "Best lap so far" }), best),
           el("div", { class: "cmp-side" }, gap, last)),
@@ -52,7 +52,8 @@
         el("div", { class: "cmp-chart" }, canvas),
         el("div", { class: "cmp-src", text: sourceLine(spec.id, L) }));
       host.append(lane);
-      S.lanes.push({ spec, L, els: { car, canvas, best, gap, last, badge, tag }, view: null, k: -2, shownDesign: -1, wantDesign: 0, setAt: 0, hit: false, ctx: null });
+      car.append(tag);
+      S.lanes.push({ spec, L, els: { car, canvas, best, gap, last, badge, tag }, view: null, ready: false, shownAt: null, k: -2, shownDesign: -1, wantDesign: 0, setAt: 0, hit: false, ctx: null });
     }
     // the clock bar: where each lane beats the pole
     const marks = $("cmpMarks"); marks.replaceChildren();
@@ -76,29 +77,61 @@
       // budgets where the steered runs' mean best lap is ahead of CMA-ES's (TESTS_TO_POLE.md §4.4; 2,000 has two steered runs)
       const ahead = Object.keys(T.best_at.steered).filter(B => T.best_at.steered[B].mean != null && T.best_at.cmaes[B].mean != null && T.best_at.steered[B].mean < T.best_at.cmaes[B].mean).map(B => fmtN(+B) + (T.best_at.steered[B].n < 3 ? " (" + T.best_at.steered[B].n + " runs)" : ""));
       line("Over the three recorded runs (seeds 7, 11, 12): PURPLE beat the pole after ", b(fmtN(P.steered.mean) + " ± " + fmtN(P.steered.sd)), " test laps on average, CMA-ES after ", b(fmtN(P.cmaes.mean) + " ± " + fmtN(P.cmaes.sd)), ahead.length ? "; PURPLE's average best lap was ahead at " + ahead.join(", ") + " test laps." : ".");
-      f.append(el("span", { class: "cmp-honest" }, "Our engine with random directions was faster still on this cheap simulator (" + fmtN(P.engine_noai.mean) + " ± " + fmtN(P.engine_noai.sd) + " test laps to the pole): see ", el("code", { text: "TESTS_TO_POLE.md" }), "."));
+      // the write-up's address sits on the footer element in index.html (data-doc), so this script names no URL
+      const doc = f.dataset.doc, more = doc ? el("a", { href: doc, target: "_blank", rel: "noopener", text: "how we counted the test laps (GitHub)" }) : "how we counted the test laps";
+      f.append(el("span", { class: "cmp-honest" }, "Our engine with random directions was faster still on this cheap simulator (" + fmtN(P.engine_noai.mean) + " ± " + fmtN(P.engine_noai.sd) + " test laps to the pole): see ", more, "."));
     }
     line("Seed " + D.seed + (D.physics ? " · " + D.physics.replace(/\s*\(.*$/, "") : "") + ". Cars tested together in one round appear when the round is done.");
   }
 
   // ---------------------------------------------------------------- 3D
+  // The cars come in one at a time: lane A's view mounts first and each next lane's view mounts once the car before it has been
+  // drawn, so the first car appears after one build instead of three at once. A view mounts with the design it should show (one
+  // build, not the baseline and then the best). After that a car is rebuilt only when its lane's best design changes: at most once
+  // per 0.65 s per car, at most one car per frame, without the morph (which rebuilt the geometry on every frame for 450 ms). The
+  // views hold still (no sway), so they draw only when their car changes. Smaller livery atlas: the panes are a few hundred px wide.
+  const VIEW_OPTS = { mode: "solid", view: "hero", label: false, legend: false, changeTags: false, pixelRatioCap: 1.5, reflection: false, aero: "corner", orbit: false, liverySize: 1024, shadows: false };
+  const REBUILD_MS = 650;
+  const waitNote = text => el("div", { class: "cmp-car-wait", text });
   function mountViews() {
+    const gen = ++S.mountGen, can = !!(EI.conceptView && S.base);
     for (const ln of S.lanes) {
       if (ln.view) { try { ln.view.dispose(); } catch (e) { /* gone */ } ln.view = null; }
-      if (!EI.conceptView || !S.base) { ln.els.car.replaceChildren(el("div", { class: "empty", text: "3D view not loaded; the numbers still update." })); continue; }
-      try { ln.view = EI.conceptView.mount(ln.els.car, { design: S.base, baseline: S.base, parts: C.parts, mode: "solid", view: "hero", label: false, legend: false, changeTags: false, livery: S.base.livery, pixelRatioCap: 1.5, reflection: false, aero: "corner" }); }
-      catch (e) { ln.els.car.replaceChildren(el("div", { class: "empty", text: "3D view unavailable here (" + e.message + "); the numbers still update." })); }
-      ln.shownDesign = 0; ln.setAt = 0;
+      ln.ready = false; ln.shownAt = null; ln.shownDesign = -1; ln.setAt = 0;
+      for (const w of ln.els.car.querySelectorAll(".cmp-car-view, .cmp-car-wait")) w.remove();
+      ln.els.car.prepend(waitNote(can ? "Building the car…" : "3D view not loaded; the numbers still update."));
     }
+    if (can) (async () => { for (const ln of S.lanes) { if (gen !== S.mountGen) return; await mountOne(ln, gen); } })();
   }
-  function showDesign(ln, now, force) {
-    const j = ln.wantDesign; if (j === ln.shownDesign) return;
-    if (!force && now - ln.setAt < 650) return;   // at most one rebuild per 0.65 s per car; the latest best design wins
-    const D = ln.L.designs[j];
-    ln.shownDesign = j; ln.setAt = now;
-    ln.els.tag.textContent = j === 0 ? "RB22 baseline" : "best design so far · found at " + fmtN(D.laps) + " test laps";
-    if (!ln.view) return;
-    try { ln.view.setDesign(designFrom(D.params), { baseline: S.base, animate: !force, livery: S.base.livery }); } catch (e) { /* view optional */ }
+  function mountOne(ln, gen) {
+    return new Promise(resolve => {
+      const host = ln.els.car, j = ln.wantDesign, pane = el("div", { class: "cmp-car-view" });
+      let settled = false;
+      const next = () => { if (!settled) { settled = true; resolve(); } };
+      const clearWait = () => { for (const w of host.querySelectorAll(".cmp-car-wait")) w.remove(); };
+      pane.addEventListener("conceptview:ready", () => {
+        if (gen !== S.mountGen) return next();
+        ln.ready = true;
+        // the view draws the car on its next frame (its frame callback runs before ours); once that frame is on screen, the next lane starts
+        requestAnimationFrame(() => { if (gen === S.mountGen) clearWait(); requestAnimationFrame(() => { if (gen === S.mountGen) ln.shownAt = performance.now() - S.t0; next(); }); });
+      }, { once: true });
+      host.prepend(pane);
+      try { ln.view = EI.conceptView.mount(pane, Object.assign({ design: j > 0 ? designFrom(ln.L.designs[j].params) : S.base, baseline: S.base, parts: C.parts, livery: S.base.livery, ghostColor: parseInt(ln.spec.color.slice(1), 16) }, VIEW_OPTS)); }
+      catch (e) { pane.remove(); clearWait(); host.prepend(waitNote("3D view unavailable here (" + e.message + "); the numbers still update.")); return next(); }
+      ln.shownDesign = j; ln.setAt = performance.now(); tagFor(ln, j);
+      // a car that cannot be built (the view says why in its pane) must not hold up the next lane
+      const watch = () => { if (settled) return; if (gen !== S.mountGen) return next(); const st = ln.view && ln.view.state(); if (st && st.error) { clearWait(); return next(); } setTimeout(watch, 250); };
+      setTimeout(watch, 250);
+    });
+  }
+  function tagFor(ln, j) { ln.els.tag.textContent = j === 0 ? "RB22 baseline" : "Best design so far · found at " + fmtN(ln.L.designs[j].laps) + " test laps"; }
+  // at most one car rebuild per frame: the lane whose car has waited longest
+  function pumpBuild(now) {
+    let pick = null;
+    for (const ln of S.lanes) if (ln.ready && ln.view && ln.wantDesign !== ln.shownDesign && now - ln.setAt >= REBUILD_MS && (!pick || ln.setAt < pick.setAt)) pick = ln;
+    if (!pick) return;
+    const j = pick.wantDesign; pick.shownDesign = j; pick.setAt = now; tagFor(pick, j);
+    try { pick.view.setDesign(j > 0 ? designFrom(pick.L.designs[j].params) : S.base, { baseline: S.base, animate: false, livery: S.base.livery }); } catch (e) { /* view optional */ }
   }
 
   // ---------------------------------------------------------------- charts
@@ -118,9 +151,9 @@
     const pad = { l: 44, r: 10, t: 14, b: 20 }, pw = W - pad.l - pad.r, ph = H - pad.t - pad.b;
     const X = laps => pad.l + pw * laps / D.budget, Y = s => pad.t + ph * (S.y.hi - s) / (S.y.hi - S.y.lo);
     g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
-    g.font = "500 10px Inter, system-ui, sans-serif"; g.textBaseline = "middle";
+    g.font = "500 11px Inter, system-ui, sans-serif"; g.textBaseline = "middle";
     // grid
-    g.strokeStyle = "#202027"; g.lineWidth = 1; g.fillStyle = "#6c6c76";
+    g.strokeStyle = "#202027"; g.lineWidth = 1; g.fillStyle = "#8a8a94";
     const step = (S.y.hi - S.y.lo) > 1.6 ? 0.5 : 0.25;
     for (let v = Math.ceil(S.y.lo / step) * step; v <= S.y.hi + 1e-9; v += step) { const y = Math.round(Y(v)) + .5; g.beginPath(); g.moveTo(pad.l, y); g.lineTo(W - pad.r, y); g.stroke(); g.textAlign = "right"; g.fillText(v.toFixed(2), pad.l - 5, y); }
     g.textAlign = "center"; g.textBaseline = "top";
@@ -128,7 +161,7 @@
     // reference lines
     const ref = (s, color, text) => { const y = Math.round(Y(s)) + .5; g.save(); g.setLineDash([5, 4]); g.strokeStyle = color; g.lineWidth = 1.3; g.beginPath(); g.moveTo(pad.l, y); g.lineTo(W - pad.r, y); g.stroke(); g.restore(); g.fillStyle = color; g.textAlign = "right"; g.textBaseline = "bottom"; g.fillText(text, W - pad.r - 2, y - 2); };
     ref(L.baseline_s, BASE_C, "RB22 baseline " + f3(L.baseline_s));
-    ref(D.pole.s, POLE_C, "real pole " + f3(D.pole.s) + " (ANT)");
+    ref(D.pole.s, POLE_C, "Real pole " + f3(D.pole.s) + " (ANT)");
     // every car tested (dots); slower than the chart: a tick on the top edge; broke a rule (no lap): a red tick above it
     const n = Math.min(end, L.tries.length);
     g.fillStyle = hexA(ln.spec.color, 0.42);
@@ -146,11 +179,11 @@
     // beat the pole
     if (L.to_pole && end >= L.to_pole.laps) {
       const px = Math.round(X(L.to_pole.laps)) + .5; g.strokeStyle = POLE_C; g.lineWidth = 1.5; g.beginPath(); g.moveTo(px, pad.t); g.lineTo(px, pad.t + ph); g.stroke();
-      g.fillStyle = POLE_C; g.textBaseline = "top"; const txt = "beat pole at " + fmtN(L.to_pole.laps); g.textAlign = px > W * 0.7 ? "right" : "left"; g.fillText(txt, px + (px > W * 0.7 ? -4 : 4), pad.t + ph - 26);
+      g.fillStyle = POLE_C; g.textBaseline = "top"; const txt = "Beat the pole at " + fmtN(L.to_pole.laps); g.textAlign = px > W * 0.7 ? "right" : "left"; g.fillText(txt, px + (px > W * 0.7 ? -4 : 4), pad.t + ph - 26);
     }
     // the run's own end before the budget
     // (a run stopped by the test-lap budget may end a few laps short of it: its next round would not fit; that is not marked)
-    if (L.end_laps < D.budget && !/^physics-lap budget/.test(L.end_reason || "") && S.t >= L.end_laps) { const px = Math.round(X(L.end_laps)) + .5; g.fillStyle = "#8a8a94"; g.textAlign = "right"; g.textBaseline = "top"; g.fillText("run ended", px - 3, pad.t + 2); }
+    if (L.end_laps < D.budget && !/^physics-lap budget/.test(L.end_reason || "") && S.t >= L.end_laps) { const px = Math.round(X(L.end_laps)) + .5; g.fillStyle = "#8a8a94"; g.textAlign = "right"; g.textBaseline = "top"; g.fillText("Run ended", px - 3, pad.t + 2); }
   }
   function hexA(hex, a) { const n = parseInt(hex.slice(1), 16); return "rgba(" + (n >> 16) + "," + ((n >> 8) & 255) + "," + (n & 255) + "," + a + ")"; }
 
@@ -163,7 +196,7 @@
     for (const ln of S.lanes) {
       const L = ln.L, k = lastStep(L.steps, t);
       if (ln.mark) ln.mark.classList.toggle("on", !!L.to_pole && t >= L.to_pole.laps);
-      if (k === ln.k && !force) { if (L.end_laps < D.budget && t >= L.end_laps && !ln.endShown) { ln.endShown = true; draw(ln, k >= 0 ? L.steps[k][0] : 0); badge(ln, k >= 0 ? L.steps[k][0] : 0); } showDesign(ln, now, false); continue; }
+      if (k === ln.k && !force) { if (L.end_laps < D.budget && t >= L.end_laps && !ln.endShown) { ln.endShown = true; draw(ln, k >= 0 ? L.steps[k][0] : 0); badge(ln, k >= 0 ? L.steps[k][0] : 0); } continue; }
       ln.k = k; ln.endShown = L.end_laps < D.budget && t >= L.end_laps;
       const end = k >= 0 ? L.steps[k][0] : 0, best = k >= 0 ? L.steps[k][1] : L.baseline_s;
       ln.els.best.replaceChildren(f3(best), el("small", { text: " s" }));
@@ -176,10 +209,11 @@
         ln.els.last.replaceChildren(round.length > 1 ? "Last round: " + round.length + " cars, fastest " : "Last car tested: ", el("b", { text: round.length > 1 ? (rb != null ? f3(rb) + " s" : "none legal") : (tr[1] != null ? f3(tr[1]) + " s" : "broke a rule, no lap") }));
       } else ln.els.last.textContent = "Starts from the RB22 baseline";
       let j = 0; for (let i = 0; i < L.designs.length; i++) if (L.designs[i].laps <= end) j = i;
-      ln.wantDesign = j; showDesign(ln, now, force);
+      ln.wantDesign = j;
       badge(ln, end);
       draw(ln, end);
     }
+    pumpBuild(now);
   }
   function badge(ln, end) {
     const L = ln.L, D = S.data, b = ln.els.badge, hit = !!L.to_pole && end >= L.to_pole.laps;
@@ -218,7 +252,7 @@
     try { S.index = await getJson("data/index.json"); }
     catch (e) { $("cmpLanes").replaceChildren(el("div", { class: "panel empty cmp-err", text: "Could not load concept/compare/data/index.json (" + e.message + ")." })); return; }
     const sel = $("cmpSeed");
-    for (const s of S.index.seeds) sel.append(el("option", { value: String(s.seed), text: "seed " + s.seed + (s.seed === S.index.default ? " (shown first)" : "") + (/pre-redesigns/.test(s.physics || "") ? " · older sim" : "") }));
+    for (const s of S.index.seeds) sel.append(el("option", { value: String(s.seed), text: "Seed " + s.seed + (s.seed === S.index.default ? " (shown first)" : "") + (/pre-redesigns/.test(s.physics || "") ? " · older sim" : "") }));
     const want = +q.get("seed"), seed = S.index.seeds.some(s => s.seed === want) ? want : S.index.default;
     sel.value = String(seed);
     sel.addEventListener("change", async () => { const was = S.playing; S.playing = false; await loadSeed(+sel.value, { t: 0 }); S.playing = was; playBtn(); });

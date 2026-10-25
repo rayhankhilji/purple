@@ -13,6 +13,17 @@
 <link rel="stylesheet" href="../../lab/lab.css">
 <link rel="stylesheet" href="../lab/concept-lab.css">
 <link rel="stylesheet" href="compare.css">
+<!-- the 3D view loads these one after another when it first needs them (concept/view/view3d.js ensureAssets); fetching them now, in
+     parallel, lets the first car appear sooner. Preload only: view3d.js still decides when they run. -->
+<link rel="preload" as="script" href="../../js/data/season2026.js">
+<link rel="preload" as="script" href="../../js/ads.js">
+<link rel="preload" as="script" href="../../js/teams.js">
+<link rel="preload" as="script" href="../../js/liveries.js">
+<link rel="preload" as="script" href="../../js/liveries/redbull.js">
+<link rel="preload" as="script" href="../../concept/view/mesh3d.js">
+<link rel="preload" as="script" href="../../concept/view/car3d.js">
+<link rel="preload" as="script" href="../../concept/view/livery-rb22.js">
+<link rel="preload" as="script" href="../../concept/view/parts3d.js">
 </head>
 <body class="cmp-page">
 <header class="cmp-top">
@@ -31,19 +42,19 @@
       <button class="btn" data-speed="16" type="button">16×</button>
     </span>
     <button class="btn" id="cmpRestart" type="button">Restart</button>
-    <label class="cmp-seed src">run <select id="cmpSeed" aria-label="which recorded run"></select></label>
+    <label class="cmp-seed">Run <select id="cmpSeed" aria-label="which recorded run"></select></label>
   </div>
 </header>
 
 <section class="cmp-clock" aria-label="test laps used">
   <div class="cmp-clock-l"><span class="cmp-clock-v" id="cmpLaps">0</span><span class="cmp-clock-of" id="cmpOf">of 3,500 test laps used</span></div>
   <div class="cmp-bar" aria-hidden="true"><div class="cmp-bar-fill" id="cmpBar"></div><div class="cmp-bar-marks" id="cmpMarks"></div></div>
-  <div class="cmp-clock-r src">one test lap = one car driven once on the <b>physics lap sim · Silverstone · model prediction</b></div>
+  <div class="cmp-clock-r">One test lap = one car driven once on the <b>physics lap sim · Silverstone · model prediction</b></div>
 </section>
 
 <main class="cmp-lanes" id="cmpLanes" aria-live="off"></main>
 
-<footer class="cmp-foot" id="cmpFoot"></footer>
+<footer class="cmp-foot" id="cmpFoot" data-doc="https://github.com/rayhankhilji/purple/blob/main/docs/concept/TESTS_TO_POLE.md"></footer>
 
 <!-- the scripts the concept lab loads for the design and the 3D car (ARCHITECTURE §7.3 order); this page never runs the sim or calls Mubit -->
 <script src="../../vendor/three.min.js"></script>
