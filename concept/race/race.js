@@ -34,13 +34,13 @@
     if (!tel) banner(["the real 2026 pole lap (concept/data/telemetry/silverstone-2026-q-ant.json) did not load: no pole ghost"]);
     await new Promise((res) => requestAnimationFrame(() => setTimeout(res, 0)));   // paint the frame before the first (≈1 s) track build
     let built;
-    try { built = RP.buildPayload({ design: S.q.design, ref: S.q.ref, conditions: S.q.conditions, telemetry: tel }); } catch (e) { built = { ok: false, errors: ["the physics lap sim failed: " + e.message] }; console.error(e); }
+    try { built = RP.buildPayload({ design: S.q.design, cars: S.q.cars || undefined, ref: S.q.ref, conditions: S.q.conditions, telemetry: tel }); } catch (e) { built = { ok: false, errors: ["the physics lap sim failed: " + e.message] }; console.error(e); }
     S.built = built;
     if (!built.payload) { banner(built.errors || ["no payload"]); $("stageWait").textContent = "No lap to show: " + (built.errors || []).join(" · "); return; }
     if (built.errors && built.errors.length) banner(built.errors);
     S.payload = built.payload;
     if (S.mode === "quali") await buildQuali();
-    $("sub").textContent = "concept race · " + designName(built.design) +(built.design.label ? " · " + built.design.label : "") + " · on the game's 3D Silverstone";
+    $("sub").textContent = S.q.cars ? (S.q.title || "Model GP") + " · " + S.q.cars.length + " model cars · physics lap sim · on the game's 3D Silverstone" : "concept race · " + designName(built.design) +(built.design.label ? " · " + built.design.label : "") + " · on the game's 3D Silverstone";
     renderLap(); renderCar(); renderCheck();
     setMode(S.mode, true);
   }
@@ -71,7 +71,7 @@
     } else if (kin) {
       src = "../../index.html?concept=1&track=silverstone&rate=" + encodeURIComponent($("rate").value);
       if (m === "replay") { $("stageTitle").textContent = "Physics replay · Silverstone"; $("stageLabel").textContent = S.payload.label; }
-      else { $("stageTitle").textContent = "Qualifying lap · Silverstone · every car's best lap, one clock"; $("stageLabel").textContent = S.qualiP.ghost_line; renderTower(null); }
+      else { $("stageTitle").textContent = S.qualiP.gp ? S.qualiP.label : "Qualifying lap · Silverstone · every car's best lap, one clock"; $("stageLabel").textContent = S.qualiP.ghost_line; renderTower(null); }
     } else {
       if (!C || !C.ok) { banner([(C && C.error) || "no cinematic link"]); return; }
       src = m === "grid" ? C.grid : C.race;
@@ -92,9 +92,10 @@
     const rp = EI.RACEPACE && EI.RACEPACE.silverstone;
     if (!rp || !rp.q) { S.quali = { ok: false, errors: ["js/data/racepace2026.js not loaded"] }; return S.quali; }
     const tel = {}; let idx = null;
-    await Promise.all(Object.keys(rp.q).map(async (c) => { try { const r = await fetch("../../" + RP.qualiFile(c)); if (r.ok) tel[c] = await r.json(); } catch (e) { /* that driver drives the pole profile, time-scaled */ } }));
+    const need = S.q.cars && S.q.field !== "all" ? Object.keys(rp.q).filter((c) => c === ((rp.pole && rp.pole.code) || "ANT")) : Object.keys(rp.q);   // several cars: only the laps shown
+    await Promise.all(need.map(async (c) => { try { const r = await fetch("../../" + RP.qualiFile(c)); if (r.ok) tel[c] = await r.json(); } catch (e) { /* that driver drives the pole profile, time-scaled */ } }));
     try { const r = await fetch("../data/telemetry/silverstone-2026-q-index.json"); if (r.ok) idx = await r.json(); } catch (e) { /* no deleted-lap note */ }
-    try { S.quali = RP.qualiPayload(S.payload, { lap_s: S.q.lap_s, racepace: rp, season: EI.SEASON, telemetry: tel, deleted: idx && idx.deleted_lap_times }); }
+    try { S.quali = RP.qualiPayload(S.payload, { lap_s: S.q.lap_s, racepace: rp, season: EI.SEASON, telemetry: tel, deleted: idx && idx.deleted_lap_times, cars: S.q.cars || undefined, field: S.q.field, title: S.q.title }); }
     catch (e) { S.quali = { ok: false, errors: ["qualifying lap: " + e.message] }; console.error(e); }
     S.qualiP = S.quali.payload || null;
     if (S.quali.errors && S.quali.errors.length) banner(S.quali.errors);
@@ -200,7 +201,7 @@
     const me = cars[0];
     let h = "<tr><th>car</th><th>lap</th><th>S1</th><th>S2</th><th>S3</th><th>Δ</th></tr>";
     for (const c of cars) {
-      h += '<tr><td class="nm"><span class="sw" style="background:' + (COL[c.id] || "#888") + '"></span>' + esc(c.short) + '</td><td class="' + (c.lap_s <= bestLap ? "best" : "") + '">' + f3(c.lap_s) + "</td>" +
+      h += '<tr><td class="nm"><span class="sw" style="background:' + esc(c.color || COL[c.id] || "#888") + '"></span>' + esc(c.short) + '</td><td class="' + (c.lap_s <= bestLap ? "best" : "") + '">' + f3(c.lap_s) + "</td>" +
         c.sectors_s.map((x, j) => '<td class="' + (x <= best[j] + 1e-9 ? "best" : "") + '">' + f3(x) + "</td>").join("") +
         '<td class="' + (c === me ? "muted" : me.lap_s - c.lap_s < 0 ? "pu" : "rd") + '">' + (c === me ? "—" : sg(me.lap_s - c.lap_s)) + "</td></tr>" +
         '<tr class="srcrow"><td colspan="6">' + esc(c.name) + " · " + esc(c.source) + (c.speed_trap_kmh ? " · trap " + Math.round(c.speed_trap_kmh) + " km/h" : "") + "</td></tr>";

@@ -1,0 +1,1528 @@
+{
+ "v": 1,
+ "kind": "purple-designer-exam-results",
+ "column": "base",
+ "label": "base-claude-opus-5-5-memory",
+ "what": "B. Opus 5.5 (claude-opus-5-5) + frozen designer prompt via server/mubit.js, untrained (x-middleware-record: metadata); only the model id swapped; temperature not sent (the model does not accept one: default sampling)",
+ "questions_sha256": "e70bd3b3771d43fa9300e20ea4089d6548dabb871ff1912151f1bde3c2c69947",
+ "questions_variant": "memory",
+ "n": 30,
+ "exam_seed": 2026,
+ "graded_by": "concept/engineer/engine.js one decision from the question's head car (physics lap sim · quasi-steady-state point mass · Silverstone · calibrated to 2026 British GP qualifying); kept = legal && lap < head − 0.1 ms",
+ "meta": {
+  "session_id": "exam-dsg-01m5rgwgjmvpg6wtb5g9ws9xjm",
+  "mock": false,
+  "trained": false,
+  "model": "claude-opus-5-5",
+  "max_tokens": 4000,
+  "temperature": null,
+  "prompt_version": "1",
+  "concurrency": 8,
+  "comparison": true,
+  "model_name": "Opus 5.5",
+  "temperature_sent": false,
+  "swapped": [
+   "model",
+   "temperature not sent (the model does not accept a temperature setting)"
+  ],
+  "system_prompt_sha256": "40bd6f55333012e058b53937bfe2b281f0d74d71fc804d97efded96049030956"
+ },
+ "summary": {
+  "N": 30,
+  "parsed": 30,
+  "legal": 29,
+  "direct_kept": 23,
+  "engine_kept": 28,
+  "direct_mean_gain_s": 0.0645,
+  "engine_mean_gain_s": 0.119867,
+  "direct_total_gain_s": 1.935,
+  "engine_total_gain_s": 3.596,
+  "line": "kept 23/30 (direct), 28/30 (engine), mean gain 0.0645 s (direct), 0.1199 s (engine); parsed 30/30, legal as proposed 29/30"
+ },
+ "calls": {
+  "n": 30,
+  "answered": 30,
+  "errors": 0,
+  "error_codes": {},
+  "latency_ms_median": 4363,
+  "latency_ms_mean": 4363.8,
+  "latency_ms_max": 6555,
+  "input_tokens_mean": 2355.9,
+  "output_tokens_mean": 317.8,
+  "stop_reasons": {
+   "end_turn": 30
+  },
+  "served_by": {
+   "provider": 30
+  },
+  "models_returned": {
+   "claude-opus-5-5": 30
+  }
+ },
+ "grade_ms": 40420,
+ "grade_ms_per_question": 1347,
+ "total_ms": 59994,
+ "rows": [
+  {
+   "phase": "early",
+   "id": "q01",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.101,
+    "d_lap_s": -0.101,
+    "lap_s": 88.391,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.127,
+    "d_lap_s": -0.127,
+    "lap_s": 88.365,
+    "from": "candidate",
+    "best_change": "sidepods.undercut_mm 100->140; rear_wing.chord_mm 420->410; floor.width_mm 1450->1460; diffuser.expansion_deg 16->15.5",
+    "screened": 2996,
+    "physics_laps": 28
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 140
+    },
+    {
+     "part": "rear_wing",
+     "param": "span_mm",
+     "from": 1100,
+     "to": 1150
+    },
+    {
+     "part": "rear_wing",
+     "param": "chord_mm",
+     "from": 420,
+     "to": 410
+    }
+   ],
+   "head_lap_s": 88.492,
+   "ms": 6089,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":140},{\"part\":\"rear_wing\",\"param\":\"span_mm\",\"to\":1150},{\"part\":\"rear_wing\",\"param\":\"chord_mm\",\"to\":410}],\"hypothesis\":\"Max undercut cleans flow to floor and beam wing; wider, shorter-chord rear wing keeps downforce at less drag. Precedents show each change gaining.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710e433378a290a66c846c729e44",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2249,
+   "output_tokens": 332,
+   "latency_ms": 5042,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q02",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.026,
+    "lap_s": 88.26,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.025,
+    "d_lap_s": -0.025,
+    "lap_s": 88.209,
+    "from": "candidate",
+    "best_change": "rear_wing.aoa_deg 18.5->19.5; rear_wing.chord_mm 385->370",
+    "screened": 2959,
+    "physics_laps": 29
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "span_mm",
+     "from": 1100,
+     "to": 1150
+    },
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 18.5,
+     "to": 18
+    },
+    {
+     "part": "diffuser",
+     "param": "expansion_deg",
+     "from": 17,
+     "to": 17.5
+    }
+   ],
+   "head_lap_s": 88.234,
+   "ms": 2491,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"span_mm\",\"to\":1150},{\"part\":\"rear_wing\",\"param\":\"aoa_deg\",\"to\":18},{\"part\":\"diffuser\",\"param\":\"expansion_deg\",\"to\":17.5}],\"hypothesis\":\"Wider rear wing at lower AoA keeps rear load with less drag, and a bit more diffuser expansion adds floor load; precedents show each one is faster.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710e433276f3b4e78ed4a5c973d9",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2457,
+   "output_tokens": 378,
+   "latency_ms": 4435,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q03",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.026,
+    "lap_s": 87.627,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.017,
+    "d_lap_s": -0.017,
+    "lap_s": 87.584,
+    "from": "candidate",
+    "best_change": "rear_wing.chord_mm 395->400; setup.roll_front 54.5->50",
+    "screened": 2971,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "chord_mm",
+     "from": 395,
+     "to": 405
+    },
+    {
+     "part": "setup",
+     "param": "roll_front",
+     "from": 54.5,
+     "to": 52.5
+    }
+   ],
+   "head_lap_s": 87.601,
+   "ms": 1858,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"chord_mm\",\"to\":405},{\"part\":\"setup\",\"param\":\"roll_front\",\"to\":52.5}],\"hypothesis\":\"Similar cars gained from a longer rear wing chord (-0.034) and a softer front roll setting (-0.019). Combined, they should add rear load and rotation through Maggotts/Becketts.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710e43367132a6795dd043268596",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2368,
+   "output_tokens": 318,
+   "latency_ms": 4501,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "early",
+   "id": "q04",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.047,
+    "d_lap_s": -0.047,
+    "lap_s": 88.495,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.053,
+    "d_lap_s": -0.053,
+    "lap_s": 88.489,
+    "from": "candidate",
+    "best_change": "rear_wing.chord_mm 420->405; diffuser.expansion_deg 15.5->17; rear_wing.span_mm 1120->1130; rear_wing.sm_delta_deg 17->18.5",
+    "screened": 2953,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "chord_mm",
+     "from": 420,
+     "to": 410
+    },
+    {
+     "part": "diffuser",
+     "param": "expansion_deg",
+     "from": 15.5,
+     "to": 16.5
+    }
+   ],
+   "head_lap_s": 88.542,
+   "ms": 1602,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"chord_mm\",\"to\":410},{\"part\":\"diffuser\",\"param\":\"expansion_deg\",\"to\":16.5}],\"hypothesis\":\"Both moves had legal gains on similar cars: shorter RW chord cuts drag on the straights, more diffuser expansion restores rear downforce for Maggotts-Becketts.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710e433577f2955a1df340a059aa",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2213,
+   "output_tokens": 427,
+   "latency_ms": 5457,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q05",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.154,
+    "d_lap_s": -0.154,
+    "lap_s": 88.043,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.19,
+    "d_lap_s": -0.19,
+    "lap_s": 88.007,
+    "from": "candidate",
+    "best_change": "sidepods.undercut_mm 100->140; rear_wing.span_mm 1090->1100; setup.roll_front 55->52.5; front_wing.aoa_deg 27->27.5",
+    "screened": 2999,
+    "physics_laps": 28
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 140
+    },
+    {
+     "part": "rear_wing",
+     "param": "span_mm",
+     "from": 1090,
+     "to": 1100
+    },
+    {
+     "part": "setup",
+     "param": "roll_front",
+     "from": 55,
+     "to": 50
+    }
+   ],
+   "head_lap_s": 88.197,
+   "ms": 1133,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":140},{\"part\":\"rear_wing\",\"param\":\"span_mm\",\"to\":1100},{\"part\":\"setup\",\"param\":\"roll_front\",\"to\":50}],\"hypothesis\":\"Deeper sidepod undercut feeds the floor and beam wing; a wider rear wing and softer front roll add rear load and mid-corner grip. Precedents total about -0.16 s.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710e43387381a588d50535c1df67",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2313,
+   "output_tokens": 171,
+   "latency_ms": 2871,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q06",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.109,
+    "d_lap_s": -0.109,
+    "lap_s": 87.632,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.109,
+    "d_lap_s": -0.109,
+    "lap_s": 87.632,
+    "from": "proposal",
+    "best_change": "floor.width_mm 1530->1540; sidepods.undercut_mm 100->140",
+    "screened": 2949,
+    "physics_laps": 26
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 140
+    },
+    {
+     "part": "floor",
+     "param": "width_mm",
+     "from": 1530,
+     "to": 1540
+    }
+   ],
+   "head_lap_s": 87.741,
+   "ms": 1844,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":140},{\"part\":\"floor\",\"param\":\"width_mm\",\"to\":1540}],\"hypothesis\":\"Deeper sidepod undercut (precedent -0.094s) feeds cleaner flow to a wider floor edge, adding downforce for Copse-Maggotts-Becketts.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":1}}",
+   "mubit_request_id": "mreq_01a1710e4334797081f551d5e768b06d",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2465,
+   "output_tokens": 305,
+   "latency_ms": 4129,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "early",
+   "id": "q07",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.095,
+    "d_lap_s": -0.095,
+    "lap_s": 88.432,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.118,
+    "d_lap_s": -0.118,
+    "lap_s": 88.409,
+    "from": "candidate",
+    "best_change": "sidepods.undercut_mm 100->135; rear_wing.span_mm 1100->1130; rear_wing.chord_mm 420->400",
+    "screened": 2996,
+    "physics_laps": 26
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 140
+    },
+    {
+     "part": "rear_wing",
+     "param": "span_mm",
+     "from": 1100,
+     "to": 1150
+    },
+    {
+     "part": "rear_wing",
+     "param": "chord_mm",
+     "from": 420,
+     "to": 410
+    }
+   ],
+   "head_lap_s": 88.527,
+   "ms": 955,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":140},{\"part\":\"rear_wing\",\"param\":\"span_mm\",\"to\":1150},{\"part\":\"rear_wing\",\"param\":\"chord_mm\",\"to\":410}],\"hypothesis\":\"Deeper undercut improves floor/diffuser flow; wider, shorter-chord rear wing keeps downforce with less drag. Precedents: -0.094, -0.021, -0.034.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710e433c75138b6f6cd2f077a1a8",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2238,
+   "output_tokens": 176,
+   "latency_ms": 2635,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q08",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.151,
+    "d_lap_s": -0.151,
+    "lap_s": 88.116,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.212,
+    "d_lap_s": -0.212,
+    "lap_s": 88.055,
+    "from": "candidate",
+    "best_change": "sidepods.undercut_mm 100->140; survival_cell.front_axle_offset_mm 75->50",
+    "screened": 2973,
+    "physics_laps": 26
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 140
+    },
+    {
+     "part": "survival_cell",
+     "param": "front_axle_offset_mm",
+     "from": 75,
+     "to": 65
+    }
+   ],
+   "head_lap_s": 88.267,
+   "ms": 1381,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":140},{\"part\":\"survival_cell\",\"param\":\"front_axle_offset_mm\",\"to\":65}],\"hypothesis\":\"Max undercut cleans flow to floor edge and beam wing for more rear load. Shorter axle offset shifts mass forward. Both are untried parts with legal precedents.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710e433678f39c29c318b6de62b5",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2465,
+   "output_tokens": 359,
+   "latency_ms": 4816,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q09",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.117,
+    "d_lap_s": -0.117,
+    "lap_s": 87.702,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.118,
+    "d_lap_s": -0.118,
+    "lap_s": 87.701,
+    "from": "alone",
+    "best_change": "sidepods.undercut_mm 100->140",
+    "screened": 2985,
+    "physics_laps": 26
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 140
+    },
+    {
+     "part": "rear_wing",
+     "param": "span_mm",
+     "from": 1100,
+     "to": 1150
+    }
+   ],
+   "head_lap_s": 87.819,
+   "ms": 1265,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":140},{\"part\":\"rear_wing\",\"param\":\"span_mm\",\"to\":1150}],\"hypothesis\":\"Max sidepod undercut feeds cleaner flow to floor/diffuser; wider rear wing adds rear load. Both legal precedents gained on similar cars.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710e4d137a61aa0ed8909b68e640",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2434,
+   "output_tokens": 143,
+   "latency_ms": 2320,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "early",
+   "id": "q10",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.003,
+    "lap_s": 88.538,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.067,
+    "d_lap_s": -0.067,
+    "lap_s": 88.468,
+    "from": "candidate",
+    "best_change": "diffuser.expansion_deg 15->16.5; rear_wing.span_mm 1100->1060; floor.width_mm 1450->1440; rear_wing.aoa_deg 19->18; floor.ride_height_mm 35->34; floor.edge 0->1",
+    "screened": 2995,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "diffuser",
+     "param": "expansion_deg",
+     "from": 15,
+     "to": 17
+    },
+    {
+     "part": "rear_wing",
+     "param": "span_mm",
+     "from": 1100,
+     "to": 1150
+    },
+    {
+     "part": "floor",
+     "param": "width_mm",
+     "from": 1450,
+     "to": 1500
+    }
+   ],
+   "head_lap_s": 88.535,
+   "ms": 1117,
+   "answer": "{\"changes\":[{\"part\":\"diffuser\",\"param\":\"expansion_deg\",\"to\":17},{\"part\":\"rear_wing\",\"param\":\"span_mm\",\"to\":1150},{\"part\":\"floor\",\"param\":\"width_mm\",\"to\":1500}],\"hypothesis\":\"More diffuser expansion, a wider floor and a wider rear wing add rear downforce. Should gain in Maggotts-Becketts-Chapel and other fast corners. Precedents support each change.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":1}}",
+   "mubit_request_id": "mreq_01a1710e4de87c2295cce94ede892bb8",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2208,
+   "output_tokens": 314,
+   "latency_ms": 4291,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q11",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.007,
+    "d_lap_s": -0.007,
+    "lap_s": 88.218,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.301,
+    "d_lap_s": -0.301,
+    "lap_s": 87.924,
+    "from": "candidate",
+    "best_change": "floor.width_mm 1450->1540; rear_wing.chord_mm 400->380; rear_wing.aoa_deg 20.5->22; diffuser.expansion_deg 17->17.5; front_wing.aoa_deg 28.5->31; floor.throat_mm 60->57.5; floor.edge 0->1",
+    "screened": 2974,
+    "physics_laps": 33
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "width_mm",
+     "from": 1450,
+     "to": 1540
+    },
+    {
+     "part": "rear_wing",
+     "param": "chord_mm",
+     "from": 400,
+     "to": 390
+    }
+   ],
+   "head_lap_s": 88.225,
+   "ms": 1069,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"width_mm\",\"to\":1540},{\"part\":\"rear_wing\",\"param\":\"chord_mm\",\"to\":390}],\"hypothesis\":\"A wider floor adds underbody downforce efficiently, and a shorter RW chord trims drag; precedents show -0.038 and -0.021 s on similar cars.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710e52d3711089c1fd9056553771",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2302,
+   "output_tokens": 334,
+   "latency_ms": 4279,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q12",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.111,
+    "d_lap_s": -0.111,
+    "lap_s": 87.635,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.111,
+    "d_lap_s": -0.111,
+    "lap_s": 87.635,
+    "from": "proposal",
+    "best_change": "sidepods.undercut_mm 100->140",
+    "screened": 2445,
+    "physics_laps": 24
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 140
+    }
+   ],
+   "head_lap_s": 87.746,
+   "ms": 821,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":140}],\"hypothesis\":\"Deeper sidepod undercut cleans flow to the floor edge and diffuser for more rear downforce; a similar car gained -0.094 s. Sidepods never tried.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710e54197c03a6ce9dbaf4b42c6c",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2464,
+   "output_tokens": 122,
+   "latency_ms": 2566,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "early",
+   "id": "q13",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.062,
+    "d_lap_s": -0.062,
+    "lap_s": 88.595,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.185,
+    "d_lap_s": -0.185,
+    "lap_s": 88.472,
+    "from": "candidate",
+    "best_change": "rear_wing.aoa_deg 20->18.5; rear_wing.span_mm 1100->1140; diffuser.expansion_deg 15.5->16.5; rear_wing.chord_mm 420->405; rear_wing.endplate_top_mm 860->855",
+    "screened": 2944,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 20,
+     "to": 19
+    },
+    {
+     "part": "rear_wing",
+     "param": "span_mm",
+     "from": 1100,
+     "to": 1150
+    }
+   ],
+   "head_lap_s": 88.657,
+   "ms": 1060,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"aoa_deg\",\"to\":19},{\"part\":\"rear_wing\",\"param\":\"span_mm\",\"to\":1150}],\"hypothesis\":\"Lower rear AoA trims drag for the Wellington and Hangar straights; a wider span recovers rear load for Maggotts-Becketts. Precedents: -0.095 and -0.035 s.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710e54477af092b06cff5f9cb856",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2294,
+   "output_tokens": 442,
+   "latency_ms": 5211,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q14",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.069,
+    "lap_s": 88.354,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.223,
+    "d_lap_s": -0.223,
+    "lap_s": 88.062,
+    "from": "candidate",
+    "best_change": "rear_wing.aoa_deg 20->22; diffuser.expansion_deg 16->16.5; rear_wing.span_mm 1110->1150; front_wing.aoa_deg 27->29.5; rear_wing.sm_delta_deg 16->18",
+    "screened": 2972,
+    "physics_laps": 32
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 20,
+     "to": 19
+    },
+    {
+     "part": "diffuser",
+     "param": "expansion_deg",
+     "from": 16,
+     "to": 17
+    },
+    {
+     "part": "rear_wing",
+     "param": "span_mm",
+     "from": 1110,
+     "to": 1150
+    }
+   ],
+   "head_lap_s": 88.285,
+   "ms": 978,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"aoa_deg\",\"to\":19},{\"part\":\"diffuser\",\"param\":\"expansion_deg\",\"to\":17},{\"part\":\"rear_wing\",\"param\":\"span_mm\",\"to\":1150}],\"hypothesis\":\"Less rear wing AoA cuts drag on the straights. More diffuser expansion and rear wing span recover rear load. Similar-car precedents were all legal gains.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":3}}",
+   "mubit_request_id": "mreq_01a1710e55827b538471aff276142dbf",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2397,
+   "output_tokens": 412,
+   "latency_ms": 5275,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q15",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.004,
+    "d_lap_s": -0.004,
+    "lap_s": 87.643,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.024,
+    "d_lap_s": -0.024,
+    "lap_s": 87.623,
+    "from": "candidate",
+    "best_change": "rear_wing.chord_mm 390->385; gearbox.step 1.156->1.154",
+    "screened": 2972,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "chord_mm",
+     "from": 390,
+     "to": 380
+    },
+    {
+     "part": "gearbox",
+     "param": "step",
+     "from": 1.156,
+     "to": 1.08
+    }
+   ],
+   "head_lap_s": 87.647,
+   "ms": 1239,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"chord_mm\",\"to\":380},{\"part\":\"gearbox\",\"param\":\"step\",\"to\":1.08}],\"hypothesis\":\"Shorter rear wing chord trims drag on the straights, and a closer gear step keeps the PU in its power band. Both helped a similar car.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710e560d7491a00c143f47125388",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2430,
+   "output_tokens": 317,
+   "latency_ms": 4451,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "early",
+   "id": "q16",
+   "parsed": true,
+   "legal": false,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.067,
+    "d_lap_s": -0.067,
+    "lap_s": 88.445,
+    "from": "projected"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.144,
+    "d_lap_s": -0.144,
+    "lap_s": 88.368,
+    "from": "candidate",
+    "best_change": "diffuser.expansion_deg 14->15.5; floor.ride_height_mm 35->33.5; rear_wing.aoa_deg 19->18; floor.edge 0->1; suspension.front 0->1",
+    "screened": 2930,
+    "physics_laps": 34
+   },
+   "proposal": [
+    {
+     "part": "diffuser",
+     "param": "expansion_deg",
+     "from": 14,
+     "to": 17
+    },
+    {
+     "part": "floor",
+     "param": "ride_height_mm",
+     "from": 35,
+     "to": 33.5
+    }
+   ],
+   "head_lap_s": 88.512,
+   "articles": [
+    "PKG-FLOOR-STALL"
+   ],
+   "ms": 1228,
+   "answer": "{\"changes\":[{\"part\":\"diffuser\",\"param\":\"expansion_deg\",\"to\":17},{\"part\":\"floor\",\"param\":\"ride_height_mm\",\"to\":33.5}],\"hypothesis\":\"More diffuser expansion plus the minimum legal ride height should add floor downforce in the high-speed sector, as similar cars gained -0.076 s and -0.062 s.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710e564b78c290dd9a2f169618da",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2212,
+   "output_tokens": 146,
+   "latency_ms": 2409,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q17",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.154,
+    "d_lap_s": -0.154,
+    "lap_s": 88.037,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.158,
+    "d_lap_s": -0.158,
+    "lap_s": 88.033,
+    "from": "candidate",
+    "best_change": "sidepods.undercut_mm 100->140; rear_wing.span_mm 1100->1150; floor.width_mm 1450->1470",
+    "screened": 2989,
+    "physics_laps": 27
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 140
+    },
+    {
+     "part": "rear_wing",
+     "param": "span_mm",
+     "from": 1100,
+     "to": 1150
+    }
+   ],
+   "head_lap_s": 88.191,
+   "ms": 867,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":140},{\"part\":\"rear_wing\",\"param\":\"span_mm\",\"to\":1150}],\"hypothesis\":\"Deeper undercut feeds the floor edge and diffuser for more downforce. A wider rear wing adds rear load to balance it. Both are legal per precedents.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710e580476f38e8c9dfdf45ff607",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2265,
+   "output_tokens": 425,
+   "latency_ms": 5846,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q18",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.121,
+    "d_lap_s": -0.121,
+    "lap_s": 87.674,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.163,
+    "d_lap_s": -0.163,
+    "lap_s": 87.632,
+    "from": "candidate",
+    "best_change": "sidepods.undercut_mm 100->140; survival_cell.front_axle_offset_mm 75->60; floor.width_mm 1510->1480; ballast.x_frac 0.05->0.03; sidepods.inlet_cm2 650->680; engine_cover.style 0->1",
+    "screened": 2983,
+    "physics_laps": 28
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 140
+    },
+    {
+     "part": "survival_cell",
+     "param": "front_axle_offset_mm",
+     "from": 75,
+     "to": 65
+    }
+   ],
+   "head_lap_s": 87.795,
+   "ms": 841,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":140},{\"part\":\"survival_cell\",\"param\":\"front_axle_offset_mm\",\"to\":65}],\"hypothesis\":\"Deeper sidepod undercut feeds the floor and rear wing for -0.095 on a similar car; a shorter axle offset adds about -0.027. Both parts are untried on this car.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710e5e1672718e9955c2d5accb8f",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2437,
+   "output_tokens": 278,
+   "latency_ms": 4081,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "early",
+   "id": "q19",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.067,
+    "d_lap_s": -0.067,
+    "lap_s": 88.524,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.152,
+    "d_lap_s": -0.152,
+    "lap_s": 88.439,
+    "from": "candidate",
+    "best_change": "rear_wing.aoa_deg 20->19.5; diffuser.expansion_deg 14->16; rear_wing.chord_mm 420->415; rear_wing.endplate_top_mm 860->850; rear_wing.sm_delta_deg 15->16",
+    "screened": 2951,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 20,
+     "to": 19
+    },
+    {
+     "part": "diffuser",
+     "param": "expansion_deg",
+     "from": 14,
+     "to": 15
+    }
+   ],
+   "head_lap_s": 88.591,
+   "ms": 778,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"aoa_deg\",\"to\":19},{\"part\":\"diffuser\",\"param\":\"expansion_deg\",\"to\":15}],\"hypothesis\":\"Trim rear wing AoA to cut drag on Hangar and Wellington straights. Diffuser expansion 15 restores rear load. Both are legal precedents (-0.086 s, -0.040 s).\",\"expected\":{\"lap_delta_s\":-1,\"sector\":3}}",
+   "mubit_request_id": "mreq_01a1710e5ead7aa28e751f3443f61bc5",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2293,
+   "output_tokens": 535,
+   "latency_ms": 6483,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q20",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.035,
+    "d_lap_s": -0.035,
+    "lap_s": 88.189,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.152,
+    "d_lap_s": -0.152,
+    "lap_s": 88.072,
+    "from": "candidate",
+    "best_change": "sidepods.undercut_mm 100->105; rear_wing.span_mm 1100->1130; rear_wing.aoa_deg 20->21.5; floor.width_mm 1440->1460; front_wing.aoa_deg 28->30",
+    "screened": 2996,
+    "physics_laps": 32
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 140
+    },
+    {
+     "part": "rear_wing",
+     "param": "span_mm",
+     "from": 1100,
+     "to": 1150
+    },
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 20,
+     "to": 19
+    }
+   ],
+   "head_lap_s": 88.224,
+   "ms": 1053,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":140},{\"part\":\"rear_wing\",\"param\":\"span_mm\",\"to\":1150},{\"part\":\"rear_wing\",\"param\":\"aoa_deg\",\"to\":19}],\"hypothesis\":\"Deeper undercut feeds floor/diffuser; wider, flatter rear wing keeps downforce with less drag. Precedents: -0.094, -0.021, -0.032 s.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710e5fb570608ed5f06d549ab946",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2452,
+   "output_tokens": 397,
+   "latency_ms": 6555,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q21",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.031,
+    "lap_s": 87.682,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0,
+    "lap_s": 87.651,
+    "from": "alone",
+    "best_change": "rear_wing.chord_mm 410->400; rear_wing.span_mm 1140->1130; rear_wing.aoa_deg 22->22.5",
+    "screened": 2991,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "chord_mm",
+     "from": 410,
+     "to": 405
+    },
+    {
+     "part": "gearbox",
+     "param": "step",
+     "from": 1.156,
+     "to": 1.08
+    },
+    {
+     "part": "gearbox",
+     "param": "top_kmh",
+     "from": 336,
+     "to": 345
+    }
+   ],
+   "head_lap_s": 87.651,
+   "ms": 1017,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"chord_mm\",\"to\":405},{\"part\":\"gearbox\",\"param\":\"step\",\"to\":1.08},{\"part\":\"gearbox\",\"param\":\"top_kmh\",\"to\":345}],\"hypothesis\":\"Untried gearbox: closer ratios and a taller top gear, plus a shorter rear wing chord for less drag. All three precedents were legal and faster on similar cars.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710e638b75a2969101f11ecd1283",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2435,
+   "output_tokens": 428,
+   "latency_ms": 6034,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "early",
+   "id": "q22",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.07,
+    "d_lap_s": -0.07,
+    "lap_s": 88.421,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.089,
+    "d_lap_s": -0.089,
+    "lap_s": 88.402,
+    "from": "candidate",
+    "best_change": "sidepods.undercut_mm 100->125; rear_wing.span_mm 1100->1070; floor.width_mm 1460->1450",
+    "screened": 2989,
+    "physics_laps": 27
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 140
+    },
+    {
+     "part": "rear_wing",
+     "param": "span_mm",
+     "from": 1100,
+     "to": 1150
+    }
+   ],
+   "head_lap_s": 88.491,
+   "ms": 1547,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":140},{\"part\":\"rear_wing\",\"param\":\"span_mm\",\"to\":1150}],\"hypothesis\":\"Deeper undercut cleans floor-edge and diffuser feed, and a wider rear wing adds efficient load. Both have precedent gains (-0.095, -0.027) and stay legal.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710e67717c32af3a1c65dfd0454b",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2261,
+   "output_tokens": 525,
+   "latency_ms": 6264,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q23",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.032,
+    "d_lap_s": -0.032,
+    "lap_s": 88.115,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.077,
+    "d_lap_s": -0.077,
+    "lap_s": 88.07,
+    "from": "candidate",
+    "best_change": "floor.width_mm 1450->1540; setup.roll_front 55->46.5; setup.brake_bias 57->56.75; rear_wing.aoa_deg 18.5->19",
+    "screened": 2996,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "width_mm",
+     "from": 1450,
+     "to": 1540
+    },
+    {
+     "part": "setup",
+     "param": "roll_front",
+     "from": 55,
+     "to": 50
+    },
+    {
+     "part": "setup",
+     "param": "brake_bias",
+     "from": 57,
+     "to": 54
+    }
+   ],
+   "head_lap_s": 88.147,
+   "ms": 906,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"width_mm\",\"to\":1540},{\"part\":\"setup\",\"param\":\"roll_front\",\"to\":50},{\"part\":\"setup\",\"param\":\"brake_bias\",\"to\":54}],\"hypothesis\":\"Max floor width adds downforce with no stall limit hit. Softer front roll and more rearward bias aid rotation in slow corners, per near-car precedents.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710e68a0726095d5f7f9a7df4444",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2444,
+   "output_tokens": 327,
+   "latency_ms": 4146,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q24",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.064,
+    "lap_s": 87.697,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.003,
+    "lap_s": 87.636,
+    "from": "candidate",
+    "best_change": "rear_wing.span_mm 1130->1140; rear_wing.sm_delta_deg 23.5->25.5",
+    "screened": 2909,
+    "physics_laps": 29
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "chord_mm",
+     "from": 400,
+     "to": 410
+    },
+    {
+     "part": "rear_wing",
+     "param": "span_mm",
+     "from": 1130,
+     "to": 1150
+    }
+   ],
+   "head_lap_s": 87.633,
+   "ms": 1290,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"chord_mm\",\"to\":410},{\"part\":\"rear_wing\",\"param\":\"span_mm\",\"to\":1150}],\"hypothesis\":\"Similar cars gained from a longer rear wing chord (-0.013 s) and full span (-0.001 s). Both stay in range and add rear downforce for the high-speed corners.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710e6a1c70028e041594744cef63",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2407,
+   "output_tokens": 277,
+   "latency_ms": 3916,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "early",
+   "id": "q25",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.053,
+    "d_lap_s": -0.053,
+    "lap_s": 88.451,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.08,
+    "d_lap_s": -0.08,
+    "lap_s": 88.424,
+    "from": "candidate",
+    "best_change": "sidepods.undercut_mm 100->125; rear_wing.span_mm 1100->1080",
+    "screened": 2989,
+    "physics_laps": 26
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 140
+    },
+    {
+     "part": "rear_wing",
+     "param": "span_mm",
+     "from": 1100,
+     "to": 1150
+    }
+   ],
+   "head_lap_s": 88.504,
+   "ms": 1202,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":140},{\"part\":\"rear_wing\",\"param\":\"span_mm\",\"to\":1150}],\"hypothesis\":\"Max undercut cleans flow to the floor and beam wing. The wider rear wing adds efficient downforce. Precedents show -0.095 and -0.027 s.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710e6e097e428903111a6365e5d9",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2238,
+   "output_tokens": 264,
+   "latency_ms": 3532,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q26",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.057,
+    "d_lap_s": -0.057,
+    "lap_s": 88.27,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.329,
+    "d_lap_s": -0.329,
+    "lap_s": 87.998,
+    "from": "candidate",
+    "best_change": "sidepods.undercut_mm 100->140; diffuser.expansion_deg 14.5->15.5; front_wing.aoa_deg 27.5->29",
+    "screened": 2989,
+    "physics_laps": 28
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 140
+    },
+    {
+     "part": "rear_wing",
+     "param": "span_mm",
+     "from": 1100,
+     "to": 1150
+    }
+   ],
+   "head_lap_s": 88.327,
+   "ms": 1272,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":140},{\"part\":\"rear_wing\",\"param\":\"span_mm\",\"to\":1150}],\"hypothesis\":\"Deeper undercut feeds floor/diffuser flow and a wider rear wing adds rear load to balance the stronger front wing; precedents show -0.095 and -0.027 s.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710e6ed77ae18a0c11cf2f2fe6b3",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2368,
+   "output_tokens": 149,
+   "latency_ms": 2237,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q27",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.117,
+    "d_lap_s": -0.117,
+    "lap_s": 87.639,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.124,
+    "d_lap_s": -0.124,
+    "lap_s": 87.632,
+    "from": "candidate",
+    "best_change": "sidepods.undercut_mm 100->140; rear_wing.chord_mm 410->405; floor.width_mm 1510->1530",
+    "screened": 2989,
+    "physics_laps": 27
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 140
+    },
+    {
+     "part": "rear_wing",
+     "param": "chord_mm",
+     "from": 410,
+     "to": 405
+    }
+   ],
+   "head_lap_s": 87.756,
+   "ms": 1087,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":140},{\"part\":\"rear_wing\",\"param\":\"chord_mm\",\"to\":405}],\"hypothesis\":\"Deeper sidepod undercut cleans flow to the floor and beam wing. A slightly shorter rear wing chord trims drag. Both had legal gains on similar cars.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710e77957153805a70722d1acdbf",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2458,
+   "output_tokens": 146,
+   "latency_ms": 2656,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "early",
+   "id": "q28",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.091,
+    "d_lap_s": -0.091,
+    "lap_s": 88.444,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.1,
+    "d_lap_s": -0.1,
+    "lap_s": 88.435,
+    "from": "candidate",
+    "best_change": "sidepods.undercut_mm 100->140; diffuser.expansion_deg 15.5->17; floor.width_mm 1450->1430; sidepods.inlet_cm2 650->680; engine_cover.style 0->1",
+    "screened": 2976,
+    "physics_laps": 32
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 140
+    },
+    {
+     "part": "diffuser",
+     "param": "expansion_deg",
+     "from": 15.5,
+     "to": 16.5
+    }
+   ],
+   "head_lap_s": 88.535,
+   "ms": 698,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":140},{\"part\":\"diffuser\",\"param\":\"expansion_deg\",\"to\":16.5}],\"hypothesis\":\"Deeper sidepod undercut cleans floor-edge flow and more diffuser expansion adds rear downforce. Precedents gave -0.104 and -0.019 s.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710e77fd7c43ba1af59d772f2f6c",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2210,
+   "output_tokens": 303,
+   "latency_ms": 4265,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q29",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.113,
+    "d_lap_s": -0.113,
+    "lap_s": 88.111,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.127,
+    "d_lap_s": -0.127,
+    "lap_s": 88.097,
+    "from": "candidate",
+    "best_change": "sidepods.undercut_mm 100->140; rear_wing.endplate_top_mm 850->880; front_wing.aoa_deg 27.5->28",
+    "screened": 2989,
+    "physics_laps": 27
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 140
+    },
+    {
+     "part": "rear_wing",
+     "param": "endplate_top_mm",
+     "from": 850,
+     "to": 880
+    }
+   ],
+   "head_lap_s": 88.224,
+   "ms": 654,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":140},{\"part\":\"rear_wing\",\"param\":\"endplate_top_mm\",\"to\":880}],\"hypothesis\":\"Deeper undercut cleans flow to floor edge/diffuser for more efficient downforce; taller endplate adds small rear load. Precedents -0.094 and -0.011 s.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710e78d3740399106def5a9d4a69",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2419,
+   "output_tokens": 417,
+   "latency_ms": 5583,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q30",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.058,
+    "lap_s": 87.719,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.021,
+    "d_lap_s": -0.021,
+    "lap_s": 87.64,
+    "from": "candidate",
+    "best_change": "rear_wing.chord_mm 390->395; survival_cell.front_axle_offset_mm 75->60",
+    "screened": 2968,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "chord_mm",
+     "from": 390,
+     "to": 380
+    },
+    {
+     "part": "survival_cell",
+     "param": "front_axle_offset_mm",
+     "from": 75,
+     "to": 65
+    }
+   ],
+   "head_lap_s": 87.661,
+   "ms": 1000,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"chord_mm\",\"to\":380},{\"part\":\"survival_cell\",\"param\":\"front_axle_offset_mm\",\"to\":65}],\"hypothesis\":\"Shorter rear wing chord cuts drag on the straights; a smaller front axle offset shifts mass and aero balance. Both precedents on similar cars were legal gains.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710e794f7290a34e862a4f16220a",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2481,
+   "output_tokens": 367,
+   "latency_ms": 4627,
+   "stop_reason": "end_turn"
+  }
+ ]
+}

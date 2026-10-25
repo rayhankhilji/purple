@@ -184,3 +184,37 @@ sleeps 2.3 s per call and answers with the scripted mock; another session's brow
 
 So 40 Mubit ideas now take about 50 s instead of ≈ 220 s, and the default run fits the 230 s engine time box with about 4.5× margin
 (20 rounds: 2.7×). A Vercel vCPU may be slower than this machine's core; the time box stop covers that.
+
+## 10. Shared memory: precedents from physics-approved decisions (2026-10-25, branch `claude/memory-harness`)
+
+Why: on the designer exam (30 held-out car states, physics-graded) Haiku 4.5 keeps 9/30 ideas exactly as proposed. The harvests
+already hold 10,188 decisions whose change, exactly as proposed, was legal and faster on the physics lap sim. The memory gives every
+model the same access to them, model-agnostic: one index, one retrieval, one block in the user message.
+
+- **Index** `concept/engineer/memory/approved.json` (1.35 MB; built by `node concept/engineer/memory/build.js --runs DIR`,
+  deterministic; DIR holds the harvests' per-run logs `harvest/ harvest2/ harvest3/ harvest-compact/run-seed<N>/`, kept outside the
+  repo). Joins each `good.jsonl` row of `docs/concept/loop-runs/{trained-harvest,-2,-3,trained-compact-harvest}` with its run's
+  `request` (head car), `proposal` (change) and decision row (as proposed: legal, d_lap_s; checked against good.jsonl). 10,183 of
+  10,188 rows joined (5 rows' run logs are missing), 8,261 entries on 7,565 distinct head cars after dedupe (same change on the same car).
+  **Held out:** rows from the exam's source seeds 101-110 and rows whose head car equals an exam question's head car are dropped
+  (none occurred: the harvests used other seeds); `test/engineer-memory.test.js` checks the committed file and a fixture build.
+- **Retrieval** `concept/engineer/memory.js retrieve({ head, decisions, k: 6, chars: 1200 })`: distance = mean |Δ| over the 36
+  parameters normalised by their model ranges; only precedents whose changed parameters started from THIS car's values (so the
+  change applies exactly as approved); a change already proposed in the run, a no-op or out-of-range change is left out; the same
+  change on several cars is one candidate, support Σ n·exp(−distance/0.005); the top candidates that pass the engine's own FIA /
+  PU / materials check on this car (no lap is run), one per parameter, ≤ 6 lines, ≤ 1,200 chars. Line:
+  `similar car (distance 0.118, 127 cars): rear_wing.endplate_top_mm 870->880 legal, -0.003 s`. Facts only.
+  The settings were chosen on DEV states (the exam's own procedure on seeds 9101-9110), never on the exam: there the top precedent was
+  legal and faster on 23/30 states (106/179 of all lines).
+- **Scenario** `fit({ ..., memory: { decisions } })` appends `"precedents": [lines]` LAST (after corrections); engine
+  `opts.memory` (default **false**: every scenario byte for byte as before), `runEngine({ memory })`, CLI `--memory on|off` (off).
+  The frozen task is untouched; server route defaults unchanged.
+- **Exam** `node concept/exam/run.js --build-questions --memory` → `concept/exam/questions-memory.json` (the same 30 states;
+  text minus the block = questions-corrections.json, checked; block 425-579 chars, 5-6 precedents; whole message 3,293-3,718 chars).
+  `--column base --model ID --memory` → `results-base-<slug>-memory.json`; `--column memory` → `results-memory-only.json`, the
+  **"Memory only (no model)"** baseline (the first precedents line applied as listed, no call): **26/30 kept as proposed**
+  (early 10/10, mid 8/10, late 8/10), legal 30/30, mean gain 0.0147 s; No AI on the same set 3/30 (`results-none-memory.json`, as on the other sets: it never reads the message).
+  The Exam tab has a third question-set button "with shared memory" and "All three side by side" (plain · + corrections ·
+  + corrections + memory, kept as proposed per column).
+- Live (integrator; untrained, `x-middleware-record: metadata`): `node concept/exam/run.js --column base --model claude-haiku-4-5 --memory`
+  (and `claude-sonnet-5-5`, `claude-opus-5-5`); an engine run with memory: `node concept/engineer/cli.js --live --memory on --seed N --out DIR`.

@@ -10,7 +10,8 @@
 // Strict JSON: prose before or after the object is a rejection; unknown keys are a rejection (so a model-made "verdict" or "kept"
 // can never sneak in). One tolerance: a single ```json fence around the object is stripped (Haiku adds one; HANDOVER §5).
 // The "changes only" task (concept/designer/prompt-compact.js) is read by validateCompact: { changes: [exactly one change] } and
-// nothing else (no hypothesis / expected needed); validatorFor(task) picks the validator of a task module.
+// nothing else (no hypothesis / expected needed); the "action-choosing" task (concept/designer/prompt-action.js) by validateAction:
+// one action code from the call's menu (ctx.menu); validatorFor(task) picks the validator of a task module.
 // Legality is NOT checked here (concept/regs.js does that on the applied design). Every rejection names the field.
 // Dual browser / Node: window.EI.concept.designerSchema and module.exports.
 (function () {
@@ -101,10 +102,30 @@
     if (cl0.clamped.length) out.clamped = cl0.clamped;
     return out;
   }
-  // the validator of a designer task module: OUTPUT "compact" -> validateCompact; anything else (v1, no OUTPUT) -> validate
-  const validatorFor = task => (task && task.OUTPUT === "compact" ? validateCompact : validate);
+  // the "action-choosing" task (concept/designer/prompt-action.js, OUTPUT "action"): the answer is exactly ONE action code ("A07"),
+  // optionally surrounded by whitespace; nothing else (no JSON, no prose, no fences, no second code). ctx.menu is the call's own menu
+  // (concept/designer/actions.js menu(head): [{ code, part, param, from, to }], the actions legal from that head car). A code that is
+  // not in the catalogue, or not on this call's menu (illegal or out of range at this head), is a rejection: the engine falls back to
+  // its own labelled step and the answer is never trained.
+  // -> { ok: true, value: { changes: [{ part, param, to, clamped: false }], hypothesis: null, expected: null, action: code } } | fail
+  const ACTION_RE = /^A\d{2}$/;
+  function validateAction(input, ctx) {
+    if (typeof input !== "string") return fail("action", "must be a string holding one action code");
+    const s = input.trim();
+    if (!ACTION_RE.test(s)) return fail("action", "must be exactly one action code like A07 (got " + JSON.stringify(s.slice(0, 40)) + ")");
+    const menu = ctx && ctx.menu;
+    if (!Array.isArray(menu)) return fail("action", "no action menu for this call");
+    const cat = (ctx && ctx.catalogue) || (C.designerActions && C.designerActions.BY_CODE) || (typeof require === "function" ? require("./actions.js").BY_CODE : null);
+    if (cat && !cat.has(s)) return fail("action", "unknown action code " + s);
+    const m = menu.find(x => x.code === s);
+    if (!m) return fail("action", "action " + s + " is not on this car's menu (illegal or out of range from the current best car)");
+    return { ok: true, value: { changes: [{ part: m.part, param: m.param, to: m.to, clamped: false }], hypothesis: null, expected: null, action: s } };
+  }
+  // the validator of a designer task module: OUTPUT "compact" -> validateCompact; "action" -> validateAction (needs ctx.menu);
+  // anything else (v1, no OUTPUT) -> validate
+  const validatorFor = task => (task && task.OUTPUT === "compact" ? validateCompact : task && task.OUTPUT === "action" ? validateAction : validate);
 
-  const api = { KEYS, CHANGE_KEYS, EXPECTED_KEYS, LIMITS, COMPACT_KEYS, COMPACT_LIMITS, parse, validate, validateCompact, validatorFor };
+  const api = { KEYS, CHANGE_KEYS, EXPECTED_KEYS, LIMITS, COMPACT_KEYS, COMPACT_LIMITS, ACTION_RE, parse, validate, validateCompact, validateAction, validatorFor };
   C.designerSchema = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();

@@ -23,12 +23,14 @@ const MAX_ITERATIONS = 30, MAX_PACE_MS = 3000;
 const now = () => new Date().toISOString();
 const newRunId = () => "loop-" + ulid().toLowerCase();
 
-// the designer tasks (both frozen): "v1" = concept/designer/prompt.js (the default, the website's), "compact" = the "changes only"
-// task concept/designer/prompt-compact.js (one change, no hypothesis; a separate Mubit task). task: a name, a task module, or null (v1)
-const TASKS = { v1: designerPrompt, compact: require("../concept/designer/prompt-compact.js") };
+// the designer tasks (all frozen): "v1" = concept/designer/prompt.js (the default, the website's), "compact" = the "changes only"
+// task concept/designer/prompt-compact.js (one change, no hypothesis; a separate Mubit task), "action" = the action-choosing task
+// concept/designer/prompt-action.js (one code from the action menu in the user message; a separate Mubit task).
+// task: a name, a task module, or null (v1)
+const TASKS = { v1: designerPrompt, compact: require("../concept/designer/prompt-compact.js"), action: require("../concept/designer/prompt-action.js") };
 function taskOf(task) {
   if (task == null) return designerPrompt;
-  if (typeof task === "string") { if (!Object.prototype.hasOwnProperty.call(TASKS, task)) throw new Error("designer task must be \"v1\" or \"compact\""); return TASKS[task]; }
+  if (typeof task === "string") { if (!Object.prototype.hasOwnProperty.call(TASKS, task)) throw new Error("designer task must be \"v1\" or \"compact\" or \"action\""); return TASKS[task]; }
   return task;
 }
 // (text, meta) -> the exact request this call sends (stub fetch in server/mubit.js; nothing leaves the process)
