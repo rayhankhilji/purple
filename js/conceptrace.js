@@ -361,7 +361,14 @@
     for (const k of st.cars) {
       const c = k.car; v.set(c.vx != null ? c.vx : c.x, (c.vy != null ? c.vy : c.y) + 1.2, c.vz != null ? c.vz : c.z); const dist = v.distanceTo(cam.position); v.project(cam);
       const on = v.z < 1 && v.z > -1 && Math.abs(v.x) < 1.05 && Math.abs(v.y) < 1.05 && dist < (st.quali && k.spec.kind === 'real' ? 120 : 260) && !(k.spec.id === 'concept' && st.cam !== 'tv' && !DRIVE);
-      k.tag.style.display = on ? '' : 'none'; if (on) { k.tag.style.left = ((v.x + 1) / 2) * W + 'px'; k.tag.style.top = ((1 - v.y) / 2) * Hh + 'px'; }
+      k.tag.style.display = on ? '' : 'none'; k.tagXY = on ? [((v.x + 1) / 2) * W, ((1 - v.y) / 2) * Hh] : null;
+    }
+    // cars running close together: lift a tag above any tag it would cover (nearest car keeps its place)
+    const placed = [];
+    for (const k of st.cars.filter((q) => q.tagXY).sort((a, b) => b.tagXY[1] - a.tagXY[1])) {
+      let [x, y] = k.tagXY;
+      for (let guard = 0; guard < 8 && placed.some((p) => Math.abs(p[0] - x) < 44 && Math.abs(p[1] - y) < 18); guard++) y -= 18;
+      placed.push([x, y]); k.tag.style.left = x + 'px'; k.tag.style.top = y + 'px';
     }
   }
   function hud() {
