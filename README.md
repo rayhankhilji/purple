@@ -10,7 +10,7 @@ A language model proposes a change to the 2026 Red Bull RB22. The FIA 2026 rules
 
 | Step | Page | What it shows |
 |---|---|---|
-| 1 Mubit engineer | `/concept/lab/` | The engine redesigning the RB22. A replay of a recorded live run opens first; **Go live** starts a new run (no passcode, rate limited). Pick the model next to Go live. The **Exam** tab holds the 30-problem exam. |
+| 1 Mubit engineer | `/concept/lab/` | The engine redesigning the RB22. A replay of a recorded live run opens first; **Go live** starts a new run (open to anyone, no passcode). Pick the model next to Go live. The **Exam** tab holds the 30-problem exam. |
 | 2 Which AI is best? | `/concept/gp/` | The Model GP: the same harness with five entrants. Last night's recorded race, or run all five live at once. |
 | 3 vs no AI | `/concept/compare/` | The engine with the model against a standard optimiser and random changes, on one clock of physics laps. |
 | 4 Race & drive | `/concept/race/` | The best cars on a qualifying lap of Silverstone in 3D against the real 2026 grid; then drive one yourself. |
@@ -146,7 +146,7 @@ First night: a research lab on top of Equation I (`/lab/`, no longer linked from
 
 - Exam: [`concept/exam/results-*.json`](concept/exam/) (`summary.direct_kept`, `legal`, `direct_mean_gain_s`).
 - Model GP, recorded: [`concept/gp/data/summary.json`](concept/gp/data/summary.json) and one file per entrant and seed.
-- Model GP, live: the integrator's run on https://purple-wine.vercel.app, 25 October about 05:30 GMT. Not stored in the repo; a new live run will give different times.
+- Model GP, live: [`docs/concept/loop-runs/live-gp-2026-10-25/`](docs/concept/loop-runs/live-gp-2026-10-25/) (run on https://purple-wine.vercel.app, 25 October about 05:30 GMT, every request id in `output.txt`). A new live run gives different times.
 - Best car 87.698 ± 0.122 s: [`docs/concept/loop-runs/trained-engineer-seed11/band.json`](docs/concept/loop-runs/trained-engineer-seed11/band.json). RB22 88.745 s and pole 88.111 s: `concept/gp/data/summary.json` (`baseline_s`, `pole_s`).
 - Corrections (47 in 120, once in 118, 64 to 3 to 8): [`docs/concept/loop-runs/trained-engineer-seed11`](docs/concept/loop-runs/trained-engineer-seed11), [`trained-corrections-seed11`](docs/concept/loop-runs/trained-corrections-seed11), [`docs/concept/TESTS_TO_POLE.md`](docs/concept/TESTS_TO_POLE.md) §9.
 - Shared memory 8,261 / 10,183: [`concept/engineer/memory/approved.json`](concept/engineer/memory/approved.json), [`docs/concept/ENGINE_V2.md`](docs/concept/ENGINE_V2.md) §10.
