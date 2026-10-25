@@ -135,6 +135,12 @@
     const worst = Math.max.apply(null, d.cars.map((c) => Math.abs(c.diff_s)));
     const me = d.cars.find((c) => c.id === "concept");
     S.qualiCheck = { same, got, want, worst, purple: me && me.replay_finish_s };
+    if (P.gp) {   // several model cars (Model GP): checked against the GP's own lap times, named by entrant (no PURPLE car here)
+      const lead = P.cars.find((c) => c.id === "concept"), slip = d.cars.filter((c) => Math.abs(c.diff_s) > 0.0015).map((c) => c.code);
+      $("towerNote").innerHTML = '<span class="' + (same ? "gr" : "rd") + '">' + (same ? "✓ Finish order matches the Model GP lap times (" + want.length + " of " + want.length + ")" : "✗ Finish order differs from the Model GP lap times: " + esc(got.join(" "))) + "</span>" +
+        " · largest gap between a finish and its lap time: " + f3(worst) + " s" + (slip.length ? " (" + esc(slip.join(", ")) + " off by more than 0.002 s)" : "") + " · fastest: " + esc(lead ? lead.name + " " + f3(me && me.replay_finish_s) + " s" : "n/a") + ". " + esc(P.ghost_line) + "." + (S.quali.notes.length ? " Time-scaled: " + esc(S.quali.notes.join("; ")) + "." : "");
+      return;
+    }
     $("towerNote").innerHTML = '<span class="' + (same ? "gr" : "rd") + '">' + (same ? "✓ finish order = the demo leaderboard (" + want.length + " / " + want.length + ")" : "✗ finish order differs from the leaderboard: " + esc(got.join(" "))) + "</span> · largest |finish − lap| " + f3(worst) + " s · PURPLE " + f3(me && me.replay_finish_s) + " s" + (S.q.lap_s != null ? " (engine " + f3(S.q.lap_s) + " s)" : "") + ". " + esc(P.ghost_line) + "." + (S.quali.notes.length ? " Time-scaled: " + esc(S.quali.notes.join("; ")) + "." : "");
   }
 
@@ -216,7 +222,7 @@
   }
   function renderCar() {
     const b = S.built.bench, pc = b.physical, d = S.built.design, A = pc.aero, me = S.payload.cars[0], rf = S.payload.cars[1];
-    $("carSrc").textContent = (d.team || "generic") + " baseline frame";
+    $("carSrc").textContent = S.q.cars ? me.name + " · the fastest model car" + (me.seed != null ? " · seed " + me.seed : "") : (d.team || "generic") + " baseline frame";
     $("carKv").innerHTML = kv([
       ["design", esc(designName(d))],
       ["legal (concept/regs.js)", b.legal ? "yes" : "no", b.legal ? "gr" : "rd"],
