@@ -1,6 +1,6 @@
 /* PURPLE Model GP - on top of lab/lab.css, concept/lab/concept-lab.css and concept/compare/compare.css (the lanes are the side-by-side
-   page's lanes, one per entrant). Unlike the side-by-side page this one scrolls: the lanes first, then the podium, the results table,
-   the shared curves and the harness. Dark only; each lane's accent is the entrant's colour (concept/gp/entrants.json). */
+   page's lanes, one per entrant). Unlike the side-by-side page this one scrolls: the result first (standings with the real pole in
+   place, the race link), then the replay lanes, the results table, the shared curves and the harness. Dark only; each lane's accent is the entrant's colour (concept/gp/entrants.json). */
 .gp-page { height: auto; min-height: 100vh; overflow: visible; }
 body.gp-page { overflow-x: hidden; overflow-y: auto; }
 .gp-banner { padding: 8px var(--gut); background: #3a1020; border-bottom: 1px solid var(--red); color: var(--text); font: 600 13px/1.4 var(--sans); }
@@ -12,23 +12,62 @@ body.gp-page { overflow-x: hidden; overflow-y: auto; }
 .gp-lanes .cmp-lw { font-family: var(--mono); font-size: 11px; }
 .gp-lanes .cmp-stats { grid-template-columns: minmax(0, 1fr); }
 .gp-lanes .cmp-side { align-items: flex-start; text-align: left; }
-#gpRace[hidden] { display: none; }
+#gpRace[hidden], #gpRace2[hidden] { display: none; }
+/* the header's race link: an outlined accent, so it reads as the way to the race next to the playback buttons */
+.cmp-ctl #gpRace { border-color: var(--purple); color: #e9d8ff; text-decoration: none; }
+.cmp-ctl #gpRace:hover { background: var(--purple-dim); }
 
-.gp-below { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; padding: 0 var(--gut) 12px; }
+/* ---- the result, first screen: headline + race button on the left, the standings on the right */
+.gp-result { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 16px 28px; align-items: start; margin: 12px var(--gut) 0; padding: 16px 20px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); }
+.gp-result[hidden] { display: none; }
+.gp-result-l { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.gp-kicker { margin: 0; font: 500 12px/1.3 var(--sans); color: var(--muted); }
+.gp-headline { margin: 0; font: 600 22px/1.3 var(--sans); color: var(--text); text-wrap: balance; }
+.gp-headline .t { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; letter-spacing: -.02em; }
+.gp-sub { margin: 0; font: 400 13px/1.5 var(--sans); color: var(--muted); max-width: 60ch; }
+.gp-cta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.gp-cta .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; font-size: 14px; text-decoration: none; }
+.btn.gp-race-btn { background: var(--purple); border-color: var(--purple); color: #0a0a0c; box-shadow: 0 0 0 0 rgba(178, 108, 255, .5); }
+.btn.gp-race-btn:hover:not(:disabled) { background: #c38cff; border-color: #c38cff; }
+.gp-watch { color: var(--text); }
+.gp-race-note { margin: 0; font: 400 12px/1.45 var(--sans); color: var(--muted); max-width: 60ch; }
+.gp-board-wrap { min-width: 0; }
+.gp-board { width: 100%; border-collapse: collapse; font: 400 13px/1.3 var(--sans); color: var(--text); }
+.gp-board th { text-align: left; font: 500 11px/1.25 var(--sans); color: var(--muted); padding: 0 8px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.gp-board th.n, .gp-board td.n { text-align: right; }
+.gp-board td { padding: 7px 8px; border-bottom: 1px solid #1c1c22; vertical-align: middle; }
+.gp-board td.n { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.gp-board td.t { font-weight: 600; font-size: 14px; }
+.gp-board .pos { width: 2.6em; font: 600 13px/1 var(--mono); color: var(--muted); }
+.gp-board tr.p1 .pos { color: var(--text); }
+.gp-board tbody tr { box-shadow: inset 3px 0 0 var(--rc, transparent); }
+.gp-board tbody tr.p1 { background: linear-gradient(90deg, rgba(178, 108, 255, .14), transparent 70%); }
+.gp-board .nm { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.gp-board .sub { display: block; margin: 2px 0 0 18px; font: 400 11px/1.3 var(--sans); color: var(--muted); }
+.gp-board .gp-chip { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--rc); }
+.gp-board tr.ctrl .gp-chip { background: none; border: 2px solid var(--rc); box-sizing: border-box; }
+.gp-board tr.pole { box-shadow: inset 3px 0 0 var(--green); }
+.gp-board tr.pole td { border-bottom-style: dashed; }
+.gp-board tr.pole .nm { color: var(--green); font-weight: 600; }
+.gp-board .gp-chip.pole { background: none; border: 2px solid var(--green); box-sizing: border-box; }
+.gp-board .under { color: var(--green); }
+.gp-board .over { color: var(--text); }
+.gp-board-src { margin: 8px 0 0; font: 400 11px/1.4 var(--sans); color: var(--muted); }
+.gp-board-src b { color: var(--text); font-weight: 500; }
+
+/* ---- the replay heading */
+.gp-replay-h { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; padding: 20px var(--gut) 8px; scroll-margin-top: 8px; }
+.gp-replay-h h2 { margin: 0; font: 600 15px/1.25 var(--sans); color: var(--text); }
+.gp-replay-h p { margin: 0; font: 400 12px/1.4 var(--sans); color: var(--muted); }
+
+/* ---- one loading line per card: ours covers the canvas until the view is ready; the view's own line is not shown here */
+.gp-lanes .cv-loading { display: none; }
+.gp-lanes .cmp-car-wait { z-index: 1; background: radial-gradient(120% 90% at 50% 45%, #18181f 0%, var(--panel) 62%); }
+
+.gp-below { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 0 var(--gut) 12px; }
 .gp-below .panel { padding: 0 0 12px; min-width: 0; }
 .gp-below .ph { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 12px 12px 8px; }
 .gp-below .ph h2 { margin: 0; font: 600 15px/1.25 var(--sans); color: var(--text); }
-.gp-table-panel, .gp-curves-panel { grid-column: 1 / -1; }
-
-.gp-podium { display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: end; gap: 8px; padding: 8px 12px; min-height: 180px; }
-.gp-step { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
-.gp-step .who { font: 600 14px/1.25 var(--sans); color: var(--text); }
-.gp-step .t { font: 600 18px/1 var(--mono); color: var(--text); font-variant-numeric: tabular-nums; }
-.gp-step .g { font: 500 12px/1.2 var(--mono); color: var(--muted); }
-.gp-step .blk { width: 100%; border-radius: var(--r) var(--r) 0 0; border-top: 3px solid var(--sc); background: #1b1b22; display: flex; align-items: flex-start; justify-content: center; padding-top: 8px; font: 700 22px/1 var(--mono); color: var(--sc); }
-.gp-step.p1 .blk { height: 90px; } .gp-step.p2 .blk { height: 64px; } .gp-step.p3 .blk { height: 44px; }
-.gp-race-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 8px 12px 0; }
-.gp-race-note { font: 400 12px/1.4 var(--sans); color: var(--muted); }
 
 .gp-table-wrap { overflow-x: auto; padding: 0 12px; }
 .gp-table { width: 100%; border-collapse: collapse; font: 400 12px/1.35 var(--sans); color: var(--text); }
@@ -37,7 +76,7 @@ body.gp-page { overflow-x: hidden; overflow-y: auto; }
 .gp-table td.n { font-family: var(--mono); text-align: right; }
 .gp-table th.n { text-align: right; }
 .gp-table tr.seed td { color: var(--muted); font-size: 11px; }
-.gp-table tr.seed td:first-child { padding-left: 28px; }
+.gp-table tr.seed td:nth-child(2) { padding-left: 26px; }
 .gp-table .sw { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; vertical-align: -1px; }
 .gp-table .under { color: var(--green); }
 .gp-table .warn { color: var(--amber); }
@@ -54,5 +93,27 @@ body.gp-page { overflow-x: hidden; overflow-y: auto; }
 .gp-empty code { font: 500 12px var(--mono); color: var(--text); overflow-wrap: anywhere; }
 
 @media (max-width: 1400px) { .gp-lanes { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: none; height: auto; row-gap: 12px; } .gp-lanes .cmp-lane { grid-row: auto; display: flex; flex-direction: column; } .gp-lanes .cmp-car { flex: none; height: 200px; } }
-@media (max-width: 1100px) { .gp-below { grid-template-columns: minmax(0, 1fr); } .gp-lanes { display: flex; flex-direction: column; } }
-@media (max-width: 520px) { .gp-podium { min-height: 150px; } .gp-step .t { font-size: 15px; } .gp-curves { height: 240px; } }
+@media (max-width: 1100px) { .gp-lanes { display: flex; flex-direction: column; } .gp-result { grid-template-columns: minmax(0, 1fr); } }
+
+
+/* the results table scrolls inside its own box; the entrant column stays put while it does */
+.gp-table th:nth-child(2), .gp-table td:nth-child(2) { position: sticky; left: 0; z-index: 1; background: var(--panel); box-shadow: 1px 0 0 var(--line); }
+.gp-swipe { display: none; margin: 8px 12px 0; font: 400 11px/1.4 var(--sans); color: var(--muted); }
+@media (max-width: 640px) {
+  .gp-swipe { display: block; }
+  .gp-table .mid { display: none; }
+  .gp-harness { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .gp-harness .k { margin-top: 8px; }
+  .gp-lanes .cmp-car { height: 180px; }
+  .gp-result { margin: 8px var(--gut) 0; padding: 14px 12px; }
+  .gp-headline { font-size: 18px; }
+  .gp-board .opt { display: none; }
+  .gp-board td, .gp-board th { padding-left: 6px; padding-right: 6px; }
+  .gp-board .sub { margin-left: 0; }
+  .gp-cta .btn { flex: 1 1 auto; justify-content: center; }
+  .gp-curves { height: 240px; }
+  .gp-below .ph { flex-direction: column; gap: 4px; }
+  .gp-table th:first-child, .gp-table td:first-child { display: none; }
+  .gp-table tr.seed td:nth-child(2) { padding-left: 16px; }
+  .gp-lanes .cmp-chart { height: 150px; }
+}

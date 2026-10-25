@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="../../lab/lab.css">
 <link rel="stylesheet" href="../lab/concept-lab.css">
 <link rel="stylesheet" href="compare.css">
+<link rel="stylesheet" href="../nav/nav.css">
 <!-- the 3D view loads these one after another when it first needs them (concept/view/view3d.js ensureAssets); fetching them now, in
      parallel, lets the first car appear sooner. Preload only: view3d.js still decides when they run. -->
 <link rel="preload" as="script" href="../../js/data/season2026.js">
@@ -26,9 +27,18 @@
 <link rel="preload" as="script" href="../../concept/view/parts3d.js">
 </head>
 <body class="cmp-page">
-<header class="cmp-top">
+<header class="cmp-top pnav-host">
+  <nav class="pnav pnav-row" aria-label="PURPLE in four steps">
+    <span class="pnav-brand">PURPLE</span>
+    <ol class="pnav-steps">
+      <li><a data-step="1" href="../lab/" title="Step 1: the autonomous engineer. Each idea is one Mubit call; the physics lap sim keeps only what is legal and faster (replay of a recorded live run)"><span class="pnav-n">1</span><span class="pnav-l">Mubit engineer</span><span class="pnav-s">Engineer</span></a></li>
+      <li><a data-step="2" id="gpLink" href="../gp/" title="Step 2: Model GP. Each model gets the same harness, the same shared memory and 150 physics laps, then the best cars race (recorded runs, physics lap sim)"><span class="pnav-n">2</span><span class="pnav-l">Which AI is best?</span><span class="pnav-s">Best AI</span></a></li>
+      <li><a data-step="3" aria-current="page" id="compareLink" href="../compare/" title="Step 3: PURPLE (Claude through Mubit) against a standard optimiser and random parts, on one clock of test laps (recorded runs, physics lap sim)"><span class="pnav-n">3</span><span class="pnav-l">vs no AI</span><span class="pnav-s">vs no AI</span></a></li>
+      <li><a data-step="4" id="raceLink" href="../race/?mode=quali" title="Step 4: the best car's physics-sim lap against every real 2026 qualifying lap (OpenF1) on the game's 3D Silverstone, then drive it yourself"><span class="pnav-n">4</span><span class="pnav-l">Race &amp; drive</span><span class="pnav-s">Race</span></a></li>
+      <li class="pnav-labi"><a class="pnav-lab" href="../../lab/" title="the setup research lab, where PURPLE started">Research lab</a></li>
+    </ol>
+  </nav>
   <div class="cmp-brand">
-    <span class="brand">PURPLE</span>
     <div class="cmp-titles">
       <h1 class="cmp-h">Three ways to design a faster car, on one clock</h1>
       <p class="cmp-cap" id="cmpCaption">Same physics simulator, same Silverstone lap, same test budget.</p>
@@ -46,10 +56,13 @@
   </div>
 </header>
 
-<section class="cmp-clock" aria-label="test laps used">
+<section class="cmp-clock" aria-label="test laps used and who is ahead">
   <div class="cmp-clock-l"><span class="cmp-clock-v" id="cmpLaps">0</span><span class="cmp-clock-of" id="cmpOf">of 3,500 test laps used</span></div>
-  <div class="cmp-bar" aria-hidden="true"><div class="cmp-bar-fill" id="cmpBar"></div><div class="cmp-bar-marks" id="cmpMarks"></div></div>
-  <div class="cmp-clock-r">One test lap = one car driven once on the <b>physics lap sim · Silverstone · model prediction</b></div>
+  <div class="cmp-clock-m">
+    <div class="cmp-bar" aria-hidden="true"><div class="cmp-bar-fill" id="cmpBar"></div><div class="cmp-bar-marks" id="cmpMarks"></div></div>
+    <div class="cmp-clock-r">One test lap = one car driven once on the <b>physics lap sim · Silverstone · model prediction</b>. Ticks: when each one beat the real pole.</div>
+  </div>
+  <div class="cmp-stand" id="cmpStand" aria-live="polite"></div>
 </section>
 
 <main class="cmp-lanes" id="cmpLanes" aria-live="off"></main>
@@ -66,5 +79,6 @@
 <script src="../design.js"></script>
 <script src="../view/view3d.js" onerror="window.__conceptViewMissing = true"></script>
 <script src="compare.js"></script>
+<script src="../nav/nav.js"></script>
 </body>
 </html>

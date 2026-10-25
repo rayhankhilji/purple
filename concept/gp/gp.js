@@ -3,7 +3,7 @@
 // simulations; seeds 1, 2, 3; the No-AI control takes random directions. This page plays back the recorded results only
 // (concept/gp/data/summary.json + <entrant>-seed<N>.json, written by concept/gp/run.js): one lane per entrant with its 3D car (the
 // side-by-side page's approach, concept/compare/compare.js: EI.conceptView, staggered builds, one rebuild per frame), best lap, curve
-// and "beat the pole at N" on one clock of physics simulations (0 -> 150); then the podium, the results table, every curve on shared
+// and "beat the pole at N" on one clock of physics simulations (0 -> 150); with the final standings (and the race link) at the top; then the results table, every curve on shared
 // axes, the harness, and "Race them" (concept/race/ Qualifying lap mode with every entrant's final car of its median seed on one
 // clock). This page never runs the sim and never calls Mubit. Nothing here is tuned or picked: every seed is in the table.
 // URL: ?seed=median|1|2|3 &t=<simulations> &speed=1|4 &play=0
@@ -59,7 +59,7 @@
     const r = L.r, by = r.ideas_by || {}, fb = (by.parse_failure || 0) + (by.llm_error || 0);
     const s = "Seed " + L.seed + (S.seedSel === "median" ? " (its median seed)" : "") + " · " + r.ideas + " ideas";
     if (e.control) return s + ", every direction random (the engine's own seeded step).";
-    return s + ": " + (by.model || 0) + " from the model" + (fb ? ", " + fb + " fell back to a random step (" + (by.parse_failure || 0) + " unparsable answers, " + (by.llm_error || 0) + " API errors)" : "") + " · " + r.calls + " calls" + (r.status !== "complete" ? " · INCOMPLETE: " + (r.stop_reason || "") : "") + ".";
+    return s + ": " + (by.model || 0) + " from the model" + (fb ? ", " + fb + " fell back to a random step (" + (by.parse_failure || 0) + " unparsable answers, " + (by.llm_error || 0) + " API errors)" : "") + " · " + r.calls + " calls" + (r.status !== "complete" ? " · incomplete: " + (r.stop_reason || "") : "") + ".";
   }
 
   // ---------------------------------------------------------------- 3D (compare.js: one lane after another, one rebuild per frame)
@@ -69,7 +69,7 @@
   const designAt = (ln, j) => (j > 0 && ln.L.designs[j].params ? designFrom(ln.L.designs[j].params) : S.base);
   function mountViews() {
     const gen = ++S.mountGen, can = !!(EI.conceptView && S.base);
-    for (const ln of S.lanes) { ln.ready = false; ln.shownDesign = -1; ln.els.car.prepend(waitNote(can ? "Building the car…" : "3D view not loaded; the numbers still update.")); }
+    for (const ln of S.lanes) { ln.ready = false; ln.shownDesign = -1; ln.els.car.prepend(waitNote(can ? "Queued: the cars build one at a time…" : "3D view not loaded; the numbers still update.")); }
     if (can) (async () => { for (const ln of S.lanes) { if (gen !== S.mountGen) return; await mountOne(ln, gen); } })();
   }
   function disposeViews() { S.mountGen++; for (const ln of S.lanes) if (ln.view) { try { ln.view.dispose(); } catch (e) { /* gone */ } ln.view = null; } }
@@ -84,11 +84,17 @@
         requestAnimationFrame(() => { if (gen === S.mountGen) clearWait(); requestAnimationFrame(next); });
       }, { once: true });
       host.prepend(pane);
+      // exactly one loading line per card: ours, covering the blank canvas until the view is ready; the view's own line is hidden (gp.css)
+      for (const w of host.querySelectorAll(".cmp-car-wait")) w.textContent = "Building the car…";
       try { ln.view = EI.conceptView.mount(pane, Object.assign({ design: designAt(ln, j), baseline: S.base, parts: C.parts, livery: S.base.livery, ghostColor: parseInt(ln.e.color.slice(1), 16) }, VIEW_OPTS)); }
       catch (e) { pane.remove(); clearWait(); host.prepend(waitNote("3D view unavailable here (" + e.message + "); the numbers still update.")); return next(); }
-      clearWait(); // the view shows its own loading line from here
       ln.shownDesign = j; ln.setAt = performance.now(); tagFor(ln, j);
-      const watch = () => { if (settled) return; if (gen !== S.mountGen) return next(); const st = ln.view && ln.view.state(); if (st && st.error) { clearWait(); return next(); } setTimeout(watch, 250); };
+      const watch = () => {
+        if (settled) return; if (gen !== S.mountGen) return next();
+        const st = ln.view && ln.view.state();
+        if (st && st.error) { try { ln.view.dispose(); } catch (e) { /* gone */ } ln.view = null; pane.remove(); clearWait(); host.prepend(waitNote("3D view unavailable here; the numbers still update.")); return next(); }
+        setTimeout(watch, 250);
+      };
       setTimeout(watch, 250);
     });
   }
@@ -193,32 +199,70 @@
   function setSpeed(v) { S.speed = v; for (const b of document.querySelectorAll(".cmp-speed .btn")) b.classList.toggle("on", +b.dataset.speed === v); }
   function restart() { S.t = 0; for (const ln of S.lanes) { ln.k = -2; ln.hit = false; } update(performance.now(), true); }
 
-  // ---------------------------------------------------------------- podium, table, harness, race link, footer
+  // ---------------------------------------------------------------- standings, table, harness, race link, footer
   // ranking: the median of each entrant's complete seeds (lower is better); an entrant with no complete seed is not ranked
   const ranked = () => S.sum.entrants.filter(e => typeof e.best_s_median === "number").slice().sort((a, b) => a.best_s_median - b.best_s_median);
-  function podium() {
-    const r = ranked(), host = $("gpPodium"); host.replaceChildren();
-    for (const i of [1, 0, 2]) {
-      const e = r[i]; if (!e) { host.append(el("div")); continue; }
-      host.append(el("div", { class: "gp-step p" + (i + 1), style: "--sc:" + e.color }, el("div", { class: "who", text: e.name }), el("div", { class: "t", text: f3(e.best_s_median) + " s" }), el("div", { class: "g", text: sg(e.gap_to_pole_s_median) + " to pole" }), el("div", { class: "blk", text: "P" + (i + 1) })));
+  // the answer at the top: the final standings (each entrant's median seed, the same lap the race uses) with the real pole lap in its
+  // place by time (no position: it is a reference, not an entrant), and a headline written from the numbers
+  const shortName = e => (e.control ? "No AI" : e.name);
+  const listAnd = a => (a.length <= 1 ? a.join("") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1]);
+  function board() {
+    const r = ranked(), T = $("gpBoard"); T.replaceChildren();
+    if (!r.length) { $("gpResult").hidden = true; return; }
+    const lead = r[0].best_s_median;
+    T.append(el("thead", {}, el("tr", {}, el("th", { class: "pos", text: "Pos" }), el("th", { text: "Entrant" }), el("th", { class: "n", text: "Best lap" }), el("th", { class: "n opt", text: "Gap" }),
+      el("th", { class: "n", text: "vs real pole" }), el("th", { class: "n opt", text: "Under the pole" }))));
+    const rows = r.map((e, i) => ({ e, s: e.best_s_median, pos: i + 1 }));
+    rows.push({ pole: true, s: S.pole });
+    rows.sort((a, b) => a.s - b.s || (a.pole ? 1 : 0) - (b.pole ? 1 : 0));
+    const tb = el("tbody");
+    for (const x of rows) {
+      if (x.pole) {
+        tb.append(el("tr", { class: "pole" }, el("td", { class: "pos", text: "" }),
+          el("td", {}, el("span", { class: "nm" }, el("span", { class: "gp-chip pole" }), "Real pole"), el("span", { class: "sub", text: "Antonelli · OpenF1 2026 · a real lap" })),
+          el("td", { class: "n t", text: f3(S.pole) }), el("td", { class: "n opt muted", text: sg(S.pole - lead) }), el("td", { class: "n muted", text: "reference" }), el("td", { class: "n opt" })));
+        continue;
+      }
+      const e = x.e, g = e.gap_to_pole_s_median;
+      const sub = e.control ? ["control · no language model", " · random directions"] : [e.model, " · untrained calls"];
+      tb.append(el("tr", { class: (x.pos === 1 ? "p1" : "") + (e.control ? " ctrl" : ""), style: "--rc:" + e.color },
+        el("td", { class: "pos", text: "P" + x.pos }),
+        el("td", {}, el("span", { class: "nm" }, el("span", { class: "gp-chip" }), e.name), el("span", { class: "sub" }, sub[0], el("span", { class: "opt", text: sub[1] }))),
+        el("td", { class: "n t", text: f3(e.best_s_median) }),
+        el("td", { class: "n opt muted", text: x.pos === 1 ? "leader" : sg(e.best_s_median - lead) }),
+        el("td", { class: "n " + (g < 0 ? "under" : "over"), text: sg(g) }),
+        el("td", { class: "n opt muted", text: e.beat_pole_n + " of " + e.complete + " seeds" })));
     }
+    T.append(tb);
+    // the headline, from the numbers: who was fastest, by how much against the real pole, and where the No-AI control finished
+    const w = r[0], wg = w.gap_to_pole_s_median;
+    $("gpHeadline").replaceChildren(el("span", { class: "who", style: "color:" + w.color, text: w.name }), " set the fastest lap: ", el("span", { class: "t", text: f3(w.best_s_median) }), " s",
+      ", " + (wg < 0 ? Math.abs(wg).toFixed(3) + " s under" : "+" + wg.toFixed(3) + " s over") + " the real pole.");
+    const ci = r.findIndex(e => e.control), sub = [];
+    if (ci >= 0) {
+      const ahead = r.slice(0, ci).map(shortName), behind = r.slice(ci + 1).map(shortName);
+      sub.push("The No-AI control (random directions, same engine) placed P" + (ci + 1) + (ahead.length ? ": " + listAnd(ahead) + " beat it" + (behind.length ? ", " + listAnd(behind) + " did not." : ".") : ": no model beat it."));
+    }
+    sub.push("Same harness" + (S.sum.memory && S.sum.memory.on ? " and shared memory" : "") + ", " + S.budget + " simulations each, untrained calls. One circuit and " + (S.sum.seeds || []).length + " seeds, so results vary: every seed is in the table below.");
+    $("gpSub").textContent = sub.join(" ");
+    $("gpResult").hidden = false;
   }
   function table() {
     const T = $("gpTable"), head = ["", "Entrant", "Best lap (s)", "vs pole (s)", "Sims to beat " + f3(S.pole), "Ideas: model / random fallback", "Unparsable answers", "API errors", "Illegal as proposed", "Calls", "Median latency", "Tokens in / out", "Seeds complete"];
     T.replaceChildren(el("tr", {}, ...head.map((h, i) => el("th", { class: i >= 2 && i !== 5 ? "n" : "", text: h }))));
     const row = (cls, cells) => T.append(el("tr", { class: cls }, ...cells));
-    const td = (t, c) => el("td", { class: c || "n", text: t == null ? "—" : String(t) });
+    const td = (t, c) => el("td", { class: c == null ? "n" : c, text: t == null ? "—" : String(t) });
     const rank = ranked();
     const order = rank.concat(S.sum.entrants.filter(e => !rank.includes(e)));
     for (const e of order) {
       const pos = rank.indexOf(e), fb = (e.parse_failures || 0) + (e.llm_errors || 0), model = e.control ? 0 : Math.max(0, (e.ideas_total || 0) - fb);
-      const name = el("td", { class: "" }, el("span", { class: "sw", style: "background:" + e.color }), e.name + (e.model ? " " : ""), e.model ? el("span", { class: "muted", text: "(" + e.model + ")" }) : null);
+      const name = el("td", { class: "" }, el("span", { class: "sw", style: "background:" + e.color }), e.name + (e.model ? " " : ""), e.model ? el("span", { class: "muted mid", text: "(" + e.model + ")" }) : null);
       row("", [td(pos >= 0 ? "P" + (pos + 1) : "—", ""), name, td(f3(e.best_s_median) + " · median"), td(sg(e.gap_to_pole_s_median), "n " + (e.gap_to_pole_s_median < 0 ? "under" : "")), td(e.beat_pole_at_median != null ? e.beat_pole_at_median + " (" + e.beat_pole_n + "/" + e.complete + " seeds)" : "not reached (" + e.beat_pole_n + "/" + e.complete + ")"),
         td(e.control ? "0 / " + e.ideas_total + " (control)" : model + " / " + fb, "n " + (fb ? "warn" : "")), td(e.control ? "—" : e.parse_failures, "n " + (e.parse_failures ? "warn" : "")), td(e.control ? "—" : e.llm_errors, "n " + (e.llm_errors ? "bad" : "")),
         td(e.control ? "—" : e.illegal_as_proposed + " / " + e.proposals), td(e.calls), td(e.latency_ms_median != null ? Math.round(e.latency_ms_median) + " ms" : "—"), td(e.tokens_in_median != null ? Math.round(e.tokens_in_median) + " / " + Math.round(e.tokens_out_median) + " per run" : "—"), td(e.complete + " / " + e.of)]);
       for (const r of e.runs || []) {
         const fbr = (r.parse_failures || 0) + (r.llm_errors || 0);
-        row("seed", [td("", ""), td("seed " + r.seed + (r.seed === e.median_seed ? " · median" : "") + (r.status !== "complete" ? " · INCOMPLETE" : ""), ""), td(f3(r.best_s)), td(sg(r.gap_to_pole_s), "n " + (r.gap_to_pole_s < 0 ? "under" : "")), td(r.beat_pole_at != null ? r.beat_pole_at : "not reached"),
+        row("seed", [td("", ""), td("seed " + r.seed + (r.seed === e.median_seed ? " · median" : "") + (r.status !== "complete" ? " · incomplete" : ""), ""), td(f3(r.best_s)), td(sg(r.gap_to_pole_s), "n " + (r.gap_to_pole_s < 0 ? "under" : "")), td(r.beat_pole_at != null ? r.beat_pole_at : "not reached"),
           td(e.control ? "0 / " + r.ideas : (r.ideas - fbr) + " / " + fbr), td(e.control ? "—" : r.parse_failures), td(e.control ? "—" : r.llm_errors), td(e.control ? "—" : r.illegal_as_proposed + " / " + r.proposals), td(r.calls), td(r.latency_ms_median != null ? Math.round(r.latency_ms_median) + " ms" : "—"), td(r.tokens_in != null ? r.tokens_in + " / " + r.tokens_out : "—"), td(r.laps_used + " sims")]);
       }
     }
@@ -255,6 +299,16 @@
       el("p", {}, "The run: ", el("code", { text: "node concept/gp/run.js --live --seeds 1,2,3 --memory off --out concept/gp/data" }))));
   }
 
+  function autoStart() {
+    const AUTO_WAIT_MS = 6000;
+    let seenAt = 0;
+    const go = () => { if (!S.auto) return; S.auto = false; if (!S.playing && S.t < S.budget) { S.playing = true; S.last = 0; playBtn(); } };
+    const poll = () => { if (!S.auto) return; if (S.lanes.every(ln => ln.ready || !EI.conceptView) || performance.now() - seenAt > AUTO_WAIT_MS) return go(); setTimeout(poll, 250); };
+    const seen = () => { if (seenAt) return; seenAt = performance.now(); poll(); };
+    if (!("IntersectionObserver" in window)) return seen();
+    const io = new IntersectionObserver(es => { if (es.some(x => x.isIntersecting)) { io.disconnect(); seen(); } }, { threshold: 0, rootMargin: "0px 0px -30% 0px" });
+    io.observe($("gpLanes"));
+  }
   async function show() {
     disposeViews();
     await buildLanes();
@@ -268,7 +322,7 @@
     if (!S.sum.entrants || !S.sum.entrants.length) return emptyState("summary.json lists no entrant");
     S.budget = (S.sum.settings && S.sum.settings.budget_physics_laps) || 150; S.pole = S.sum.pole_s || 88.111;
     $("gpOf").textContent = "of " + S.budget + " physics simulations";
-    if (S.sum.mock) { const bn = $("gpBanner"); bn.hidden = false; bn.textContent = "MOCK DATA: every model entrant here answered with the scripted mock (concept/designer/loop.js), not a model. These are not model results."; }
+    if (S.sum.mock) { const bn = $("gpBanner"); bn.hidden = false; bn.textContent = "Mock data: every model entrant here answered with the scripted mock (concept/designer/loop.js), not a model. These are not model results."; }
     const sel = $("gpSeed"); sel.append(el("option", { value: "median", text: "Median seed of each" }), ...(S.sum.seeds || []).map(s => el("option", { value: String(s), text: "Seed " + s })));
     const want = q.get("seed"); S.seedSel = want && [...sel.options].some(o => o.value === want) ? want : "median"; sel.value = S.seedSel;
     sel.addEventListener("change", async () => { const was = S.playing; S.playing = false; S.seedSel = sel.value; S.t = 0; await show(); S.playing = was; playBtn(); });
@@ -277,14 +331,19 @@
     for (const bt of document.querySelectorAll(".cmp-speed .btn")) bt.addEventListener("click", () => setSpeed(+bt.dataset.speed));
     setSpeed(S.speed);
     $("gpBelow").hidden = false;
-    podium(); table(); harness(); footer();
+    board(); table(); harness(); footer();
     const race = raceLink();
-    if (race) { for (const id of ["gpRace", "gpRace2"]) { $(id).href = race.url; $(id).hidden = false; } $("gpRaceNote").textContent = "Opens the Qualifying lap with all " + race.n + " cars (each entrant's fastest car of its median seed, physics lap sim) and the " + POLE_LABEL + " lap on one clock."; }
+    if (race) { for (const id of ["gpRace", "gpRace2"]) { $(id).href = race.url; $(id).hidden = false; } $("gpRaceNote").textContent = "A qualifying lap in 3D: all " + race.n + " cars and the real pole lap (OpenF1 2026) start together on one clock. Each car is its entrant's median-seed car; its lap time comes from the physics lap sim."; }
     else { $("gpRace2").hidden = true; $("gpRaceNote").textContent = "No race: no entrant has a complete run yet."; }
     await show();
     drawCurves();
     window.addEventListener("resize", () => { for (const ln of S.lanes) { ln.cv = null; ln.k = -2; } update(performance.now(), true); drawCurves(); });
-    S.playing = q.get("play") !== "0" && S.t < S.budget; playBtn();
+    // the replay starts by itself once its cards are on screen and their cars are built (or after a short wait), so it is not over
+    // before anyone sees it; "Watch the replay" scrolls to it and plays it from the start
+    $("gpWatch").addEventListener("click", ev => { ev.preventDefault(); S.auto = false; $("gpReplay").scrollIntoView({ behavior: "smooth", block: "start" }); restart(); S.playing = true; S.last = 0; playBtn(); });
+    $("gpPlay").addEventListener("click", () => { S.auto = false; });
+    S.auto = q.get("play") !== "0" && S.t < S.budget; playBtn();
+    if (S.auto) autoStart();
     window.__gp = S;
     requestAnimationFrame(frame);
   }

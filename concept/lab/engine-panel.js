@@ -619,7 +619,7 @@
 
   // ---------------------------------------------------------------- mount
   function mount() {
-    const top = document.querySelector("header.top"), back = top && top.querySelector(".back");
+    const top = document.querySelector("header.top"), back = top && top.querySelector(".back, .hbreak");   // end of the first header row
     if (top) top.insertBefore(btn, back || null);
     document.body.append(root);
     const want = qs.get("engine");

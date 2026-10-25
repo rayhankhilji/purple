@@ -335,7 +335,7 @@
   function buildRows() {
     const P = st.P, U = st.ui;
     U.tw.innerHTML = '<div class="cr-hd"><span class="cr-lb">Physics replay · Silverstone</span><span class="cr-lb" id="crLap">flying lap</span></div><div id="crRows"></div>';
-    U.dash.innerHTML = '<div class="cr-col"><span class="cr-lb">concept · sim</span><span class="cr-spd" id="crSpd">0</span><span class="cr-lb" style="text-align:right">km/h</span></div>' +
+    U.dash.innerHTML = '<div class="cr-col"><span class="cr-lb">' + (P.gp && st.cars && st.cars[0] ? esc(st.cars[0].spec.short || 'concept') : 'concept') + ' · sim</span><span class="cr-spd" id="crSpd">0</span><span class="cr-lb" style="text-align:right">km/h</span></div>' +
       '<div class="cr-col"><span class="cr-lb">gear · sim</span><span class="cr-big2" id="crGear">–</span><span class="cr-chip" id="crAero">corner</span><span class="cr-chip" id="crErs">ers</span></div>' +
       '<div class="cr-col" style="min-width:150px"><span class="cr-lb">lap · sim seconds</span><span class="cr-clk" id="crClk">0.000</span><div class="cr-secs" id="crSecs"><span class="cr-sec">S1</span><span class="cr-sec">S2</span><span class="cr-sec">S3</span></div></div>' +
       '<div class="cr-col" style="min-width:150px" id="crDel"></div>';
@@ -361,7 +361,14 @@
     for (const k of st.cars) {
       const c = k.car; v.set(c.vx != null ? c.vx : c.x, (c.vy != null ? c.vy : c.y) + 1.2, c.vz != null ? c.vz : c.z); const dist = v.distanceTo(cam.position); v.project(cam);
       const on = v.z < 1 && v.z > -1 && Math.abs(v.x) < 1.05 && Math.abs(v.y) < 1.05 && dist < (st.quali && k.spec.kind === 'real' ? 120 : 260) && !(k.spec.id === 'concept' && st.cam !== 'tv' && !DRIVE);
-      k.tag.style.display = on ? '' : 'none'; if (on) { k.tag.style.left = ((v.x + 1) / 2) * W + 'px'; k.tag.style.top = ((1 - v.y) / 2) * Hh + 'px'; }
+      k.tag.style.display = on ? '' : 'none'; k.tagXY = on ? [((v.x + 1) / 2) * W, ((1 - v.y) / 2) * Hh] : null;
+    }
+    // cars running close together: lift a tag above any tag it would cover (nearest car keeps its place)
+    const placed = [];
+    for (const k of st.cars.filter((q) => q.tagXY).sort((a, b) => b.tagXY[1] - a.tagXY[1])) {
+      let [x, y] = k.tagXY;
+      for (let guard = 0; guard < 8 && placed.some((p) => Math.abs(p[0] - x) < 44 && Math.abs(p[1] - y) < 18); guard++) y -= 18;
+      placed.push([x, y]); k.tag.style.left = x + 'px'; k.tag.style.top = y + 'px';
     }
   }
   function hud() {
@@ -400,7 +407,7 @@
     st.ui.cam.innerHTML = 'camera <b>' + st.cam + '</b>' + (st.auto ? ' · director' : '') + ' · ' + st.rate + '× · ' + (st.paused ? '<span class="cr-am">paused</span>' : 'live') + '<br><span class="cr-mu">C camera · A director · Space pause · R replay · 1 2 4 8 speed</span>';
     if (st.quali) {   // PURPLE at the line: its measured finish on the replay clock and its place (the full tower is beside the view)
       if (me.finish == null) st.ui.fin.style.display = 'none';
-      else { st.ui.fin.style.display = ''; st.ui.fin.innerHTML = '<div class="cr-lb" style="margin-bottom:4px">PURPLE · lap complete</div><div style="display:flex;justify-content:space-between;gap:8px"><span class="cr-big2 cr-pu">' + fmt(me.finish) + ' s</span><span class="cr-big2">P' + (me.spec.pos || '—') + '</span></div><div class="cr-mu" style="font-size:10.5px;margin-top:3px">' + esc(me.spec.source) + '</div>'; }
+      else { st.ui.fin.style.display = ''; st.ui.fin.innerHTML = '<div class="cr-lb" style="margin-bottom:4px">' + (st.P.gp ? esc(me.spec.short || 'PURPLE') : 'PURPLE') + ' · lap complete</div><div style="display:flex;justify-content:space-between;gap:8px"><span class="cr-big2 cr-pu">' + fmt(me.finish) + ' s</span><span class="cr-big2">P' + (me.spec.pos || '—') + '</span></div><div class="cr-mu" style="font-size:10.5px;margin-top:3px">' + esc(me.spec.source) + '</div>'; }
     } else if (!st.finished) st.ui.fin.style.display = 'none';
     else {
       const r = api.result || result(); st.ui.fin.style.display = '';

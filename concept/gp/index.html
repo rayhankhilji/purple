@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="../lab/concept-lab.css">
 <link rel="stylesheet" href="../compare/compare.css">
 <link rel="stylesheet" href="gp.css">
+<link rel="stylesheet" href="../nav/nav.css">
 <link rel="preload" as="script" href="../../js/data/season2026.js">
 <link rel="preload" as="script" href="../../js/ads.js">
 <link rel="preload" as="script" href="../../js/teams.js">
@@ -25,9 +26,18 @@
 <link rel="preload" as="script" href="../../concept/view/parts3d.js">
 </head>
 <body class="cmp-page gp-page">
-<header class="cmp-top">
+<header class="cmp-top pnav-host">
+  <nav class="pnav pnav-row" aria-label="PURPLE in four steps">
+    <span class="pnav-brand">PURPLE</span>
+    <ol class="pnav-steps">
+      <li><a data-step="1" href="../lab/" title="Step 1: the autonomous engineer. Each idea is one Mubit call; the physics lap sim keeps only what is legal and faster (replay of a recorded live run)"><span class="pnav-n">1</span><span class="pnav-l">Mubit engineer</span><span class="pnav-s">Engineer</span></a></li>
+      <li><a data-step="2" aria-current="page" id="gpLink" href="../gp/" title="Step 2: Model GP. Each model gets the same harness, the same shared memory and 150 physics laps, then the best cars race (recorded runs, physics lap sim)"><span class="pnav-n">2</span><span class="pnav-l">Which AI is best?</span><span class="pnav-s">Best AI</span></a></li>
+      <li><a data-step="3" id="compareLink" href="../compare/" title="Step 3: PURPLE (Claude through Mubit) against a standard optimiser and random parts, on one clock of test laps (recorded runs, physics lap sim)"><span class="pnav-n">3</span><span class="pnav-l">vs no AI</span><span class="pnav-s">vs no AI</span></a></li>
+      <li><a data-step="4" id="raceLink" href="../race/?mode=quali" title="Step 4: the best car's physics-sim lap against every real 2026 qualifying lap (OpenF1) on the game's 3D Silverstone, then drive it yourself"><span class="pnav-n">4</span><span class="pnav-l">Race &amp; drive</span><span class="pnav-s">Race</span></a></li>
+      <li class="pnav-labi"><a class="pnav-lab" href="../../lab/" title="the setup research lab, where PURPLE started">Research lab</a></li>
+    </ol>
+  </nav>
   <div class="cmp-brand">
-    <span class="brand">PURPLE</span>
     <div class="cmp-titles">
       <h1 class="cmp-h">Model GP · which AI is the best race engineer?</h1>
       <p class="cmp-cap">150 simulations each, same harness, same data, physics decides</p>
@@ -47,6 +57,29 @@
 
 <div class="gp-banner" id="gpBanner" hidden></div>
 
+<!-- the answer first: the final standings (median seed of each entrant) with the real pole in its place, then the way into the race -->
+<section class="gp-result" id="gpResult" aria-labelledby="gpHeadline" hidden>
+  <div class="gp-result-l">
+    <p class="gp-kicker">Result · median of 3 seeds per entrant</p>
+    <h2 class="gp-headline" id="gpHeadline"></h2>
+    <p class="gp-sub" id="gpSub"></p>
+    <div class="gp-cta">
+      <a class="btn primary gp-race-btn" id="gpRace2" href="#" hidden>Race them on Silverstone <span aria-hidden="true">→</span></a>
+      <a class="btn gp-watch" id="gpWatch" href="#gpReplay">Watch the replay <span aria-hidden="true">↓</span></a>
+    </div>
+    <p class="gp-race-note" id="gpRaceNote"></p>
+  </div>
+  <div class="gp-board-wrap">
+    <table class="gp-board" id="gpBoard" aria-label="final standings"></table>
+    <p class="gp-board-src">Every lap: <b>physics lap sim · Silverstone · model prediction</b>. Real pole: <b>OpenF1 2026</b>, a real lap.</p>
+  </div>
+</section>
+
+<div class="gp-replay-h" id="gpReplay">
+  <h2>The replay</h2>
+  <p>Each card plays back one entrant's run, simulation by simulation, with the best car it had found so far.</p>
+</div>
+
 <section class="cmp-clock" aria-label="physics simulations used">
   <div class="cmp-clock-l"><span class="cmp-clock-v" id="gpLaps">0</span><span class="cmp-clock-of" id="gpOf">of 150 physics simulations</span></div>
   <div class="cmp-bar" aria-hidden="true"><div class="cmp-bar-fill" id="gpBar"></div><div class="cmp-bar-marks" id="gpMarks"></div></div>
@@ -56,14 +89,10 @@
 <main class="cmp-lanes gp-lanes" id="gpLanes" aria-live="off"></main>
 
 <section class="gp-below" id="gpBelow" hidden>
-  <div class="panel gp-podium-panel">
-    <div class="ph"><h2>Podium</h2><span class="src" id="gpPodiumSrc">median seed per entrant · physics lap sim · Silverstone · model prediction</span></div>
-    <div class="gp-podium" id="gpPodium"></div>
-    <div class="gp-race-row"><a class="btn primary" id="gpRace2" href="#">Race them · Qualifying lap</a><span class="gp-race-note" id="gpRaceNote"></span></div>
-  </div>
   <div class="panel gp-table-panel">
     <div class="ph"><h2>Results</h2><span class="src">median seed per entrant, then each seed · real pole · OpenF1 2026</span></div>
     <div class="gp-table-wrap"><table class="gp-table" id="gpTable"></table></div>
+    <p class="gp-swipe">Swipe the table sideways to see every column. The entrant stays in view.</p>
   </div>
   <div class="panel gp-curves-panel">
     <div class="ph"><h2>Best lap so far, every entrant on shared axes</h2><span class="src">median seed bold, other seeds faint</span></div>
@@ -89,5 +118,6 @@
 <script src="../race/payload.js"></script>
 <script src="../view/view3d.js" onerror="window.__conceptViewMissing = true"></script>
 <script src="gp.js"></script>
+<script src="../nav/nav.js"></script>
 </body>
 </html>
