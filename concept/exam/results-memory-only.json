@@ -1,0 +1,1056 @@
+{
+ "v": 1,
+ "kind": "purple-designer-exam-results",
+ "column": "memory",
+ "label": "memory-only",
+ "what": "M. memory only, no model: the top precedent of the shared memory (concept/engineer/memory.js) applied as listed; no call",
+ "questions_sha256": "e70bd3b3771d43fa9300e20ea4089d6548dabb871ff1912151f1bde3c2c69947",
+ "questions_variant": "memory",
+ "n": 30,
+ "exam_seed": 2026,
+ "graded_by": "concept/engineer/engine.js one decision from the question's head car (physics lap sim · quasi-steady-state point mass · Silverstone · calibrated to 2026 British GP qualifying); kept = legal && lap < head − 0.1 ms",
+ "meta": {
+  "mock": false,
+  "trained": false,
+  "model": null,
+  "proposer": "memory only, no model: the question's top precedent (the first line of its precedents block) as the answer; no call"
+ },
+ "summary": {
+  "N": 30,
+  "parsed": 30,
+  "legal": 30,
+  "direct_kept": 26,
+  "engine_kept": 30,
+  "direct_mean_gain_s": 0.014733,
+  "engine_mean_gain_s": 0.082067,
+  "direct_total_gain_s": 0.442,
+  "engine_total_gain_s": 2.462,
+  "line": "kept 26/30 (direct), 30/30 (engine), mean gain 0.0147 s (direct), 0.0821 s (engine); parsed 30/30, legal as proposed 30/30"
+ },
+ "calls": null,
+ "grade_ms": 39526,
+ "grade_ms_per_question": 1318,
+ "total_ms": 39533,
+ "rows": [
+  {
+   "phase": "early",
+   "id": "q01",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.002,
+    "d_lap_s": -0.002,
+    "lap_s": 88.49,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.035,
+    "d_lap_s": -0.035,
+    "lap_s": 88.457,
+    "from": "candidate",
+    "best_change": "rear_wing.endplate_top_mm 860->880; rear_wing.chord_mm 420->415; rear_wing.sm_delta_deg 15->17",
+    "screened": 2894,
+    "physics_laps": 28
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "endplate_top_mm",
+     "from": 860,
+     "to": 880
+    }
+   ],
+   "head_lap_s": 88.492,
+   "ms": 6238,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"endplate_top_mm\",\"to\":880}],\"hypothesis\":\"memory only, no model: the top precedent\",\"expected\":{\"lap_delta_s\":-0.002,\"sector\":2}}"
+  },
+  {
+   "phase": "mid",
+   "id": "q02",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.013,
+    "d_lap_s": -0.013,
+    "lap_s": 88.221,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.02,
+    "d_lap_s": -0.02,
+    "lap_s": 88.214,
+    "from": "candidate",
+    "best_change": "rear_wing.span_mm 1100->1080; rear_wing.chord_mm 385->375; rear_wing.aoa_deg 18.5->19.5; rear_wing.sm_delta_deg 30->28.5",
+    "screened": 2884,
+    "physics_laps": 29
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "span_mm",
+     "from": 1100,
+     "to": 1150
+    }
+   ],
+   "head_lap_s": 88.234,
+   "ms": 2476,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"span_mm\",\"to\":1150}],\"hypothesis\":\"memory only, no model: the top precedent\",\"expected\":{\"lap_delta_s\":-0.021,\"sector\":2}}"
+  },
+  {
+   "phase": "late",
+   "id": "q03",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.002,
+    "d_lap_s": -0.002,
+    "lap_s": 87.599,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.002,
+    "d_lap_s": -0.002,
+    "lap_s": 87.599,
+    "from": "proposal",
+    "best_change": "rear_wing.endplate_top_mm 870->880",
+    "screened": 2858,
+    "physics_laps": 27
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "endplate_top_mm",
+     "from": 870,
+     "to": 880
+    }
+   ],
+   "head_lap_s": 87.601,
+   "ms": 1627,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"endplate_top_mm\",\"to\":880}],\"hypothesis\":\"memory only, no model: the top precedent\",\"expected\":{\"lap_delta_s\":-0.003,\"sector\":2}}"
+  },
+  {
+   "phase": "early",
+   "id": "q04",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.018,
+    "d_lap_s": -0.018,
+    "lap_s": 88.524,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.05,
+    "d_lap_s": -0.05,
+    "lap_s": 88.492,
+    "from": "candidate",
+    "best_change": "rear_wing.chord_mm 420->405; diffuser.expansion_deg 15.5->16.5; rear_wing.span_mm 1120->1130; rear_wing.endplate_top_mm 850->865; rear_wing.sm_delta_deg 17->19",
+    "screened": 2925,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "chord_mm",
+     "from": 420,
+     "to": 410
+    }
+   ],
+   "head_lap_s": 88.542,
+   "ms": 1673,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"chord_mm\",\"to\":410}],\"hypothesis\":\"memory only, no model: the top precedent\",\"expected\":{\"lap_delta_s\":-0.035,\"sector\":2}}"
+  },
+  {
+   "phase": "mid",
+   "id": "q05",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.003,
+    "d_lap_s": -0.003,
+    "lap_s": 88.194,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.015,
+    "d_lap_s": -0.015,
+    "lap_s": 88.182,
+    "from": "candidate",
+    "best_change": "gearbox.top_kmh 336->353; gearbox.step 1.156->1.164",
+    "screened": 356,
+    "physics_laps": 25
+   },
+   "proposal": [
+    {
+     "part": "gearbox",
+     "param": "top_kmh",
+     "from": 336,
+     "to": 345
+    }
+   ],
+   "head_lap_s": 88.197,
+   "ms": 1015,
+   "answer": "{\"changes\":[{\"part\":\"gearbox\",\"param\":\"top_kmh\",\"to\":345}],\"hypothesis\":\"memory only, no model: the top precedent\",\"expected\":{\"lap_delta_s\":-0.006,\"sector\":2}}"
+  },
+  {
+   "phase": "late",
+   "id": "q06",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.041,
+    "lap_s": 87.782,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.024,
+    "d_lap_s": -0.024,
+    "lap_s": 87.717,
+    "from": "candidate",
+    "best_change": "rear_wing.chord_mm 365->380; rear_wing.span_mm 1140->1130; rear_wing.aoa_deg 24->23.5; rear_wing.endplate_top_mm 875->870; rear_wing.sm_delta_deg 26.5->28.5",
+    "screened": 2899,
+    "physics_laps": 29
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "chord_mm",
+     "from": 365,
+     "to": 380
+    }
+   ],
+   "head_lap_s": 87.741,
+   "ms": 1002,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"chord_mm\",\"to\":380}],\"hypothesis\":\"memory only, no model: the top precedent\",\"expected\":{\"lap_delta_s\":-0.008,\"sector\":2}}"
+  },
+  {
+   "phase": "early",
+   "id": "q07",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.004,
+    "d_lap_s": -0.004,
+    "lap_s": 88.523,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.042,
+    "d_lap_s": -0.042,
+    "lap_s": 88.485,
+    "from": "candidate",
+    "best_change": "rear_wing.endplate_top_mm 860->880; rear_wing.chord_mm 420->415; rear_wing.sm_delta_deg 15->17",
+    "screened": 2894,
+    "physics_laps": 29
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "endplate_top_mm",
+     "from": 860,
+     "to": 880
+    }
+   ],
+   "head_lap_s": 88.527,
+   "ms": 1020,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"endplate_top_mm\",\"to\":880}],\"hypothesis\":\"memory only, no model: the top precedent\",\"expected\":{\"lap_delta_s\":-0.003,\"sector\":2}}"
+  },
+  {
+   "phase": "mid",
+   "id": "q08",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.015,
+    "lap_s": 88.282,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.213,
+    "d_lap_s": -0.213,
+    "lap_s": 88.054,
+    "from": "candidate",
+    "best_change": "rear_wing.aoa_deg 20->21; front_wing.aoa_deg 27.5->30; rear_wing.span_mm 1100->1120; rear_wing.chord_mm 375->365; rear_wing.elements 2->3; rear_wing.endplate_top_mm 870->865",
+    "screened": 2912,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 20,
+     "to": 19
+    }
+   ],
+   "head_lap_s": 88.267,
+   "ms": 1024,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"aoa_deg\",\"to\":19}],\"hypothesis\":\"memory only, no model: the top precedent\",\"expected\":{\"lap_delta_s\":-0.032,\"sector\":2}}"
+  },
+  {
+   "phase": "late",
+   "id": "q09",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.01,
+    "d_lap_s": -0.01,
+    "lap_s": 87.809,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.019,
+    "d_lap_s": -0.019,
+    "lap_s": 87.8,
+    "from": "candidate",
+    "best_change": "rear_wing.span_mm 1100->1140",
+    "screened": 2884,
+    "physics_laps": 28
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "span_mm",
+     "from": 1100,
+     "to": 1150
+    }
+   ],
+   "head_lap_s": 87.819,
+   "ms": 1122,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"span_mm\",\"to\":1150}],\"hypothesis\":\"memory only, no model: the top precedent\",\"expected\":{\"lap_delta_s\":-0.021,\"sector\":2}}"
+  },
+  {
+   "phase": "early",
+   "id": "q10",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.005,
+    "d_lap_s": -0.005,
+    "lap_s": 88.53,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.057,
+    "d_lap_s": -0.057,
+    "lap_s": 88.478,
+    "from": "candidate",
+    "best_change": "rear_wing.endplate_top_mm 860->875; diffuser.expansion_deg 15->16.5; rear_wing.chord_mm 405->395",
+    "screened": 2894,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "endplate_top_mm",
+     "from": 860,
+     "to": 880
+    }
+   ],
+   "head_lap_s": 88.535,
+   "ms": 1048,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"endplate_top_mm\",\"to\":880}],\"hypothesis\":\"memory only, no model: the top precedent\",\"expected\":{\"lap_delta_s\":-0.005,\"sector\":2}}"
+  },
+  {
+   "phase": "mid",
+   "id": "q11",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.019,
+    "d_lap_s": -0.019,
+    "lap_s": 88.206,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.177,
+    "d_lap_s": -0.177,
+    "lap_s": 88.048,
+    "from": "candidate",
+    "best_change": "rear_wing.span_mm 1100->1110; front_wing.aoa_deg 28.5->31; rear_wing.aoa_deg 20.5->22.5; rear_wing.sm_delta_deg 30->28",
+    "screened": 2864,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "span_mm",
+     "from": 1100,
+     "to": 1150
+    }
+   ],
+   "head_lap_s": 88.225,
+   "ms": 1230,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"span_mm\",\"to\":1150}],\"hypothesis\":\"memory only, no model: the top precedent\",\"expected\":{\"lap_delta_s\":-0.015,\"sector\":2}}"
+  },
+  {
+   "phase": "late",
+   "id": "q12",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.012,
+    "d_lap_s": -0.012,
+    "lap_s": 87.734,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.019,
+    "d_lap_s": -0.019,
+    "lap_s": 87.727,
+    "from": "candidate",
+    "best_change": "gearbox.top_kmh 336->352; gearbox.step 1.156->1.16",
+    "screened": 356,
+    "physics_laps": 25
+   },
+   "proposal": [
+    {
+     "part": "gearbox",
+     "param": "top_kmh",
+     "from": 336,
+     "to": 345
+    }
+   ],
+   "head_lap_s": 87.746,
+   "ms": 754,
+   "answer": "{\"changes\":[{\"part\":\"gearbox\",\"param\":\"top_kmh\",\"to\":345}],\"hypothesis\":\"memory only, no model: the top precedent\",\"expected\":{\"lap_delta_s\":-0.002,\"sector\":2}}"
+  },
+  {
+   "phase": "early",
+   "id": "q13",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.097,
+    "d_lap_s": -0.097,
+    "lap_s": 88.56,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.191,
+    "d_lap_s": -0.191,
+    "lap_s": 88.466,
+    "from": "candidate",
+    "best_change": "rear_wing.aoa_deg 20->18.5; diffuser.expansion_deg 15.5->17; rear_wing.chord_mm 420->410",
+    "screened": 2923,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 20,
+     "to": 19
+    }
+   ],
+   "head_lap_s": 88.657,
+   "ms": 1257,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"aoa_deg\",\"to\":19}],\"hypothesis\":\"memory only, no model: the top precedent\",\"expected\":{\"lap_delta_s\":-0.095,\"sector\":2}}"
+  },
+  {
+   "phase": "mid",
+   "id": "q14",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.003,
+    "d_lap_s": -0.003,
+    "lap_s": 88.282,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.192,
+    "d_lap_s": -0.192,
+    "lap_s": 88.093,
+    "from": "candidate",
+    "best_change": "front_wing.aoa_deg 27->29.5; rear_wing.span_mm 1110->1090; rear_wing.chord_mm 360->345; rear_wing.aoa_deg 20->22; rear_wing.elements 2->3; rear_wing.sm_delta_deg 16->18",
+    "screened": 2894,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "endplate_top_mm",
+     "from": 860,
+     "to": 880
+    }
+   ],
+   "head_lap_s": 88.285,
+   "ms": 1278,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"endplate_top_mm\",\"to\":880}],\"hypothesis\":\"memory only, no model: the top precedent\",\"expected\":{\"lap_delta_s\":-0.002,\"sector\":2}}"
+  },
+  {
+   "phase": "late",
+   "id": "q15",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.015,
+    "d_lap_s": -0.015,
+    "lap_s": 87.632,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.023,
+    "d_lap_s": -0.023,
+    "lap_s": 87.624,
+    "from": "candidate",
+    "best_change": "rear_wing.span_mm 1150->1120",
+    "screened": 2900,
+    "physics_laps": 28
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "span_mm",
+     "from": 1150,
+     "to": 1100
+    }
+   ],
+   "head_lap_s": 87.647,
+   "ms": 1562,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"span_mm\",\"to\":1100}],\"hypothesis\":\"memory only, no model: the top precedent\",\"expected\":{\"lap_delta_s\":-0.006,\"sector\":2}}"
+  },
+  {
+   "phase": "early",
+   "id": "q16",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.07,
+    "d_lap_s": -0.07,
+    "lap_s": 88.442,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.155,
+    "d_lap_s": -0.155,
+    "lap_s": 88.357,
+    "from": "candidate",
+    "best_change": "diffuser.expansion_deg 14->15.5; rear_wing.aoa_deg 19->18; floor.ride_height_mm 35->33.5; floor.edge 0->1",
+    "screened": 2726,
+    "physics_laps": 32
+   },
+   "proposal": [
+    {
+     "part": "diffuser",
+     "param": "expansion_deg",
+     "from": 14,
+     "to": 17
+    }
+   ],
+   "head_lap_s": 88.512,
+   "ms": 1773,
+   "answer": "{\"changes\":[{\"part\":\"diffuser\",\"param\":\"expansion_deg\",\"to\":17}],\"hypothesis\":\"memory only, no model: the top precedent\",\"expected\":{\"lap_delta_s\":-0.076,\"sector\":2}}"
+  },
+  {
+   "phase": "mid",
+   "id": "q17",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.001,
+    "d_lap_s": -0.001,
+    "lap_s": 88.19,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.169,
+    "d_lap_s": -0.169,
+    "lap_s": 88.022,
+    "from": "candidate",
+    "best_change": "rear_wing.endplate_top_mm 860->875; front_wing.aoa_deg 30->32; rear_wing.aoa_deg 19.5->21; rear_wing.sm_delta_deg 15->16.5",
+    "screened": 2894,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "endplate_top_mm",
+     "from": 860,
+     "to": 880
+    }
+   ],
+   "head_lap_s": 88.191,
+   "ms": 1063,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"endplate_top_mm\",\"to\":880}],\"hypothesis\":\"memory only, no model: the top precedent\",\"expected\":{\"lap_delta_s\":-0.002,\"sector\":2}}"
+  },
+  {
+   "phase": "late",
+   "id": "q18",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.112,
+    "d_lap_s": -0.112,
+    "lap_s": 87.683,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.112,
+    "d_lap_s": -0.112,
+    "lap_s": 87.683,
+    "from": "proposal",
+    "best_change": "sidepods.undercut_mm 100->140",
+    "screened": 2508,
+    "physics_laps": 24
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 140
+    }
+   ],
+   "head_lap_s": 87.795,
+   "ms": 1210,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":140}],\"hypothesis\":\"memory only, no model: the top precedent\",\"expected\":{\"lap_delta_s\":-0.095,\"sector\":2}}"
+  },
+  {
+   "phase": "early",
+   "id": "q19",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.001,
+    "d_lap_s": -0.001,
+    "lap_s": 88.59,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.132,
+    "d_lap_s": -0.132,
+    "lap_s": 88.459,
+    "from": "candidate",
+    "best_change": "rear_wing.aoa_deg 20->19.5; diffuser.expansion_deg 14->15.5; rear_wing.chord_mm 420->415; rear_wing.endplate_top_mm 860->855",
+    "screened": 2923,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 20,
+     "to": 19
+    }
+   ],
+   "head_lap_s": 88.591,
+   "ms": 996,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"aoa_deg\",\"to\":19}],\"hypothesis\":\"memory only, no model: the top precedent\",\"expected\":{\"lap_delta_s\":-0.086,\"sector\":2}}"
+  },
+  {
+   "phase": "mid",
+   "id": "q20",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.005,
+    "d_lap_s": -0.005,
+    "lap_s": 88.219,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.193,
+    "d_lap_s": -0.193,
+    "lap_s": 88.031,
+    "from": "candidate",
+    "best_change": "rear_wing.endplate_top_mm 860->880; front_wing.aoa_deg 28->30; rear_wing.span_mm 1100->1090; rear_wing.aoa_deg 20->21.5; rear_wing.sm_delta_deg 15->16.5",
+    "screened": 2894,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "endplate_top_mm",
+     "from": 860,
+     "to": 880
+    }
+   ],
+   "head_lap_s": 88.224,
+   "ms": 1601,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"endplate_top_mm\",\"to\":880}],\"hypothesis\":\"memory only, no model: the top precedent\",\"expected\":{\"lap_delta_s\":-0.003,\"sector\":2}}"
+  },
+  {
+   "phase": "late",
+   "id": "q21",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.021,
+    "d_lap_s": -0.021,
+    "lap_s": 87.63,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.021,
+    "d_lap_s": -0.021,
+    "lap_s": 87.63,
+    "from": "proposal",
+    "best_change": "gearbox.top_kmh 336->345",
+    "screened": 356,
+    "physics_laps": 25
+   },
+   "proposal": [
+    {
+     "part": "gearbox",
+     "param": "top_kmh",
+     "from": 336,
+     "to": 345
+    }
+   ],
+   "head_lap_s": 87.651,
+   "ms": 874,
+   "answer": "{\"changes\":[{\"part\":\"gearbox\",\"param\":\"top_kmh\",\"to\":345}],\"hypothesis\":\"memory only, no model: the top precedent\",\"expected\":{\"lap_delta_s\":-0.002,\"sector\":2}}"
+  },
+  {
+   "phase": "early",
+   "id": "q22",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.002,
+    "d_lap_s": -0.002,
+    "lap_s": 88.489,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.03,
+    "d_lap_s": -0.03,
+    "lap_s": 88.461,
+    "from": "candidate",
+    "best_change": "rear_wing.endplate_top_mm 860->880; rear_wing.chord_mm 420->415; rear_wing.sm_delta_deg 15->17",
+    "screened": 2894,
+    "physics_laps": 29
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "endplate_top_mm",
+     "from": 860,
+     "to": 880
+    }
+   ],
+   "head_lap_s": 88.491,
+   "ms": 885,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"endplate_top_mm\",\"to\":880}],\"hypothesis\":\"memory only, no model: the top precedent\",\"expected\":{\"lap_delta_s\":-0.002,\"sector\":2}}"
+  },
+  {
+   "phase": "mid",
+   "id": "q23",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.028,
+    "lap_s": 88.175,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.193,
+    "d_lap_s": -0.193,
+    "lap_s": 87.954,
+    "from": "candidate",
+    "best_change": "rear_wing.span_mm 1100->1110; front_wing.aoa_deg 27->29.5; rear_wing.aoa_deg 18.5->20.5; rear_wing.endplate_top_mm 880->875; rear_wing.sm_delta_deg 18.5->17",
+    "screened": 2888,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "span_mm",
+     "from": 1100,
+     "to": 1150
+    }
+   ],
+   "head_lap_s": 88.147,
+   "ms": 966,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"span_mm\",\"to\":1150}],\"hypothesis\":\"memory only, no model: the top precedent\",\"expected\":{\"lap_delta_s\":-0.009,\"sector\":2}}"
+  },
+  {
+   "phase": "late",
+   "id": "q24",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.003,
+    "lap_s": 87.636,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.005,
+    "d_lap_s": -0.005,
+    "lap_s": 87.628,
+    "from": "candidate",
+    "best_change": "gearbox.top_kmh 336->353; gearbox.step 1.154->1.16",
+    "screened": 356,
+    "physics_laps": 25
+   },
+   "proposal": [
+    {
+     "part": "gearbox",
+     "param": "top_kmh",
+     "from": 336,
+     "to": 345
+    }
+   ],
+   "head_lap_s": 87.633,
+   "ms": 905,
+   "answer": "{\"changes\":[{\"part\":\"gearbox\",\"param\":\"top_kmh\",\"to\":345}],\"hypothesis\":\"memory only, no model: the top precedent\",\"expected\":{\"lap_delta_s\":-0.003,\"sector\":2}}"
+  },
+  {
+   "phase": "early",
+   "id": "q25",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.002,
+    "d_lap_s": -0.002,
+    "lap_s": 88.502,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.031,
+    "d_lap_s": -0.031,
+    "lap_s": 88.473,
+    "from": "candidate",
+    "best_change": "rear_wing.endplate_top_mm 860->880; rear_wing.chord_mm 420->415; rear_wing.sm_delta_deg 15->17",
+    "screened": 2894,
+    "physics_laps": 29
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "endplate_top_mm",
+     "from": 860,
+     "to": 880
+    }
+   ],
+   "head_lap_s": 88.504,
+   "ms": 860,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"endplate_top_mm\",\"to\":880}],\"hypothesis\":\"memory only, no model: the top precedent\",\"expected\":{\"lap_delta_s\":-0.002,\"sector\":2}}"
+  },
+  {
+   "phase": "mid",
+   "id": "q26",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.004,
+    "d_lap_s": -0.004,
+    "lap_s": 88.323,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.279,
+    "d_lap_s": -0.279,
+    "lap_s": 88.048,
+    "from": "candidate",
+    "best_change": "rear_wing.endplate_top_mm 860->880; diffuser.expansion_deg 14.5->15.5; front_wing.aoa_deg 27.5->30; rear_wing.span_mm 1100->1110; rear_wing.elements 2->3; rear_wing.sm_delta_deg 15->16",
+    "screened": 2894,
+    "physics_laps": 32
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "endplate_top_mm",
+     "from": 860,
+     "to": 880
+    }
+   ],
+   "head_lap_s": 88.327,
+   "ms": 928,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"endplate_top_mm\",\"to\":880}],\"hypothesis\":\"memory only, no model: the top precedent\",\"expected\":{\"lap_delta_s\":-0.002,\"sector\":2}}"
+  },
+  {
+   "phase": "late",
+   "id": "q27",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.003,
+    "d_lap_s": -0.003,
+    "lap_s": 87.753,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.007,
+    "d_lap_s": -0.007,
+    "lap_s": 87.749,
+    "from": "candidate",
+    "best_change": "rear_wing.endplate_top_mm 870->880; rear_wing.span_mm 1110->1100",
+    "screened": 2858,
+    "physics_laps": 27
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "endplate_top_mm",
+     "from": 870,
+     "to": 880
+    }
+   ],
+   "head_lap_s": 87.756,
+   "ms": 971,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"endplate_top_mm\",\"to\":880}],\"hypothesis\":\"memory only, no model: the top precedent\",\"expected\":{\"lap_delta_s\":-0.001,\"sector\":2}}"
+  },
+  {
+   "phase": "early",
+   "id": "q28",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.005,
+    "d_lap_s": -0.005,
+    "lap_s": 88.53,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.021,
+    "d_lap_s": -0.021,
+    "lap_s": 88.514,
+    "from": "candidate",
+    "best_change": "gearbox.top_kmh 336->352; gearbox.step 1.156->1.164",
+    "screened": 356,
+    "physics_laps": 25
+   },
+   "proposal": [
+    {
+     "part": "gearbox",
+     "param": "top_kmh",
+     "from": 336,
+     "to": 345
+    }
+   ],
+   "head_lap_s": 88.535,
+   "ms": 679,
+   "answer": "{\"changes\":[{\"part\":\"gearbox\",\"param\":\"top_kmh\",\"to\":345}],\"hypothesis\":\"memory only, no model: the top precedent\",\"expected\":{\"lap_delta_s\":-0.01,\"sector\":2}}"
+  },
+  {
+   "phase": "mid",
+   "id": "q29",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.002,
+    "d_lap_s": -0.002,
+    "lap_s": 88.222,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.017,
+    "d_lap_s": -0.017,
+    "lap_s": 88.207,
+    "from": "candidate",
+    "best_change": "gearbox.top_kmh 336->354; gearbox.step 1.156->1.164",
+    "screened": 356,
+    "physics_laps": 25
+   },
+   "proposal": [
+    {
+     "part": "gearbox",
+     "param": "top_kmh",
+     "from": 336,
+     "to": 345
+    }
+   ],
+   "head_lap_s": 88.224,
+   "ms": 653,
+   "answer": "{\"changes\":[{\"part\":\"gearbox\",\"param\":\"top_kmh\",\"to\":345}],\"hypothesis\":\"memory only, no model: the top precedent\",\"expected\":{\"lap_delta_s\":-0.006,\"sector\":2}}"
+  },
+  {
+   "phase": "late",
+   "id": "q30",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.011,
+    "d_lap_s": -0.011,
+    "lap_s": 87.65,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.018,
+    "d_lap_s": -0.018,
+    "lap_s": 87.643,
+    "from": "candidate",
+    "best_change": "gearbox.top_kmh 336->352; gearbox.step 1.156->1.16",
+    "screened": 356,
+    "physics_laps": 25
+   },
+   "proposal": [
+    {
+     "part": "gearbox",
+     "param": "top_kmh",
+     "from": 336,
+     "to": 345
+    }
+   ],
+   "head_lap_s": 87.661,
+   "ms": 761,
+   "answer": "{\"changes\":[{\"part\":\"gearbox\",\"param\":\"top_kmh\",\"to\":345}],\"hypothesis\":\"memory only, no model: the top precedent\",\"expected\":{\"lap_delta_s\":-0.002,\"sector\":2}}"
+  }
+ ]
+}

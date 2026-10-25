@@ -22,6 +22,10 @@
 //   illegal-as-proposed parameters with their legal range, and the legal ranges for the head car. It changes only the user message;
 //   the frozen designer task (prompt, model, max_tokens, temperature) is untouched. With it on, an illegal proposal's decision row
 //   also records which proposed parameter was illegal on its own (illegal_params).
+//   opts.memory (default false; false = the scenarios exactly as before, byte for byte): the scenario also carries the SHARED MEMORY
+//   block "precedents" (concept/engineer/memory.js: the k most relevant physics-approved changes from the harvest index, for the
+//   head car, not already proposed in this run), appended last. User message only; the frozen task is untouched. opts.memoryOpts
+//   passes retrieval options (k, chars).
 //   opts.ideas K (default 1 = one decision at a time, exactly as before; 2-8 = PARALLEL ROUNDS, docs/concept/ENGINE_V2.md §9): each
 //   round asks for K ideas AT ONCE, all from the same head car; call i's scenario carries one more fact, focus: "<area of the car>"
 //   (concept/engineer/scenario.js FOCUS; identical inputs would give identical answers at temperature 0). Every idea is tested
@@ -47,7 +51,7 @@ const KEPT_RULE = "kept = legal (FIA 2026 Section C checks + homologated PU + ma
 const MAX_IDEAS = 8;          // ideas per round (≤ 8 Mubit calls in flight per run)
 const FASTER_S = 0.0005;      // "found a faster car": the idea's best legal version beats the head by more than 0.5 ms (record-good.js FASTER_BY_S)
 const ROUND_RULE = "a round: K ideas from Mubit at once from the same head car (each call's scenario has its own focus line); every idea is tested; the round's fastest legal car is kept if it beats the head";
-const DEFAULTS = { ideas: 1, deadline: null, maxRounds: null, seed: 1, team: "redbull", maxDecisions: 40, maxCalls: 40, patience: 3, stopAfter: 15, variants: 3000, confirm: 24, explore: 4, workers: 0, pace_ms: 0, trained: false, segments: true, corrections: true };
+const DEFAULTS = { ideas: 1, deadline: null, maxRounds: null, seed: 1, team: "redbull", maxDecisions: 40, maxCalls: 40, patience: 3, stopAfter: 15, variants: 3000, confirm: 24, explore: 4, workers: 0, pace_ms: 0, trained: false, segments: true, corrections: true, memory: false };
 const r3 = v => (typeof v === "number" && isFinite(v) ? Math.round(v * 1000) / 1000 : null);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const now = () => Date.now();
@@ -111,7 +115,7 @@ async function runEngineer(opts) {
     tree.root({ params: start.params, team: start.team || null, legal: true, lap_s: r.lap_s, sectors_s: r.sectors_s, mass_kg: r.mass_kg, front_share: r.front_share });
   }
   const rootNode = tree.nodes[0];
-  emit("start", { resumed: !!opts.resume, decisions_done: k0, seed: opts.seed, trained: !!opts.trained, prompt_version: P.DESIGNER_PROMPT_VERSION, team: opts.team || null, baseline: { lap_s: rootNode.lap_s, sectors_s: rootNode.sectors_s, gap_to_pole_s: r3(rootNode.lap_s - POLE) }, pole_s: POLE, label: LABEL, kept_rule: KEPT_RULE, opts: Object.assign({ variants: opts.variants, confirm: opts.confirm, explore: opts.explore, patience: opts.patience, stopAfter: opts.stopAfter, maxDecisions: opts.maxDecisions, maxCalls: opts.maxCalls, workers: screenPool.n }, opts.corrections ? { corrections: true } : {}, (opts.ideas | 0) > 1 ? { ideas: Math.min(MAX_IDEAS, opts.ideas | 0), round_rule: ROUND_RULE } : {}), tree: tree.compact(), peak: tree.peak, head: tree.head });
+  emit("start", { resumed: !!opts.resume, decisions_done: k0, seed: opts.seed, trained: !!opts.trained, prompt_version: P.DESIGNER_PROMPT_VERSION, team: opts.team || null, baseline: { lap_s: rootNode.lap_s, sectors_s: rootNode.sectors_s, gap_to_pole_s: r3(rootNode.lap_s - POLE) }, pole_s: POLE, label: LABEL, kept_rule: KEPT_RULE, opts: Object.assign({ variants: opts.variants, confirm: opts.confirm, explore: opts.explore, patience: opts.patience, stopAfter: opts.stopAfter, maxDecisions: opts.maxDecisions, maxCalls: opts.maxCalls, workers: screenPool.n }, opts.corrections ? { corrections: true } : {}, opts.memory ? { memory: true } : {}, (opts.ideas | 0) > 1 ? { ideas: Math.min(MAX_IDEAS, opts.ideas | 0), round_rule: ROUND_RULE } : {}), tree: tree.compact(), peak: tree.peak, head: tree.head });
 
   let stopped = null, lastPeakAt = k0;
   if (opts.resume) { for (let i = decisions.length - 1; i >= 0; i--) if (decisions[i].new_peak) { lastPeakAt = i + 1; break; } }
@@ -126,7 +130,7 @@ async function runEngineer(opts) {
   // pre: { request } already previewed (a round previews all K first, so the K calls start in slot order: deterministic mocks)
   async function ask(k, sc, dec, head, meta, pre) {
     const request = pre ? pre.request : opts.preview ? await opts.preview(sc.text, meta) : null;
-    emit("request", Object.assign({ decision: k, scenario: sc.scenario, scenario_text: sc.text, scenario_chars: sc.chars, scenario_tokens: sc.tokens, trained: !!opts.trained, request }, extra(dec)));
+    emit("request", Object.assign({ decision: k, scenario: sc.scenario, scenario_text: sc.text, scenario_chars: sc.chars, scenario_tokens: sc.tokens, trained: !!opts.trained, request }, sc.precedents ? { precedents: sc.precedents, memory_chars: sc.memory_chars } : {}, extra(dec)));
     let proposal = null, why = null;
     calls++;
     const tc = now();
@@ -260,7 +264,7 @@ async function runEngineer(opts) {
       const headNode = tree.get(tree.head), head = designOf(tree.head);
       const headSummary = { lap_s: headNode.lap_s, gap_to_pole_s: headNode.lap_s - POLE, mass_kg: headNode.mass_kg, front_share: headNode.front_share };
       const branch = tree.branch, branchDecs = decisions.filter(d => d.branch === branch.id);
-      const sc = scen.fit({ head, headSummary, tree, decisions: branchDecs, limits: opts.scenarioLimits, corrections: opts.corrections ? { decisions, limits: opts.correctionsLimits } : null });
+      const sc = scen.fit({ head, headSummary, tree, decisions: branchDecs, limits: opts.scenarioLimits, corrections: opts.corrections ? { decisions, limits: opts.correctionsLimits } : null, memory: opts.memory ? Object.assign({}, opts.memoryOpts || {}, { decisions }) : null });
       const dec = { decision: k, branch: branch.id, head: headNode.id, head_lap_s: headNode.lap_s, session_id: sessionId, scenario: sc.text, scenario_chars: sc.chars, scenario_tokens: sc.tokens, trained: !!opts.trained, by: null, t0: now() };
 
       // ---- 1. the designer call (one per decision)
@@ -307,7 +311,7 @@ async function runEngineer(opts) {
         emit("round", { round, ideas: n, of: K, head: headNode.id, head_lap_s: headNode.lap_s, focus: foci, first_decision: k1 });
         const slots = foci.map((focus, i) => {
           const k = k1 + i;
-          const sc = scen.fit({ head, headSummary, tree, decisions: branchDecs, focus, limits: opts.scenarioLimits, corrections: opts.corrections ? { decisions, limits: opts.correctionsLimits } : null });
+          const sc = scen.fit({ head, headSummary, tree, decisions: branchDecs, focus, limits: opts.scenarioLimits, corrections: opts.corrections ? { decisions, limits: opts.correctionsLimits } : null, memory: opts.memory ? Object.assign({}, opts.memoryOpts || {}, { decisions }) : null });
           const dec = { decision: k, round, slot: i + 1, of: n, focus, branch: branch.id, head: headNode.id, head_lap_s: headNode.lap_s, session_id: sessionId, scenario: sc.text, scenario_chars: sc.chars, scenario_tokens: sc.tokens, trained: !!opts.trained, by: null, t0 };
           return { k, sc, dec };
         });

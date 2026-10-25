@@ -72,13 +72,13 @@ const serialize = sc => JSON.stringify(sc);
 function fit(o) {
   const L = Object.assign({}, LIMITS, o.limits || {});
   const sc = build(o); let text = serialize(sc), dropped = 0;
-  const done = () => {
+  const done = () => withMemory(o, sc, (() => {
     if (!o.corrections) return { scenario: sc, text, chars: text.length, tokens: base.approxTokens(text), dropped };
     const c = fitCorrections(corrections({ decisions: o.corrections.decisions, head: o.head }), Object.assign({}, CORRECTIONS, o.corrections.limits || {}), sc.near);
     const baseChars = text.length;
     sc.corrections = c.block; text = serialize(sc);
     return { scenario: sc, text, chars: text.length, tokens: base.approxTokens(text), dropped, base_chars: baseChars, corrections_chars: c.chars, corrections_dropped: c.dropped };
-  };
+  })());
   const lastRow = () => sc.tested[sc.tested.length - 1] || {};
   while (text.length > L.chars) {
     if (sc.tested.length > 1) sc.tested.shift();
@@ -93,6 +93,18 @@ function fit(o) {
     dropped++; text = serialize(sc);
   }
   return done();
+}
+
+// ---- shared memory (opt-in: fit({ ..., memory: { decisions, k, chars } }); concept/engineer/memory.js): the "precedents" block,
+// appended LAST, after everything above is fitted exactly as without it (so the text without "precedents" is byte for byte the
+// text with the option off). Lines of facts: "similar car (distance 0.012, 9 cars): floor.width_mm 1450->1470 legal, -0.021 s".
+function withMemory(o, sc, r) {
+  if (!o.memory) return r;
+  const m = require("./memory.js").retrieve(Object.assign({}, o.memory, { head: o.head, decisions: o.memory.decisions || [] }));
+  const before = r.text.length;
+  sc.precedents = m.lines;
+  const text = serialize(sc);
+  return Object.assign(r, { text, chars: text.length, tokens: base.approxTokens(text), memory_chars: text.length - before, precedents: m.picked });
 }
 
 // ---- physics corrections

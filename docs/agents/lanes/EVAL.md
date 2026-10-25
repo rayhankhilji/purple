@@ -4,6 +4,13 @@ Status: all items merged; README refresh PR open; idle until v2 trains. Owner: a
 
 Owns: see `docs/agents/PARALLEL_PLAN.md` §1. Update this file at the end of every session (dated section on top; keep older ones).
 
+### 2026-10-25 — helper (shared memory) — precedents from physics-approved decisions, the same for every model
+- Status: done locally on `claude/memory-harness` (from dd31cc3), committed, not pushed. No live Mubit calls (mock / replay / no-model only); the live model columns are the integrator's.
+- Files: `concept/engineer/memory.js` (retrieval), `concept/engineer/memory/build.js` + `approved.json` (index: 8,261 entries, 7,565 head cars, 10,183 approved rows, 1.35 MB; exam seeds 101-110 and exam head cars excluded), `concept/engineer/scenario.js` (`fit({ memory })`: "precedents" block appended last), `concept/engineer/engine.js` (`opts.memory`, default false; request event carries the picks), `concept/benchmark/baselines.js` (`runEngine({ memory })`), `concept/engineer/cli.js` (`--memory on|off`, off), `concept/exam/questions.js` (`buildMemory`), `concept/exam/run.js` (`--memory`, `--column memory`), `concept/exam/questions-memory.json`, `results-memory-only.json`, `results-none-memory.json`, `concept/lab/exam-panel.js` ("with shared memory" + "All three side by side"), `test/engineer-memory.test.js` (6 tests), `docs/concept/ENGINE_V2.md` §10.
+- Result (offline, no model): "Memory only (no model)" keeps 26/30 exam ideas as proposed (legal 30/30). Retrieval settings were tuned on dev states (seeds 9101-9110: 23/30), never on the exam.
+- Next (integrator, live, untrained): `node concept/exam/run.js --column base --model claude-haiku-4-5 --memory` (then sonnet / opus); see ENGINE_V2 §10.
+- Blockers / questions: none.
+
 ### 2026-10-24 — helper (model comparison) — designer exam: Haiku 4.5 vs Sonnet 5.5 vs Opus 5.5 vs No AI
 - Status: done locally on `claude/model-compare` (from c6b87a1), not pushed. No live Mubit calls made (loopback stand-in and the scripted mock only); the live columns are the integrator's.
 - Files: `concept/exam/models.json` (new: THE model list, `temperature` 0 = frozen, null = not sent), `concept/exam/run.js` (`--model ID`, `--concurrency 1..8`, per-row `served_by` / `stop_reason` / `error_status` / `error_message`, `calls` summary, `results-base-<slug>[-corrections].json`), `server/mubit.js` (`buildRequest`: `TEMPERATURE === null` leaves the field out; frozen tasks' bytes unchanged), `concept/lab/exam-panel.js` + `.css` ("Model comparison" section), `concept/exam/results-none-corrections.json` (No AI graded on the corrections questions: identical to the plain set, 3/30 kept, as expected since No AI never reads the message), `test/concept-exam-models.test.js` (new).
