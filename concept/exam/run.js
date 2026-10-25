@@ -3,6 +3,13 @@
 //   node concept/exam/run.js --build-questions                  (re)build concept/exam/questions.json (deterministic, ≈ 6 min)
 //   node concept/exam/run.js --build-questions --corrections    build concept/exam/questions-corrections.json: the same 30 states
 //                                                                  with the physics-corrections block (TESTS_TO_POLE.md §8)
+//   node concept/exam/run.js --build-questions --memory         build concept/exam/questions-memory.json: the same 30 states with the
+//                                                                  corrections block AND the shared-memory "precedents" block
+//                                                                  (concept/engineer/memory.js); text minus the block = questions-corrections.json (checked)
+//   add --memory to a column (= --questions concept/exam/questions-memory.json): results-<column>-memory.json, e.g.
+//   node concept/exam/run.js --column base --model claude-haiku-4-5 --memory    -> results-base-claude-haiku-4-5-memory.json
+//   node concept/exam/run.js --column memory                    M. "memory only, no model": each question answered with its top
+//                                                                  precedent exactly as listed (no call, no network) -> results-memory-only.json
 //   add --questions concept/exam/questions-corrections.json to a column: results-<column>-corrections.json (never overwrites the
 //   results of questions.json)
 //   node concept/exam/run.js --column none    [--n 30]          A. no AI: a seeded random legal proposal per question
@@ -56,19 +63,22 @@ function modelTask(id) {
 }
 
 function parseArgs(argv) {
-  const a = { column: null, answers: null, n: null, export: false, build: false, workers: null, questions: null, label: null, corrections: false, model: null, concurrency: null };
+  const a = { column: null, answers: null, n: null, export: false, build: false, workers: null, questions: null, label: null, corrections: false, model: null, concurrency: null, memory: false };
   for (let i = 0; i < argv.length; i++) {
     const k = argv[i], v = argv[i + 1];
     if (k === "--column") { a.column = v; i++; } else if (k === "--answers") { a.answers = v; i++; } else if (k === "--n") { a.n = +v; i++; }
-    else if (k === "--export") a.export = true; else if (k === "--build-questions") a.build = true; else if (k === "--corrections") a.corrections = true;
+    else if (k === "--export") a.export = true; else if (k === "--build-questions") a.build = true; else if (k === "--corrections") a.corrections = true; else if (k === "--memory") a.memory = true;
     else if (k === "--model") { a.model = v; i++; } else if (k === "--concurrency") { a.concurrency = +v; i++; }
     else if (k === "--workers") { a.workers = +v; i++; } else if (k === "--questions") { a.questions = v; i++; } else if (k === "--label") { a.label = v; i++; }
     else if (k === "--help" || k === "-h") a.help = true;
     else throw new Error("unknown option " + k);
   }
   if (a.corrections && !a.build) throw new Error("--corrections goes with --build-questions (to grade them: --questions concept/exam/questions-corrections.json)");
+  if (a.build && a.corrections && a.memory) throw new Error("--build-questions takes --corrections or --memory, not both");
+  if (a.memory && a.questions) throw new Error("--memory means --questions concept/exam/questions-memory.json; give one of them");
   if (a.help || a.build || a.export) return a;
-  if (!["none", "base", "adapter"].includes(a.column)) throw new Error("--column none|base|adapter (or --export / --build-questions)");
+  if (!["none", "base", "adapter", "memory"].includes(a.column)) throw new Error("--column none|base|adapter|memory (or --export / --build-questions)");
+  if (a.column === "memory") a.memory = true;
   if (a.column === "adapter" && !a.answers) throw new Error("--column adapter needs --answers FILE");
   if (a.n != null && !(Number.isInteger(a.n) && a.n >= 1)) throw new Error("--n must be a positive integer");
   if (a.label != null && !/^[A-Za-z0-9_.-]{1,60}$/.test(a.label)) throw new Error("--label: letters, digits, _ . - only");
@@ -95,6 +105,13 @@ function randomProposal(q, seed) {
     return { text, draw };
   }
   throw new Error("exam: no legal random proposal for " + q.id + " in 500 draws");
+}
+
+// ---- column M: "memory only, no model": the question's top precedent (its first precedents line), exactly as the models see it
+function memoryProposal(q) {
+  const p = (q.precedents || [])[0];
+  if (!p) return { text: "", no_precedent: true };
+  return { text: JSON.stringify({ changes: p.changes.map(c => ({ part: c.part, param: c.param, to: c.to })), hypothesis: "memory only, no model: the top precedent", expected: { lap_delta_s: p.d_lap_s, sector: 2 } }) };
 }
 
 // ---- column B: the frozen designer task, untrained, through server/mubit.js only (mock under MUBIT_MOCK=1)
@@ -225,6 +242,13 @@ async function main(argv, io) {
   const a = parseArgs(argv);
   const log = s => io.err(s + "\n");
   if (a.help) { const src = fs.readFileSync(__filename, "utf8").split("\n"); io.out(src.slice(1, src.findIndex(l => l.startsWith("\"use strict\""))).map(l => l.replace(/^\/\/ ?/, "")).join("\n") + "\n"); return 0; }
+  if (a.build && a.memory) {
+    const doc = await questionsMod.buildMemory({ workers: a.workers, log });
+    fs.writeFileSync(questionsMod.FILE_MEMORY, questionsMod.serialize(doc));
+    const add = doc.questions.map(q => q.memory_chars), n = doc.questions.map(q => q.precedents_n);
+    io.out("exam questions with shared memory: " + doc.questions.length + " -> " + path.relative(process.cwd(), questionsMod.FILE_MEMORY) + " (block +" + Math.min(...add) + "..+" + Math.max(...add) + " chars, " + Math.min(...n) + ".." + Math.max(...n) + " precedents)\n");
+    return 0;
+  }
   if (a.build && a.corrections) {
     const doc = await questionsMod.buildCorrections({ workers: a.workers, log });
     const file = questionsMod.FILE_CORRECTIONS;
@@ -239,10 +263,11 @@ async function main(argv, io) {
     io.out("exam questions: " + doc.questions.length + " -> " + path.relative(process.cwd(), a.questions || questionsMod.FILE) + "\n");
     return 0;
   }
-  const doc = questionsMod.load(a.questions);
+  const doc = questionsMod.load(a.memory ? questionsMod.FILE_MEMORY : a.questions);
+  if (a.column === "memory" && doc.variant !== "memory") throw new Error("--column memory needs the memory questions (concept/exam/questions-memory.json)");
   const qs = doc.questions.slice(0, a.n == null ? doc.questions.length : a.n);
   if (a.export) {
-    const e = exportConsole(doc, qs), sfx = doc.variant === "corrections" ? "-corrections" : "";
+    const e = exportConsole(doc, qs), sfx = doc.variant === "corrections" || doc.variant === "memory" ? "-" + doc.variant : "";
     fs.writeFileSync(path.join(DIR, "for-console" + sfx + ".txt"), e.console);
     fs.writeFileSync(path.join(DIR, "answers-template" + sfx + ".txt"), e.template_txt);
     fs.writeFileSync(path.join(DIR, "answers-template" + sfx + ".json"), e.template_json);
@@ -252,6 +277,7 @@ async function main(argv, io) {
   const t0 = Date.now();
   let texts, meta = {};
   if (a.column === "none") texts = qs.map(q => Object.assign({ id: q.id }, randomProposal(q)));
+  else if (a.column === "memory") { texts = qs.map(q => Object.assign({ id: q.id }, memoryProposal(q))); meta = { mock: false, trained: false, model: null, proposer: "memory only, no model: the question's top precedent (the first line of its precedents block) as the answer; no call" }; }
   else if (a.column === "base") {
     if (!mockMode()) require("dotenv").config({ path: process.env.PURPLE_ENV_FILE || path.join(DIR, "..", "..", "server", ".env") });
     const task = a.model ? modelTask(a.model) : prompt;
@@ -274,12 +300,12 @@ async function main(argv, io) {
   const rows = await gradeAll(qs, texts, { workers: a.workers, log });
   const gradeMs = Date.now() - tg;
   const summary = grader.summarize(rows);
-  const sfx = doc.variant === "corrections" ? "-corrections" : "";
-  const name = a.label || (a.column === "base" && a.model ? "base-" + modelOf(a.model).slug + (meta.mock ? "-mock" : "") : a.column === "base" && meta.mock ? "base-mock" : a.column) + sfx;
+  const sfx = doc.variant === "corrections" || doc.variant === "memory" ? "-" + doc.variant : "";
+  const name = a.label || (a.column === "memory" ? "memory-only" : (a.column === "base" && a.model ? "base-" + modelOf(a.model).slug + (meta.mock ? "-mock" : "") : a.column === "base" && meta.mock ? "base-mock" : a.column) + sfx);
   const calls = a.column === "base" ? callStats(rows) : null;
   const res = {
     v: 1, kind: "purple-designer-exam-results", column: a.column, label: name,
-    what: { none: "A. no AI: seeded random legal proposal (design.mutate at the engine's fallback step size, redrawn until legal)", base: (a.model ? "B. " + modelOf(a.model).name + " (" + a.model + ") + frozen designer prompt via server/mubit.js, untrained (x-middleware-record: metadata); only the model id swapped" + (modelTask(a.model).TEMPERATURE === null ? "; temperature not sent (the model does not accept one: default sampling)" : "") : "B. Claude Haiku 4.5 + frozen designer prompt via server/mubit.js, untrained (x-middleware-record: metadata)") + (meta.mock ? " · MOCK RUN: the scripted mock, not a model" : ""), adapter: "C. answers pasted from the Mubit console (Try models)" }[a.column],
+    what: { none: "A. no AI: seeded random legal proposal (design.mutate at the engine's fallback step size, redrawn until legal)", base: (a.model ? "B. " + modelOf(a.model).name + " (" + a.model + ") + frozen designer prompt via server/mubit.js, untrained (x-middleware-record: metadata); only the model id swapped" + (modelTask(a.model).TEMPERATURE === null ? "; temperature not sent (the model does not accept one: default sampling)" : "") : "B. Claude Haiku 4.5 + frozen designer prompt via server/mubit.js, untrained (x-middleware-record: metadata)") + (meta.mock ? " · MOCK RUN: the scripted mock, not a model" : ""), adapter: "C. answers pasted from the Mubit console (Try models)", memory: "M. memory only, no model: the top precedent of the shared memory (concept/engineer/memory.js) applied as listed; no call" }[a.column],
     questions_sha256: questionsMod.sha(JSON.stringify(qs.map(q => q.text_sha256))), questions_variant: doc.variant || "plain", n: qs.length, exam_seed: grader.EXAM_SEED,
     graded_by: "concept/engineer/engine.js one decision from the question's head car (physics lap sim · quasi-steady-state point mass · Silverstone · calibrated to 2026 British GP qualifying); kept = legal && lap < head − 0.1 ms",
     meta, summary, calls, grade_ms: gradeMs, grade_ms_per_question: Math.round(gradeMs / qs.length), total_ms: Date.now() - t0, rows,
@@ -293,4 +319,4 @@ async function main(argv, io) {
 
 if (require.main === module) main(process.argv.slice(2)).then(c => process.exit(c || 0), e => { process.stderr.write("exam: " + (e && e.message || e) + "\n"); process.exit(2); });
 
-module.exports = { parseArgs, randomProposal, baseAnswers, parseAnswers, gradeAll, exportConsole, main, models, modelOf, modelTask, callStats, NONE_SEED, MOCK_SEED, MAX_CONCURRENCY };
+module.exports = { parseArgs, randomProposal, memoryProposal, baseAnswers, parseAnswers, gradeAll, exportConsole, main, models, modelOf, modelTask, callStats, NONE_SEED, MOCK_SEED, MAX_CONCURRENCY };

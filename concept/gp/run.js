@@ -44,10 +44,11 @@ function memoryOpt(S) {
   if (!S.memory) return { opt: undefined, info: { on: false } };
   const sup = memorySupport();
   if (!sup.available) throw new Error("GP setting memory: true, but " + sup.why + " (run with --memory off, or wait for the memory helper's merge)");
-  const M = require(MEMORY_FILE), mk = typeof M.forEngine === "function" ? M.forEngine : typeof M.load === "function" ? M.load : null;
-  const opt = mk ? mk({ team: S.team, circuit: S.circuit, readOnly: true }) : true;
-  const size = opt && typeof opt === "object" ? (typeof opt.size === "number" ? opt.size : Array.isArray(opt.items) ? opt.items.length : Array.isArray(opt) ? opt.length : null) : null;
-  return { opt, info: { on: true, module: sup.module, module_sha256: sup.sha256, via: mk ? (M.forEngine ? "forEngine" : "load") : "true", size } };
+  // concept/engineer/memory.js: the engine reads opts.memory (boolean) and loads the one read-only index file itself, the same file for
+  // every entrant; info() names its size and sha so every run file records exactly which snapshot it used
+  const M = require(MEMORY_FILE), mi = typeof M.info === "function" ? M.info() : {};
+  const opt = true, size = mi.entries == null ? null : mi.entries;
+  return { opt, info: { on: true, module: sup.module, module_sha256: sup.sha256, via: "engine opts.memory", size, index_sha256: mi.sha256 || null, held_out: mi.held_out || null } };
 }
 // the harness every entrant shares, as written into every run file and the summary (the page shows it)
 const SYSTEM_PROMPT_SHA256 = require("crypto").createHash("sha256").update(prompt.SYSTEM_PROMPT).digest("hex");

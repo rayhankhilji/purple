@@ -24,7 +24,7 @@ const prompt = require("../designer/prompt.js");
 const { Pool } = require("../campaign/pool.js");
 const { ScreenPool } = require("../engineer/screen.js");
 
-const FILE = path.join(__dirname, "questions.json"), FILE_CORRECTIONS = path.join(__dirname, "questions-corrections.json");
+const FILE = path.join(__dirname, "questions.json"), FILE_CORRECTIONS = path.join(__dirname, "questions-corrections.json"), FILE_MEMORY = path.join(__dirname, "questions-memory.json");
 const SEEDS = [101, 102, 103, 104, 105, 106, 107, 108, 109, 110];
 const USED_SEEDS = [1, 2, 3, 7, 11, 12, 13, 14, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 41, 42];   // recorded / trained runs (see header)
 const TEAM = "redbull";
@@ -40,14 +40,16 @@ async function snapshots(seed, o) {
   const snaps = [];
   let cur = null;
   const mock = loop.mockCaller(seed);
-  const llm = async (text, meta) => { cur = { k: meta.gen, text }; return mock(text, meta); };
+  const llm = async (text, meta) => { cur = { k: meta.gen, text, precedents: lastPrecedents }; return mock(text, meta); };
+  let lastPrecedents = null;   // the memory block's picks of the request just built (the engine's request event carries them)
   const res = await engine.runEngineer(Object.assign({}, run, {
-    llm, mock: true, seed, team, runId: "exam-src-seed" + seed, maxCalls: run.maxDecisions, segments: true, pool: o.pool, screenPool: o.screenPool, corrections: !!o.corrections,
+    llm, mock: true, seed, team, runId: "exam-src-seed" + seed, maxCalls: run.maxDecisions, segments: true, pool: o.pool, screenPool: o.screenPool, corrections: !!o.corrections, memory: !!o.memory,
     onEvent(type, data) {
       if (type === "start") peakLap = data.baseline.lap_s;
+      if (type === "request") lastPrecedents = data.precedents || null;
       if (type === "decision") {
         // the row's head is the car this decision's scenario was built on
-        snaps.push({ k: data.decision, text: cur.text, head: { node: data.row.head, params: JSON.parse(JSON.stringify(headParams)), lap_s: data.row.head_lap_s }, peak_lap_s: peakLap, scenario_chars: data.row.scenario_chars });
+        snaps.push({ k: data.decision, text: cur.text, precedents: cur.precedents || null, head: { node: data.row.head, params: JSON.parse(JSON.stringify(headParams)), lap_s: data.row.head_lap_s }, peak_lap_s: peakLap, scenario_chars: data.row.scenario_chars });
         if (data.head_params) headParams = data.head_params;
         headNode = data.head; peakLap = data.peak.lap_s;
       }
@@ -149,6 +151,46 @@ async function buildCorrections(o) {
   });
 }
 
+// the shared-memory variant (concept/engineer/memory.js): the SAME 30 car states, the engine's text with corrections AND memory on;
+// the text without the "precedents" block must be byte for byte questions-corrections.json's text (checked; the scripted mock never
+// reads either block, so the source runs are identical). Each question also records the picks behind its lines (precedents), which
+// the "memory only, no model" column answers with (its top line, exactly as the models see it).
+const withoutPrecedents = text => { const sc = JSON.parse(text); delete sc.precedents; return JSON.stringify(sc); };
+async function buildMemory(o) {
+  o = o || {};
+  const src = o.source || load(FILE_CORRECTIONS);
+  if (src.variant !== "corrections") throw new Error("exam memory: the source must be questions-corrections.json");
+  const workers = o.workers == null ? Math.min(4, os.cpus().length) : o.workers;
+  const pool = new Pool(workers), screenPool = new ScreenPool(workers);
+  const log = o.log || (() => {});
+  const memory = require("../engineer/memory.js");
+  const bySeed = new Map(); for (const q of src.questions) { if (!bySeed.has(q.source.seed)) bySeed.set(q.source.seed, []); bySeed.get(q.source.seed).push(q); }
+  const out = new Map();
+  try {
+    for (const [seed, qs] of bySeed) {
+      const t0 = Date.now(), last = Math.max(...qs.map(q => q.source.decision));
+      const run = await snapshots(seed, { pool, screenPool, team: src.questions[0].team, run: Object.assign({}, src.run_opts, { maxDecisions: last }), corrections: true, memory: true });
+      for (const q of qs) {
+        const s = run.snaps.find(x => x.k === q.source.decision);
+        if (!s) throw new Error("exam memory: seed " + seed + " has no decision " + q.source.decision);
+        if (withoutPrecedents(s.text) !== q.text) throw new Error("exam memory: " + q.id + " text without the precedents block differs from questions-corrections.json");
+        if (JSON.stringify(s.head.params) !== JSON.stringify(q.head.params) || s.head.lap_s !== q.head.lap_s) throw new Error("exam memory: " + q.id + " head car differs");
+        const sc = JSON.parse(s.text);
+        out.set(q.id, Object.assign({}, q, { text: s.text, text_sha256: sha(s.text), chars: s.text.length, corrections_text_sha256: q.text_sha256, corrections_chars: q.chars, memory_chars: s.text.length - q.chars, precedents_n: sc.precedents.length, precedents: s.precedents || [] }));
+      }
+      log("exam memory: seed " + seed + " " + qs.length + " questions up to decision " + last + " (" + ((Date.now() - t0) / 1000).toFixed(1) + " s)");
+    }
+  } finally { await pool.close(); await screenPool.close(); }
+  const questions = src.questions.map(q => out.get(q.id));
+  return Object.assign({}, src, {
+    variant: "memory",
+    how: src.how + "; AND the shared-memory block \"precedents\" (concept/engineer/memory.js, engine option memory on; index concept/engineer/memory/approved.json sha256 " + memory.info().sha256.slice(0, 12) + "…, which holds nothing from the exam's seeds or head cars): the text without the block is questions-corrections.json's text, byte for byte",
+    source_corrections_sha256: sha(JSON.stringify(src.questions.map(q => q.text_sha256))),
+    memory_index: memory.info(),
+    questions,
+  });
+}
+
 function load(file) {
   const doc = JSON.parse(fs.readFileSync(file || FILE, "utf8"));
   if (!doc || doc.kind !== "purple-designer-exam-questions" || !Array.isArray(doc.questions)) throw new Error("exam: not a questions file: " + (file || FILE));
@@ -157,4 +199,4 @@ function load(file) {
 }
 const serialize = doc => JSON.stringify(doc, null, 1) + "\n";
 
-module.exports = { FILE, FILE_CORRECTIONS, SEEDS, USED_SEEDS, TEAM, RUN, build, buildCorrections, withoutCorrections, load, serialize, snapshots, pick, sha };
+module.exports = { FILE, FILE_CORRECTIONS, FILE_MEMORY, buildMemory, withoutPrecedents, SEEDS, USED_SEEDS, TEAM, RUN, build, buildCorrections, withoutCorrections, load, serialize, snapshots, pick, sha };

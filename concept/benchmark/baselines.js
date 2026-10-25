@@ -39,14 +39,15 @@ function replayLlm(proposals) {
 // runs never read the scenario, so it is off for them (and off is how the recorded runs ran). segments (default false): the
 // per-segment report the steered runs fed into their scenario (not a physics lap, never counted). trained: passed to the llm as
 // meta.trained only; this module never calls Mubit (a live, trained llm is injected by concept/engineer/cli.js).
+// memory (default false): the shared-memory "precedents" block in the scenario (concept/engineer/memory.js); off = as recorded.
 // screen: { variants, confirm, explore } (default the engine's 3,000 / 24 / 4); { variants: 1, confirm: 1, explore: 0 } is the expensive-test
 // regime: each idea is tested once, exactly as proposed (after the engine's legal repair), one physics lap per decision.
 const SCREENS = { full: { variants: 3000, confirm: 24, explore: 4 }, direct: { variants: 1, confirm: 1, explore: 0 } };
-async function runEngine({ root, seed, team, budget, workers, llm, maxDecisions, stopAfter, mock, corrections, segments, trained, runId, onEvent, maxCalls, screen, prompt }) {
+async function runEngine({ root, seed, team, budget, workers, llm, maxDecisions, stopAfter, mock, corrections, segments, trained, runId, onEvent, maxCalls, screen, prompt, memory }) {
   const engine = mod(root, "engineer/engine.js");
   const t0 = Date.now();
   let laps = 0;
-  const extra = corrections ? { corrections: true } : { corrections: false };
+  const extra = Object.assign(corrections ? { corrections: true } : { corrections: false }, memory ? { memory: true } : {});
   const res = await engine.runEngineer(Object.assign({
     llm, mock: !!mock, seed, team: team || "redbull", trained: !!trained, workers: workers == null ? 4 : workers,
     maxDecisions: maxDecisions || 100000, maxCalls: maxCalls || 100000, stopAfter: stopAfter || 1e9, patience: 3, ...(SCREENS[screen || "full"] || screen),
@@ -58,7 +59,7 @@ async function runEngine({ root, seed, team, budget, workers, llm, maxDecisions,
   return {
     seed, baseline_s: res.baseline.lap_s, pole_s: res.pole_s, stopped: res.stopped, runtime_s: +((Date.now() - t0) / 1000).toFixed(1),
     decisions: res.decisions.length, by, kept: res.stats.kept, reverts: res.stats.reverts, forks: res.stats.forks, points,
-    peak_params: res.peak.params, corrections: !!corrections, explore: exploreStats(res.decisions), result: res,
+    peak_params: res.peak.params, corrections: !!corrections, memory: !!memory, explore: exploreStats(res.decisions), result: res,
   };
 }
 // how the directions spread over the catalogue: distinct parameters / parts named, the most-named parameter, illegal as proposed

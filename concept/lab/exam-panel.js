@@ -159,7 +159,11 @@
   // chosen question set. Haiku 4.5's earlier run (results-base.json, before --model existed) stands in for its column until a
   // results-base-claude-haiku-4-5.json exists, and says so.
   const MC = { variant: "plain", data: {} };
-  const VARIANTS = [{ key: "plain", name: "The engine's message" }, { key: "corrections", name: "+ physics corrections block" }];
+  // question sets: plain · + corrections · + corrections + shared memory (concept/engineer/memory.js "precedents" block); "all" shows
+  // each column's "kept as proposed" on the three sets side by side
+  const VARIANTS = [{ key: "plain", name: "The engine's message" }, { key: "corrections", name: "+ physics corrections block" }, { key: "memory", name: "with shared memory" }, { key: "all", name: "All three side by side" }];
+  const SETS = VARIANTS.filter(v => v.key !== "all");
+  const sfxOf = variant => (variant === "plain" ? "" : "-" + variant);
   function median(a) { if (!a.length) return null; const b = a.slice().sort((x, y) => x - y), m = b.length >> 1; return b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2; }
   function modelStats(doc, isModel) {
     const rows = Array.isArray(doc && doc.rows) ? doc.rows : [], N = rows.length;
@@ -183,7 +187,7 @@
   }
   async function loadModelCols(variant, getJ) {
     getJ = getJ || optJson;
-    const sfx = variant === "corrections" ? "-corrections" : "";
+    const sfx = sfxOf(variant);
     const list = await getJ(DATA + "models.json");
     if (!list || !Array.isArray(list.models)) throw new Error(DATA + "models.json missing or unreadable");
     const cols = await Promise.all(list.models.map(async m => {
@@ -200,19 +204,26 @@
     const nf = "results-none" + sfx + ".json", nd = await getJ(DATA + nf);
     const noneOk = !!(nd && nd.kind === "purple-designer-exam-results" && nd.column === "none" && Array.isArray(nd.rows) && variantOf(nd) === variant);
     cols.push({ kind: "none", m: { name: "No AI", id: "a random legal change" }, file: nf, doc: noneOk ? nd : null, st: noneOk ? modelStats(nd, false) : null });
+    // "Memory only (no model)": the top precedent of the shared memory applied as listed (run.js --column memory); memory set only
+    if (variant === "memory") {
+      const mf = "results-memory-only.json", md = await getJ(DATA + mf);
+      const ok = !!(md && md.kind === "purple-designer-exam-results" && md.column === "memory" && Array.isArray(md.rows) && variantOf(md) === "memory");
+      cols.push({ kind: "memonly", m: { name: "Memory only (no model)", id: "the top precedent, applied as listed" }, file: mf, doc: ok ? md : null, st: ok ? modelStats(md, false) : null });
+    }
     return { variant, models: list.models, cols };
   }
   function buildModels(data) {
     const cols = data.cols, shown = cols.filter(c => c.doc);
-    const ran = c => c.kind === "none" || c.st.answered > 0;
+    const ran = c => c.kind === "none" || c.kind === "memonly" || c.st.answered > 0;
+    const noCall = c => c.kind === "none" || c.kind === "memonly";
     const nN = (k, c) => c.st[k] + "/" + c.st.N;
     const METRICS = [
       { name: "Kept as proposed", lead: true, fmt: c => nN("direct", c), title: "the reply's own change, tested on the sim, is legal and faster than the car it started from" },
       { name: "Legal as proposed", fmt: c => nN("legal", c), title: "the reply's change passes the 2026 technical rules (FIA Section C) without any repair" },
       { name: "Mean gain as proposed (s)", fmt: c => f4(c.st.dgain), title: "lap time gained per question (0 when not kept), averaged over the questions" },
       { name: "Kept with engine", fmt: c => nN("engine", c), title: "the engine's normal treatment of the reply: 3,000 variants around it screened, the best 24 tested on the sim" },
-      { name: "Median latency (s)", fmt: c => (c.kind === "none" ? "—" : isNum(c.st.latMedS) ? c.st.latMedS.toFixed(2) : "—"), title: "one call through Mubit, timed by the caller; median over the calls that answered" },
-      { name: "Mean output tokens", fmt: c => (c.kind === "none" ? "—" : isNum(c.st.outMean) ? String(Math.round(c.st.outMean)) : "—"), title: "output tokens as reported by the provider (includes any thinking), mean over the calls that answered" },
+      { name: "Median latency (s)", fmt: c => (noCall(c) ? "—" : isNum(c.st.latMedS) ? c.st.latMedS.toFixed(2) : "—"), title: "one call through Mubit, timed by the caller; median over the calls that answered" },
+      { name: "Mean output tokens", fmt: c => (noCall(c) ? "—" : isNum(c.st.outMean) ? String(Math.round(c.st.outMean)) : "—"), title: "output tokens as reported by the provider (includes any thinking), mean over the calls that answered" },
     ];
     const thead = el("tr", null, el("th", { scope: "col", class: "m" }, el("span", { class: "label", text: "Per model" })),
       cols.map(c => el("th", { scope: "col", class: "mc-" + c.kind }, el("span", { class: "cn", text: c.m.name }), el("span", { class: "cs", text: c.m.id }))));
@@ -224,6 +235,7 @@
     for (const c of cols) {
       if (!c.doc) { notes.push(c.m.name + ": not run yet (" + c.file + ")" + (c.why ? "; " + c.why : "") + "."); continue; }
       if (c.kind === "none") { notes.push("No AI: " + c.file + " (a seeded random legal change per question; no model call)."); continue; }
+      if (c.kind === "memonly") { notes.push("Memory only (no model): " + c.file + " (each question answered with the first line of its precedents block, applied exactly as listed; no model call). A fair extra baseline: the same memory every model sees."); continue; }
       const meta = c.doc.meta || {}, st = c.st, bits = [c.file + (c.earlier ? " (the earlier Haiku run, before the comparison)" : "")];
       bits.push(st.N + " calls" + (isNum(meta.concurrency) ? ", " + meta.concurrency + " in flight" : c.earlier ? ", 2 in flight" : ""));
       bits.push(meta.temperature === null ? "temperature not sent (default sampling)" : "temperature " + meta.temperature);
@@ -235,7 +247,7 @@
     const Ns = Array.from(new Set(shown.map(c => c.st.N)));
     const sha = Array.from(new Set(shown.map(c => c.doc.questions_sha256).filter(Boolean)));
     const noTemp = data.models.filter(m => m.temperature === null).map(m => m.name), withTemp = data.models.filter(m => m.temperature !== null).map(m => m.name);
-    const sw = el("div", { class: "mc-sw", role: "group", "aria-label": "question set" }, VARIANTS.map(v => el("button", { type: "button", class: "btn sm" + (v.key === data.variant ? " on" : ""), "aria-pressed": v.key === data.variant ? "true" : "false", onclick: () => setVariant(v.key) }, v.name)));
+    const sw = switcher(data.variant);
     return el("div", { class: "mc-body" },
       el("div", { class: "ph" }, el("span", { class: "label", text: "Model comparison" }), el("span", { class: "src", text: SIM })),
       el("p", { class: "ex-cap mc-lede" }, "Same " + (Ns.length === 1 ? Ns[0] : 30) + " car situations, same prompt, same physics; only the model changes."),
@@ -244,14 +256,40 @@
       noTemp.length ? el("p", { class: "ex-cap src" }, noTemp.join(" and ") + " run at " + (noTemp.length > 1 ? "their" : "its") + " default sampling: " + (noTemp.length > 1 ? "these models do" : "this model does") + " not accept a temperature setting" + (withTemp.length ? " (" + withTemp.join(", ") + ": temperature 0, as frozen)" : "") + ". They also think before answering, so they get up to 4,000 output tokens; Haiku keeps the frozen 250.") : null,
       Ns.length > 1 || sha.length > 1 ? el("p", { class: "ex-cap warn" }, "The columns are not on the same questions (N = " + Ns.join(", ") + "): compare with care.") : null,
       el("ul", { class: "ex-cap src mc-notes" }, notes.map(t => el("li", null, t))),
+      data.variant === "memory" ? el("p", { class: "ex-cap src" }, MEMORY_NOTE) : null,
       el("p", { class: "ex-cap src" }, "All model calls go through Mubit, untrained (they never become training examples). Kept = legal and faster on the sim than the car the question starts from; an illegal change is first moved to the nearest legal car, as the engine does. Latency is one call, timed by the caller. Scores are counts, n/N."));
+  }
+  const MEMORY_NOTE = "Shared memory: the same for every model. Each question's message also lists up to 6 precedents from the physics-approved harvest decisions (the change as proposed was legal and faster on the sim on a similar car; nothing from this exam's runs or cars is in the index), changes already tried in that run left out. User message only; the frozen task is unchanged.";
+  function switcher(cur) { return el("div", { class: "mc-sw", role: "group", "aria-label": "question set" }, VARIANTS.map(v => el("button", { type: "button", class: "btn sm" + (v.key === cur ? " on" : ""), "aria-pressed": v.key === cur ? "true" : "false", onclick: () => setVariant(v.key) }, v.name))); }
+  // the three question sets side by side: one row per column (models, No AI, Memory only), "kept as proposed" n/N on each set
+  function buildAll(all) {
+    const rows = [], seen = new Map();
+    for (const set of SETS) for (const c of all[set.key].cols) { const k = c.kind + ":" + (c.m.id || c.m.name); if (!seen.has(k)) { seen.set(k, rows.length); rows.push({ c, cells: {} }); } rows[seen.get(k)].cells[set.key] = c; }
+    const cell = c => (!c ? el("td", { class: "muted nr" }, "—") : !c.doc ? el("td", { class: "muted nr" }, "not run yet") : c.st.answered === 0 && c.kind === "model" ? el("td", { class: "warn nr" }, "calls failed") : el("td", { class: "mc-" + c.kind }, c.st.direct + "/" + c.st.N));
+    return el("div", { class: "mc-body" },
+      el("div", { class: "ph" }, el("span", { class: "label", text: "Model comparison" }), el("span", { class: "src", text: SIM })),
+      el("p", { class: "ex-cap mc-lede" }, "Kept as proposed on each question set: the same 30 car situations, the same prompt and physics; only the message's extra blocks change."),
+      switcher("all"),
+      el("div", { class: "ex-tablewrap" }, el("table", { class: "ex-table mc-table" },
+        el("thead", null, el("tr", null, el("th", { scope: "col", class: "m" }, el("span", { class: "label", text: "Kept as proposed" })), SETS.map(s => el("th", { scope: "col" }, el("span", { class: "cn", text: s.key === "plain" ? "plain" : s.key === "corrections" ? "+ corrections" : "+ corrections + memory" }))))),
+        el("tbody", null, rows.map(r => el("tr", null, el("th", { scope: "row", class: "m" }, r.c.m.name), SETS.map(s => cell(r.cells[s.key]))))))),
+      el("p", { class: "ex-cap src" }, MEMORY_NOTE),
+      el("p", { class: "ex-cap src" }, "Kept = legal and faster on the sim than the car the question starts from. Scores are counts, n/N; whatever a model scored is what shows."));
   }
   async function setVariant(v) {
     MC.variant = v;
-    try { if (!MC.data[v]) MC.data[v] = await loadModelCols(v); renderModels(); }
+    try {
+      if (v === "all") { for (const s of SETS) if (!MC.data[s.key]) MC.data[s.key] = await loadModelCols(s.key); }
+      else if (!MC.data[v]) MC.data[v] = await loadModelCols(v);
+      renderModels();
+    }
     catch (e) { const box = $("#exModels"); if (box) box.replaceChildren(el("div", { class: "ph" }, el("span", { class: "label", text: "Model comparison" })), el("p", { class: "ex-cap warn" }, "could not load the model comparison: " + (e.message || e))); }
   }
-  function renderModels() { const box = $("#exModels"), d = MC.data[MC.variant]; if (box && d) box.replaceChildren(buildModels(d)); }
+  function renderModels() {
+    const box = $("#exModels"); if (!box) return;
+    if (MC.variant === "all") { if (SETS.every(s => MC.data[s.key])) box.replaceChildren(buildAll(MC.data)); return; }
+    const d = MC.data[MC.variant]; if (d) box.replaceChildren(buildModels(d));
+  }
   const gradedProvider = () => S.qs.map(q => q.id).filter(id => S.provider[id]);
   function compactIds(ids) {
     const ns = ids.map(id => +id.slice(1)).sort((a, b) => a - b), out = [];
