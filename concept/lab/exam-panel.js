@@ -241,7 +241,7 @@
       el("p", { class: "ex-cap mc-lede" }, "Same " + (Ns.length === 1 ? Ns[0] : 30) + " car situations, same prompt, same physics; only the model changes."),
       sw,
       el("div", { class: "ex-tablewrap" }, el("table", { class: "ex-table mc-table" }, el("thead", null, thead), el("tbody", null, body))),
-      noTemp.length ? el("p", { class: "ex-cap src" }, noTemp.join(" and ") + " run at " + (noTemp.length > 1 ? "their" : "its") + " default sampling: " + (noTemp.length > 1 ? "these models do" : "this model does") + " not accept a temperature setting" + (withTemp.length ? " (" + withTemp.join(", ") + ": temperature 0, as frozen)" : "") + ".") : null,
+      noTemp.length ? el("p", { class: "ex-cap src" }, noTemp.join(" and ") + " run at " + (noTemp.length > 1 ? "their" : "its") + " default sampling: " + (noTemp.length > 1 ? "these models do" : "this model does") + " not accept a temperature setting" + (withTemp.length ? " (" + withTemp.join(", ") + ": temperature 0, as frozen)" : "") + ". They also think before answering, so they get up to 4,000 output tokens; Haiku keeps the frozen 250.") : null,
       Ns.length > 1 || sha.length > 1 ? el("p", { class: "ex-cap warn" }, "The columns are not on the same questions (N = " + Ns.join(", ") + "): compare with care.") : null,
       el("ul", { class: "ex-cap src mc-notes" }, notes.map(t => el("li", null, t))),
       el("p", { class: "ex-cap src" }, "All model calls go through Mubit, untrained (they never become training examples). Kept = legal and faster on the sim than the car the question starts from; an illegal change is first moved to the nearest legal car, as the engine does. Latency is one call, timed by the caller. Scores are counts, n/N."));

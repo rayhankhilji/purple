@@ -52,7 +52,7 @@ function modelOf(id) {
 function modelTask(id) {
   const m = modelOf(id);
   if (m.temperature !== null && m.temperature !== prompt.TEMPERATURE) throw new Error("models.json: " + id + " temperature must be null or the frozen " + prompt.TEMPERATURE);
-  return Object.freeze({ DRAFT: prompt.DRAFT, DESIGNER_PROMPT_VERSION: prompt.DESIGNER_PROMPT_VERSION, SYSTEM_PROMPT: prompt.SYSTEM_PROMPT, MODEL: id, MAX_TOKENS: prompt.MAX_TOKENS, TEMPERATURE: m.temperature === null ? null : prompt.TEMPERATURE });
+  return Object.freeze({ DRAFT: prompt.DRAFT, DESIGNER_PROMPT_VERSION: prompt.DESIGNER_PROMPT_VERSION, SYSTEM_PROMPT: prompt.SYSTEM_PROMPT, MODEL: id, MAX_TOKENS: m.max_tokens || prompt.MAX_TOKENS, TEMPERATURE: m.temperature === null ? null : prompt.TEMPERATURE });
 }
 
 function parseArgs(argv) {

@@ -1,5 +1,5 @@
 // PURPLE DESIGNER EXAM - the model comparison (concept/exam/models.json, run.js --model, the Exam view's "Model comparison").
-// --model swaps only the model id of the frozen designer task (system prompt, max_tokens identical; temperature identical, or left
+// --model swaps only the model id of the frozen designer task (system prompt identical; max_tokens the frozen 250 unless models.json gives a thinking model more; temperature identical, or left
 // out for a model whose API rejects it), every call is untrained (x-middleware-record: metadata), ≤ 8 in flight, the results file is
 // named per model and records latency / tokens / served_by / model as returned; the frozen tasks' request bytes do not change; the
 // panel shows n/N from the files as they are and "not run yet" without one. The HTTP server is a loopback stand-in on 127.0.0.1:
@@ -56,9 +56,9 @@ test("--model swaps only MODEL: system prompt, max_tokens, temperature (or none)
   for (const m of MODELS) {
     const t = R.modelTask(m.id);
     assert.ok(Object.isFrozen(t));
-    assert.equal(t.SYSTEM_PROMPT, prompt.SYSTEM_PROMPT); assert.equal(t.MAX_TOKENS, prompt.MAX_TOKENS); assert.equal(t.DRAFT, prompt.DRAFT);
+    assert.equal(t.SYSTEM_PROMPT, prompt.SYSTEM_PROMPT); assert.equal(t.MAX_TOKENS, m.max_tokens || prompt.MAX_TOKENS); assert.equal(t.DRAFT, prompt.DRAFT);
     const r = mubit.buildRequest(Object.assign({ task: t }, args));
-    const want = Object.assign({}, frozen.params, { model: m.id });
+    const want = Object.assign({}, frozen.params, { model: m.id, max_tokens: m.max_tokens || prompt.MAX_TOKENS });
     if (m.temperature === null) delete want.temperature;
     assert.equal(JSON.stringify(r.params), JSON.stringify(want), m.id + ": only the model (and, where the model rejects it, the temperature field) differ");
     assert.deepEqual(r.headers, { "x-middleware-record": "metadata" });
@@ -95,7 +95,7 @@ test("run.js --model (stub gateway): untrained, ≤ 8 in flight, results-base-<s
     assert.equal(res.label, "base-claude-opus-5-5"); assert.equal(res.n, 2);
     assert.equal(res.meta.model, "claude-opus-5-5"); assert.equal(res.meta.trained, false); assert.equal(res.meta.mock, false);
     assert.equal(res.meta.concurrency, 8); assert.equal(res.meta.temperature, null); assert.equal(res.meta.temperature_sent, false);
-    assert.equal(res.meta.max_tokens, prompt.MAX_TOKENS); assert.equal(res.meta.prompt_version, prompt.DESIGNER_PROMPT_VERSION);
+    assert.equal(res.meta.max_tokens, 4000); assert.equal(res.meta.prompt_version, prompt.DESIGNER_PROMPT_VERSION);
     for (const r of res.rows) { assert.equal(r.model, "claude-opus-5-5"); assert.equal(r.served_by, "provider"); assert.equal(r.input_tokens, 400); assert.equal(r.output_tokens, 40); assert.equal(typeof r.latency_ms, "number"); assert.equal(r.stop_reason, "end_turn"); }
     assert.equal(res.calls.answered, 2); assert.equal(res.calls.errors, 0); assert.equal(res.calls.output_tokens_mean, 40);
     assert.deepEqual(res.calls.models_returned, { "claude-opus-5-5": 2 });

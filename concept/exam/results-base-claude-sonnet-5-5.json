@@ -1,0 +1,1308 @@
+{
+ "v": 1,
+ "kind": "purple-designer-exam-results",
+ "column": "base",
+ "label": "base-claude-sonnet-5-5",
+ "what": "B. Sonnet 5.5 (claude-sonnet-5-5) + frozen designer prompt via server/mubit.js, untrained (x-middleware-record: metadata); only the model id swapped; temperature not sent (the model does not accept one: default sampling)",
+ "questions_sha256": "9434d81c78777e1983b649b973286ed6d962b877417526b073677ec29d73ae79",
+ "questions_variant": "plain",
+ "n": 30,
+ "exam_seed": 2026,
+ "graded_by": "concept/engineer/engine.js one decision from the question's head car (physics lap sim · quasi-steady-state point mass · Silverstone · calibrated to 2026 British GP qualifying); kept = legal && lap < head − 0.1 ms",
+ "meta": {
+  "session_id": "exam-dsg-01m5r546d3kwpwkn49d97gb0s7",
+  "mock": false,
+  "trained": false,
+  "model": "claude-sonnet-5-5",
+  "max_tokens": 4000,
+  "temperature": null,
+  "prompt_version": "1",
+  "concurrency": 8,
+  "comparison": true,
+  "model_name": "Sonnet 5.5",
+  "temperature_sent": false,
+  "swapped": [
+   "model",
+   "temperature not sent (the model does not accept a temperature setting)"
+  ],
+  "system_prompt_sha256": "40bd6f55333012e058b53937bfe2b281f0d74d71fc804d97efded96049030956"
+ },
+ "summary": {
+  "N": 30,
+  "parsed": 30,
+  "legal": 26,
+  "direct_kept": 19,
+  "engine_kept": 27,
+  "direct_mean_gain_s": 0.012367,
+  "engine_mean_gain_s": 0.059067,
+  "direct_total_gain_s": 0.371,
+  "engine_total_gain_s": 1.772,
+  "line": "kept 19/30 (direct), 27/30 (engine), mean gain 0.0124 s (direct), 0.0591 s (engine); parsed 30/30, legal as proposed 26/30"
+ },
+ "calls": {
+  "n": 30,
+  "answered": 30,
+  "errors": 0,
+  "error_codes": {},
+  "latency_ms_median": 4656,
+  "latency_ms_mean": 4690.7,
+  "latency_ms_max": 6630,
+  "input_tokens_mean": 1390.2,
+  "output_tokens_mean": 474.6,
+  "stop_reasons": {
+   "end_turn": 30
+  },
+  "served_by": {
+   "provider": 30
+  },
+  "models_returned": {
+   "claude-sonnet-5-5": 30
+  }
+ },
+ "grade_ms": 70650,
+ "grade_ms_per_question": 2355,
+ "total_ms": 91206,
+ "rows": [
+  {
+   "phase": "early",
+   "id": "q01",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.003,
+    "d_lap_s": -0.003,
+    "lap_s": 88.489,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.013,
+    "d_lap_s": -0.013,
+    "lap_s": 88.479,
+    "from": "candidate",
+    "best_change": "gearbox.top_kmh 336->345; gearbox.step 1.156->1.15",
+    "screened": 194,
+    "physics_laps": 25
+   },
+   "proposal": [
+    {
+     "part": "gearbox",
+     "param": "top_kmh",
+     "from": 336,
+     "to": 340
+    }
+   ],
+   "head_lap_s": 88.492,
+   "ms": 12501,
+   "answer": "{\"changes\":[{\"part\":\"gearbox\",\"param\":\"top_kmh\",\"to\":340}],\"hypothesis\":\"Silverstone has long high-speed straights, so a taller top gear could cut time on the Wellington and Hamilton straights without touching any floor or wing limit.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a170521c2e7f839a767818d01cee8d",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 1384,
+   "output_tokens": 466,
+   "latency_ms": 5248,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q02",
+   "parsed": true,
+   "legal": false,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.029,
+    "d_lap_s": -0.029,
+    "lap_s": 88.205,
+    "from": "projected"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.045,
+    "d_lap_s": -0.045,
+    "lap_s": 88.189,
+    "from": "candidate",
+    "best_change": "floor.ride_height_mm 29->28; diffuser.expansion_deg 17->16",
+    "screened": 2727,
+    "physics_laps": 32
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "ride_height_mm",
+     "from": 29,
+     "to": 28
+    }
+   ],
+   "head_lap_s": 88.234,
+   "articles": [
+    "PKG-FLOOR-STALL"
+   ],
+   "ms": 5878,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"ride_height_mm\",\"to\":28}],\"hypothesis\":\"Lowering ride height 1 mm should raise floor downforce and cornering speed without touching any limit parameter. Gains are expected in the fast corners of sector 1.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":1}}",
+   "mubit_request_id": "mreq_01a170521af67732b59e5f458a695ab9",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 1378,
+   "output_tokens": 412,
+   "latency_ms": 4859,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q03",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.134,
+    "lap_s": 87.735,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.001,
+    "d_lap_s": -0.001,
+    "lap_s": 87.6,
+    "from": "candidate",
+    "best_change": "rear_wing.endplate_top_mm 870->875",
+    "screened": 2895,
+    "physics_laps": 28
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 22,
+     "to": 21
+    }
+   ],
+   "head_lap_s": 87.601,
+   "ms": 3626,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"aoa_deg\",\"to\":21}],\"hypothesis\":\"Rear wing AoA is not at a limit. Trimming it 1 degree cuts drag on Hangar and Wellington straights, which should outweigh the small loss of rear downforce.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":1}}",
+   "mubit_request_id": "mreq_01a170521b0870d1b27b8597ab4bffce",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 1348,
+   "output_tokens": 384,
+   "latency_ms": 4354,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "early",
+   "id": "q04",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.01,
+    "d_lap_s": -0.01,
+    "lap_s": 88.532,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.028,
+    "d_lap_s": -0.028,
+    "lap_s": 88.514,
+    "from": "candidate",
+    "best_change": "floor.ride_height_mm 35->33.5; rear_wing.aoa_deg 18.5->17.5; floor.edge 0->1",
+    "screened": 2723,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "ride_height_mm",
+     "from": 35,
+     "to": 34.5
+    }
+   ],
+   "head_lap_s": 88.542,
+   "ms": 2226,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"ride_height_mm\",\"to\":34.7}],\"hypothesis\":\"Lowering the ride height slightly, but staying above the 34.5 stall limit, should add floor downforce through the fast Maggotts-Becketts-Chapel complex at little drag cost.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":1}}",
+   "mubit_request_id": "mreq_01a170521b157672985e3cd127a2648d",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 1369,
+   "output_tokens": 663,
+   "latency_ms": 6018,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q05",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.059,
+    "d_lap_s": -0.059,
+    "lap_s": 88.138,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.237,
+    "d_lap_s": -0.237,
+    "lap_s": 87.96,
+    "from": "candidate",
+    "best_change": "front_wing.aoa_deg 27->30; rear_wing.aoa_deg 21->23.5; front_wing.sm_delta_deg 4.5->5",
+    "screened": 2930,
+    "physics_laps": 30
+   },
+   "proposal": [
+    {
+     "part": "front_wing",
+     "param": "aoa_deg",
+     "from": 27,
+     "to": 28
+    }
+   ],
+   "head_lap_s": 88.197,
+   "ms": 3692,
+   "answer": "{\"changes\":[{\"part\":\"front_wing\",\"param\":\"aoa_deg\",\"to\":28}],\"hypothesis\":\"The earlier front aoa rise from 25 to 27 helped. One more degree should add front downforce in the Maggotts-Becketts high-speed section without a large drag cost.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a170521b0c7c929edd27e27a73f143",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 1371,
+   "output_tokens": 486,
+   "latency_ms": 4496,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q06",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.147,
+    "lap_s": 87.888,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.021,
+    "d_lap_s": -0.021,
+    "lap_s": 87.72,
+    "from": "candidate",
+    "best_change": "rear_wing.sm_delta_deg 26.5->29",
+    "screened": 2878,
+    "physics_laps": 29
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 24,
+     "to": 23
+    }
+   ],
+   "head_lap_s": 87.741,
+   "ms": 1787,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"aoa_deg\",\"to\":23}],\"hypothesis\":\"Rear wing AoA is not at a limit. Trimming it by 1 deg should cut drag on the straights and at Stowe, and the sm_delta gains suggest the cornering downforce loss is small.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a170521b1a78f39db8513f95871dde",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 1409,
+   "output_tokens": 500,
+   "latency_ms": 5029,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "early",
+   "id": "q07",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.998,
+    "lap_s": 89.525,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.031,
+    "d_lap_s": -0.031,
+    "lap_s": 88.496,
+    "from": "candidate",
+    "best_change": "rear_wing.span_mm 1100->1090; rear_wing.chord_mm 420->410; rear_wing.endplate_top_mm 860->865",
+    "screened": 2948,
+    "physics_laps": 27
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 17.5,
+     "to": 15
+    }
+   ],
+   "head_lap_s": 88.527,
+   "ms": 926,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"aoa_deg\",\"to\":15}],\"hypothesis\":\"Cutting rear wing AoA further reduces drag on Silverstone's fast straights. Floor-led downforce from the 32.5 mm ride height should cover the lost rear load in the Maggotts-Becketts complex.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":1}}",
+   "mubit_request_id": "mreq_01a170521b1778b0b5d224b7edfcb872",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 1376,
+   "output_tokens": 433,
+   "latency_ms": 4535,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q08",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.047,
+    "d_lap_s": -0.047,
+    "lap_s": 88.22,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.212,
+    "d_lap_s": -0.212,
+    "lap_s": 88.055,
+    "from": "candidate",
+    "best_change": "rear_wing.chord_mm 375->360; diffuser.expansion_deg 16.5->16; front_wing.aoa_deg 27.5->30; rear_wing.aoa_deg 20->22.5; rear_wing.sm_delta_deg 20.5->21.5",
+    "screened": 2921,
+    "physics_laps": 32
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "chord_mm",
+     "from": 375,
+     "to": 360
+    }
+   ],
+   "head_lap_s": 88.267,
+   "ms": 2014,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"chord_mm\",\"to\":360}],\"hypothesis\":\"A slightly shorter rear wing chord cuts drag on Hangar Straight and the Wellington straight for little downforce loss. The floor and front wing carry the balance.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":1}}",
+   "mubit_request_id": "mreq_01a170521b1a7b90a997b5105ec6efb3",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 1424,
+   "output_tokens": 633,
+   "latency_ms": 6630,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q09",
+   "parsed": true,
+   "legal": false,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.024,
+    "d_lap_s": -0.024,
+    "lap_s": 87.795,
+    "from": "repaired"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.05,
+    "d_lap_s": -0.05,
+    "lap_s": 87.769,
+    "from": "candidate",
+    "best_change": "sidepods.inlet_cm2 650->690; sidepods.undercut_mm 100->115; engine_cover.style 0->1",
+    "screened": 2063,
+    "physics_laps": 26
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "inlet_cm2",
+     "from": 650,
+     "to": 600
+    }
+   ],
+   "head_lap_s": 87.819,
+   "articles": [
+    "PKG-COOLING"
+   ],
+   "ms": 3308,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"inlet_cm2\",\"to\":600}],\"hypothesis\":\"A smaller sidepod inlet cuts frontal area and drag on Silverstone's fast straights. Cooling should still cope, and this part is outside the abandoned floor/wing/gearbox branches.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":3}}",
+   "mubit_request_id": "mreq_01a170522b7f7443bf309295984d194f",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 1401,
+   "output_tokens": 465,
+   "latency_ms": 4698,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "early",
+   "id": "q10",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.046,
+    "d_lap_s": -0.046,
+    "lap_s": 88.489,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.095,
+    "d_lap_s": -0.095,
+    "lap_s": 88.44,
+    "from": "candidate",
+    "best_change": "floor.ride_height_mm 35->33.5; rear_wing.aoa_deg 19->17.5; floor.edge 0->1; diffuser.expansion_deg 15->16; suspension.front 0->1",
+    "screened": 2727,
+    "physics_laps": 33
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "ride_height_mm",
+     "from": 35,
+     "to": 34
+    }
+   ],
+   "head_lap_s": 88.535,
+   "ms": 2054,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"ride_height_mm\",\"to\":34}],\"hypothesis\":\"Lowering the ride height by 1 mm to the legal minimum of 34 should add floor downforce in the fast Maggotts-Becketts-Chapel complex at little drag cost.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a170522bc77210a4be826661a2280f",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 1370,
+   "output_tokens": 412,
+   "latency_ms": 3987,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q11",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.01,
+    "lap_s": 88.235,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.119,
+    "d_lap_s": -0.119,
+    "lap_s": 88.106,
+    "from": "candidate",
+    "best_change": "diffuser.expansion_deg 17->16; rear_wing.aoa_deg 20.5->19.5; floor.width_mm 1450->1460; floor.throat_mm 60->58; floor.ride_height_mm 35->34; floor.edge 0->1",
+    "screened": 2579,
+    "physics_laps": 32
+   },
+   "proposal": [
+    {
+     "part": "diffuser",
+     "param": "expansion_deg",
+     "from": 17,
+     "to": 18
+    }
+   ],
+   "head_lap_s": 88.225,
+   "ms": 2685,
+   "answer": "{\"changes\":[{\"part\":\"diffuser\",\"param\":\"expansion_deg\",\"to\":18}],\"hypothesis\":\"A slightly steeper diffuser expansion should add underfloor downforce for the medium and high-speed corners, with little drag cost, as long as the flow stays attached.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":3}}",
+   "mubit_request_id": "mreq_01a170522bff7d93bfbbce1411451e09",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 1376,
+   "output_tokens": 362,
+   "latency_ms": 3995,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q12",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.171,
+    "lap_s": 87.917,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.002,
+    "lap_s": 87.748,
+    "from": "candidate",
+    "best_change": "rear_wing.endplate_top_mm 880->875",
+    "screened": 2887,
+    "physics_laps": 28
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 22,
+     "to": 21
+    }
+   ],
+   "head_lap_s": 87.746,
+   "ms": 1365,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"aoa_deg\",\"to\":21}],\"hypothesis\":\"Silverstone is high-speed and the car is near its stall limits. Less rear-wing angle should cut drag on the straights for more gain than the downforce lost in corners.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":3}}",
+   "mubit_request_id": "mreq_01a170522d367452b7386560f0931373",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 1408,
+   "output_tokens": 393,
+   "latency_ms": 3791,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "early",
+   "id": "q13",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.03,
+    "d_lap_s": -0.03,
+    "lap_s": 88.627,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.067,
+    "d_lap_s": -0.067,
+    "lap_s": 88.59,
+    "from": "candidate",
+    "best_change": "sidepods.undercut_mm 115->145; sidepods.inlet_cm2 650->590; cooling.layout 0->1",
+    "screened": 2146,
+    "physics_laps": 26
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 115,
+     "to": 130
+    }
+   ],
+   "head_lap_s": 88.657,
+   "ms": 1072,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":130}],\"hypothesis\":\"The last kept step (diffuser expansion 14 to 15.5, undercut 100 to 115) gained most in fast-corner segments. A deeper undercut should add more floor flow there.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a170522deb74c3a23d5001c92f96e9",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 1395,
+   "output_tokens": 518,
+   "latency_ms": 4821,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q14",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.002,
+    "d_lap_s": -0.002,
+    "lap_s": 88.283,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.012,
+    "d_lap_s": -0.012,
+    "lap_s": 88.273,
+    "from": "candidate",
+    "best_change": "gearbox.top_kmh 336->346; gearbox.step 1.156->1.154",
+    "screened": 206,
+    "physics_laps": 25
+   },
+   "proposal": [
+    {
+     "part": "gearbox",
+     "param": "top_kmh",
+     "from": 336,
+     "to": 341
+    }
+   ],
+   "head_lap_s": 88.285,
+   "ms": 872,
+   "answer": "{\"changes\":[{\"part\":\"gearbox\",\"param\":\"top_kmh\",\"to\":341}],\"hypothesis\":\"Extra downforce cost straight-line time (Hangar, Wellington +). A longer top gear should recover speed on the straights without touching the corner gains.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a170522e7877b3a6242c166bd0fe3a",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 1411,
+   "output_tokens": 588,
+   "latency_ms": 5379,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q15",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.01,
+    "d_lap_s": -0.01,
+    "lap_s": 87.637,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.017,
+    "d_lap_s": -0.017,
+    "lap_s": 87.63,
+    "from": "candidate",
+    "best_change": "gearbox.top_kmh 336->345; gearbox.step 1.156->1.158",
+    "screened": 194,
+    "physics_laps": 25
+   },
+   "proposal": [
+    {
+     "part": "gearbox",
+     "param": "top_kmh",
+     "from": 336,
+     "to": 340
+    }
+   ],
+   "head_lap_s": 87.647,
+   "ms": 863,
+   "answer": "{\"changes\":[{\"part\":\"gearbox\",\"param\":\"top_kmh\",\"to\":340}],\"hypothesis\":\"Silverstone has long high-speed sections. A slightly taller top gear may cut shifts or limiter time on the straights. Gearbox is barely explored and not at a legal limit.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":3}}",
+   "mubit_request_id": "mreq_01a1705231bc7a409724cea2159ddb56",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 1383,
+   "output_tokens": 393,
+   "latency_ms": 3652,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "early",
+   "id": "q16",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.03,
+    "d_lap_s": -0.03,
+    "lap_s": 88.482,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.133,
+    "d_lap_s": -0.133,
+    "lap_s": 88.379,
+    "from": "candidate",
+    "best_change": "diffuser.expansion_deg 14->16.5; rear_wing.aoa_deg 19->18; floor.width_mm 1450->1470; floor.throat_mm 60->58; floor.edge 0->1",
+    "screened": 2579,
+    "physics_laps": 32
+   },
+   "proposal": [
+    {
+     "part": "diffuser",
+     "param": "expansion_deg",
+     "from": 14,
+     "to": 15
+    }
+   ],
+   "head_lap_s": 88.512,
+   "ms": 1230,
+   "answer": "{\"changes\":[{\"part\":\"diffuser\",\"param\":\"expansion_deg\",\"to\":15}],\"hypothesis\":\"A slightly larger diffuser expansion adds rear downforce for the fast Maggotts-Becketts-Chapel sector. It sits far from any listed limit, so the legal risk is low.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a17052342f7372b7a583b3a80f0731",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 1370,
+   "output_tokens": 411,
+   "latency_ms": 3256,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q17",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.002,
+    "d_lap_s": -0.002,
+    "lap_s": 88.189,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.146,
+    "d_lap_s": -0.146,
+    "lap_s": 88.045,
+    "from": "candidate",
+    "best_change": "rear_wing.aoa_deg 19.5->21; front_wing.aoa_deg 30->32; front_wing.sm_delta_deg 5->4.5",
+    "screened": 2900,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "front_wing",
+     "param": "span_mm",
+     "from": 1340,
+     "to": 1350
+    }
+   ],
+   "head_lap_s": 88.191,
+   "ms": 1272,
+   "answer": "{\"changes\":[{\"part\":\"front_wing\",\"param\":\"span_mm\",\"to\":1350}],\"hypothesis\":\"Wider front wing gave gains before; 1350 is the legal max and should add front load and outwash in the slow Brooklands/Vale/Club corners.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":3}}",
+   "mubit_request_id": "mreq_01a170523b5b73a2add417ed232c04d8",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 1385,
+   "output_tokens": 466,
+   "latency_ms": 4374,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q18",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.016,
+    "d_lap_s": -0.016,
+    "lap_s": 87.779,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.028,
+    "d_lap_s": -0.028,
+    "lap_s": 87.767,
+    "from": "candidate",
+    "best_change": "rear_wing.sm_delta_deg 24.5->28.5; rear_wing.span_mm 1130->1120; rear_wing.chord_mm 430->420; rear_wing.aoa_deg 21->21.5",
+    "screened": 2904,
+    "physics_laps": 29
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "sm_delta_deg",
+     "from": 24.5,
+     "to": 26.5
+    }
+   ],
+   "head_lap_s": 87.795,
+   "ms": 1891,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"sm_delta_deg\",\"to\":26.5}],\"hypothesis\":\"Raising the rear wing's sm_delta (24.5 to 26.5) continues the recent gain, cutting drag on the Wellington and Hangar straights at little cost in Brooklands downforce.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":3}}",
+   "mubit_request_id": "mreq_01a170523b9a73d3903574581bfe1de7",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 1378,
+   "output_tokens": 503,
+   "latency_ms": 4454,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "early",
+   "id": "q19",
+   "parsed": true,
+   "legal": false,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.043,
+    "d_lap_s": -0.043,
+    "lap_s": 88.548,
+    "from": "projected"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.169,
+    "d_lap_s": -0.169,
+    "lap_s": 88.422,
+    "from": "candidate",
+    "best_change": "floor.ride_height_mm 35->33; rear_wing.aoa_deg 20->18.5; floor.edge 0->1",
+    "screened": 2753,
+    "physics_laps": 28
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "ride_height_mm",
+     "from": 35,
+     "to": 33
+    }
+   ],
+   "head_lap_s": 88.591,
+   "articles": [
+    "PKG-FLOOR-STALL"
+   ],
+   "ms": 1187,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"ride_height_mm\",\"to\":33}],\"hypothesis\":\"A lower floor ride height should add underfloor downforce for the high-speed corners (Maggotts-Becketts) at little drag cost, and it is not at a legal limit.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a170523c0072619d18674fc0e38722",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 1392,
+   "output_tokens": 483,
+   "latency_ms": 5228,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q20",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.002,
+    "d_lap_s": -0.002,
+    "lap_s": 88.222,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.017,
+    "d_lap_s": -0.017,
+    "lap_s": 88.207,
+    "from": "candidate",
+    "best_change": "gearbox.top_kmh 336->348; gearbox.step 1.156->1.16",
+    "screened": 246,
+    "physics_laps": 25
+   },
+   "proposal": [
+    {
+     "part": "gearbox",
+     "param": "top_kmh",
+     "from": 336,
+     "to": 342
+    }
+   ],
+   "head_lap_s": 88.224,
+   "ms": 880,
+   "answer": "{\"changes\":[{\"part\":\"gearbox\",\"param\":\"top_kmh\",\"to\":342}],\"hypothesis\":\"Longer top gear should cut time on Wellington/Hangar straights, since 336 km/h may be gear-limited. Drag is unchanged, so the cost should be small.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a170523d9776209441a6e4a8a6858f",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 1409,
+   "output_tokens": 712,
+   "latency_ms": 6305,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q21",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.209,
+    "lap_s": 87.86,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0,
+    "lap_s": 87.651,
+    "from": "candidate",
+    "best_change": "rear_wing.endplate_top_mm 870->875",
+    "screened": 2880,
+    "physics_laps": 28
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 22,
+     "to": 21
+    }
+   ],
+   "head_lap_s": 87.651,
+   "ms": 1798,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"aoa_deg\",\"to\":21}],\"hypothesis\":\"Slightly less rear wing incidence cuts drag on the long straights. Floor and front wing are already at their limits, so the downforce loss should be smaller than the gain.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":3}}",
+   "mubit_request_id": "mreq_01a170523ffe7f1185dde054004fb9ea",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 1415,
+   "output_tokens": 567,
+   "latency_ms": 5662,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "early",
+   "id": "q22",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.002,
+    "d_lap_s": -0.002,
+    "lap_s": 88.489,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.022,
+    "d_lap_s": -0.022,
+    "lap_s": 88.469,
+    "from": "candidate",
+    "best_change": "floor.width_mm 1460->1490; floor.throat_mm 61.5->64; floor.ride_height_mm 32.5->31; suspension.front 0->1",
+    "screened": 2731,
+    "physics_laps": 29
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "width_mm",
+     "from": 1460,
+     "to": 1480
+    }
+   ],
+   "head_lap_s": 88.491,
+   "ms": 1904,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"width_mm\",\"to\":1480}],\"hypothesis\":\"Earlier floor gains came from Maggotts-Becketts, and a wider floor (1450 to 1460 helped) should add underfloor downforce in the fast Sector 2 corners.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1705240c07f329c0978802498569e",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 1392,
+   "output_tokens": 516,
+   "latency_ms": 5323,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q23",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.092,
+    "lap_s": 88.239,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.216,
+    "d_lap_s": -0.216,
+    "lap_s": 87.931,
+    "from": "candidate",
+    "best_change": "rear_wing.aoa_deg 18.5->20; front_wing.aoa_deg 27->29.5; rear_wing.span_mm 1100->1130; rear_wing.endplate_top_mm 880->865",
+    "screened": 2910,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 18.5,
+     "to": 19.5
+    }
+   ],
+   "head_lap_s": 88.147,
+   "ms": 2953,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"aoa_deg\",\"to\":19.5}],\"hypothesis\":\"Recent AoA increases were kept; slightly more rear wing angle adds downforce for the high-speed Maggotts-Becketts-Chapel complex, worth more than the extra drag.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1705240e7738181e39db07a2c6451",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 1396,
+   "output_tokens": 634,
+   "latency_ms": 5946,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q24",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.093,
+    "lap_s": 87.726,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.005,
+    "d_lap_s": -0.005,
+    "lap_s": 87.628,
+    "from": "candidate",
+    "best_change": "rear_wing.aoa_deg 20.5->21; rear_wing.chord_mm 400->385; rear_wing.sm_delta_deg 23.5->24.5",
+    "screened": 2875,
+    "physics_laps": 28
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 20.5,
+     "to": 20
+    }
+   ],
+   "head_lap_s": 87.633,
+   "ms": 2568,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"aoa_deg\",\"to\":20}],\"hypothesis\":\"Silverstone rewards high-speed efficiency. A slightly lower rear wing AoA cuts drag on the straights for a small downforce loss in Maggotts-Becketts-Chapel.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":1}}",
+   "mubit_request_id": "mreq_01a1705243787962b37b68639f7f1873",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 1384,
+   "output_tokens": 410,
+   "latency_ms": 3823,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "early",
+   "id": "q25",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.708,
+    "lap_s": 89.212,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.019,
+    "d_lap_s": -0.019,
+    "lap_s": 88.485,
+    "from": "candidate",
+    "best_change": "rear_wing.span_mm 1100->1090; rear_wing.endplate_top_mm 860->870",
+    "screened": 2939,
+    "physics_laps": 28
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 17.5,
+     "to": 15.5
+    }
+   ],
+   "head_lap_s": 88.504,
+   "ms": 2245,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"aoa_deg\",\"to\":15.5}],\"hypothesis\":\"Lower rear wing AoA cuts drag on Wellington/Hangar straights. The previous AoA cut from 20 to 17.5 was kept, so there may be more gain before the loss of downforce outweighs it.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":1}}",
+   "mubit_request_id": "mreq_01a170524c717bd091ca6e27d342fb1a",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 1373,
+   "output_tokens": 517,
+   "latency_ms": 5172,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q26",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.002,
+    "d_lap_s": -0.002,
+    "lap_s": 88.325,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.017,
+    "d_lap_s": -0.017,
+    "lap_s": 88.31,
+    "from": "candidate",
+    "best_change": "gearbox.top_kmh 336->350; gearbox.step 1.156->1.162",
+    "screened": 318,
+    "physics_laps": 25
+   },
+   "proposal": [
+    {
+     "part": "gearbox",
+     "param": "top_kmh",
+     "from": 336,
+     "to": 344
+    }
+   ],
+   "head_lap_s": 88.327,
+   "ms": 1295,
+   "answer": "{\"changes\":[{\"part\":\"gearbox\",\"param\":\"top_kmh\",\"to\":344}],\"hypothesis\":\"Last test lost time on Wellington and Hangar straights. A higher top-speed gearing should recover straight-line time without touching the aero that gained in corners.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":3}}",
+   "mubit_request_id": "mreq_01a170524d017d80b9525b3e3767abae",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 1409,
+   "output_tokens": 476,
+   "latency_ms": 4614,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q27",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.158,
+    "lap_s": 87.914,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.004,
+    "d_lap_s": -0.004,
+    "lap_s": 87.752,
+    "from": "candidate",
+    "best_change": "rear_wing.span_mm 1110->1100",
+    "screened": 2895,
+    "physics_laps": 28
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 22,
+     "to": 21
+    }
+   ],
+   "head_lap_s": 87.756,
+   "ms": 1932,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"aoa_deg\",\"to\":21}],\"hypothesis\":\"Less rear wing angle cuts drag on the Wellington and Hangar straights. The car is at its front-wing and floor limits, so the trade is worth testing.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":1}}",
+   "mubit_request_id": "mreq_01a17052506d7033b97598025dafec04",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 1395,
+   "output_tokens": 390,
+   "latency_ms": 4055,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "early",
+   "id": "q28",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.01,
+    "d_lap_s": -0.01,
+    "lap_s": 88.525,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.037,
+    "d_lap_s": -0.037,
+    "lap_s": 88.498,
+    "from": "candidate",
+    "best_change": "diffuser.expansion_deg 15.5->14.5; rear_wing.aoa_deg 18.5->17.5; floor.ride_height_mm 35->33; floor.edge 0->1",
+    "screened": 2579,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "diffuser",
+     "param": "expansion_deg",
+     "from": 15.5,
+     "to": 16.5
+    }
+   ],
+   "head_lap_s": 88.535,
+   "ms": 1884,
+   "answer": "{\"changes\":[{\"part\":\"diffuser\",\"param\":\"expansion_deg\",\"to\":16.5}],\"hypothesis\":\"The earlier gain came from raising diffuser expansion from 14 to 15.5. A further step to 16.5 may add floor downforce through the Maggotts-Becketts-Chapel complex.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1705252697983a45f54e31cd553b6",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 1366,
+   "output_tokens": 408,
+   "latency_ms": 3820,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q29",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.004,
+    "d_lap_s": -0.004,
+    "lap_s": 88.22,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.011,
+    "d_lap_s": -0.011,
+    "lap_s": 88.213,
+    "from": "candidate",
+    "best_change": "gearbox.top_kmh 336->345; gearbox.step 1.156->1.152",
+    "screened": 194,
+    "physics_laps": 25
+   },
+   "proposal": [
+    {
+     "part": "gearbox",
+     "param": "top_kmh",
+     "from": 336,
+     "to": 340
+    }
+   ],
+   "head_lap_s": 88.224,
+   "ms": 1076,
+   "answer": "{\"changes\":[{\"part\":\"gearbox\",\"param\":\"top_kmh\",\"to\":340}],\"hypothesis\":\"Silverstone has long high-speed straights, and the lap shows gains in fast sections. A slightly longer top gear may add speed without breaking any listed limit.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":1}}",
+   "mubit_request_id": "mreq_01a17052558b79e29e39030c1ea2105a",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 1423,
+   "output_tokens": 514,
+   "latency_ms": 5026,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q30",
+   "parsed": true,
+   "legal": false,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": null,
+    "from": "none legal"
+   },
+   "engine": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.001,
+    "lap_s": 87.662,
+    "from": "candidate",
+    "best_change": "rear_wing.endplate_top_mm 880->875",
+    "screened": 2828,
+    "physics_laps": 28
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "endplate_top_mm",
+     "from": 880,
+     "to": 885
+    }
+   ],
+   "head_lap_s": 87.661,
+   "articles": [
+    "C3.11.2(a)"
+   ],
+   "ms": 1579,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"endplate_top_mm\",\"to\":885}],\"hypothesis\":\"Endplate top 870->875 kept with small gain and 880 sub-test slightly better; continuing to 885 should add a tiny bit of rear downforce/efficiency.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":3}}",
+   "mubit_request_id": "mreq_01a17052561d7b939ecd81f2f720e298",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 1416,
+   "output_tokens": 124,
+   "latency_ms": 2170,
+   "stop_reason": "end_turn"
+  }
+ ]
+}

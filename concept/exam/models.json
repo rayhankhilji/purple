@@ -1,8 +1,27 @@
 {
- "_about": "PURPLE designer exam: the models of the R&D lab's model comparison. The ONE list: concept/exam/run.js --model accepts only these ids, the concept lab's Exam view shows one column per entry (in this order). Calls go through server/mubit.js (Mubit's Anthropic gateway), untrained, with the frozen designer task (concept/designer/prompt.js) and only the model id swapped. temperature: the frozen value (0) for a model that accepts it; null for a model whose API rejects a temperature setting (Sonnet 5.5 and Opus 5.5 answer 400 'temperature is deprecated for this model', integrator probe 2026-10-24): the field is then left out of the request and the model runs at its default sampling. Results: concept/exam/results-base-<slug>.json (with the corrections questions: results-base-<slug>-corrections.json).",
+ "_about": "PURPLE designer exam: the models of the R&D lab's model comparison. The ONE list: concept/exam/run.js --model accepts only these ids, the concept lab's Exam view shows one column per entry (in this order). Calls go through server/mubit.js (Mubit's Anthropic gateway), untrained, with the frozen designer task (concept/designer/prompt.js) and only the model id swapped. temperature: the frozen value (0) for a model that accepts it; null for a model whose API rejects a temperature setting (Sonnet 5.5 and Opus 5.5 answer 400 'temperature is deprecated for this model', integrator probe 2026-10-24): the field is then left out of the request and the model runs at its default sampling. Results: concept/exam/results-base-<slug>.json (with the corrections questions: results-base-<slug>-corrections.json). max_tokens: the frozen 250 unless set here; Sonnet 5.5 and Opus 5.5 think before answering (adaptive thinking, which cannot be switched off for them) and used all 250 tokens thinking with no answer (integrator probe 2026-10-25), so they get 4000.",
  "models": [
-  { "id": "claude-haiku-4-5", "slug": "claude-haiku-4-5", "name": "Haiku 4.5", "current": true, "temperature": 0, "legacy_file": "results-base" },
-  { "id": "claude-sonnet-5-5", "slug": "claude-sonnet-5-5", "name": "Sonnet 5.5", "temperature": null },
-  { "id": "claude-opus-5-5", "slug": "claude-opus-5-5", "name": "Opus 5.5", "temperature": null }
+  {
+   "id": "claude-haiku-4-5",
+   "slug": "claude-haiku-4-5",
+   "name": "Haiku 4.5",
+   "current": true,
+   "temperature": 0,
+   "legacy_file": "results-base"
+  },
+  {
+   "id": "claude-sonnet-5-5",
+   "slug": "claude-sonnet-5-5",
+   "name": "Sonnet 5.5",
+   "temperature": null,
+   "max_tokens": 4000
+  },
+  {
+   "id": "claude-opus-5-5",
+   "slug": "claude-opus-5-5",
+   "name": "Opus 5.5",
+   "temperature": null,
+   "max_tokens": 4000
+  }
  ]
 }
