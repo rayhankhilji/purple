@@ -80,6 +80,9 @@ const LIMITS = {
   time_box_s: Math.min(intEnv("PURPLE_TIME_BOX_S", MAX_DURATION_S - 60), MAX_DURATION_S - 30),
   orphan_s: 20,                               // a mock / speed run nobody follows for this long is stopped (its stream went elsewhere)
   ticket_s: 120, cookie_h: 12, engine_workers: 1,
+  // engine runs at once per instance: the live Model GP opens one stream per model at once and Fluid compute may send them all to one
+  // instance (they share its vCPU; each run is time-boxed on its own)
+  engine_runs_per_instance: intEnv("PURPLE_ENGINE_RUNS_PER_INSTANCE", 8),
 };
 const TMP = () => process.env.PURPLE_VERCEL_TMP || path.join(os.tmpdir(), "purple");
 
@@ -165,7 +168,7 @@ function create() {
   const deferred = new Map();   // run id -> promise that settles when that validation-only run has stopped
   const allowedLive = new Set();
   const gated = { callMubit(args) { if (!allowedLive.has(args.sessionId)) { const e = new Error("deferred: a live run calls Mubit only from the instance that streams it"); e.code = "deferred"; return Promise.reject(e); } return realMubit.callMubit(args); } };
-  const api = createApp({ dataDir, mubit: switching, conceptMubit: gated, hostOk: /^[a-z0-9.-]+(:\d+)?$/i, engineWorkers: LIMITS.engine_workers, engineTmpDir: path.join(TMP(), "engine"), examWritable: false, examWorkers: LIMITS.engine_workers, log: (...a) => console.log(...a) });
+  const api = createApp({ dataDir, mubit: switching, conceptMubit: gated, hostOk: /^[a-z0-9.-]+(:\d+)?$/i, engineWorkers: LIMITS.engine_workers, engineMaxRuns: LIMITS.engine_runs_per_instance, engineTmpDir: path.join(TMP(), "engine"), examWritable: false, examWorkers: LIMITS.engine_workers, log: (...a) => console.log(...a) });
   const inner = api.app;
 
   const limiter = Limiter();
@@ -335,7 +338,7 @@ function create() {
     let r;
     try {
       if (kind === "loop") r = api.concept.start(t.b);
-      else { if (api.engine.active()) return fail("an engine run is already running on this instance: " + api.engine.active().id); if (t.b.resumed_elsewhere) return fail("a resumed engineer run streams only from the instance that took its POST; start it again"); r = t.b.mode === "speed" ? api.engine.startSpeed(t.b) : t.b.mode === "engineer" ? api.engine.startEngineer(t.b) : api.engine.startAuto(t.b); }
+      else { if (api.engine.full()) return fail("this instance is running its limit of engine runs (" + LIMITS.engine_runs_per_instance + "); start it again"); if (t.b.resumed_elsewhere) return fail("a resumed engineer run streams only from the instance that took its POST; start it again"); r = t.b.mode === "speed" ? api.engine.startSpeed(t.b) : t.b.mode === "engineer" ? api.engine.startEngineer(t.b) : api.engine.startAuto(t.b); }
     } catch (e) { return fail("could not replay the run here: " + (e && e.message || e)); }
     if (t.live) allowedLive.add(r.id);   // synchronous after start(): its first call comes after the next macrotask
     replayed.add(asked); alias.set(asked, r.id); host(kind, r, !!t.live);
