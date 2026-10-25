@@ -118,6 +118,51 @@ baseline maps to exactly 1.0) and loads `index.html?lab=1&…&mult_baseline=…&
 model; the game's car cannot take them). The race posts `purple:result` / `purple:grid` to the page, shown as game seconds with the
 cinematic label. In race mode the two cars keep the lab's liveries (baseline Williams blue, candidate McLaren orange).
 
+## Drive it yourself (time trial) and Race the grid (the visitor drives)
+
+Two more tabs, `?mode=drive` and `?mode=racegrid`, plus a **"Drive it yourself →"** button in the stage header of the Qualifying lap
+(and Physics replay) view. Link from the concept lab (integrator: the lab is not this helper's file) with
+`EI.concept.race.url(bestDesign, { base: "../race/", ref: "redbull", mode: "drive", lap_s: bestLap })`
+→ `/concept/race/?design=…&ref=redbull&mode=drive&lap=87.700` (or `mode: "racegrid"`).
+
+| Mode | Who drives | Times are | Label |
+|---|---|---|---|
+| **Drive it** (`drive`) | the visitor (keyboard W A S D / arrows, Shift Straight Mode, Space ERS, C camera; the game's touch buttons and gamepad as in the game), game car physics with the design's v0 multipliers | game seconds at the sim's control line; ghosts: physics-sim / OpenF1 seconds on the same clock | "game handling model: your lap mixes the car with your driving; the sim lap is the physics lap sim · model prediction" |
+| **Race the grid** (`racegrid`) | the visitor vs the game's 21 AI drivers (Official level: pace from each driver's real 2026 qualifying time), 3 laps, the player in Hadjar's RB22 seat | game seconds (the game's own timing at the painted line) | "game race · AI pace scaled to real 2026 qualifying times · your car uses the optimised design's aero and mass; not a prediction of a real race" |
+
+- **The player's car** (both modes): the game's car (`js/car.js` physics, unchanged) with `car.aero` = the design's
+  `bench.v0Multipliers(physical).mult` `{ df, cd, a0, b0 }`: the same mapping the Game race mode uses (mass folded into `df` via
+  the mass ratio, tyre load sensitivity into `a0` / `b0`; power and Straight Mode deltas do not reach the game car). Its body is the
+  design's own (`EI.conceptView.buildCar`, RB22 livery as in the Qualifying lap mode: there is no separate PURPLE livery); wheels
+  of that body are not animated; the cockpit camera shows no cockpit.
+- **Time trial**: rolling start where PURPLE's sim lap is 4 s before the sim's control line, at its speed, after a 3-2-1 freeze. Each
+  lap is timed at that control line (game s 84.6, the line the ghosts are timed at); ghosts restart from the line with every lap the
+  visitor starts (classic time-trial ghosts), so all share one clock: **PURPLE · sim** (the design's physics-sim trace, ending at
+  exactly the URL's `&lap`; time-scaled to it and flagged if a re-run differs by > 0.5 ms), **ANT · pole** (OpenF1, ending at exactly
+  88.111 s) and **RB22 · sim** (88.745). Live delta to each ghost at your position (game s → sim s by inverting the line mapping).
+  Track limits as the game's stewards judge them (no part of the car on the track for 0.12 s) mark the lap "track limits": it is not
+  a best. Result card over the view: "your lap X.XXX s · physics sim of this car 87.700 s · real pole 88.111 s", deltas, **Drive
+  again** (rolling start) and **Back to the engineer** (`../lab/`); the best per design + lap is kept in `localStorage`
+  (`purple-drive-best:<id>:<lap>`, try/catch).
+- **Game seconds vs real seconds**: the game's Official AI laps the real 2026 times on this clock (js/ai.js calibration), while the
+  game car at its limit laps 80.8 s (LIMIT_LAP): a skilled player in the game car can beat the real pole. The label says the lap
+  mixes the car with the driving; it is a ghost comparison, not a prediction.
+- **Race the grid**: `startRace({ players: [PURPLE in Red Bull seat HAD], bots: 21, difficulty: 'official', laps: 3 })`, then the grid
+  is re-ordered (`race.placeGrid`) by real 2026 British GP qualifying (`js/data/racepace2026.js`) with PURPLE inserted **by its sim
+  lap** (87.700 → P1; ties PURPLE first, as the demo board). Lights, rules, timing tower (F1 logo hidden), toasts and touch buttons
+  are the game's. At the flag the page shows position, lap times, best lap and the top 5 (`purple:drive-finish`, again when
+  classified). AI cars run mediums, as in every game race.
+- **Game hooks**: all in `js/conceptrace.js` behind `?concept=1&drive=trial|grid` (never with `?lab=1`); `index.html`, `main.js`,
+  `race.js`, `car.js`, `ai.js` unchanged. The time trial swaps `race.cars` to the player only around the game's own `race.update`
+  (ghosts are drawn but never in physics, collisions or positions); Esc / P pause and R restart are this page's, every other key is
+  the game's. Messages: game → page `purple:drive-lap`, `purple:drive-finish`, `purple:drive-state` (2 Hz); page → game the payload
+  (`mode: "drive"`, `kind: "trial" | "grid"`) and `purple:concept-cmd` (`restart`, `pause`, `cam`).
+- Code: `concept/race/drive.js` (payloads, result cards, grid order, best-lap storage), `concept/race/race.js` (tabs, card, panel),
+  `js/conceptrace.js` (the runtime). Test: `test/concept-race-drive.test.js` (card numbers = URL lap / 88.111, ghosts finish at their
+  laps, multipliers = Game race mapping, grid order, storage, flag gating in a sandbox page, honest words). Shots:
+  `docs/concept/dashboard-shots/drive-*.png` (laps there are driven by the game's own AI at the player's wheel, fast-forwarded, as
+  headless Chromium cannot be steered by hand).
+
 ## Game hooks (opt-in)
 
 - `index.html`: `<script src="js/conceptrace.js">` before `main.js`. Without `?concept=1` the file only defines `EI.ConceptRace`

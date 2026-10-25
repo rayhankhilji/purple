@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="race.css">
-<!-- URL contract (docs/concept/RACE.md): ?design=<base64url JSON Design>&ref=redbull[&conditions=<base64url JSON>][&wind_ms=..&wind_from_deg=..][&mode=replay|quali|race|grid][&lap=87.700][&rate=1] -->
+<!-- URL contract (docs/concept/RACE.md): ?design=<base64url JSON Design>&ref=redbull[&conditions=<base64url JSON>][&wind_ms=..&wind_from_deg=..][&mode=replay|quali|race|grid|drive|racegrid][&lap=87.700][&rate=1] -->
 </head>
 <body>
 <header class="top">
@@ -22,6 +22,8 @@
     <button class="tab" role="tab" id="tabReplay" data-mode="replay" aria-selected="true" title="the physics lap sim's own trace, replayed on the game's track">Physics replay</button>
     <button class="tab" role="tab" id="tabRace" data-mode="race" aria-selected="false" title="the game's AI and lap model with the bench's v0 multipliers: cinematic">Game race</button>
     <button class="tab" role="tab" id="tabGrid" data-mode="grid" aria-selected="false" title="the concept aero on HAD's car in the real 2026 field, game AI: cinematic">2026 grid</button>
+    <button class="tab drive" role="tab" id="tabDrive" data-mode="drive" aria-selected="false" title="you drive the optimised car: a time trial against its physics-sim lap and the real pole lap (ghosts)">Drive it</button>
+    <button class="tab drive" role="tab" id="tabRaceGrid" data-mode="racegrid" aria-selected="false" title="you drive the optimised car in a 3-lap game race against the AI 2026 field">Race the grid</button>
   </div>
   <div class="ctl" id="ctl">
     <button class="btn" id="btnReplay" title="replay the lap (R)">Replay</button>
@@ -35,9 +37,16 @@
 
 <main class="main">
   <section class="panel stage" aria-label="game view">
-    <div class="ph"><span class="label" id="stageTitle">Physics replay · Silverstone</span><span class="src" id="stageLabel">physics lap sim</span></div>
+    <div class="ph"><span class="label" id="stageTitle">Physics replay · Silverstone</span><span class="src" id="stageLabel">physics lap sim</span><button class="btn go" id="btnDrive" hidden title="drive the optimised car yourself: a time trial against these ghosts">Drive it yourself →</button></div>
     <iframe id="game" title="Equation I · Silverstone" allow="autoplay; fullscreen"></iframe>
     <div class="wait" id="stageWait">Building Silverstone and running the physics lap sim…</div>
+    <div class="card" id="driveCard" role="dialog" aria-label="lap result" hidden>
+      <div class="card-h"><span class="label" id="cardTitle">Lap complete</span><button class="x" id="cardClose" title="close (the lap stays in the list beside the view)" aria-label="close">×</button></div>
+      <div class="card-line" id="cardLine"></div>
+      <div class="kv" id="cardKv"></div>
+      <div class="note" id="cardNote"></div>
+      <div class="card-b"><button class="btn go" id="cardAgain">Drive again</button><a class="btn" id="cardBack" href="../lab/">Back to the engineer</a></div>
+    </div>
   </section>
 
   <aside class="side">
@@ -65,6 +74,10 @@
     <section class="panel" aria-label="the car">
       <div class="ph"><span class="label">The car</span><span class="src" id="carSrc"></span></div>
       <div class="pb"><div class="kv" id="carKv"></div><div class="note" id="carNote"></div></div>
+    </section>
+    <section class="panel" id="drivePanel" aria-label="your laps" style="order:-2" hidden>
+      <div class="ph"><span class="label" id="driveTitle">Your laps</span><span class="src" id="driveSrc">game seconds</span></div>
+      <div class="pb"><div class="kv" id="driveKv"></div><div class="note" id="driveNote"></div><div class="keys" id="driveKeys">W A S D or arrows to drive · Shift straight mode · Space ERS · C camera · Esc pause · R restart · touch and gamepad: the game's own controls. Click the view first so it has the keyboard.</div></div>
     </section>
     <section class="panel" id="cinePanel" aria-label="game race result" style="order:-1" hidden>
       <div class="ph"><span class="label">Game race result</span><span class="src">game lap model</span></div>
@@ -101,6 +114,7 @@
 <script src="../physical.js"></script>
 <script src="../bench.js"></script>
 <script src="payload.js"></script>
+<script src="drive.js"></script>
 <script src="race.js"></script>
 </body>
 </html>
