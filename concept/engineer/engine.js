@@ -30,6 +30,9 @@
 //   legal version beat the head by > 0.5 ms; the "kept" training rule of record-good.js), round_best (its car was the round's pick).
 //   opts.deadline (epoch ms): stop cleanly BEFORE a round (or decision) that would end after it, judged on the slowest of the last 3
 //   ("stopped at the time limit after N rounds"). opts.maxRounds caps rounds.
+//   opts.prompt: the designer TASK module (default concept/designer/prompt.js, v1; concept/designer/prompt-compact.js = the
+//   "changes only" task, one change, no hypothesis). It picks the answer's validator (schema.validatorFor) and the version label;
+//   the caller (opts.llm) must send the same task (concept/engineer/cli.js --task wires both).
 // runEngineer(opts) -> { run_id, tree, decisions, stats, peak, ... }. Deterministic for (seed, llm answers, worker counts any).
 "use strict";
 const design = require("../design.js"), bench = require("../bench.js"), regs = require("../regs.js"), phys = require("../physical.js");
@@ -132,7 +135,7 @@ async function runEngineer(opts) {
       const o = typeof res === "string" ? { text: res } : res;
       dec.call = { mubit_request_id: o.mubit_request_id || null, served_by: o.served_by || null, model: o.model || null, input_tokens: o.input_tokens == null ? null : o.input_tokens, output_tokens: o.output_tokens == null ? null : o.output_tokens, latency_ms: o.latency_ms == null ? now() - tc : o.latency_ms, trained: !!opts.trained, mock: !!o.mock };
       dec.response_text = String(o.text).slice(0, 600);
-      const v = schema.validate(o.text);
+      const v = schema.validatorFor(P)(o.text);   // v1: changes + hypothesis + expected; compact task: one change only
       if (v.ok) { proposal = v.value; if (v.clamped) dec.clamped = v.clamped; }
       else why = "parse: " + v.error;
     } catch (e) {

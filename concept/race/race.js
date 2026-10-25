@@ -6,8 +6,9 @@
 // "Game race" / "2026 grid" load the game's own ?lab=1 broadcast race instead (game AI + game lap model: cinematic).
 // Messages are same-origin only and must come from the iframe (ARCHITECTURE §10). State for tests: window.__conceptRace.
 (function () {
-  const RP = window.EI && EI.concept && EI.concept.race, $ = (id) => document.getElementById(id);
-  const S = { q: null, mode: "replay", built: null, payload: null, quali: null, qualiP: null, started: null, finish: null, state: null, cine: null, errors: [] };
+  const RP = window.EI && EI.concept && EI.concept.race, DR = window.EI && EI.concept && EI.concept.drive, $ = (id) => document.getElementById(id);
+  const S = { q: null, mode: "replay", built: null, payload: null, quali: null, qualiP: null, started: null, finish: null, state: null, cine: null, driveP: null, driveRes: null, driveState: null, driveNotes: [], errors: [] };
+  const DRIVE_MODES = { drive: "trial", racegrid: "grid" };
   window.__conceptRace = S;
   const COL = { concept: "var(--purple)", ref: "var(--rb)", pole: "var(--merc)" };
   const esc = (x) => String(x == null ? "" : x).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -49,16 +50,25 @@
     S.mode = m; S.started = null; S.finish = null; S.state = null; S.cine = null;
     for (const t of document.querySelectorAll(".tab")) t.setAttribute("aria-selected", String(t.dataset.mode === m));
     const kin = m === "replay" || m === "quali";   // kinematic replays in the game view (js/conceptrace.js)
-    $("ctl").style.visibility = kin ? "" : "hidden";
-    $("cinePanel").hidden = kin;
+    const drv = !!DRIVE_MODES[m];                  // the visitor drives (js/conceptrace.js ?drive=trial|grid)
+    $("ctl").style.visibility = kin || drv ? "" : "hidden";
+    $("rate").hidden = drv; $("btnReplay").textContent = drv ? "Restart" : "Replay"; $("btnReplay").title = drv ? "restart (R)" : "replay the lap (R)";
+    $("cinePanel").hidden = kin || drv; $("drivePanel").hidden = !drv; $("driveCard").hidden = true;
+    $("btnDrive").hidden = !kin;
     $("checkPanel").hidden = m !== "replay"; $("mapPanel").hidden = !kin;
-    $("towerPanel").hidden = m !== "quali"; $("lapPanel").hidden = m === "quali";
+    $("towerPanel").hidden = m !== "quali"; $("lapPanel").hidden = m === "quali" || drv;
     const ft = $("honest"); if (!ft.dataset.base) ft.dataset.base = ft.textContent;
     ft.textContent = m === "quali" && S.qualiP ? S.qualiP.foot : ft.dataset.base;
+    if (drv) { const r = buildDrive(m); if (!r) return; ft.textContent = S.driveP.foot; }
     const C = S.built && S.built.cinematic;
     let src;
     if (m === "quali" && !S.qualiP) { banner(["qualifying lap: " + ((S.quali && S.quali.errors.join(" · ")) || "no data")]); return; }
-    if (kin) {
+    if (drv) {
+      src = "../../index.html?concept=1&track=silverstone&drive=" + DRIVE_MODES[m];
+      $("stageTitle").textContent = m === "drive" ? "Drive it yourself · time trial · Silverstone" : "Race the grid · " + S.driveP.laps + " laps · Silverstone";
+      $("stageLabel").textContent = S.driveP.honest;
+      renderDrivePanel(null);
+    } else if (kin) {
       src = "../../index.html?concept=1&track=silverstone&rate=" + encodeURIComponent($("rate").value);
       if (m === "replay") { $("stageTitle").textContent = "Physics replay · Silverstone"; $("stageLabel").textContent = S.payload.label; }
       else { $("stageTitle").textContent = "Qualifying lap · Silverstone · every car's best lap, one clock"; $("stageLabel").textContent = S.qualiP.ghost_line; renderTower(null); }
@@ -70,7 +80,7 @@
       $("cine").innerHTML = kv([["multipliers df / cd / a0 / b0", Object.values(C.multipliers).map((x) => (+x).toFixed(3)).join(" / ")], ["clamped to the game's band", C.clamped ? "yes" : "no"]]);
       $("cineNote").textContent = C.note + ". Game seconds come from the game's lap model (its limit car laps " + ((EI.LIMIT_LAP && EI.LIMIT_LAP.silverstone) || "80.8") + " s at Silverstone): not comparable with the physics sim's seconds.";
     }
-    $("stageWait").hidden = false; $("stageWait").textContent = kin ? "Building Silverstone…" : "Building Silverstone · the game's AI drives this one…";
+    $("stageWait").hidden = false; $("stageWait").textContent = drv ? "Building Silverstone · you drive this one…" : kin ? "Building Silverstone…" : "Building Silverstone · the game's AI drives this one…";
     $("prog").style.width = "0";
     game().src = src;
     if (!first) { const u = new URL(location.href); u.searchParams.set("mode", m); history.replaceState(null, "", u.toString()); }
@@ -126,6 +136,63 @@
     S.qualiCheck = { same, got, want, worst, purple: me && me.replay_finish_s };
     $("towerNote").innerHTML = '<span class="' + (same ? "gr" : "rd") + '">' + (same ? "✓ finish order = the demo leaderboard (" + want.length + " / " + want.length + ")" : "✗ finish order differs from the leaderboard: " + esc(got.join(" "))) + "</span> · largest |finish − lap| " + f3(worst) + " s · PURPLE " + f3(me && me.replay_finish_s) + " s" + (S.q.lap_s != null ? " (engine " + f3(S.q.lap_s) + " s)" : "") + ". " + esc(P.ghost_line) + "." + (S.quali.notes.length ? " Time-scaled: " + esc(S.quali.notes.join("; ")) + "." : "");
   }
+
+  // ---------------------------------------------------------------- Drive it yourself (time trial) / Race the grid: the payload, the result cards
+  function buildDrive(m) {
+    if (!DR) { banner(["concept/race/drive.js did not load"]); return null; }
+    const rp = EI.RACEPACE && EI.RACEPACE.silverstone, C = S.built && S.built.cinematic, mult = C && C.ok ? C.multipliers : null;
+    if (!mult) banner(["drive: no v0 multipliers for this design (" + ((C && C.error) || "no cinematic mapping") + "): the game's shipped car instead"]);
+    const r = m === "drive" ? DR.drivePayload(S.payload, { lap_s: S.q.lap_s, pole_s: rp && rp.pole && rp.pole.s, multipliers: mult })
+      : DR.gridPayload(S.payload, { lap_s: S.q.lap_s, q: rp && rp.q, multipliers: mult });
+    if (r.errors && r.errors.length) banner(r.errors);
+    if (!r.payload) return null;
+    S.driveP = r.payload; S.driveRes = null; S.driveState = null; S.driveNotes = r.notes || [];
+    S.bestKey = DR.bestKey(S.built.design, S.driveP.sim_lap_s);
+    return r;
+  }
+  function renderDrivePanel(st) {
+    const P = S.driveP; if (!P) return;
+    const rows = [];
+    if (P.kind === "trial") {
+      const best = DR.loadBest(null, S.bestKey), laps = (st && st.laps) || [];
+      $("driveTitle").textContent = "Your laps · time trial"; $("driveSrc").textContent = "game seconds · control line";
+      rows.push(["physics sim of this car", f3(P.sim_lap_s) + " s"], ["real pole · ANT 2026", f3(P.pole_lap_s) + " s"]);
+      if (P.ref_lap_s != null) rows.push(["RB22 baseline · sim", f3(P.ref_lap_s) + " s"]);
+      rows.push(["your best (this session)", st && st.best_s != null ? f3(st.best_s) + " s" : "—", "pu"], ["your best (this browser)", best != null ? f3(best) + " s" : "—"]);
+      $("driveKv").innerHTML = kv(rows) + (laps.length ? '<div class="lapsList">' + laps.slice(-8).map((l) => '<span class="muted">L' + l.no + '</span><span class="' + (l.deleted ? "del" : st.best_s != null && Math.abs(l.lap - st.best_s) < 5e-4 ? "pb" : "") + '">' + f3(l.lap) + " s</span><span>" + sg(l.lap - P.sim_lap_s) + '</span><span class="muted">' + (l.deleted ? "track limits" : "vs sim") + "</span>").join("") + "</div>" : "");
+      const mm = P.player.aero;
+      $("driveNote").textContent = (st && st.phase === "count" ? "Rolling start in a moment. " : "") + "Your car: the game's car with this design's multipliers" + (mm ? " df " + (+mm.df).toFixed(3) + " · cd " + (+mm.cd).toFixed(3) + " · a0 " + (+mm.a0).toFixed(3) + " · b0 " + (+mm.b0).toFixed(3) : " (none: shipped car)") + " (aero and mass, as the Game race mode maps them). Ghosts restart from the line with each lap you start." + (S.driveNotes.length ? " " + S.driveNotes.join("; ") + "." : "");
+    } else {
+      $("driveTitle").textContent = "Your race · " + P.laps + " laps"; $("driveSrc").textContent = "game race · game seconds";
+      rows.push(["grid", esc(P.grid_note.replace(/^grid: /, ""))]);
+      if (st) rows.push(["position", "P" + st.position + " / " + st.field, "pu"], ["lap", (st.finished ? "finished" : st.started ? st.lap + " / " + st.laps_total : "on the grid")], ["your laps", st.laps.length ? st.laps.map(f3).join(" · ") : "—"], ["best lap", f3(st.best_lap)]);
+      $("driveKv").innerHTML = kv(rows);
+      $("driveNote").textContent = P.honest + ". AI: the game's Official level on mediums; physics sim of this car " + f3(P.sim_lap_s) + " s (a qualifying lap, not a race lap).";
+    }
+  }
+  function showCard(title, line, rows, note) {
+    $("cardTitle").textContent = title; $("cardLine").innerHTML = line; $("cardKv").innerHTML = kv(rows); $("cardNote").textContent = note; $("driveCard").hidden = false;
+  }
+  function onDriveLap(d) {
+    const P = S.driveP, prevBrowser = DR.loadBest(null, S.bestKey);
+    const card = DR.resultCard({ lap_s: d.lap_s, deleted: d.deleted, sim_lap_s: P.sim_lap_s, pole_lap_s: P.pole_lap_s, ref_lap_s: P.ref_lap_s, best_s: d.best_s, prev_best_s: prevBrowser });
+    if (!d.deleted && card.personal_best) DR.saveBest(null, S.bestKey, d.lap_s);
+    S.driveRes = { lap: d, card };
+    const line = '<span class="you">your lap ' + f3(card.lap) + " s</span>" + (d.deleted ? ' <span class="am">(track limits)</span>' : "") + " · physics sim of this car " + f3(card.sim) + " s" + (card.pole != null ? " · real pole " + f3(card.pole) + " s" : "");
+    showCard("Lap " + d.lap_no + (card.personal_best ? " · your best in this browser" : " complete"), line,
+      card.rows.map((r) => [r.k, r.v + (r.d != null ? " <small>(" + sg(r.d) + ")</small>" : "") + "<br><small>" + esc(r.src) + "</small>", r.key === "you" ? "pu" : ""]),
+      card.label + ".");
+    renderDrivePanel(S.driveState);
+  }
+  function onDriveFinish(d) {
+    const card = DR.gridResultCard(d);
+    S.driveRes = { finish: d, card };
+    const top = (d.classification || []).slice(0, 5).map((c) => c.pos + " " + (c.player ? "PURPLE" : c.code)).join(" · ");
+    showCard(d.classified ? "Race classified" : "Chequered flag", '<span class="you">' + esc(card.headline) + "</span>",
+      [["your laps (game s)", card.lap_text || "—"], ["best lap", f3(card.best) + " s"], ["top 5", esc(top)], ["physics sim of this car (quali lap)", f3(d.sim_lap_s) + " s"]], card.label + ".");
+    renderDrivePanel(d);
+  }
+  const focusGame = () => { try { game().focus(); game().contentWindow.focus(); } catch (e) { /* not loaded */ } };
 
   // ---------------------------------------------------------------- panels
   function renderLap() {
@@ -196,6 +263,11 @@
     const d = e.data;
     if (d.type === "purple:concept-ready" && S.mode === "replay" && S.payload) send({ type: "purple:concept-race", payload: S.payload });
     else if (d.type === "purple:concept-ready" && S.mode === "quali" && S.qualiP) { const { tables, ...pl } = S.qualiP; send({ type: "purple:concept-race", payload: pl }); }
+    else if (d.type === "purple:concept-ready" && DRIVE_MODES[S.mode] && S.driveP) send({ type: "purple:concept-race", payload: S.driveP });
+    else if (d.type === "purple:concept-started" && d.drive) { S.started = d; $("stageWait").hidden = true; focusGame(); }
+    else if (d.type === "purple:drive-state" && DRIVE_MODES[S.mode]) { S.driveState = d; renderDrivePanel(d); $("btnPause").textContent = d.paused ? "Resume" : "Pause"; }
+    else if (d.type === "purple:drive-lap" && S.mode === "drive") onDriveLap(d);
+    else if (d.type === "purple:drive-finish" && S.mode === "racegrid") onDriveFinish(d);
     else if (d.type === "purple:concept-started") { S.started = d; $("stageWait").hidden = true; renderMapping(d.mapping); send({ type: "purple:concept-cmd", cmd: "cam", value: $("cam").value }); }
     else if (d.type === "purple:concept-state" && S.mode === "quali") { S.state = d; renderTower(d); $("btnPause").textContent = d.paused ? "Resume" : "Pause"; }
     else if (d.type === "purple:concept-finish" && S.mode === "quali") { S.finish = d; renderQualiCheck(d); }
@@ -207,9 +279,14 @@
   game().addEventListener("load", () => { if (S.mode !== "replay" && S.mode !== "quali") setTimeout(() => { $("stageWait").hidden = true; }, 1500); });
 
   for (const t of document.querySelectorAll(".tab")) t.addEventListener("click", async () => { if (!S.payload || t.dataset.mode === S.mode) return; if (t.dataset.mode === "quali") await buildQuali(); setMode(t.dataset.mode); });
-  $("btnReplay").addEventListener("click", () => { S.finish = null; if (S.mode === "quali") renderTower(null); else renderCheck(); send({ type: "purple:concept-cmd", cmd: "restart" }); });
-  $("btnPause").addEventListener("click", () => send({ type: "purple:concept-cmd", cmd: "pause" }));
+  // the entry from the qualifying lap (and the physics replay): drive the same car yourself against the same ghosts
+  $("btnDrive").addEventListener("click", () => { if (S.payload) setMode("drive"); });
+  $("cardClose").addEventListener("click", () => { $("driveCard").hidden = true; focusGame(); });
+  $("cardAgain").addEventListener("click", () => { $("driveCard").hidden = true; send({ type: "purple:concept-cmd", cmd: "restart" }); focusGame(); });
+  game().addEventListener("load", () => { if (DRIVE_MODES[S.mode]) focusGame(); });
+  $("btnReplay").addEventListener("click", () => { if (DRIVE_MODES[S.mode]) { $("driveCard").hidden = true; send({ type: "purple:concept-cmd", cmd: "restart" }); focusGame(); return; } S.finish = null; if (S.mode === "quali") renderTower(null); else renderCheck(); send({ type: "purple:concept-cmd", cmd: "restart" }); });
+  $("btnPause").addEventListener("click", () => { send({ type: "purple:concept-cmd", cmd: "pause" }); if (DRIVE_MODES[S.mode]) focusGame(); });
   $("rate").addEventListener("change", () => send({ type: "purple:concept-cmd", cmd: "rate", value: +$("rate").value }));
-  $("cam").addEventListener("change", () => send({ type: "purple:concept-cmd", cmd: "cam", value: $("cam").value }));
+  $("cam").addEventListener("change", () => { send({ type: "purple:concept-cmd", cmd: "cam", value: $("cam").value }); if (DRIVE_MODES[S.mode]) focusGame(); });
   init();
 })();

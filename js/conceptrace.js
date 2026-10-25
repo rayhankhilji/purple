@@ -112,6 +112,10 @@
   const q = typeof location !== 'undefined' && typeof document !== 'undefined' ? new URLSearchParams(location.search) : null;
   if (!q || q.get('concept') !== '1' || q.get('lab') === '1') return;
   api.active = true;
+  // "Drive it yourself" (?concept=1&drive=trial: time trial with ghosts) and "Race the grid" (?concept=1&drive=grid: the game's AI
+  // 2026 field): the visitor drives the design's car with the game's own controls (keyboard, touch, gamepad). Section at the end.
+  const DRIVE = ['trial', 'grid'].includes(q.get('drive')) ? q.get('drive') : null;
+  api.drive = DRIVE;
   // licensing: no F1 / FIA marks in the concept views. The loading splash's F1 logo and championship line become a neutral PURPLE
   // title, and the trackside F1 logo boards draw nothing (EI.Ads is the game's own painter; only this page load is affected).
   try {
@@ -139,7 +143,9 @@
 
   // the game's own overlays (menu, HUD panels, banner, lights, pause / results cards) stay hidden: this page has its own HUD
   const style = document.createElement('style');
-  style.textContent = '#menu,#viewports,#banner,#touch,#lights,#pause,#results,#pitui,#toasts,#controls{display:none!important}' +
+  // the game's own overlays stay hidden; the drive modes keep the touch controls and toasts, the race also the game's HUD and lights
+  const HIDE = DRIVE === 'grid' ? '#menu,#banner,#pause,#results,#controls,.tw-f1' : DRIVE === 'trial' ? '#menu,#viewports,#banner,#lights,#pause,#results,#pitui,#controls' : '#menu,#viewports,#banner,#touch,#lights,#pause,#results,#pitui,#toasts,#controls';
+  style.textContent = HIDE + '{display:none!important}' +
     '#cr{position:fixed;inset:0;pointer-events:none;z-index:40;font:500 13px/1.35 "JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;color:#e8e8ec;-webkit-font-smoothing:antialiased}' +
     '#cr .cr-p{background:rgba(10,10,12,.82);border:1px solid #26262c;border-radius:6px}' +
     '#cr .cr-lb{font:600 10px/1.2 Inter,system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#8a8a94}' +
@@ -170,6 +176,12 @@
   // keys: this page's own (the game's pause / restart / camera keys would start an AI race or a pause menu)
   window.addEventListener('keydown', (e) => {
     const k = e.code;
+    if (DRIVE) {   // the drive modes: the game's driving and camera keys work as in the game; Esc / P pause and R restart are this page's
+      if (!['Escape', 'KeyP', 'KeyR'].includes(k)) return;
+      e.stopImmediatePropagation(); e.preventDefault();
+      if (!e.repeat) command({ cmd: k === 'KeyR' ? 'restart' : 'pause' });
+      return;
+    }
     if (!['Escape', 'KeyP', 'KeyR', 'KeyH', 'KeyC', 'KeyA', 'Space', 'Digit1', 'Digit2', 'Digit4', 'Digit8', 'Slash', 'KeyM', 'KeyF'].includes(k)) return;
     e.stopImmediatePropagation(); e.preventDefault();
     if (k === 'Space' || k === 'KeyP' || k === 'Escape') command({ cmd: 'pause' });
@@ -196,6 +208,7 @@
   }
 
   function command(c) {
+    if (DRIVE) return driveCommand(c);
     if (c.cmd === 'pause') st.paused = !st.paused;
     else if (c.cmd === 'restart') { st.t = -RUNUP; st.finished = false; st.paused = false; for (const k of st.cars) { k.finish = null; k.lapsDone = 0; k.secT = [null, null]; } st.sector = []; st.dirI = 0; st.dirT = 0; if (st.auto) setCam('tv'); }
     else if (c.cmd === 'rate' && c.value > 0 && c.value <= 32) st.rate = c.value;
@@ -211,6 +224,7 @@
   function run() {
     const D = st.D, P = st.P; const w = document.getElementById('crWait'); if (w) w.remove();
     if (st.race) return;   // one replay per page load (restart: command 'restart')
+    if (DRIVE || P.mode === 'drive') { if (DRIVE && P.mode === 'drive' && P.kind === DRIVE) runDrive(); else console.warn('concept race: drive payload / URL mismatch'); return; }
     const specs = P.cars.map((c, i) => ({ role: c.id, team: c.team, tyre: 'soft', aero: null, driver: { name: c.short || c.id.toUpperCase(), code: (c.code || c.short || c.id).slice(0, 4).toUpperCase(), num: c.num || 90 + i } }));
     D.startRace({ players: [], bots: 0, laps: 1, difficulty: 100, grid: 'front', assist: 'full', seed: 1, lab: { mode: 'race', concept: true, cars: specs } });
     const race = D.race, track = D.track; st.race = race;
@@ -344,7 +358,7 @@
     const v = tags.v || (tags.v = new THREE.Vector3()), W = window.innerWidth, Hh = window.innerHeight;
     for (const k of st.cars) {
       const c = k.car; v.set(c.vx != null ? c.vx : c.x, (c.vy != null ? c.vy : c.y) + 1.2, c.vz != null ? c.vz : c.z); const dist = v.distanceTo(cam.position); v.project(cam);
-      const on = v.z < 1 && v.z > -1 && Math.abs(v.x) < 1.05 && Math.abs(v.y) < 1.05 && dist < (st.quali && k.spec.kind === 'real' ? 120 : 260) && !(k.spec.id === 'concept' && st.cam !== 'tv');
+      const on = v.z < 1 && v.z > -1 && Math.abs(v.x) < 1.05 && Math.abs(v.y) < 1.05 && dist < (st.quali && k.spec.kind === 'real' ? 120 : 260) && !(k.spec.id === 'concept' && st.cam !== 'tv' && !DRIVE);
       k.tag.style.display = on ? '' : 'none'; if (on) { k.tag.style.left = ((v.x + 1) / 2) * W + 'px'; k.tag.style.top = ((1 - v.y) / 2) * Hh + 'px'; }
     }
   }
@@ -391,5 +405,199 @@
       st.ui.fin.innerHTML = '<div class="cr-lb" style="margin-bottom:4px">Lap · physics-sim seconds</div>' + r.cars.map((c) => '<div style="display:flex;justify-content:space-between;gap:8px"><span>' + esc(c.name) + '</span><span>' + fmt(c.lap_s) + '</span></div>').join('') +
         '<div class="cr-lb" style="margin-top:6px">replay finish (clock) − lap</div>' + r.cars.map((c) => '<div style="display:flex;justify-content:space-between"><span class="cr-mu">' + esc(c.id) + '</span><span class="cr-mu">' + sgn(c.diff_s) + ' s</span></div>').join('');
     }
+  }
+
+  // ================================================================ Drive it yourself (?drive=trial) and Race the grid (?drive=grid)
+  // The visitor drives: the game's own car physics (js/car.js) and controls (js/input.js: keyboard, touch, gamepad), the player's car
+  // carrying the design's v0 multipliers { df, cd, a0, b0 } in car.aero (the Game race mode's mapping; ARCHITECTURE §9 hook) and the
+  // design's own body (EI.conceptView.buildCar, as in the Qualifying lap mode). Nothing here runs without ?concept=1&drive=...
+  //  trial: one player, no bots; rolling start where PURPLE's sim lap is runup_s before the sim's control line; the lap is timed at that
+  //         line (game seconds) and the ghosts (kinematic, like the replay) restart from the line with every lap the player starts,
+  //         so all share one clock: PURPLE's sim lap ends at exactly its sim time, the pole lap at exactly 88.111 s.
+  //  grid:  one player + the game's 21 AI drivers at the Official level (pace from each driver's real 2026 qualifying time), the
+  //         player in Hadjar's RB22 seat, the grid re-ordered by real qualifying with PURPLE placed by its sim lap; the game's race
+  //         (lights, HUD, rules, timing at the painted line). The page gets 'purple:drive-lap' / 'purple:drive-finish' / 'purple:drive-state'.
+  const dv = { phase: 'off', t: 0, count: 0, lapStart: null, lapNo: 0, laps: [], best: null, last: null, cut: false, offT: 0, paused: false, me: null, ctrl: 0, posted: false, postedC: false, flash: null };
+  api.driveState = dv;
+  const r3 = (x) => Math.round(x * 1000) / 1000;
+
+  function runDrive() {
+    const D = st.D, P = st.P, grid = P.kind === 'grid', pl = P.player || {};
+    const teams = EI.TEAMS || [], ti = Math.max(0, teams.findIndex((t) => t.id === (pl.team || 'redbull'))), team = teams[ti];
+    const seat = team ? Math.max(0, team.drivers.findIndex((d) => d.code === pl.replace)) : 0;
+    D.startRace({ players: [{ name: pl.name || 'PURPLE', teamIndex: ti, seat, tyre: pl.tyre || (grid ? 'medium' : 'soft') }], bots: grid ? 21 : 0, laps: grid ? (P.laps || 3) : 99, difficulty: P.difficulty || 'official', grid: 'front', assist: pl.assist || 'full', seed: P.seed || 2026 });
+    const race = D.race, me = race.players[0]; st.race = race; dv.race = race; dv.me = me; dv.posted = false; dv.postedC = false;
+    if (pl.aero) me.aero = Object.assign({ df: 1, cd: 1, a0: 1, b0: 1 }, pl.aero);   // the design's multipliers (bench.v0Multipliers): x1 = the shipped car
+    dv.body = { car: me, spec: { ghost: false, design: pl.design, team: pl.team || 'redbull' } };
+    if (pl.design) api.viewReady.then(() => { if (st.race === race) conceptBody(dv.body, race); });
+    const inner = race.update.bind(race);
+    if (st.ui && st.ui.tags) st.ui.tags.innerHTML = '';
+    if (grid) setupGrid(race, inner); else setupTrial(race, inner);
+    buildDriveHud();
+    if (!dv.raf) { dv.raf = true; requestAnimationFrame(driveFrame); }
+    post({ type: 'purple:concept-started', drive: P.kind, mapping: st.map ? st.map.stats : null, aero: me.aero });
+  }
+  function playerFlap(dt) {
+    const b = dv.body; if (!b || !b.body3d) return;
+    const want = dv.me.drsOpen ? 1 : 0, f = b.flap + Math.max(-1, Math.min(1, ((want - b.flap) / 0.4) * dt));
+    if (Math.abs(f - b.flap) > 1e-3) { b.flap = f; b.body3d.setAero(f); }
+  }
+
+  // ---- the time trial
+  function setupTrial(race, inner) {
+    const D = st.D, P = st.P, track = D.track, Lg = track.length;
+    st.map = mapLine(track, P.line); dv.ctrl = mod(st.map.sg[0], Lg);
+    // game metres after the control line -> metres along the sim's line (the inverse of the line mapping), for the live deltas
+    const n = st.map.n, rel = new Float64Array(n); for (let k = 0; k < n; k++) rel[k] = st.map.sg[k] - st.map.sg[0];
+    const ds = P.line.ds, Ls = P.line.L;
+    dv.simS = (gd) => {
+      if (!(gd > 0)) return 0; if (gd >= rel[n - 1]) return Math.min(Ls, (n - 1) * ds + (gd - rel[n - 1]) * (Ls / Lg));
+      let lo = 0, hi = n - 1; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (rel[m] <= gd) lo = m; else hi = m; }
+      return (lo + (gd - rel[lo]) / ((rel[hi] - rel[lo]) || 1)) * ds;
+    };
+    st.cars = P.cars.map((c, i) => {
+      const team = (EI.TEAM_BY_ID && EI.TEAM_BY_ID[c.team]) || EI.TEAMS[0], drv = { name: c.short, code: String(c.code || c.short).slice(0, 4).toUpperCase(), num: c.num || 90 + i };
+      const car = new EI.Car({ id: 200 + i, team, driver: drv, name: c.short, num: drv.num, tyre: 'soft', assist: 'full', skill: 1, envMap: race.cfg.envMap });
+      car.isGhost = true; D.scene.add(car.group); race.cars.push(car);   // drawn and interpolated by main.js like any car; never in the physics step
+      return { car, spec: Object.assign({ ghost: true }, c), tl: timeline(c), finish: null, secT: [null, null], prevH: null };
+    });
+    st.cars.forEach((k) => { if (!k.spec.design) ghostify(k.car, 0.5); });
+    api.viewReady.then(() => st.cars.forEach((k) => { if (k.spec.design && st.race === race) conceptBody(k, race); }));
+    st.cars.forEach((k) => { k.tag = el('div', 'cr-tag', esc(k.spec.short), st.ui.tags); k.tag.style.color = k.spec.color || '#fff'; });
+    const players = race.players.slice(), all = race.cars;
+    race.started = true; race.phase = 'racing'; race.time = 0; race.lightsOn = 0;
+    race.update = function (dt, inputs) { trialStep(dt, inputs, inner, players, all); };   // this race instance only
+    trialRestart();
+  }
+  function trialStartPose() {
+    const P = st.P, k0 = st.cars.find((k) => k.spec.id === 'concept') || st.cars[0], d = k0.tl.dist(-P.runup_s), sIn = mod(d, k0.tl.L);
+    return { p: st.map.pose(sIn), v: k0.tl.at(sIn).v_kmh / 3.6 };
+  }
+  function placeAtStart() {
+    const me = dv.me, track = st.D.track, s0 = trialStartPose();
+    me.place(s0.p.x, s0.p.z, s0.p.heading, s0.p.y); me.v = s0.v; me.trk.i = -1; track.project(me.x, me.z, null, me.trk); me._prevS = me.trk.s;
+  }
+  function trialRestart() {
+    const me = dv.me, P = st.P;
+    dv.phase = 'count'; dv.count = 3; dv.t = -P.runup_s; dv.lapStart = null; dv.lapNo = 0; dv.cut = false; dv.offT = 0; dv.paused = false; dv.last = null; dv.flash = null; dv.goT = null;
+    me.ers = 1; me.wear = 0; me.drsEligible = false; me.drsOpen = false; me.slipstream = 0; me.throttle = 0; me.brake = 0; me.penalty = 0;
+    placeAtStart();
+    for (const k of st.cars) k.finish = null;
+    st.t = dv.t; pose(0, true);
+  }
+  function trialStep(dt, inputs, inner, players, all) {
+    if (dv.paused) return;
+    const me = dv.me, race = dv.race, track = st.D.track, Lg = track.length;
+    if (dv.phase === 'count') { dv.count -= dt; placeAtStart(); if (dv.count <= 0) { dv.phase = 'run'; dv.goT = performance.now(); } return; }
+    const gPrev = dv.lapStart == null ? dv.t : dv.t - dv.lapStart, a = me.trk.s;
+    race.cars = players; try { inner(dt, inputs); } finally { race.cars = all; }   // the game's own step for the player's car only
+    dv.t += dt;
+    playerFlap(dt);
+    // track limits as the game's stewards judge them: no part of the car on the track (centre beyond the edge by 1.1 m) for 0.12 s
+    if (Math.abs(me.trk.lat) > track.halfWidth + 1.1) { dv.offT += dt; if (dv.offT >= 0.12) dv.cut = true; } else dv.offT = 0;
+    let reset = false;
+    if (race.crossed(a, me.trk.s, dv.ctrl)) {
+      const tc = dv.t - mod(me.trk.s - dv.ctrl, Lg) / Math.max(Math.abs(me.v), 1);
+      if (dv.lapStart == null || tc - dv.lapStart > 20) {
+        if (dv.lapStart != null) lapDone(tc - dv.lapStart);
+        dv.lapStart = tc; dv.lapNo++; dv.cut = dv.offT >= 0.12; reset = true;
+        for (const k of st.cars) k.finish = null;
+      }
+    }
+    const gt = dv.lapStart == null ? dv.t : dv.t - dv.lapStart; st.t = gt;
+    pose(dt, reset);
+    if (!reset) for (const k of st.cars) if (k.finish == null) { const f = crossingExact(k.tl, gPrev, gt, k.tl.L); if (f != null) k.finish = f; }
+  }
+  function lapDone(lap) {
+    const P = st.P, deleted = dv.cut, prev = dv.best;
+    dv.laps.push({ no: dv.lapNo, lap: r3(lap), deleted });
+    if (!deleted && (dv.best == null || lap < dv.best)) dv.best = lap;
+    dv.last = { lap, deleted, no: dv.lapNo }; dv.flash = { text: 'LAP ' + fmt(lap) + (deleted ? ' · track limits' : ''), until: performance.now() + 4000 };
+    const msg = { type: 'purple:drive-lap', kind: 'trial', lap_no: dv.lapNo, lap_s: r3(lap), deleted, best_s: dv.best == null ? null : r3(dv.best), prev_best_s: prev == null ? null : r3(prev),
+      sim_lap_s: P.sim_lap_s, pole_lap_s: P.pole_lap_s, ref_lap_s: P.ref_lap_s, aero: dv.me.aero, ghosts: st.cars.map((k) => ({ id: k.spec.id, lap_s: k.spec.lap_s, replay_finish_s: k.finish == null ? null : r3(k.finish) })) };
+    api.lastLap = msg; post(msg); console.log('purple:drive-lap ' + JSON.stringify({ lap_s: msg.lap_s, deleted, sim_lap_s: msg.sim_lap_s, pole_lap_s: msg.pole_lap_s }));
+  }
+
+  // ---- the race against the game's AI 2026 field
+  function setupGrid(race, inner) {
+    const P = st.P, me = dv.me;
+    const code = (c) => (c.isPlayer ? 'PRPL' : String((c.driver && c.driver.code) || '').toUpperCase());
+    const order = [], byCode = new Map(race.cars.map((c) => [code(c), c]));
+    for (const cd of P.grid_order || []) { const c = byCode.get(cd); if (c && order.indexOf(c) < 0) order.push(c); }
+    for (const c of race.cars) if (order.indexOf(c) < 0) order.push(c);
+    race.placeGrid(order, 1);
+    race.gridInfo = { label: P.grid_note || 'real 2026 qualifying order' };
+    if (race.renderField) race.renderField();
+    if (st.D.snapCameras) st.D.snapCameras();
+    st.cars = []; st.map = null;
+    race.update = function (dt, inputs) {
+      if (dv.paused) return;
+      inner(dt, inputs); playerFlap(dt);
+      if (me.finished && !dv.posted) { dv.posted = true; postGrid(); }
+      else if (race.classified && !dv.postedC) { dv.postedC = true; postGrid(); }
+    };
+  }
+  function gridSnapshot() {
+    const race = dv.race, me = dv.me, P = st.P;
+    const cls = (race.order || race.cars).map((c) => ({ pos: c.pos, code: c.isPlayer ? 'PRPL' : c.driver.code, name: c.isPlayer ? 'PURPLE (you)' : c.driver.name, team: c.team.id, color: c.team.primary, player: !!c.isPlayer,
+      finished: !!c.finished, race_time_s: c.finished ? r3(c.raceTime) : null, best_lap_s: c.bestLap > 0 ? r3(c.bestLap) : null, penalty_s: c.penalty || 0 }));
+    return { kind: 'grid', classified: !!race.classified, started: !!race.started, lap: Math.min(me.lap || 1, race.laps), laps_total: race.laps, position: me.pos, field: race.cars.length, finished: !!me.finished,
+      laps: me.laps.map(r3), laps_deleted: me.lapsDeleted || [], best_lap: me.bestLap > 0 ? r3(me.bestLap) : null, penalty_s: me.penalty || 0, sim_lap_s: P.sim_lap_s, aero: me.aero, classification: cls };
+  }
+  function postGrid() { const r = Object.assign({ type: 'purple:drive-finish' }, gridSnapshot()); api.gridResult = r; post(r); console.log('purple:drive-finish ' + JSON.stringify({ position: r.position, field: r.field, laps: r.laps, best_lap: r.best_lap, classified: r.classified })); }
+
+  function driveCommand(c) {
+    if (!dv.race) return;
+    if (c.cmd === 'pause') dv.paused = !dv.paused;
+    else if (c.cmd === 'restart') { if (st.P.kind === 'grid') { st.race = null; dv.paused = false; runDrive(); } else trialRestart(); }
+    else if (c.cmd === 'cam' && st.D && st.D.setCam) { const m = CAM[c.value]; if (m != null) st.D.setCam(0, m); }
+  }
+
+  // ---- HUD (the trial's own; the race keeps the game's HUD and adds the honest label)
+  function buildDriveHud() {
+    const U2 = st.ui, P = st.P, grid = P.kind === 'grid';
+    U2.tw.style.display = 'none'; U2.fin.style.display = 'none';
+    if (!dv.count0) { dv.count0 = el('div', 'cr-p cr-wait', null, st.hud); dv.count0.style.cssText = 'top:38%;font:700 44px/1.1 "JetBrains Mono",ui-monospace,monospace;padding:10px 22px;display:none'; }
+    U2.lbl.style.cssText = grid ? 'top:auto;bottom:14px;left:14px;width:360px' : 'top:14px;left:14px;width:340px';
+    U2.dash.style.display = grid ? 'none' : '';
+    U2.cam.style.cssText = grid ? 'top:14px;right:auto;left:50%;transform:translateX(-50%);text-align:center' : '';   // the race: clear of the game's tower, timer and dash
+    if (!grid) U2.dash.innerHTML = '<div class="cr-col"><span class="cr-lb">PURPLE · you</span><span class="cr-spd" id="crSpd">0</span><span class="cr-lb" style="text-align:right">km/h · game</span></div>' +
+      '<div class="cr-col"><span class="cr-lb">gear</span><span class="cr-big2" id="crGear">–</span><span class="cr-chip" id="crAero">corner</span><span class="cr-chip" id="crErs">ers</span></div>' +
+      '<div class="cr-col" style="min-width:150px"><span class="cr-lb">lap · game seconds</span><span class="cr-clk" id="crClk">—</span><span class="cr-lb" id="crLast">last —</span><span class="cr-lb" id="crBest">best —</span></div>';
+  }
+  let dhudT = 0;
+  function driveFrame(now) {
+    requestAnimationFrame(driveFrame);
+    if (!st.race || st.D.race !== st.race) return;
+    if (st.P.kind === 'trial') tags();
+    if (now - dhudT < 66) return; dhudT = now; driveHud(now);
+    if (now - st.lastPost > 500) {
+      st.lastPost = now;
+      if (st.P.kind === 'grid') post(Object.assign({ type: 'purple:drive-state', paused: dv.paused }, gridSnapshot(), { classification: undefined }));
+      else post({ type: 'purple:drive-state', kind: 'trial', phase: dv.phase, paused: dv.paused, t: dv.t, lap_no: dv.lapNo, lap_clock: dv.lapStart == null ? null : dv.t - dv.lapStart, best_s: dv.best, laps: dv.laps });
+    }
+  }
+  function driveHud(now) {
+    const P = st.P, me = dv.me, U2 = st.ui, grid = P.kind === 'grid', $ = (id) => document.getElementById(id);
+    const keys = 'W A S D / arrows drive · Shift straight mode · Space ERS · C camera · Esc pause · R restart';
+    U2.cam.innerHTML = (dv.paused ? '<span class="cr-am">paused</span> · Esc to resume<br>' : '') + '<span class="cr-mu">' + keys + (grid ? ' (back to the grid)' : ' (rolling start)') + '</span>';
+    if (grid) { U2.lbl.innerHTML = '<b>' + esc(P.label) + '</b><br>' + esc(P.honest) + '<br><span class="cr-mu">' + esc(P.grid_note || '') + '</span>'; return; }
+    const lapClock = dv.lapStart == null ? null : dv.t - dv.lapStart, simS = dv.simS(mod(me.trk.s - dv.ctrl, st.D.track.length));
+    const rows = st.cars.map((k) => {
+      const dd = lapClock == null || dv.phase !== 'run' ? null : lapClock - k.tl.tAtS(simS);
+      return '<div style="display:flex;justify-content:space-between;gap:8px"><span><span style="color:' + esc(k.spec.color) + '">■</span> ' + esc(k.spec.short) + ' <span class="cr-mu">' + fmt(k.spec.lap_s) + '</span></span><span class="' + (dd == null ? 'cr-mu' : dd < 0 ? 'cr-pu' : 'cr-rd') + '">' + sgn(dd, 2) + '</span></div>';
+    }).join('');
+    U2.lbl.innerHTML = '<b>' + esc(P.label) + '</b><br><span class="cr-mu">' + esc(P.honest) + '</span><div style="margin-top:6px" class="cr-lb">ghosts · same clock · live delta (− = you ahead)</div>' + rows;
+    $('crSpd').textContent = Math.round(Math.abs(me.v) * 3.6); $('crGear').textContent = me.gear || 'N';
+    const aero = $('crAero'); aero.textContent = me.drsOpen ? 'straight mode' : 'corner mode'; aero.className = 'cr-chip' + (me.drsOpen ? ' cr-on' : '');
+    const ers = $('crErs'); ers.textContent = (me.ersActive ? 'ers deploy ' : 'ers ') + Math.round(me.ers * 100) + '%'; ers.className = 'cr-chip' + (me.ersActive ? ' cr-dep' : '');
+    $('crClk').textContent = dv.phase === 'count' ? 'ready' : lapClock == null ? 'run-up' : fmt(lapClock) + (dv.cut ? ' ✗' : '');
+    $('crLast').textContent = 'last ' + (dv.last ? fmt(dv.last.lap) + (dv.last.deleted ? ' (track limits)' : '') : '—');
+    $('crBest').textContent = 'best ' + (dv.best != null ? fmt(dv.best) : '—');
+    const c0 = dv.count0;
+    if (dv.phase === 'count') { c0.style.display = ''; c0.style.fontSize = '44px'; c0.textContent = String(Math.max(1, Math.ceil(dv.count))); }
+    else if (dv.goT && now - dv.goT < 900) { c0.style.display = ''; c0.textContent = 'GO'; }
+    else if (dv.flash && now < dv.flash.until) { c0.style.display = ''; c0.style.fontSize = '30px'; c0.textContent = dv.flash.text; }
+    else c0.style.display = 'none';
   }
 })();

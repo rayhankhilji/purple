@@ -42,7 +42,7 @@ function replayLlm(proposals) {
 // screen: { variants, confirm, explore } (default the engine's 3,000 / 24 / 4); { variants: 1, confirm: 1, explore: 0 } is the expensive-test
 // regime: each idea is tested once, exactly as proposed (after the engine's legal repair), one physics lap per decision.
 const SCREENS = { full: { variants: 3000, confirm: 24, explore: 4 }, direct: { variants: 1, confirm: 1, explore: 0 } };
-async function runEngine({ root, seed, team, budget, workers, llm, maxDecisions, stopAfter, mock, corrections, segments, trained, runId, onEvent, maxCalls, screen }) {
+async function runEngine({ root, seed, team, budget, workers, llm, maxDecisions, stopAfter, mock, corrections, segments, trained, runId, onEvent, maxCalls, screen, prompt }) {
   const engine = mod(root, "engineer/engine.js");
   const t0 = Date.now();
   let laps = 0;
@@ -50,7 +50,7 @@ async function runEngine({ root, seed, team, budget, workers, llm, maxDecisions,
   const res = await engine.runEngineer(Object.assign({
     llm, mock: !!mock, seed, team: team || "redbull", trained: !!trained, workers: workers == null ? 4 : workers,
     maxDecisions: maxDecisions || 100000, maxCalls: maxCalls || 100000, stopAfter: stopAfter || 1e9, patience: 3, ...(SCREENS[screen || "full"] || screen),
-    segments: !!segments, runId, onEvent,
+    segments: !!segments, runId, onEvent, ...(prompt ? { prompt } : {}),
     shouldStop: ({ decisions }) => { laps = decisions.reduce((s, d) => s + d.physics_laps, 0); return budget != null && laps >= budget ? "physics-lap budget " + budget : null; },
   }, extra));
   const points = C.fromEngine({ baseline_s: res.baseline.lap_s, decisions: res.decisions, nodes: res.tree.nodes });
