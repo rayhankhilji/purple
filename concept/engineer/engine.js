@@ -393,7 +393,7 @@ function statsView(s, tree, calls) {
 function compactDecision(d) {
   return Object.assign({
     decision: d.decision, branch: d.branch, head: d.head, head_lap_s: d.head_lap_s, by: d.by, fallback_reason: d.fallback_reason || null,
-    mubit_request_id: d.call ? d.call.mubit_request_id : null, trained: d.trained, mock: !!(d.call && d.call.mock), latency_ms: d.call ? d.call.latency_ms : null,
+    mubit_request_id: d.call ? d.call.mubit_request_id : null, model: d.call && d.call.model || null, served_by: d.call && d.call.served_by || null, trained: d.trained, mock: !!(d.call && d.call.mock), latency_ms: d.call ? d.call.latency_ms : null,
     hypothesis: d.hypothesis || null, expected: d.expected || null, expected_hit: d.expected_hit == null ? null : d.expected_hit,
     proposal_change: d.proposal_change, as_proposed: d.as_proposed, projection: d.projection || null,
     subspace: d.subspace, screen: d.screen, physics_laps: d.physics_laps, physics_ms: d.physics_ms, laps_per_s: d.laps_per_s,
