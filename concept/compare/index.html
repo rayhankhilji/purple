@@ -46,10 +46,13 @@
   </div>
 </header>
 
-<section class="cmp-clock" aria-label="test laps used">
+<section class="cmp-clock" aria-label="test laps used and who is ahead">
   <div class="cmp-clock-l"><span class="cmp-clock-v" id="cmpLaps">0</span><span class="cmp-clock-of" id="cmpOf">of 3,500 test laps used</span></div>
-  <div class="cmp-bar" aria-hidden="true"><div class="cmp-bar-fill" id="cmpBar"></div><div class="cmp-bar-marks" id="cmpMarks"></div></div>
-  <div class="cmp-clock-r">One test lap = one car driven once on the <b>physics lap sim · Silverstone · model prediction</b></div>
+  <div class="cmp-clock-m">
+    <div class="cmp-bar" aria-hidden="true"><div class="cmp-bar-fill" id="cmpBar"></div><div class="cmp-bar-marks" id="cmpMarks"></div></div>
+    <div class="cmp-clock-r">One test lap = one car driven once on the <b>physics lap sim · Silverstone · model prediction</b>. Ticks: when each one beat the real pole.</div>
+  </div>
+  <div class="cmp-stand" id="cmpStand" aria-live="polite"></div>
 </section>
 
 <main class="cmp-lanes" id="cmpLanes" aria-live="off"></main>

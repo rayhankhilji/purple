@@ -16,9 +16,9 @@
   const f3 = v => (typeof v === "number" ? v.toFixed(3) : "—");
   const LAPS_PER_S = 25;   // 1× = 25 test laps per second of playback
   const LANES = [
-    { id: "purple", cls: "a", color: "#b26cff", who: "Claude suggests one idea at a time through Mubit. PURPLE's engine checks thousands of variants of it for free, then test-drives the best few." },
-    { id: "cmaes", cls: "b", color: "#5fb4ff", who: "Changes every setting at once, 16 to 64 cars a round, and learns from each round's lap times." },
-    { id: "random", cls: "c", color: "#f2a541", who: "Every car changes every part at random, within the full range, pulled back towards the RB22 only as far as the rules need. Each is driven once." },
+    { id: "purple", cls: "a", color: "#b26cff", short: "PURPLE", who: "Claude suggests one idea at a time through Mubit. PURPLE's engine checks thousands of variants of it for free, then test-drives the best few." },
+    { id: "cmaes", cls: "b", color: "#5fb4ff", short: "Optimiser, no AI", who: "Changes every setting at once, 16 to 64 cars a round, and learns from each round's lap times." },
+    { id: "random", cls: "c", color: "#f2a541", short: "Random parts", who: "Every car changes every part at random, within the full range, pulled back towards the RB22 only as far as the rules need. Each is driven once." },
   ];
   const POLE_C = "#4ade80", BASE_C = "#8a8a94", ILLEGAL_C = "rgba(240, 80, 110, .55)";
   const q = new URLSearchParams(location.search);
@@ -41,9 +41,10 @@
     for (const spec of LANES) {
       const L = S.data.lanes[spec.id]; if (!L) continue;
       const car = el("div", { class: "cmp-car" }), canvas = el("canvas", { role: "img", "aria-label": L.title + ": lap time of every car tested and the best so far, against test laps used" });
+      const rank = el("span", { class: "cmp-rank" });
       const best = el("span", { class: "cmp-best-v" }), gap = el("div", { class: "cmp-gap" }), last = el("div", { class: "cmp-last" }), badge = el("div", { class: "cmp-badge" }), tag = el("div", { class: "cmp-car-tag" });
       const lane = el("section", { class: "panel cmp-lane " + spec.cls, "aria-label": L.title },
-        el("div", { class: "cmp-lh" }, el("div", { class: "cmp-lt" }, el("i"), L.title), el("div", { class: "cmp-lw", text: spec.who })),
+        el("div", { class: "cmp-lh" }, el("div", { class: "cmp-lt" }, el("i"), el("span", { class: "cmp-ltt", text: L.title }), rank), el("div", { class: "cmp-lw", text: spec.who })),
         car,
         el("div", { class: "cmp-stats" },
           el("div", { class: "cmp-best" }, el("span", { class: "cmp-best-l", text: "Best lap so far" }), best),
@@ -53,7 +54,7 @@
         el("div", { class: "cmp-src", text: sourceLine(spec.id, L) }));
       host.append(lane);
       car.append(tag);
-      S.lanes.push({ spec, L, els: { car, canvas, best, gap, last, badge, tag }, view: null, ready: false, shownAt: null, k: -2, shownDesign: -1, wantDesign: 0, setAt: 0, hit: false, ctx: null });
+      S.lanes.push({ spec, L, els: { car, canvas, best, gap, last, badge, tag, rank }, view: null, ready: false, shownAt: null, k: -2, shownDesign: -1, wantDesign: 0, setAt: 0, hit: false, ctx: null });
     }
     // the clock bar: where each lane beats the pole
     const marks = $("cmpMarks"); marks.replaceChildren();
@@ -159,10 +160,9 @@
     g.textAlign = "center"; g.textBaseline = "top";
     for (let x = 0; x <= D.budget; x += 500) { const px = Math.round(X(x)) + .5; g.beginPath(); g.moveTo(px, pad.t); g.lineTo(px, pad.t + ph); g.stroke(); if (x % 1000 === 0 || W > 420) g.fillText(x ? fmtN(x) : "0", Math.min(px, W - pad.r - 12), pad.t + ph + 5); }
     // reference lines
-    const ref = (s, color, text) => { const y = Math.round(Y(s)) + .5; g.save(); g.setLineDash([5, 4]); g.strokeStyle = color; g.lineWidth = 1.3; g.beginPath(); g.moveTo(pad.l, y); g.lineTo(W - pad.r, y); g.stroke(); g.restore(); g.fillStyle = color; g.textAlign = "right"; g.textBaseline = "bottom"; g.fillText(text, W - pad.r - 2, y - 2); };
-    ref(L.baseline_s, BASE_C, "RB22 baseline " + f3(L.baseline_s));
-    ref(D.pole.s, POLE_C, "Real pole " + f3(D.pole.s) + " (ANT)");
+    const ref = (s, color, text) => { const y = Math.round(Y(s)) + .5; g.save(); g.setLineDash([5, 4]); g.strokeStyle = color; g.lineWidth = 1.3; g.beginPath(); g.moveTo(pad.l, y); g.lineTo(W - pad.r, y); g.stroke(); g.restore(); g.textAlign = "right"; g.textBaseline = "bottom"; const tw = g.measureText(text).width; g.fillStyle = "rgba(18, 18, 22, .85)"; g.fillRect(W - pad.r - tw - 5, y - 16, tw + 6, 14); g.fillStyle = color; g.fillText(text, W - pad.r - 2, y - 2); };
     // every car tested (dots); slower than the chart: a tick on the top edge; broke a rule (no lap): a red tick above it
+    // (the reference lines are drawn after the dots, so their labels stay readable)
     const n = Math.min(end, L.tries.length);
     g.fillStyle = hexA(ln.spec.color, 0.42);
     for (let i = 0; i < n; i++) { const tr = L.tries[i], s = tr[1]; if (s == null || s > S.y.hi) continue; g.fillRect(X(tr[0]) - 1.1, Y(s) - 1.1, 2.2, 2.2); }
@@ -170,6 +170,8 @@
     for (let i = 0; i < n; i++) { const tr = L.tries[i]; if (tr[1] != null && tr[1] > S.y.hi) g.fillRect(X(tr[0]) - 0.6, pad.t - 1, 1.2, 4); }
     g.fillStyle = ILLEGAL_C;
     for (let i = 0; i < n; i++) { const tr = L.tries[i]; if (tr[1] == null) g.fillRect(X(tr[0]) - 0.6, pad.t - 7, 1.2, 4); }
+    ref(L.baseline_s, BASE_C, "RB22 baseline " + f3(L.baseline_s));
+    ref(D.pole.s, POLE_C, "Real pole " + f3(D.pole.s) + " (ANT)");
     // best so far (a step line, one step per round)
     g.strokeStyle = ln.spec.color; g.lineWidth = 2.4; g.lineJoin = "round"; g.beginPath(); g.moveTo(X(0), Y(L.baseline_s));
     let prev = L.baseline_s, lastX = 0;
@@ -213,7 +215,22 @@
       badge(ln, end);
       draw(ln, end);
     }
+    standings();
     pumpBuild(now);
+  }
+  // who is ahead now: the lanes by best lap so far (a tie keeps the page order); the leader's lane says "Ahead"
+  function standings() {
+    const t = S.t, rows = S.lanes.map((ln, i) => { const k = lastStep(ln.L.steps, t); return { ln, i, s: k >= 0 ? ln.L.steps[k][1] : ln.L.baseline_s }; });
+    rows.sort((a, b) => a.s - b.s || a.i - b.i);
+    const tie = rows.length > 1 && rows[0].s === rows[1].s, key = rows.map(r => r.ln.spec.id + r.s).join("|");
+    if (key === S.standKey) return;
+    S.standKey = key;
+    const host = $("cmpStand");
+    for (const ln of S.lanes) { const lead = !tie && ln === rows[0].ln; ln.els.rank.textContent = lead ? "Ahead" : ""; ln.els.rank.classList.toggle("on", lead); }
+    if (rows.every(r => r.s === rows[0].s)) { host.replaceChildren(el("span", { class: "cmp-stand-h", text: "Who is ahead" }), el("span", { class: "cmp-stand-none", text: "All three start from the RB22 baseline, " + f3(rows[0].s) + " s" })); return; }
+    host.replaceChildren(el("span", { class: "cmp-stand-h", text: "Best lap now" }),
+      el("ol", { class: "cmp-stand-l" }, ...rows.map((r, j) => el("li", Object.assign({ style: "--lc:" + r.ln.spec.color }, j === 0 && !tie ? { class: "lead" } : {}),
+        el("span", { class: "cmp-stand-n", text: String(j + 1) }), el("i"), el("span", { class: "cmp-stand-w", text: r.ln.spec.short }), el("b", { text: f3(r.s) + " s" })))));
   }
   function badge(ln, end) {
     const L = ln.L, D = S.data, b = ln.els.badge, hit = !!L.to_pole && end >= L.to_pole.laps;

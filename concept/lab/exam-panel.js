@@ -66,8 +66,12 @@
     if (ls) { merge("adapter", ls.adapter); merge("provider", ls.provider); if (ls.drafts) for (const c of ["adapter", "provider"]) if (ls.drafts[c] && typeof ls.drafts[c] === "object") for (const [id, t] of Object.entries(ls.drafts[c])) if (S.byId.has(id) && typeof t === "string") S.drafts[c][id] = t; }
     S.loaded = true;
   }
-  async function probeApi() {
+  // the grader lives on a local PURPLE server: probe it on a local page or with ?api=, and otherwise only when asked ("Look for the
+  // grader"), so the public page makes no request to a server the visitor does not run
+  const LOCAL = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname || "") || qs.has("api");
+  async function probeApi(force) {
     try {
+      if (!LOCAL && !force) throw new Error("not checked on the public site");
       const r = await fetch(API + "/api/concept/exam/info", { cache: "no-store" });
       const j = await r.json();
       if (!j || !j.ok) throw new Error((j && j.error && j.error.message) || "HTTP " + r.status);
@@ -93,8 +97,12 @@
   const root = el("section", { class: "exam", id: "exam", "aria-label": "designer exam" });
   function frame() {
     const head = el("div", { class: "ex-head" },
-      el("div", { class: "ex-title" }, el("span", { class: "label ex-kicker", text: "Exam · the designer task" }),
-        el("h1", { class: "ex-h1", text: "30 car situations the engineer has never seen. Each answer is tested on the physics lap sim (Silverstone, model prediction)." })),
+      el("div", { class: "ex-title" }, el("span", { class: "ex-kicker", text: "Exam" }),
+        el("h1", { class: "ex-h1", text: "30 car situations the engineer never saw. Each answer is tested on the physics lap sim (Silverstone, model prediction)." })));
+    const hero = el("section", { class: "panel exh", id: "exHero", "aria-label": "does the harness make every model better" }, el("p", { class: "ex-cap src" }, "Loading the exam results…"));
+    const toolHead = el("div", { class: "ex-toolhead", id: "exTool" },
+      el("div", { class: "ex-title" }, el("h2", { class: "ex-h2", text: "Grade the trained adapter yourself" }),
+        el("p", { class: "ex-cap src ex-toolsub" }, "Paste replies from the Mubit console, one situation at a time. Grading runs on a local PURPLE server and makes no Mubit call.")),
       el("div", { class: "ex-status src", id: "exStatus" }));
     const howto = el("details", { class: "panel ex-howto", id: "exHowto", open: true },
       el("summary", null, el("span", { class: "label", text: "How to get the adapter's answers" })),
@@ -111,7 +119,7 @@
       el("button", { type: "button", class: "btn", id: "exExportP", onclick: () => exportAnswers("provider"), hidden: true }, "Export Claude (Try models)"),
       el("span", { class: "src", id: "exSaveNote" }));
     const list = el("div", { class: "ex-list", id: "exList" });
-    root.append(head, el("div", { class: "ex-grid" }, el("aside", { class: "ex-side" }, howto, board, models, tools), el("section", { class: "ex-qs", "aria-label": "questions" }, el("div", { class: "ex-qhead" }, el("span", { class: "label", text: "Questions" }), el("span", { class: "src", id: "exListMeta" })), list)));
+    root.append(head, hero, toolHead, el("div", { class: "ex-grid" }, el("aside", { class: "ex-side" }, howto, board, models, tools), el("section", { class: "ex-qs", "aria-label": "questions" }, el("div", { class: "ex-qhead" }, el("span", { class: "label", text: "Questions" }), el("span", { class: "src", id: "exListMeta" })), list)));
   }
 
   // ---------------------------------------------------------------- scoreboard
@@ -151,7 +159,9 @@
     $("#exExportP").hidden = !prov.length;
     const st = $("#exStatus");
     st.replaceChildren(el("span", { class: "badge " + (k ? "purple" : "") , text: k + "/30 graded" }), " ",
-      S.api ? el("span", null, el("span", { class: "dot ok" }), "grader ready" + (S.api.writable ? " · saves on this server to " + S.api.saves :" · this site cannot store answers: they stay in this browser, use Export")) : el("span", { class: "warn" }, el("span", { class: "dot bad" }), S.apiWhy || "checking the grader…"));
+      S.api ? el("span", null, el("span", { class: "dot ok" }), "grader ready" + (S.api.writable ? " · saves on this server to " + S.api.saves :" · this site cannot store answers: they stay in this browser, use Export"))
+        : el("span", { title: S.apiWhy || null }, el("span", { class: "dot" }), "Grader offline: it runs on a local PURPLE server (" + (API || location.origin) + "). ",
+          el("button", { type: "button", class: "btn sm", id: "exProbe", onclick: async () => { const b = $("#exProbe"); if (b) { b.disabled = true; b.textContent = "Looking…"; } await probeApi(true); for (const q of S.qs) { renderState(q.id); renderResult(q.id); } renderBoard(); } }, "Look for the grader")));
     $("#exSaveNote").textContent = S.api && S.api.writable ? "Saved on this server and in this browser." : "Kept in this browser. Export downloads answers-adapter.json for the repo.";
   }
   // ---------------------------------------------------------------- model comparison (concept/exam/models.json + results files)
@@ -290,6 +300,129 @@
     if (MC.variant === "all") { if (SETS.every(s => MC.data[s.key])) box.replaceChildren(buildAll(MC.data)); return; }
     const d = MC.data[MC.variant]; if (d) box.replaceChildren(buildModels(d));
   }
+  // ---------------------------------------------------------------- the headline: does the harness help every model?
+  // One chart per measure (kept as proposed n/N, mean lap time gained per situation); x = the three harness settings; one line per
+  // model in its Model GP colour (concept/gp/entrants.json); No AI a grey dashed line; Memory only a grey marker on the memory
+  // setting. Read from the same results files as the model comparison (loadModelCols): no number here is typed in by hand.
+  const HERO_COLORS = { "claude-haiku-4-5": "#3987e5", "claude-sonnet-5-5": "#d95926", "claude-opus-5-5": "#9085e9" }, GREY = "#8a8a94";
+  const SET_NAMES = { plain: ["Plain"], corrections: ["+ physics", "corrections"], memory: ["+ corrections", "+ shared memory"] };
+  const SET_LONG = { plain: "plain", corrections: "+ physics corrections", memory: "+ corrections + shared memory" };
+  // to the ms, half up (gains are recorded to the ms, so a mean such as 1.935 / 30 = 0.0645 must not read 0.064 from float error)
+  const g3 = v => (isNum(v) ? (Math.round(v * 1000 + 1e-7) / 1000).toFixed(3) : "—");
+  const HERO = { data: null };
+  function heroSeries(all) {
+    const models = all.plain.models.map(m => ({ m, color: HERO_COLORS[m.id] || "#c9c9d0", pts: SETS.map(s => { const c = all[s.key].cols.find(x => x.kind === "model" && x.m.id === m.id); return c && c.doc && c.st.answered > 0 ? { set: s.key, st: c.st } : null; }) }));
+    const none = SETS.map(s => { const c = all[s.key].cols.find(x => x.kind === "none"); return c && c.doc ? { set: s.key, st: c.st } : null; });
+    const mo = all.memory.cols.find(x => x.kind === "memonly");
+    return { models, none, memonly: mo && mo.doc ? mo.st : null };
+  }
+  const SVGNS = "http://www.w3.org/2000/svg";
+  function sv(tag, attrs, ...kids) { const n = document.createElementNS(SVGNS, tag); for (const [k, v] of Object.entries(attrs || {})) if (v != null) n.setAttribute(k, v); for (const k of kids) if (k != null) n.append(k.nodeType ? k : String(k)); return n; }
+  const tip = t => sv("title", null, t);
+  // one small multiple; measure = { key, max, ticks, tick, fmt, name }
+  function heroChart(S2, measure, W) {
+    const narrow = W < 420, H = narrow ? 240 : 260;
+    const pad = { l: narrow ? 34 : 44, r: narrow ? 100 : 128, t: 12, b: 42 };
+    const xNames = narrow ? { plain: ["Plain"], corrections: ["+ physics", "corrections"], memory: ["+ shared", "memory"] } : SET_NAMES;
+    const pw = W - pad.l - pad.r, ph = H - pad.t - pad.b;
+    const X = i => pad.l + pw * (0.1 + 0.8 * i / 2), Y = v => pad.t + ph * (1 - v / measure.max);
+    const val = st => (measure.key === "direct" ? st.direct : st.dgain);
+    const svg = sv("svg", { class: "exh-svg", width: W, height: H, viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": measure.name + ", per model and harness setting" });
+    for (const t of measure.ticks) { const y = Math.round(Y(t)) + 0.5; svg.append(sv("line", { x1: pad.l, x2: X(2) + 10, y1: y, y2: y, class: t === 0 ? "exh-base" : "exh-grid" }), sv("text", { x: pad.l - 8, y, class: "exh-tick", "text-anchor": "end", "dominant-baseline": "middle" }, measure.tick(t))); }
+    SETS.forEach((s, i) => xNames[s.key].forEach((ln, j) => svg.append(sv("text", { x: X(i), y: H - pad.b + 18 + j * 14, class: "exh-x" + (narrow ? " sm" : ""), "text-anchor": "middle" }, ln))));
+    const labels = [];
+    // No AI: grey dashed line across the settings it ran on
+    const nonePts = S2.none.map((p, i) => (p ? [X(i), Y(val(p.st)), p] : null)).filter(Boolean);
+    if (nonePts.length) {
+      svg.append(sv("polyline", { points: nonePts.map(p => p[0] + "," + p[1]).join(" "), class: "exh-none" }));
+      for (const [x, y, p] of nonePts) svg.append(sv("circle", { cx: x, cy: y, r: 3.5, fill: GREY, class: "exh-pt" }, tip("No AI · " + SET_LONG[p.set] + ": " + measure.fmt(p.st))));
+      const last = nonePts[nonePts.length - 1]; labels.push({ y: last[1], text: "No AI " + measure.fmt(last[2].st), color: GREY });
+    }
+    // Memory only: one grey hollow diamond on the memory setting
+    if (S2.memonly) { const x = X(2), y = Y(val(S2.memonly)); svg.append(sv("rect", { x: x - 5, y: y - 5, width: 10, height: 10, transform: "rotate(45 " + x + " " + y + ")", class: "exh-mo" }, tip("Memory only, no model: " + measure.fmt(S2.memonly)))); labels.push({ y, text: (narrow ? "Memory " : "Memory only ") + measure.fmt(S2.memonly), color: GREY, hollow: true }); }
+    // models: a small horizontal dodge so equal values stay visible side by side
+    S2.models.forEach((s, k) => {
+      const dx = (k - (S2.models.length - 1) / 2) * 7;
+      const pts = s.pts.map((p, i) => (p ? [X(i) + dx, Y(val(p.st)), p] : null)).filter(Boolean);
+      if (!pts.length) return;
+      svg.append(sv("polyline", { points: pts.map(p => p[0] + "," + p[1]).join(" "), stroke: s.color, class: "exh-line" }));
+      for (const [x, y, p] of pts) svg.append(sv("circle", { cx: x, cy: y, r: 4.5, fill: s.color, class: "exh-pt" }, tip(s.m.name + " · " + SET_LONG[p.set] + ": " + measure.fmt(p.st))));
+      const last = pts[pts.length - 1]; labels.push({ y: last[1], text: s.m.name.replace(/ \d.*$/, "") + " " + measure.fmt(last[2].st), color: s.color });
+    });
+    // end labels on the right, pushed apart (14 px) so none overlap, kept inside the plot
+    labels.sort((a, b) => a.y - b.y);
+    const gap = 15; for (let i = 1; i < labels.length; i++) if (labels[i].y - labels[i - 1].y < gap) labels[i].y = labels[i - 1].y + gap;
+    const over = labels.length ? labels[labels.length - 1].y - (pad.t + ph) : 0; if (over > 0) for (const l of labels) l.y -= over;
+    const lx = X(2) + 16;
+    for (const l of labels) svg.append(sv("g", null, l.hollow ? sv("rect", { x: lx + 1, y: l.y - 3, width: 6, height: 6, transform: "rotate(45 " + (lx + 4) + " " + l.y + ")", class: "exh-mo" }) : sv("rect", { x: lx, y: l.y - 4, width: 8, height: 8, rx: 2, fill: l.color }), sv("text", { x: lx + 13, y: l.y, class: "exh-lab" + (narrow ? " sm" : ""), "dominant-baseline": "middle" }, l.text)));
+    return svg;
+  }
+  function heroTakeaway(S2) {
+    const ms = S2.models.filter(s => s.pts.every(Boolean));
+    if (!ms.length) return null;
+    const k = (s, i) => s.pts[i].st.direct, N = s => s.pts[0].st.N, g = (s, i) => s.pts[i].st.dgain;
+    const up = ms.every(s => k(s, 1) >= k(s, 0) && k(s, 2) >= k(s, 1)), gainUp = ms.every(s => g(s, 1) >= g(s, 0) && g(s, 2) >= g(s, 1));
+    const P = [];
+    P.push(el("p", null, el("b", null, up ? "Yes. Each step helps or holds every model. " : "Not for every model. "),
+      "Plain to full harness, kept as proposed: " + ms.map(s => s.m.name + " " + k(s, 0) + "/" + N(s) + " to " + k(s, 2) + "/" + N(s)).join(", ") + "." + (gainUp ? " Lap time gained rises at every step for all three." : "")));
+    const best = ms.slice().sort((a, b) => k(b, 2) - k(a, 2) || g(b, 2) - g(a, 2)), tied = best.filter(s => k(s, 2) === k(best[0], 2));
+    P.push(el("p", null, el("b", null, "Best model: close. "),
+      (tied.length > 1 ? tied.map(s => s.m.name).join(" and ") + " both keep " : best[0].m.name + " keeps ") + k(best[0], 2) + "/" + N(best[0]) + " with the full harness; " + best[0].m.name + " gains the most per situation, " + g3(g(best[0], 2)) + " s."));
+    if (S2.memonly && S2.memonly.dgain > 0) {
+      const r = ms.map(s => g(s, 2) / S2.memonly.dgain), lo = Math.round(Math.min(...r)), hi = Math.round(Math.max(...r));
+      P.push(el("p", null, el("b", null, "The models still matter. "), "Memory alone keeps " + S2.memonly.direct + "/" + S2.memonly.N + " but gains only " + g3(S2.memonly.dgain) + " s per situation. With the same memory, the models gain " + (lo === hi ? lo : lo + " to " + hi) + " times as much."));
+    }
+    return el("div", { class: "exh-take" }, P);
+  }
+  function heroTable(S2) {
+    const row = (name, color, setText, st, first, span, cls) => el("tr", { class: [first ? "first" : "", cls || ""].join(" ").trim() || null },
+      first ? el("th", { scope: "rowgroup", rowspan: span > 1 ? String(span) : null, class: "exh-who" }, el("span", { class: "exh-key" + (color ? "" : " mo"), style: color ? "background:" + color : null }), name) : null,
+      el("td", { class: "exh-set" }, setText),
+      el("td", { class: "num" }, st ? st.direct + "/" + st.N : "—"), el("td", { class: "num" }, st ? st.legal + "/" + st.N : "—"), el("td", { class: "num" }, st ? g3(st.dgain) + " s" : "—"));
+    const body = [];
+    for (const s of S2.models) SETS.forEach((set, i) => body.push(row(s.m.name, s.color, SET_LONG[set.key], s.pts[i] && s.pts[i].st, i === 0, 3, i === 2 ? "full" : "")));
+    const noneSt = S2.none[0] && S2.none[0].st;
+    if (noneSt) body.push(row("No AI", GREY, "random legal change", noneSt, true, 1, "base"));
+    if (S2.memonly) body.push(row("Memory only", null, "top precedent, no model", S2.memonly, true, 1, "base"));
+    return el("div", { class: "exh-tablewrap" }, el("table", { class: "exh-table" },
+      el("caption", null, "Every number in the charts"),
+      el("thead", null, el("tr", null, el("th", { scope: "col" }, "Model"), el("th", { scope: "col" }, "Harness"), el("th", { scope: "col", class: "num" }, "Kept"), el("th", { scope: "col", class: "num" }, "Legal"), el("th", { scope: "col", class: "num" }, "Mean gain"))),
+      el("tbody", null, body)));
+  }
+  function renderHero() {
+    const wrap = $("#exHeroCharts"); if (!wrap || !HERO.data) return;
+    const S2 = HERO.data, cw = wrap.clientWidth; if (!cw) return;
+    let cols = 1; try { cols = getComputedStyle(wrap).gridTemplateColumns.split(" ").filter(Boolean).length || 1; } catch (e) { /* default one */ }
+    const W = Math.floor(cols > 1 ? (cw - 24) / 2 : cw);
+    const any = S2.models.map(s => s.pts.find(Boolean)).find(Boolean), N = any ? any.st.N : 30;
+    const gtop = Math.ceil(Math.max(0.02, ...S2.models.flatMap(s => s.pts.filter(Boolean).map(p => p.st.dgain))) * 50) / 50;
+    const MEAS = [
+      { key: "direct", name: "Kept as proposed, out of " + N, sub: "legal and faster than the car it started from", max: N, ticks: [0, 10, 20, 30].filter(t => t <= N), tick: t => String(t), fmt: st => st.direct + "/" + st.N },
+      { key: "dgain", name: "Mean lap time gained per situation", sub: "seconds; 0 when not kept, averaged over all " + N, max: gtop, ticks: [0, 0.02, 0.04, 0.06, 0.08, 0.1].filter(t => t <= gtop + 1e-9), tick: t => t.toFixed(2), fmt: st => g3(st.dgain) + " s" },
+    ];
+    wrap.replaceChildren(...MEAS.map(m => el("figure", { class: "exh-fig" }, el("figcaption", null, el("span", { class: "exh-ft" }, m.name), el("span", { class: "exh-fs" }, m.sub)), heroChart(S2, m, W))));
+  }
+  async function loadHero() {
+    const box = $("#exHero"); if (!box) return;
+    try {
+      const all = {}; for (const s of SETS) all[s.key] = MC.data[s.key] || (MC.data[s.key] = await loadModelCols(s.key));
+      HERO.data = heroSeries(all);
+    } catch (e) { box.replaceChildren(el("p", { class: "ex-cap warn" }, "Could not load the exam results: " + (e.message || e))); return; }
+    const D = HERO.data;
+    const legend = el("ul", { class: "exh-legend", "aria-label": "legend" },
+      D.models.map(s => el("li", null, el("span", { class: "exh-key", style: "background:" + s.color }), s.m.name)),
+      el("li", null, el("span", { class: "exh-key dash" }), "No AI, a random legal change"),
+      D.memonly ? el("li", null, el("span", { class: "exh-key mo" }), "Memory only, no model") : null);
+    box.replaceChildren(
+      el("div", { class: "exh-head" }, el("h2", { class: "exh-h" }, "Does the harness make every model better?"),
+        el("p", { class: "exh-sub" }, "Left to right, the harness adds physics corrections, then a shared memory of physics-approved decisions, the same for every model.")),
+      heroTakeaway(D), legend, el("div", { class: "exh-charts", id: "exHeroCharts" }), heroTable(D),
+      el("p", { class: "exh-note" }, "Kept = the answer's own change is legal and faster on the sim than the car the situation starts from. Legal = passes the 2026 technical rules as proposed. Scores are counts, n/N. Model calls went through Mubit, untrained; No AI and Memory only make no model call. Per-file details: Model comparison, below."));
+    renderHero();
+  }
+  let heroTimer = null;
+  if (typeof window.addEventListener === "function") window.addEventListener("resize", () => { clearTimeout(heroTimer); heroTimer = setTimeout(renderHero, 120); });
+
   const gradedProvider = () => S.qs.map(q => q.id).filter(id => S.provider[id]);
   function compactIds(ids) {
     const ns = ids.map(id => +id.slice(1)).sort((a, b) => a - b), out = [];
@@ -411,6 +544,7 @@
     }
     try { const u = new URL(location.href); if (on) u.searchParams.set("view", "exam"); else if (u.searchParams.get("view") === "exam") u.searchParams.delete("view"); history.replaceState(null, "", u); } catch (e) { /* file:// */ }
     if (!on) window.dispatchEvent(new Event("resize"));
+    else requestAnimationFrame(renderHero);
   }
   async function boot() {
     const main = $("#clab"); if (!main) return;
@@ -420,7 +554,7 @@
     if (ex) ex.addEventListener("click", () => show(true));
     for (const id of ["#btnViewEng", "#btnViewNoAI", "#btnViewMubit"]) { const b = $(id); if (b) b.addEventListener("click", () => { if (S.shown) show(false); }); }
     if (qs.get("view") === "exam") show(true);
-    setVariant("plain");   // independent of the questions: a missing results file never blocks the rest of the view
+    loadHero().then(() => setVariant("memory"));   // independent of the questions: a missing results file never blocks the rest of the view
     try { await load(); } catch (e) { $("#exList").replaceChildren(el("div", { class: "empty warn" }, "could not load the exam files (" + DATA + "questions.json, results-*.json): " + (e.message || e))); return; }
     renderList(); renderBoard();
     await probeApi();
