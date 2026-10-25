@@ -1,17 +1,18 @@
 // PURPLE concept lab - the model switcher's data and the Go live run body (pure; the browser page and node tests share it).
 // The models come from concept/gp/entrants.json (the Model GP entrants); each one is a "car" with its own name (entrant.car, else this
-// file's built-in name for that id, else entrant.name). The default model (Claude Haiku 4.5, the frozen designer task) is the only one
+// file's built-in car for that id, else entrant.name) and a label for the picker and the title (this file's label for that id, else
+// the car and the entrant name, e.g. "ChatGPT (GPT-6 Luna)"). The default model (Claude Haiku 4.5, the frozen designer task) is the only one
 // whose Go live keeps record_good: physics-approved ideas re-sent by the server as trained calls. Every other model is sent as
 // { model: id, memory: true } with no record_good / trained fields: untrained, not recorded for training (the server refuses those
 // fields for any other model). "no-ai" is the control: llm "live", but the server makes no model call (the engine's own direction).
 (function (root) {
   const DEFAULT_ID = "haiku-4-5";
   const BUILTIN = [
-    { id: "haiku-4-5", car: "Claude Haiku 4.5", code: "HAIK", color: "#3987e5", provider: "anthropic", model: "claude-haiku-4-5" },
-    { id: "sonnet-5-5", car: "Claude Sonnet 5.5", code: "SONN", color: "#d95926", provider: "anthropic", model: "claude-sonnet-5-5" },
-    { id: "opus-5-5", car: "Claude Opus 5.5", code: "OPUS", color: "#9085e9", provider: "anthropic", model: "claude-opus-5-5" },
-    { id: "gpt-6-luna", car: "ChatGPT (GPT-6 Luna)", code: "GPT", color: "#d55181", provider: "openai", model: "gpt-6-luna" },
-    { id: "no-ai", car: "No AI (control)", code: "NOAI", color: "#8a8a94", provider: "none", model: null, control: true },
+    { id: "haiku-4-5", label: "Claude Haiku 4.5", car: "Claude Haiku", code: "HAIK", color: "#3987e5", provider: "anthropic", model: "claude-haiku-4-5" },
+    { id: "sonnet-5-5", label: "Claude Sonnet 5.5", car: "Claude Sonnet", code: "SONN", color: "#d95926", provider: "anthropic", model: "claude-sonnet-5-5" },
+    { id: "opus-5-5", label: "Claude Opus 5.5", car: "Claude Opus", code: "OPUS", color: "#9085e9", provider: "anthropic", model: "claude-opus-5-5" },
+    { id: "gpt-6-luna", label: "ChatGPT (GPT-6 Luna)", car: "ChatGPT", code: "GPT", color: "#d55181", provider: "openai", model: "gpt-6-luna" },
+    { id: "no-ai", label: "No AI (control)", car: "No AI", code: "NOAI", color: "#8a8a94", provider: "none", model: null, control: true },
   ];
   const ID_RE = /^[a-z0-9][a-z0-9.-]{0,40}$/;
   const isDefault = id => !id || id === DEFAULT_ID;
@@ -25,7 +26,8 @@
       if (!e || typeof e.id !== "string" || !ID_RE.test(e.id) || out.some(x => x.id === e.id)) continue;
       const b = BUILTIN.find(x => x.id === e.id) || {};
       const car = String((typeof e.car === "string" && e.car.trim()) || b.car || e.name || e.id).slice(0, 40);
-      out.push({ id: e.id, car, name: e.name || car, code: String(e.code || b.code || e.id.slice(0, 4)).toUpperCase().slice(0, 4), color: /^#[0-9a-fA-F]{6}$/.test(e.color || "") ? e.color : b.color || "#8a8a94",
+      const name = String(e.name || car);
+      out.push({ id: e.id, car, name, label: b.label || (name !== car ? car + " (" + name + ")" : car), code: String(e.code || b.code || e.id.slice(0, 4)).toUpperCase().slice(0, 4), color: /^#[0-9a-fA-F]{6}$/.test(e.color || "") ? e.color : b.color || "#8a8a94",
         provider: e.provider || b.provider || null, model: e.model === undefined ? b.model || null : e.model, control: !!(e.control || b.control) });
     }
     if (!out.length) return BUILTIN.slice();

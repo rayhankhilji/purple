@@ -19,12 +19,14 @@ test("mubit-first: the lab loads it after the layout, Mubit is the default view,
 });
 
 test("mubit-first: the browser never calls Mubit; Go live is a record_good (kept) engine run of 5 / 10 / 20 parallel rounds × 4 ideas", () => {
-  const js = read("concept/lab/mubit-first.js"), lab = read("concept/lab/concept-lab.js");
-  for (const [f, s] of [["mubit-first.js", js], ["concept-lab.js", lab]]) assert.doesNotMatch(s, /api\.mubit\.ai|api\.anthropic\.com|@anthropic-ai\/sdk/, f);
+  const js = read("concept/lab/mubit-first.js"), lab = read("concept/lab/concept-lab.js"), ms = read("concept/lab/model-switch.js");
+  for (const [f, s] of [["mubit-first.js", js], ["concept-lab.js", lab], ["model-switch.js", ms]]) assert.doesNotMatch(s, /api\.mubit\.ai|api\.anthropic\.com|@anthropic-ai\/sdk/, f);
   assert.match(js, /\/api\/concept\/engine\/run/);
   assert.match(js, /const rounds = S\.liveN, n = rounds \* IDEAS;/);
-  assert.match(js, /\{ mode: "engineer", team: "redbull", ideas: IDEAS, rounds, max_calls: n, variants: LIVE_SCREEN\.variants, confirm_k: LIVE_SCREEN\.confirm_k, explore: LIVE_SCREEN\.explore \}/);
-  assert.match(js, /llm: "live", record_good: "kept", confirm: "trained", confirm_text: "TRAIN " \+ n,/);
+  // the run body (concept/lab/model-switch.js runBody; test/model-switcher-ui.test.js checks it for every model)
+  assert.match(js, /MS\.runBody\(\{ llm, model: S\.runModel\.id, rounds, ideas: IDEAS, screen: LIVE_SCREEN,/);
+  assert.match(ms, /\{ mode: "engineer", team: "redbull", ideas: o\.ideas, rounds, max_calls: n, variants: sc\.variants, confirm_k: sc\.confirm_k, explore: sc\.explore \}/);
+  assert.match(ms, /llm: "live", record_good: "kept", confirm: "trained", confirm_text: "TRAIN " \+ n,/);
   assert.match(js, /const LIVE_CHOICES = \[5, 10, 20\];/);
   assert.match(js, /const IDEAS = 4;/);
   assert.match(js, /const LIVE_SCREEN = \{ variants: 600, confirm_k: 8, explore: 2 \};/);

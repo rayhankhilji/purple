@@ -121,3 +121,10 @@ a.btn { text-decoration: none; display: inline-block; color: var(--text); }
 .lapsList .del { color: var(--muted); text-decoration: line-through; }
 .lapsList .pb { color: var(--purple); padding: 0; }
 @media (max-width: 1000px) { .card { top: 44px; } }
+
+/* several model cars: who races, "Models + pole" | "Everyone" (race.js fieldToggle; a reload with only / real / field) */
+.fieldsw { display: inline-flex; flex: none; gap: 2px; padding: 2px; background: #1a1a20; border: 1px solid var(--line); border-radius: var(--r); }
+.fieldsw .btn { padding: 3px 9px; border: 0; background: transparent; color: var(--muted); white-space: nowrap; }
+.fieldsw .btn.on { background: var(--purple-dim); color: var(--text); }
+/* phones: a car's full name ("Claude Haiku", "ChatGPT") wraps in the timing tower instead of being cut */
+@media (max-width: 640px) { .tower .nm { white-space: normal; overflow-wrap: anywhere; } }
