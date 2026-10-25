@@ -92,7 +92,7 @@ Memory alone picks a safe past change more often, but the models gain 4 to 5 tim
 | Designer v1 | 98 examples | 5/19 (26%), not passed | Mubit kept Claude answering |
 | Designer v1 | 4,115 physics-approved examples, from 48,250 decisions | not run yet | sent; waiting for Mubit to train |
 | Compact | 6,073 physics-approved, from 24,975 | not run yet | sent; waiting for Mubit to train |
-| Action (one code per answer) | harvest running | not run yet | built so a small model can match Claude exactly |
+| Action (one code per answer) | 16,981 physics-approved, from 48,878 | not run yet | sent; built so a small model can match Claude exactly |
 
 Mubit scores its small model by how often it gives exactly Claude's answer. A free-text design answer is hard to match word for word, so we added two shorter answer formats for the same job. Source: Mubit console, 24 and 25 October.
 

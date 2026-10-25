@@ -19,6 +19,7 @@
     model: [
       ["v1", "98 examples · Mubit test 5/19, not passed"],
       ["v2", "4,115 physics-approved examples sent"],
+      ["+", "6,073 compact and 16,981 one-code examples sent, for an exact match"],
     ],
     model_source: "Mubit console, 24 Oct",
     // docs/concept/loop-runs/trained-harvest: good.jsonl rows (test/mubit-first.test.js checks the count)
