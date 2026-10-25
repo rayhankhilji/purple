@@ -238,17 +238,6 @@
         el("td", { class: "n opt muted", text: e.beat_pole_n + " of " + e.complete + " seeds" })));
     }
     T.append(tb);
-    // the headline, from the numbers: who was fastest, by how much against the real pole, and where the No-AI control finished
-    const w = r[0], wg = w.gap_to_pole_s_median;
-    $("gpHeadline").replaceChildren(el("span", { class: "who", style: "color:" + w.color, text: w.name }), " set the fastest lap: ", el("span", { class: "t", text: f3(w.best_s_median) }), " s",
-      ", " + (wg < 0 ? Math.abs(wg).toFixed(3) + " s under" : "+" + wg.toFixed(3) + " s over") + " the real pole.");
-    const ci = r.findIndex(e => e.control), sub = [];
-    if (ci >= 0) {
-      const ahead = r.slice(0, ci).map(shortName), behind = r.slice(ci + 1).map(shortName);
-      sub.push("The No-AI control (random directions, same engine) placed P" + (ci + 1) + (ahead.length ? ": " + listAnd(ahead) + " beat it" + (behind.length ? ", " + listAnd(behind) + " did not." : ".") : ": no model beat it."));
-    }
-    sub.push("Same harness" + (S.sum.memory && S.sum.memory.on ? " and shared memory" : "") + ", " + S.budget + " simulations each, untrained calls. One circuit and " + (S.sum.seeds || []).length + " seeds, so results vary: every seed is in the table below.");
-    $("gpSub").textContent = sub.join(" ");
     $("gpResult").hidden = false;
   }
   function table() {
@@ -305,10 +294,8 @@
   }
   function footer() {
     const f = $("gpFoot"); f.replaceChildren();
-    const line = (...k) => f.append(el("span", {}, ...k)), b = t => el("b", { text: t });
-    line("Every lap: ", b(LABEL), ". Dashed lines: the ", b(POLE_LABEL + " " + f3(S.pole) + " s"), " (Antonelli, 2026 British GP) and the RB22 start car on the same sim.");
-    line("A single circuit (Silverstone), ", b("150 simulations"), " per run, seeds 1, 2, 3: results vary between seeds, so every seed is in the table. The ", b("No-AI control"), " (random directions, same engine) is included on purpose: a model has to beat it to show its ideas helped. An answer that does not parse takes the same random step and is counted as such, never credited to the model.");
-    line("Recorded " + (S.sum.generated_at || "").slice(0, 10) + " by concept/gp/run.js · " + (S.sum.memory && S.sum.memory.on ? "shared memory on" : "shared memory off") + " · played back here: no new call.");
+    const b = t => el("b", { text: t });
+    f.append(el("span", {}, "lap: ", b(LABEL), " · ", b(POLE_LABEL + " " + f3(S.pole) + " s"), " · recorded " + (S.sum.generated_at || "").slice(0, 10) + " by concept/gp/run.js · " + (S.sum.memory && S.sum.memory.on ? "shared memory on" : "shared memory off") + " · replay, no new call"));
   }
   function emptyState(why) {
     $("gpLanes").replaceChildren(el("div", { class: "panel gp-empty" }, el("p", { text: "No Model GP results yet (" + why + "). Nothing is shown until the live run is recorded: no placeholder numbers." }),
@@ -349,23 +336,36 @@
     setSpeed(S.speed);
     $("gpBelow").hidden = false;
     board(); table(); harness(); footer();
-    const race = raceLink();
-    if (race) { for (const id of ["gpRace", "gpRace2"]) { $(id).href = race.url; $(id).hidden = false; } $("gpRaceNote").textContent = "A qualifying lap in 3D: all " + race.n + " cars and the real pole lap (OpenF1 2026) start together on one clock. Each car is its entrant's median-seed car; its lap time comes from the physics lap sim."; }
-    else { $("gpRace2").hidden = true; $("gpRaceNote").textContent = "No race: no entrant has a complete run yet."; }
-    const race2 = raceLink(true);
-    if (race2) { $("gpRaceModels").href = race2.url; $("gpRaceModels").hidden = false; }
+    const race = raceLink(true);
+    if (race) { $("gpRaceModels").href = race.url; $("gpRaceModels").hidden = false; }
+    S.ready = true;
+    if (S.wantOpen) openRecorded();
+    window.__gp = S;
+  }
+  // the last recorded race is its own tab: its lanes, 3D cars and curves are built the first time it is opened (the live race is the page)
+  async function openRecorded() {
+    S.wantOpen = true;
+    if (!S.ready || S.opened) return;
+    S.opened = true;
     await show();
     drawCurves();
-    window.addEventListener("resize", () => { for (const ln of S.lanes) { ln.cv = null; ln.k = -2; } update(performance.now(), true); drawCurves(); });
-    // the replay starts by itself once its cards are on screen and their cars are built (or after a short wait), so it is not over
-    // before anyone sees it; "Watch the replay" scrolls to it and plays it from the start
-    $("gpWatch").addEventListener("click", ev => { ev.preventDefault(); S.auto = false; $("gpReplay").scrollIntoView({ behavior: "smooth", block: "start" }); restart(); S.playing = true; S.last = 0; playBtn(); });
+    window.addEventListener("resize", () => { if ($("gpRec").hidden) return; for (const ln of S.lanes) { ln.cv = null; ln.k = -2; } update(performance.now(), true); drawCurves(); });
     $("gpPlay").addEventListener("click", () => { S.auto = false; });
     S.auto = q.get("play") !== "0" && S.t < S.budget; playBtn();
     if (S.auto) autoStart();
-    window.__gp = S;
     requestAnimationFrame(frame);
   }
+  function tab(which) {
+    const rec = which === "rec";
+    $("gpLive").hidden = rec; $("gpRec").hidden = !rec;
+    $("gpTabLive").classList.toggle("on", !rec); $("gpTabRec").classList.toggle("on", rec);
+    $("gpTabLive").setAttribute("aria-selected", String(!rec)); $("gpTabRec").setAttribute("aria-selected", String(rec));
+    try { const u = new URL(location.href); if (rec) u.searchParams.set("tab", "recorded"); else u.searchParams.delete("tab"); history.replaceState(null, "", u); } catch (e) { /* file:// */ }
+    if (rec) openRecorded(); else window.dispatchEvent(new Event("resize"));
+  }
+  $("gpTabLive").addEventListener("click", () => tab("live"));
+  $("gpTabRec").addEventListener("click", () => tab("rec"));
+  if (q.get("tab") === "recorded" || q.get("t")) tab("rec");
   // the pieces concept/gp/live.js (the live mode) reuses: one card / chart / 3D code for the replay and the live lanes
   (window.EI = window.EI || {}).gp = { S, el, f3, sg, hexA, sizeCanvas, axes, stepLine, mountOne, pumpBuild, designFrom, waitNote, carsLink, getJson, LABEL, POLE_LABEL, POLE_C, BASE_C, ILLEGAL_C };
   init().catch(e => { $("gpLanes").replaceChildren(el("div", { class: "panel gp-empty", text: "Model GP failed to start: " + e.message })); });
