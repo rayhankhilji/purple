@@ -1,0 +1,1435 @@
+{
+ "v": 1,
+ "kind": "purple-designer-exam-results",
+ "column": "base",
+ "label": "base-claude-opus-5-5-corrections",
+ "what": "B. Opus 5.5 (claude-opus-5-5) + frozen designer prompt via server/mubit.js, untrained (x-middleware-record: metadata); only the model id swapped; temperature not sent (the model does not accept one: default sampling)",
+ "questions_sha256": "a02b6517c5c005d9890ea7fc07c91a34847699ec7cd28279eae1a33065b33ac4",
+ "questions_variant": "corrections",
+ "n": 30,
+ "exam_seed": 2026,
+ "graded_by": "concept/engineer/engine.js one decision from the question's head car (physics lap sim · quasi-steady-state point mass · Silverstone · calibrated to 2026 British GP qualifying); kept = legal && lap < head − 0.1 ms",
+ "meta": {
+  "session_id": "exam-dsg-01m5rf6q0sftsv4dbhjc9j2pjc",
+  "mock": false,
+  "trained": false,
+  "model": "claude-opus-5-5",
+  "max_tokens": 4000,
+  "temperature": null,
+  "prompt_version": "1",
+  "concurrency": 8,
+  "comparison": true,
+  "model_name": "Opus 5.5",
+  "temperature_sent": false,
+  "swapped": [
+   "model",
+   "temperature not sent (the model does not accept a temperature setting)"
+  ],
+  "system_prompt_sha256": "40bd6f55333012e058b53937bfe2b281f0d74d71fc804d97efded96049030956"
+ },
+ "summary": {
+  "N": 30,
+  "parsed": 30,
+  "legal": 30,
+  "direct_kept": 22,
+  "engine_kept": 30,
+  "direct_mean_gain_s": 0.042467,
+  "engine_mean_gain_s": 0.098433,
+  "direct_total_gain_s": 1.274,
+  "engine_total_gain_s": 2.953,
+  "line": "kept 22/30 (direct), 30/30 (engine), mean gain 0.0425 s (direct), 0.0984 s (engine); parsed 30/30, legal as proposed 30/30"
+ },
+ "calls": {
+  "n": 30,
+  "answered": 30,
+  "errors": 0,
+  "error_codes": {},
+  "latency_ms_median": 5168.5,
+  "latency_ms_mean": 5317.3,
+  "latency_ms_max": 8354,
+  "input_tokens_mean": 2089.7,
+  "output_tokens_mean": 412.5,
+  "stop_reasons": {
+   "end_turn": 30
+  },
+  "served_by": {
+   "provider": 30
+  },
+  "models_returned": {
+   "claude-opus-5-5": 30
+  }
+ },
+ "grade_ms": 17089,
+ "grade_ms_per_question": 570,
+ "total_ms": 40826,
+ "rows": [
+  {
+   "phase": "early",
+   "id": "q01",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.083,
+    "d_lap_s": -0.083,
+    "lap_s": 88.409,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.13,
+    "d_lap_s": -0.13,
+    "lap_s": 88.362,
+    "from": "candidate",
+    "best_change": "floor.width_mm 1450->1540; sidepods.undercut_mm 100->140; floor.throat_mm 62->64; floor.ride_height_mm 32.5->31; diffuser.expansion_deg 16->15.5; suspension.front 0->1",
+    "screened": 2978,
+    "physics_laps": 32
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "width_mm",
+     "from": 1450,
+     "to": 1540
+    },
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 130
+    }
+   ],
+   "head_lap_s": 88.492,
+   "ms": 3429,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"width_mm\",\"to\":1540},{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":130}],\"hypothesis\":\"Wider floor plus deeper undercut feeds more underfloor load. Diffuser gains came mainly in Maggotts-Becketts, so more floor downforce should cut S1/S2 time.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":1}}",
+   "mubit_request_id": "mreq_01a170f35cc77682929632f355764188",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 1960,
+   "output_tokens": 355,
+   "latency_ms": 4978,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q02",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.003,
+    "lap_s": 88.237,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.048,
+    "d_lap_s": -0.048,
+    "lap_s": 88.186,
+    "from": "candidate",
+    "best_change": "diffuser.expansion_deg 17->15.5; floor.width_mm 1480->1540; floor.ride_height_mm 29->28; suspension.front 1->0",
+    "screened": 2810,
+    "physics_laps": 32
+   },
+   "proposal": [
+    {
+     "part": "diffuser",
+     "param": "expansion_deg",
+     "from": 17,
+     "to": 18
+    },
+    {
+     "part": "floor",
+     "param": "width_mm",
+     "from": 1480,
+     "to": 1540
+    }
+   ],
+   "head_lap_s": 88.234,
+   "ms": 731,
+   "answer": "{\"changes\":[{\"part\":\"diffuser\",\"param\":\"expansion_deg\",\"to\":18},{\"part\":\"floor\",\"param\":\"width_mm\",\"to\":1540}],\"hypothesis\":\"Diffuser gave the biggest gain so far; max legal expansion plus a wider floor should add underfloor load for Copse/Maggots-Becketts at small drag cost.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a170f35cc674b3924e2b689df0a759",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2180,
+   "output_tokens": 427,
+   "latency_ms": 5543,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q03",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.019,
+    "lap_s": 87.62,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.006,
+    "d_lap_s": -0.006,
+    "lap_s": 87.595,
+    "from": "candidate",
+    "best_change": "rear_wing.span_mm 1110->1140; front_wing.span_mm 1340->1350; rear_wing.chord_mm 395->390",
+    "screened": 2914,
+    "physics_laps": 30
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "span_mm",
+     "from": 1110,
+     "to": 1150
+    },
+    {
+     "part": "front_wing",
+     "param": "span_mm",
+     "from": 1340,
+     "to": 1350
+    }
+   ],
+   "head_lap_s": 87.601,
+   "ms": 718,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"span_mm\",\"to\":1150},{\"part\":\"front_wing\",\"param\":\"span_mm\",\"to\":1350}],\"hypothesis\":\"Rear wing kept 6/6. Widen both wings to their span limits for balanced extra downforce in Maggotts/Becketts and Copse, with a small drag cost.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a170f35cbd779097d9b016a44a4494",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2147,
+   "output_tokens": 449,
+   "latency_ms": 5595,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "early",
+   "id": "q04",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.007,
+    "lap_s": 88.549,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.065,
+    "d_lap_s": -0.065,
+    "lap_s": 88.477,
+    "from": "candidate",
+    "best_change": "floor.width_mm 1450->1520; diffuser.expansion_deg 15.5->16; rear_wing.aoa_deg 18.5->17; floor.ride_height_mm 35->33.5; floor.edge 0->1; suspension.front 0->1",
+    "screened": 2890,
+    "physics_laps": 32
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "width_mm",
+     "from": 1450,
+     "to": 1500
+    },
+    {
+     "part": "diffuser",
+     "param": "expansion_deg",
+     "from": 15.5,
+     "to": 16.5
+    }
+   ],
+   "head_lap_s": 88.542,
+   "ms": 535,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"width_mm\",\"to\":1500},{\"part\":\"diffuser\",\"param\":\"expansion_deg\",\"to\":16.5}],\"hypothesis\":\"Wider floor and more diffuser expansion add efficient underbody downforce. Recent gains came in high-speed Maggotts-Becketts, so S2 should improve.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a170f35ccc7bf3b9ee0f5320b085c6",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 1939,
+   "output_tokens": 289,
+   "latency_ms": 3722,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q05",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.059,
+    "d_lap_s": -0.059,
+    "lap_s": 88.138,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.11,
+    "d_lap_s": -0.11,
+    "lap_s": 88.087,
+    "from": "candidate",
+    "best_change": "floor.width_mm 1520->1540; sidepods.undercut_mm 100->140",
+    "screened": 2928,
+    "physics_laps": 28
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "width_mm",
+     "from": 1520,
+     "to": 1540
+    },
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 120
+    }
+   ],
+   "head_lap_s": 88.197,
+   "ms": 516,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"width_mm\",\"to\":1540},{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":120}],\"hypothesis\":\"Wider floor to the 1540 limit plus a deeper sidepod undercut should feed the floor cleanly and add downforce for Copse and Maggotts-Becketts.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a170f35cc77180a5a93ed8ea1dbbbb",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2048,
+   "output_tokens": 601,
+   "latency_ms": 6962,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q06",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.001,
+    "d_lap_s": -0.001,
+    "lap_s": 87.74,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.002,
+    "d_lap_s": -0.002,
+    "lap_s": 87.739,
+    "from": "candidate",
+    "best_change": "floor.width_mm 1530->1540; rear_wing.span_mm 1140->1110; rear_wing.aoa_deg 24->24.5",
+    "screened": 2881,
+    "physics_laps": 29
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "width_mm",
+     "from": 1530,
+     "to": 1540
+    },
+    {
+     "part": "rear_wing",
+     "param": "span_mm",
+     "from": 1140,
+     "to": 1150
+    }
+   ],
+   "head_lap_s": 87.741,
+   "ms": 459,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"width_mm\",\"to\":1540},{\"part\":\"rear_wing\",\"param\":\"span_mm\",\"to\":1150}],\"hypothesis\":\"Max legal floor width and rear wing span add downforce at little drag cost, helping the Copse-Becketts high-speed sweeps where recent gains came.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a170f35cd37881a05d5674ce8b38c4",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2202,
+   "output_tokens": 658,
+   "latency_ms": 8354,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "early",
+   "id": "q07",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.063,
+    "d_lap_s": -0.063,
+    "lap_s": 88.464,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.091,
+    "d_lap_s": -0.091,
+    "lap_s": 88.436,
+    "from": "candidate",
+    "best_change": "sidepods.undercut_mm 100->125; rear_wing.span_mm 1100->1080",
+    "screened": 2989,
+    "physics_laps": 26
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 140
+    },
+    {
+     "part": "rear_wing",
+     "param": "span_mm",
+     "from": 1100,
+     "to": 1150
+    }
+   ],
+   "head_lap_s": 88.527,
+   "ms": 627,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":140},{\"part\":\"rear_wing\",\"param\":\"span_mm\",\"to\":1150}],\"hypothesis\":\"Deeper undercut feeds the floor edge and diffuser; a wider rear wing adds rear load for Maggotts-Becketts-Chapel at a modest drag cost.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a170f35cc47e4283aee82b66c51d09",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 1967,
+   "output_tokens": 526,
+   "latency_ms": 6355,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q08",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.057,
+    "d_lap_s": -0.057,
+    "lap_s": 88.21,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.135,
+    "d_lap_s": -0.135,
+    "lap_s": 88.132,
+    "from": "candidate",
+    "best_change": "floor.width_mm 1530->1540; sidepods.undercut_mm 100->140; rear_wing.aoa_deg 20->19.5; diffuser.expansion_deg 16.5->15.5; suspension.front 1->0",
+    "screened": 2912,
+    "physics_laps": 33
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "width_mm",
+     "from": 1530,
+     "to": 1540
+    },
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 120
+    }
+   ],
+   "head_lap_s": 88.267,
+   "ms": 575,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"width_mm\",\"to\":1540},{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":120}],\"hypothesis\":\"Floor gave the largest gains; widening it to the max and a deeper undercut feeding the floor edge should add underfloor load for the high-speed corners.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a170f35dee7aa199a6f7bfde76fb2c",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2176,
+   "output_tokens": 401,
+   "latency_ms": 5828,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q09",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.091,
+    "d_lap_s": -0.091,
+    "lap_s": 87.728,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.118,
+    "d_lap_s": -0.118,
+    "lap_s": 87.701,
+    "from": "candidate",
+    "best_change": "sidepods.undercut_mm 100->140",
+    "screened": 2328,
+    "physics_laps": 24
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 130
+    }
+   ],
+   "head_lap_s": 87.819,
+   "ms": 539,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":130}],\"hypothesis\":\"Deeper sidepod undercut feeds cleaner flow to the floor edge and diffuser at their limits, adding rear downforce for Maggotts-Becketts-Chapel.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a170f36b3d7210908406a8edbe654e",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2212,
+   "output_tokens": 417,
+   "latency_ms": 5213,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "early",
+   "id": "q10",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.043,
+    "d_lap_s": -0.043,
+    "lap_s": 88.492,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.17,
+    "d_lap_s": -0.17,
+    "lap_s": 88.365,
+    "from": "candidate",
+    "best_change": "floor.width_mm 1450->1500; sidepods.undercut_mm 100->140; rear_wing.aoa_deg 19->18.5; floor.ride_height_mm 35->34; diffuser.expansion_deg 15->15.5; suspension.front 0->1",
+    "screened": 2971,
+    "physics_laps": 33
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "width_mm",
+     "from": 1450,
+     "to": 1520
+    },
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 120
+    }
+   ],
+   "head_lap_s": 88.535,
+   "ms": 586,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"width_mm\",\"to\":1520},{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":120}],\"hypothesis\":\"Wider floor and deeper undercut add underbody load and cleaner flow to the diffuser, gaining in Maggotts-Becketts-Chapel at little drag cost.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a170f3710072c2beabb1d7a8b1d1b8",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 1936,
+   "output_tokens": 292,
+   "latency_ms": 4179,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q11",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.019,
+    "d_lap_s": -0.019,
+    "lap_s": 88.206,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.125,
+    "d_lap_s": -0.125,
+    "lap_s": 88.1,
+    "from": "candidate",
+    "best_change": "floor.width_mm 1450->1480; diffuser.expansion_deg 17->16; rear_wing.aoa_deg 20.5->19.5; floor.ride_height_mm 35->33; floor.edge 0->1; suspension.front 0->1",
+    "screened": 2890,
+    "physics_laps": 33
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "width_mm",
+     "from": 1450,
+     "to": 1500
+    },
+    {
+     "part": "diffuser",
+     "param": "expansion_deg",
+     "from": 17,
+     "to": 18
+    }
+   ],
+   "head_lap_s": 88.225,
+   "ms": 493,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"width_mm\",\"to\":1500},{\"part\":\"diffuser\",\"param\":\"expansion_deg\",\"to\":18}],\"hypothesis\":\"Floor and diffuser are untested. A wider floor and more diffuser expansion should add underbody load and help the slow corners, where recent gains came.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":3}}",
+   "mubit_request_id": "mreq_01a170f372207b31988d945590caaf03",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2034,
+   "output_tokens": 278,
+   "latency_ms": 3852,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q12",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.083,
+    "d_lap_s": -0.083,
+    "lap_s": 87.663,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.111,
+    "d_lap_s": -0.111,
+    "lap_s": 87.635,
+    "from": "candidate",
+    "best_change": "sidepods.undercut_mm 100->140",
+    "screened": 2328,
+    "physics_laps": 24
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 130
+    }
+   ],
+   "head_lap_s": 87.746,
+   "ms": 389,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":130}],\"hypothesis\":\"Untried sidepods: a deeper undercut should feed cleaner flow to the floor edge and diffuser, adding downforce for the Maggotts-Becketts high-speed load.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a170f372537862bfb529c65eff8557",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2208,
+   "output_tokens": 336,
+   "latency_ms": 4512,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "early",
+   "id": "q13",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.015,
+    "lap_s": 88.672,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.2,
+    "d_lap_s": -0.2,
+    "lap_s": 88.457,
+    "from": "candidate",
+    "best_change": "floor.width_mm 1450->1510; diffuser.expansion_deg 15.5->16.5; rear_wing.aoa_deg 20->18; floor.throat_mm 60->61; floor.ride_height_mm 35->34; suspension.front 0->1",
+    "screened": 2867,
+    "physics_laps": 29
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "width_mm",
+     "from": 1450,
+     "to": 1520
+    },
+    {
+     "part": "diffuser",
+     "param": "expansion_deg",
+     "from": 15.5,
+     "to": 16.5
+    }
+   ],
+   "head_lap_s": 88.657,
+   "ms": 421,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"width_mm\",\"to\":1520},{\"part\":\"diffuser\",\"param\":\"expansion_deg\",\"to\":16.5}],\"hypothesis\":\"The last diffuser and undercut gain came in high-speed corners. A wider floor plus more diffuser expansion should add underfloor downforce for Maggotts-Becketts.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":1}}",
+   "mubit_request_id": "mreq_01a170f3733e7bb0a7284a9ca8c133df",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2022,
+   "output_tokens": 344,
+   "latency_ms": 4459,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q14",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.037,
+    "d_lap_s": -0.037,
+    "lap_s": 88.248,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.112,
+    "d_lap_s": -0.112,
+    "lap_s": 88.173,
+    "from": "candidate",
+    "best_change": "floor.width_mm 1450->1470; floor.ride_height_mm 32.5->31; suspension.front 0->1",
+    "screened": 2901,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "diffuser",
+     "param": "expansion_deg",
+     "from": 16,
+     "to": 17.5
+    },
+    {
+     "part": "floor",
+     "param": "width_mm",
+     "from": 1450,
+     "to": 1500
+    }
+   ],
+   "head_lap_s": 88.285,
+   "ms": 433,
+   "answer": "{\"changes\":[{\"part\":\"diffuser\",\"param\":\"expansion_deg\",\"to\":17.5},{\"part\":\"floor\",\"param\":\"width_mm\",\"to\":1500}],\"hypothesis\":\"Floor gave the biggest gain. More diffuser expansion and a wider floor should add underbody load for Maggotts-Becketts-Chapel at a small drag cost.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a170f376797e03814a684b2193cbd8",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2125,
+   "output_tokens": 492,
+   "latency_ms": 6275,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q15",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.002,
+    "lap_s": 87.649,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.02,
+    "d_lap_s": -0.02,
+    "lap_s": 87.627,
+    "from": "candidate",
+    "best_change": "floor.width_mm 1500->1540; rear_wing.aoa_deg 22.5->22",
+    "screened": 2714,
+    "physics_laps": 29
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "width_mm",
+     "from": 1500,
+     "to": 1520
+    }
+   ],
+   "head_lap_s": 87.647,
+   "ms": 425,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"width_mm\",\"to\":1520}],\"hypothesis\":\"Floor is the strongest lever after the rear wing and is capped elsewhere. Widening it within the 1540 limit should add underfloor load for Maggotts-Becketts.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a170f377ad79129e39a026de7f47f4",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2173,
+   "output_tokens": 497,
+   "latency_ms": 6648,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "early",
+   "id": "q16",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.075,
+    "d_lap_s": -0.075,
+    "lap_s": 88.437,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.172,
+    "d_lap_s": -0.172,
+    "lap_s": 88.34,
+    "from": "candidate",
+    "best_change": "floor.width_mm 1450->1540; diffuser.expansion_deg 14->16.5; rear_wing.aoa_deg 19->17.5; floor.throat_mm 60->61.5; floor.ride_height_mm 35->33; floor.edge 0->1; suspension.front 0->1",
+    "screened": 2897,
+    "physics_laps": 33
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "width_mm",
+     "from": 1450,
+     "to": 1500
+    },
+    {
+     "part": "diffuser",
+     "param": "expansion_deg",
+     "from": 14,
+     "to": 15.5
+    }
+   ],
+   "head_lap_s": 88.512,
+   "ms": 434,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"width_mm\",\"to\":1500},{\"part\":\"diffuser\",\"param\":\"expansion_deg\",\"to\":15.5}],\"hypothesis\":\"Wider floor plus more diffuser expansion raises underbody downforce with little drag, gaining in the high-speed Copse and Maggotts-Becketts-Chapel corners.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a170f37d1b75c3b87f9e70b190a843",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 1940,
+   "output_tokens": 401,
+   "latency_ms": 5401,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q17",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.126,
+    "d_lap_s": -0.126,
+    "lap_s": 88.065,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.191,
+    "d_lap_s": -0.191,
+    "lap_s": 88,
+    "from": "candidate",
+    "best_change": "floor.width_mm 1450->1520; sidepods.undercut_mm 100->135; diffuser.expansion_deg 15->16; suspension.front 0->1",
+    "screened": 2984,
+    "physics_laps": 33
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "width_mm",
+     "from": 1450,
+     "to": 1520
+    },
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 130
+    }
+   ],
+   "head_lap_s": 88.191,
+   "ms": 393,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"width_mm\",\"to\":1520},{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":130}],\"hypothesis\":\"Wider floor plus deeper sidepod undercut feeds more underfloor load, gaining in high-speed Copse-Maggotts-Becketts for little drag.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":1}}",
+   "mubit_request_id": "mreq_01a170f37f5f703298b176c320ec6519",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 1976,
+   "output_tokens": 319,
+   "latency_ms": 4433,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q18",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.056,
+    "d_lap_s": -0.056,
+    "lap_s": 87.739,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.112,
+    "d_lap_s": -0.112,
+    "lap_s": 87.683,
+    "from": "candidate",
+    "best_change": "floor.width_mm 1510->1530; sidepods.undercut_mm 100->140",
+    "screened": 2933,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "width_mm",
+     "from": 1510,
+     "to": 1540
+    },
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 120
+    }
+   ],
+   "head_lap_s": 87.795,
+   "ms": 447,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"width_mm\",\"to\":1540},{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":120}],\"hypothesis\":\"A wider floor at max legal width and a deeper sidepod undercut feed cleaner flow to the floor edge for more downforce through Maggotts-Becketts.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a170f3802374c296757f355bdd834b",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2167,
+   "output_tokens": 378,
+   "latency_ms": 4641,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "early",
+   "id": "q19",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.044,
+    "d_lap_s": -0.044,
+    "lap_s": 88.547,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.195,
+    "d_lap_s": -0.195,
+    "lap_s": 88.396,
+    "from": "candidate",
+    "best_change": "floor.width_mm 1450->1510; floor.ride_height_mm 35->33.5; rear_wing.aoa_deg 20->18; floor.throat_mm 60->60.5; floor.edge 0->1; diffuser.expansion_deg 14->15.5; suspension.front 0->1",
+    "screened": 2903,
+    "physics_laps": 29
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "width_mm",
+     "from": 1450,
+     "to": 1500
+    },
+    {
+     "part": "floor",
+     "param": "ride_height_mm",
+     "from": 35,
+     "to": 34
+    }
+   ],
+   "head_lap_s": 88.591,
+   "ms": 344,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"width_mm\",\"to\":1500},{\"part\":\"floor\",\"param\":\"ride_height_mm\",\"to\":34}],\"hypothesis\":\"The floor is untried. A wider floor and lower ride height (34 mm, the legal minimum) should add ground-effect downforce for Copse and Maggotts-Becketts at small drag cost.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a170f3812b7f60b60ac9db6cc99bce",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2023,
+   "output_tokens": 462,
+   "latency_ms": 5333,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q20",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.122,
+    "d_lap_s": -0.122,
+    "lap_s": 88.102,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.156,
+    "d_lap_s": -0.156,
+    "lap_s": 88.068,
+    "from": "candidate",
+    "best_change": "floor.width_mm 1440->1540; sidepods.undercut_mm 100->140; floor.throat_mm 61->63.5; floor.ride_height_mm 32->31; diffuser.expansion_deg 13.5->14",
+    "screened": 2981,
+    "physics_laps": 28
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "width_mm",
+     "from": 1440,
+     "to": 1540
+    },
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 140
+    }
+   ],
+   "head_lap_s": 88.224,
+   "ms": 330,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"width_mm\",\"to\":1540},{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":140}],\"hypothesis\":\"Wider floor plus deeper undercut feed more underbody load at low drag cost, helping Maggotts-Becketts and Stowe without losing straight-line speed.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a170f383f576c3beb2501b18687c75",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2182,
+   "output_tokens": 432,
+   "latency_ms": 5274,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q21",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.009,
+    "lap_s": 87.66,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.01,
+    "d_lap_s": -0.01,
+    "lap_s": 87.641,
+    "from": "candidate",
+    "best_change": "gearbox.top_kmh 336->342",
+    "screened": 2943,
+    "physics_laps": 29
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "endplate_top_mm",
+     "from": 870,
+     "to": 880
+    },
+    {
+     "part": "gearbox",
+     "param": "top_kmh",
+     "from": 336,
+     "to": 330
+    }
+   ],
+   "head_lap_s": 87.651,
+   "ms": 481,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"endplate_top_mm\",\"to\":880},{\"part\":\"gearbox\",\"param\":\"top_kmh\",\"to\":330}],\"hypothesis\":\"A taller rear endplate within its legal max adds rear load for Maggotts-Becketts. Shorter gearing improves drive out of slow corners, given early 2026 energy clipping.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a170f384a77a12919ca37183ec11c1",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2223,
+   "output_tokens": 558,
+   "latency_ms": 6915,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "early",
+   "id": "q22",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.007,
+    "d_lap_s": -0.007,
+    "lap_s": 88.484,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.021,
+    "d_lap_s": -0.021,
+    "lap_s": 88.47,
+    "from": "candidate",
+    "best_change": "floor.width_mm 1460->1540; floor.throat_mm 61.5->64; floor.ride_height_mm 32.5->31; suspension.front 0->1",
+    "screened": 2769,
+    "physics_laps": 30
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "width_mm",
+     "from": 1460,
+     "to": 1520
+    }
+   ],
+   "head_lap_s": 88.491,
+   "ms": 397,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"width_mm\",\"to\":1520}],\"hypothesis\":\"Wider floor adds efficient underbody downforce for Maggotts-Becketts and Stowe with little drag; the earlier 1450->1460 step was part of the best combo.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":1}}",
+   "mubit_request_id": "mreq_01a170f38dd171208c29eceb92458197",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 1972,
+   "output_tokens": 352,
+   "latency_ms": 4894,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q23",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.067,
+    "d_lap_s": -0.067,
+    "lap_s": 88.08,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.085,
+    "d_lap_s": -0.085,
+    "lap_s": 88.062,
+    "from": "candidate",
+    "best_change": "floor.width_mm 1450->1540; front_wing.span_mm 1300->1350; diffuser.expansion_deg 16->16.5; suspension.front 0->1",
+    "screened": 2943,
+    "physics_laps": 32
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "width_mm",
+     "from": 1450,
+     "to": 1540
+    },
+    {
+     "part": "front_wing",
+     "param": "span_mm",
+     "from": 1300,
+     "to": 1350
+    }
+   ],
+   "head_lap_s": 88.147,
+   "ms": 386,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"width_mm\",\"to\":1540},{\"part\":\"front_wing\",\"param\":\"span_mm\",\"to\":1350}],\"hypothesis\":\"A wider floor adds underbody downforce. Max front wing span restores aero balance. Should gain most in Maggotts-Becketts high-speed load.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a170f390b07a839b40472de4ad3980",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2167,
+   "output_tokens": 368,
+   "latency_ms": 5124,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q24",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.014,
+    "d_lap_s": -0.014,
+    "lap_s": 87.619,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.014,
+    "d_lap_s": -0.014,
+    "lap_s": 87.619,
+    "from": "proposal",
+    "best_change": "sidepods.undercut_mm 135->140",
+    "screened": 1879,
+    "physics_laps": 23
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 135,
+     "to": 140
+    }
+   ],
+   "head_lap_s": 87.633,
+   "ms": 503,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":140}],\"hypothesis\":\"Sidepods gave -0.096 before. Max legal undercut should clean rear floor and beam-wing flow, adding downforce for Maggotts-Becketts and Stowe.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a170f391a37e43ac62af4da352bee0",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2188,
+   "output_tokens": 539,
+   "latency_ms": 6310,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "early",
+   "id": "q25",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.065,
+    "d_lap_s": -0.065,
+    "lap_s": 88.439,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.122,
+    "d_lap_s": -0.122,
+    "lap_s": 88.382,
+    "from": "candidate",
+    "best_change": "floor.width_mm 1450->1500; sidepods.undercut_mm 100->140; floor.throat_mm 60->62; floor.ride_height_mm 33->32.5; diffuser.expansion_deg 14.5->16",
+    "screened": 2978,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "width_mm",
+     "from": 1450,
+     "to": 1540
+    },
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 130
+    }
+   ],
+   "head_lap_s": 88.504,
+   "ms": 424,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"width_mm\",\"to\":1540},{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":130}],\"hypothesis\":\"A wider floor plus a deeper sidepod undercut should add underfloor load at low drag, gaining most through Maggotts-Becketts and Stowe.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":1}}",
+   "mubit_request_id": "mreq_01a170f392357f82b8d4af83cd720df6",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 1949,
+   "output_tokens": 306,
+   "latency_ms": 4103,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q26",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.023,
+    "d_lap_s": -0.023,
+    "lap_s": 88.304,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.137,
+    "d_lap_s": -0.137,
+    "lap_s": 88.19,
+    "from": "candidate",
+    "best_change": "floor.width_mm 1450->1490; diffuser.expansion_deg 14.5->16; rear_wing.aoa_deg 19.5->18.5",
+    "screened": 2868,
+    "physics_laps": 32
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "width_mm",
+     "from": 1450,
+     "to": 1520
+    },
+    {
+     "part": "diffuser",
+     "param": "expansion_deg",
+     "from": 14.5,
+     "to": 15.5
+    }
+   ],
+   "head_lap_s": 88.327,
+   "ms": 414,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"width_mm\",\"to\":1520},{\"part\":\"diffuser\",\"param\":\"expansion_deg\",\"to\":15.5}],\"hypothesis\":\"Floor changes gave the biggest gains; wider floor and more diffuser expansion add efficient underbody downforce for Maggotts-Becketts with little drag.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":1}}",
+   "mubit_request_id": "mreq_01a170f392447cd38867c709090ee68f",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2097,
+   "output_tokens": 318,
+   "latency_ms": 4358,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q27",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.052,
+    "d_lap_s": -0.052,
+    "lap_s": 87.704,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.121,
+    "d_lap_s": -0.121,
+    "lap_s": 87.635,
+    "from": "candidate",
+    "best_change": "floor.width_mm 1510->1530; sidepods.undercut_mm 100->140; suspension.front 1->0",
+    "screened": 2939,
+    "physics_laps": 32
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "width_mm",
+     "from": 1510,
+     "to": 1530
+    },
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 120
+    }
+   ],
+   "head_lap_s": 87.756,
+   "ms": 375,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"width_mm\",\"to\":1530},{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":120}],\"hypothesis\":\"Wider floor plus deeper sidepod undercut feed more flow to the floor edge, adding underbody downforce for Maggotts/Becketts with little drag.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a170f3966f73b1b5798bc018b626ac",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2191,
+   "output_tokens": 379,
+   "latency_ms": 4511,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "early",
+   "id": "q28",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.014,
+    "lap_s": 88.549,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.053,
+    "d_lap_s": -0.053,
+    "lap_s": 88.482,
+    "from": "candidate",
+    "best_change": "floor.width_mm 1450->1540; rear_wing.aoa_deg 18.5->17.5; floor.throat_mm 60->62; floor.ride_height_mm 35->32; floor.edge 0->1; suspension.front 0->1",
+    "screened": 2817,
+    "physics_laps": 32
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "width_mm",
+     "from": 1450,
+     "to": 1500
+    }
+   ],
+   "head_lap_s": 88.535,
+   "ms": 367,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"width_mm\",\"to\":1500}],\"hypothesis\":\"A wider floor adds underbody downforce at little drag cost, which should help in Maggotts-Becketts and Copse, the high-speed sections where wing gains showed.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":1}}",
+   "mubit_request_id": "mreq_01a170f3988c7a918f9ebadbc1427723",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 1936,
+   "output_tokens": 293,
+   "latency_ms": 4247,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q29",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.087,
+    "d_lap_s": -0.087,
+    "lap_s": 88.137,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.113,
+    "d_lap_s": -0.113,
+    "lap_s": 88.111,
+    "from": "candidate",
+    "best_change": "floor.width_mm 1470->1540; sidepods.undercut_mm 100->140",
+    "screened": 2983,
+    "physics_laps": 30
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "width_mm",
+     "from": 1470,
+     "to": 1520
+    },
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 130
+    }
+   ],
+   "head_lap_s": 88.224,
+   "ms": 492,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"width_mm\",\"to\":1520},{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":130}],\"hypothesis\":\"Wider floor plus deeper sidepod undercut feed more underfloor load for Copse-Maggotts-Becketts without touching the stall-limited throat or ride height.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a170f39fab7fd283296ded1846e104",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2130,
+   "output_tokens": 517,
+   "latency_ms": 6402,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q30",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.007,
+    "lap_s": 87.668,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.008,
+    "d_lap_s": -0.008,
+    "lap_s": 87.653,
+    "from": "candidate",
+    "best_change": "gearbox.step 1.156->1.16; gearbox.top_kmh 336->343",
+    "screened": 359,
+    "physics_laps": 25
+   },
+   "proposal": [
+    {
+     "part": "gearbox",
+     "param": "step",
+     "from": 1.156,
+     "to": 1.14
+    }
+   ],
+   "head_lap_s": 87.661,
+   "ms": 319,
+   "answer": "{\"changes\":[{\"part\":\"gearbox\",\"param\":\"step\",\"to\":1.14}],\"hypothesis\":\"Gearbox is untested. Closer ratios at the same 336 km/h top speed should keep revs in the power band on exits from Maggotts-Becketts and Stowe.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a170f3a0ed7902a7a3e1689ac4db9f",
+   "model": "claude-opus-5-5",
+   "served_by": "provider",
+   "input_tokens": 2220,
+   "output_tokens": 392,
+   "latency_ms": 5097,
+   "stop_reason": "end_turn"
+  }
+ ]
+}
