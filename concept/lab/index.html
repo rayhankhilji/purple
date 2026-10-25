@@ -18,32 +18,36 @@
 <link rel="stylesheet" href="mubit-first.css">
 </head>
 <body class="clab-page mubit-on">
+<!-- two rows: brand · tagline · tools and links (loop-panel.js / engine-panel.js insert their buttons before the first link), then
+     the view tabs · the run controls of the view -->
 <header class="top">
   <span class="brand">PURPLE</span>
   <span class="sub" id="sub">Mubit proposes, physics decides: the RB22 against the real 2026 grid at Silverstone</span>
+  <div id="banner" role="alert" hidden></div>
+  <span class="spacer"></span>
+  <a class="src back" id="compareLink" href="../compare/" title="PURPLE (Claude through Mubit) against a standard optimiser and random parts, on one clock of test laps (recorded runs, physics lap sim)">PURPLE vs no AI →</a>
+  <a class="src back" id="raceLink" href="../race/?mode=quali" title="Qualifying lap: the current best car's physics-sim lap against every real 2026 qualifying lap (OpenF1), on one clock on the game's 3D Silverstone">Watch on Silverstone →</a>
+  <a class="src back" href="../../lab/" title="the setup research lab">Research lab →</a>
+  <span class="hbreak" aria-hidden="true"></span>
   <div class="viewsw" role="group" aria-label="view">
     <button type="button" class="btn small on" id="btnViewMubit" aria-pressed="true" title="the autonomous engineer driven by Mubit: each decision is one Mubit call; thousands of versions of the idea are tested and the physics lap sim keeps only what is faster">Mubit engineer</button>
     <button type="button" class="btn small" id="btnViewNoAI" aria-pressed="false" title="the plain in-browser optimiser (no AI at all), for comparison">Compare: no AI</button>
     <button type="button" class="btn small" id="btnViewEng" aria-pressed="false" title="the same engineer as a tree of every car it tested (recorded runs, branches, reverts)">Design tree</button>
     <button type="button" class="btn small" id="btnViewExam" aria-pressed="false" title="the designer exam: 30 held-out car situations, no AI vs regular Claude vs the Mubit-trained adapter, graded on the physics lap sim">Exam</button>
   </div>
-  <div id="banner" role="alert" hidden></div>
   <span class="spacer"></span>
   <form class="ctl noai-only" id="ctl" autocomplete="off" aria-label="optimiser controls" onsubmit="return false">
     <button type="button" class="btn primary" id="btnRun">Run</button>
     <button type="button" class="btn" id="btnStep" title="run one generation">Step</button>
     <button type="button" class="btn" id="btnReset">Reset</button>
-    <label class="f" for="seed">seed <input type="number" id="seed" min="0" max="999999" step="1" value="1"></label>
-    <label class="f" for="gens">gens <input type="number" id="gens" min="1" max="5000" step="1" value="200"></label>
-    <label class="f" for="speed">speed <select id="speed"><option value="300">1×</option><option value="60">4×</option><option value="0" selected>max</option></select></label>
-    <label class="f" for="team" title="the car the optimiser starts from">baseline <select id="team"><option value="redbull" selected>Red Bull RB22</option><option value="generic">generic 2026</option></select></label>
-    <label class="f" for="simSel" title="lap simulator: the physics lap sim (concept/sim) or sim v0 (the game's lap model, relative)">sim <select id="simSel"><option value="physics" selected>physics</option><option value="v0">v0</option></select></label>
+    <label class="f" for="seed">Seed <input type="number" id="seed" min="0" max="999999" step="1" value="1"></label>
+    <label class="f" for="gens" title="generations">Gens <input type="number" id="gens" min="1" max="5000" step="1" value="200"></label>
+    <label class="f" for="speed">Speed <select id="speed"><option value="300">1×</option><option value="60">4×</option><option value="0" selected>max</option></select></label>
+    <label class="f" for="team" title="the car the optimiser starts from">Baseline <select id="team"><option value="redbull" selected>Red Bull RB22</option><option value="generic">generic 2026</option></select></label>
+    <label class="f" for="simSel" title="lap simulator: the physics lap sim (concept/sim) or sim v0 (the game's lap model, relative)">Sim <select id="simSel"><option value="physics" selected>physics</option><option value="v0">v0</option></select></label>
   </form>
   <span class="badge noai-only" id="genBadge">gen 0 / 200</span>
   <div class="mctl mubit-only" id="muCtl" aria-label="Mubit run controls"></div>
-  <a class="src back" id="compareLink" href="../compare/" title="PURPLE (Claude through Mubit) against a standard optimiser and random parts, on one clock of test laps (recorded runs, physics lap sim)">PURPLE vs no AI →</a>
-  <a class="src back" id="raceLink" href="../race/?mode=quali" title="Qualifying lap: the current best car's physics-sim lap against every real 2026 qualifying lap (OpenF1), on one clock on the game's 3D Silverstone">watch on Silverstone →</a>
-  <a class="src back" href="../../lab/" title="the setup research lab">research lab →</a>
 </header>
 
 <section class="mustrip mubit-only" id="muStrip" aria-label="Mubit counters"></section>
