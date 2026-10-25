@@ -1,0 +1,58 @@
+/* PURPLE Model GP - on top of lab/lab.css, concept/lab/concept-lab.css and concept/compare/compare.css (the lanes are the side-by-side
+   page's lanes, one per entrant). Unlike the side-by-side page this one scrolls: the lanes first, then the podium, the results table,
+   the shared curves and the harness. Dark only; each lane's accent is the entrant's colour (concept/gp/entrants.json). */
+.gp-page { height: auto; min-height: 100vh; overflow: visible; }
+body.gp-page { overflow-x: hidden; overflow-y: auto; }
+.gp-banner { padding: 8px var(--gut); background: #3a1020; border-bottom: 1px solid var(--red); color: var(--text); font: 600 13px/1.4 var(--sans); }
+.gp-lanes { flex: none; grid-template-columns: repeat(5, minmax(0, 1fr)); height: 640px; }
+.gp-lanes .cmp-lane { --lc: var(--gp-c, var(--purple)); }
+.gp-lanes .cmp-lane.ctrl { border-top-style: dashed; }
+.gp-lanes .cmp-best-v { font-size: 26px; }
+.gp-lanes .cmp-chart { height: 170px; }
+.gp-lanes .cmp-lw { font-family: var(--mono); font-size: 11px; }
+.gp-lanes .cmp-stats { grid-template-columns: minmax(0, 1fr); }
+.gp-lanes .cmp-side { align-items: flex-start; text-align: left; }
+#gpRace[hidden] { display: none; }
+
+.gp-below { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; padding: 0 var(--gut) 12px; }
+.gp-below .panel { padding: 0 0 12px; min-width: 0; }
+.gp-below .ph { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 12px 12px 8px; }
+.gp-below .ph h2 { margin: 0; font: 600 15px/1.25 var(--sans); color: var(--text); }
+.gp-table-panel, .gp-curves-panel { grid-column: 1 / -1; }
+
+.gp-podium { display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: end; gap: 8px; padding: 8px 12px; min-height: 180px; }
+.gp-step { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+.gp-step .who { font: 600 14px/1.25 var(--sans); color: var(--text); }
+.gp-step .t { font: 600 18px/1 var(--mono); color: var(--text); font-variant-numeric: tabular-nums; }
+.gp-step .g { font: 500 12px/1.2 var(--mono); color: var(--muted); }
+.gp-step .blk { width: 100%; border-radius: var(--r) var(--r) 0 0; border-top: 3px solid var(--sc); background: #1b1b22; display: flex; align-items: flex-start; justify-content: center; padding-top: 8px; font: 700 22px/1 var(--mono); color: var(--sc); }
+.gp-step.p1 .blk { height: 90px; } .gp-step.p2 .blk { height: 64px; } .gp-step.p3 .blk { height: 44px; }
+.gp-race-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 8px 12px 0; }
+.gp-race-note { font: 400 12px/1.4 var(--sans); color: var(--muted); }
+
+.gp-table-wrap { overflow-x: auto; padding: 0 12px; }
+.gp-table { width: 100%; border-collapse: collapse; font: 400 12px/1.35 var(--sans); color: var(--text); }
+.gp-table th { text-align: left; font: 500 11px/1.25 var(--sans); color: var(--muted); padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.gp-table td { padding: 6px 8px; border-bottom: 1px solid #1c1c22; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.gp-table td.n { font-family: var(--mono); text-align: right; }
+.gp-table th.n { text-align: right; }
+.gp-table tr.seed td { color: var(--muted); font-size: 11px; }
+.gp-table tr.seed td:first-child { padding-left: 28px; }
+.gp-table .sw { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; vertical-align: -1px; }
+.gp-table .under { color: var(--green); }
+.gp-table .warn { color: var(--amber); }
+.gp-table .bad { color: var(--red); }
+
+.gp-curves { position: relative; height: 320px; margin: 0 12px; }
+.gp-curves canvas { display: block; width: 100%; height: 100%; }
+.gp-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; padding: 8px 12px 0; font: 500 12px/1.3 var(--sans); color: var(--muted); }
+.gp-legend i { display: inline-block; width: 16px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+.gp-harness { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 16px; padding: 0 12px; font: 400 12px/1.4 var(--sans); }
+.gp-harness .k { color: var(--muted); }
+.gp-harness .v { color: var(--text); font-family: var(--mono); font-size: 11px; overflow-wrap: anywhere; }
+.gp-empty { grid-column: 1 / -1; margin: 24px auto; max-width: 720px; padding: 16px; font: 400 13px/1.5 var(--sans); color: var(--muted); }
+.gp-empty code { font: 500 12px var(--mono); color: var(--text); overflow-wrap: anywhere; }
+
+@media (max-width: 1400px) { .gp-lanes { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: none; height: auto; row-gap: 12px; } .gp-lanes .cmp-lane { grid-row: auto; display: flex; flex-direction: column; } .gp-lanes .cmp-car { flex: none; height: 200px; } }
+@media (max-width: 1100px) { .gp-below { grid-template-columns: minmax(0, 1fr); } .gp-lanes { display: flex; flex-direction: column; } }
+@media (max-width: 520px) { .gp-podium { min-height: 150px; } .gp-step .t { font-size: 15px; } .gp-curves { height: 240px; } }

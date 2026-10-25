@@ -41,12 +41,46 @@
     if (typeof opts.lap_s === "number" && isFinite(opts.lap_s)) p.set("lap", opts.lap_s.toFixed(3));   // the engine's lap (the quali mode checks it)
     return (opts.base == null ? "/concept/race/" : opts.base) + "?" + p.toString();
   }
-  // query string -> { design | null, ref, conditions | null, mode, rate, errors[] }
+  // ---- several concept cars on one clock (Model GP, concept/gp/): ?cars=<base64url JSON [{ n: name, c: code, col: "#rrggbb", lap: s,
+  // seed, d: slim Design }]>&mode=quali[&field=pole|all]. The single-car ?design= URL is unchanged. ≤ MAX_CARS cars; the first car (the
+  // list is ordered by sim lap) is the page's "concept" car, the others ride as ghosts with their own names and colours.
+  const MAX_CARS = 8;
+  const CODE_RE = /^[A-Z0-9]{2,4}$/, COLOR_RE = /^#[0-9a-fA-F]{6}$/;
+  function carsUrl(cars, opts) {
+    opts = opts || {};
+    const list = cars.map(c => { const o = { n: String(c.name), c: String(c.code).toUpperCase(), col: c.color, d: slimDesign(c.design) }; if (typeof c.lap_s === "number" && isFinite(c.lap_s)) o.lap = +c.lap_s.toFixed(3); if (c.seed != null) o.seed = c.seed; if (c.note) o.note = String(c.note); return o; });
+    const p = new URLSearchParams();
+    p.set("cars", encodeParam(list));
+    p.set("ref", opts.ref || "redbull");
+    p.set("mode", opts.mode || "quali");
+    if (opts.field) p.set("field", opts.field);
+    if (opts.title) p.set("title", String(opts.title).slice(0, 80));
+    return (opts.base == null ? "/concept/race/" : opts.base) + "?" + p.toString();
+  }
+  // the decoded ?cars= list -> { cars: [{ id, name, short, code, color, lap_s, seed, note, design }] | null, errors[] }
+  function parseCars(v) {
+    let raw; try { raw = decodeParam(v); } catch (e) { return { cars: null, errors: ["?cars is not base64url JSON (" + e.message + ")"] }; }
+    if (!Array.isArray(raw) || !raw.length) return { cars: null, errors: ["?cars must be a non-empty list"] };
+    if (raw.length > MAX_CARS) return { cars: null, errors: ["?cars: at most " + MAX_CARS + " cars"] };
+    const errors = [], cars = [], seen = new Set();
+    raw.forEach((x, i) => {
+      const code = x && String(x.c || "").toUpperCase();
+      if (!x || typeof x.n !== "string" || !x.n.trim()) { errors.push("?cars[" + i + "]: no name"); return; }
+      if (!CODE_RE.test(code) || seen.has(code) || ["PRPL", "RB22", "BASE"].includes(code)) { errors.push("?cars[" + i + "]: code must be 2-4 letters / digits, unique, not PRPL / RB22 / BASE"); return; }
+      if (!COLOR_RE.test(String(x.col || ""))) { errors.push("?cars[" + i + "]: colour must be #rrggbb"); return; }
+      if (!x.d || typeof x.d !== "object" || !x.d.params) { errors.push("?cars[" + i + "]: no design"); return; }
+      seen.add(code);
+      cars.push({ id: i === 0 ? "concept" : "gp" + (i + 1), name: x.n.trim().slice(0, 60), short: code, code, color: x.col, lap_s: typeof x.lap === "number" && isFinite(x.lap) && x.lap > 0 ? x.lap : null, seed: x.seed == null ? null : x.seed, note: x.note ? String(x.note).slice(0, 120) : null, design: x.d });
+    });
+    return { cars: errors.length ? null : cars, errors };
+  }
+  // query string -> { design | null, cars | null, field, title, ref, conditions | null, mode, rate, errors[] }
   function parseQuery(search) {
     const q = new URLSearchParams(search || ""), errors = [];
-    let design = null;
+    let design = null, cars = null;
     const dv = q.get("design");
     if (dv && dv !== "baseline") { try { design = decodeParam(dv); } catch (e) { errors.push("?design is not base64url JSON (" + e.message + ")"); } }
+    if (q.get("cars")) { const pc = parseCars(q.get("cars")); cars = pc.cars; for (const e of pc.errors) errors.push(e); if (cars && !design) design = cars[0].design; }
     const ref = (q.get("ref") || (design && design.team) || "redbull").toLowerCase();
     if (!REF_NAMES[ref]) errors.push("?ref=" + ref + ": known refs are " + Object.keys(REF_NAMES).join(", "));
     let conditions = null;
@@ -56,11 +90,16 @@
       if (!isFinite(v)) { errors.push("?" + k + " is not a number"); continue; }
       conditions = Object.assign({}, conditions || {}, { [k]: v });
     }
-    const mode = ["replay", "quali", "race", "grid", "drive", "racegrid"].includes(q.get("mode")) ? q.get("mode") : "replay";
+    const mode = ["replay", "quali", "race", "grid", "drive", "racegrid"].includes(q.get("mode")) ? q.get("mode") : cars ? "quali" : "replay";
     const rate = Math.min(32, Math.max(0.25, parseFloat(q.get("rate")) || 1));
     let lap_s = null;
     if (q.get("lap") != null) { const v = parseFloat(q.get("lap")); if (isFinite(v) && v > 0) lap_s = v; else errors.push("?lap is not a lap time"); }
-    return { design, ref, conditions, mode, rate, lap_s, errors };
+    if (cars && lap_s == null) lap_s = cars[0].lap_s;
+    const field = q.get("field") === "all" ? "all" : "pole";   // several cars: the real pole only (default) or the whole real field
+    const title = q.get("title") ? String(q.get("title")).slice(0, 80) : null;
+    const out = { design, ref, conditions, mode, rate, lap_s, errors };
+    if (cars) Object.assign(out, { cars, field, title });
+    return out;
   }
 
   function conditionsLabel(c, defaults) {
@@ -124,7 +163,7 @@
     const S = EI.conceptSim && EI.conceptSim.simulateLap ? EI.conceptSim : (typeof require === "function" ? require("../sim/index.js") : null);
     if (!S || !design || !bench) return { ok: false, errors: ["concept race: load concept/sim/*.js, design.js, physical.js and bench.js first"] };
     const ref = opts.ref || "redbull", R = REF_NAMES[ref] || REF_NAMES.redbull;
-    const d = opts.design || design.baseline(ref === "generic" ? undefined : { team: ref });
+    const d = (Array.isArray(opts.cars) && opts.cars.length ? opts.cars[0].design : opts.design) || design.baseline(ref === "generic" ? undefined : { team: ref });
     const v = design.validate(d); if (!v.ok) return { ok: false, errors: v.errors };
     const cond = opts.conditions && Object.keys(opts.conditions).length ? opts.conditions : null;
     const b = bench.bench(d, { circuit: TRACK, sim: "physics", objective: "quali", conditions: cond || undefined });
@@ -144,6 +183,20 @@
       const tt = telemetryTable(opts.telemetry), lap = opts.telemetry.lap || {};
       if (Math.abs(tt.L - track.L) > 1) errors.push("telemetry lap length " + tt.L + " m differs from the line's " + track.L + " m");
       cars.push(Object.assign({ id: "pole", name: "ANT · 2026 pole (real)", short: "ANT POLE", team: "mercedes", num: 12, ghost: true, source: POLE_SOURCE, lap_s: lap.lap_time_s, sectors_s: lap.sector_s, speed_trap_kmh: lap.speed_trap_kmh, time_check_s: Math.round((tt.t[tt.t.length - 1] - lap.lap_time_s) * 1000) / 1000 }, tt));
+    }
+    // several concept cars (?cars=): the first is the "concept" car above (named as given); every other one is simulated here the same
+    // way and rides as a ghost with its own name / colour. An illegal or invalid one is reported and left out (never given a time).
+    const list = Array.isArray(opts.cars) ? opts.cars : null;
+    if (list) {
+      Object.assign(cars[0], { name: list[0].name, short: list[0].short, code: list[0].code, color: list[0].color, entrant: true, seed: list[0].seed, note: list[0].note });
+      for (const x of list.slice(1)) {
+        const vx = design.validate(x.design); if (!vx.ok) { errors.push(x.code + ": " + vx.errors.join("; ")); continue; }
+        const bx = bench.bench(x.design, { circuit: TRACK, sim: "physics", objective: "quali", conditions: cond || undefined });
+        if (!bx.legal) { errors.push(x.code + ": illegal design, no lap time (" + (bx.violations || []).map(v => v.id).join(", ") + ")"); continue; }
+        const rx = run(bx.physical);
+        if (Math.abs(rx.lap_s - bx.circuits[TRACK].lap_s) > 1e-9) errors.push(x.code + ": the traced lap " + rx.lap_s + " differs from the bench's " + bx.circuits[TRACK].lap_s);
+        cars.push(Object.assign({ id: x.id, name: x.name, short: x.short, code: x.code, color: x.color, team: x.design.team === "redbull" ? "redbull" : "lumi", num: 26, ghost: true, entrant: true, seed: x.seed, note: x.note, source: "physics lap sim", lap_s: rx.lap_s, sectors_s: rx.sectors_s, vmax_kmh: rx.vmax_kmh, speed_trap_kmh: rx.speed_trap_kmh, energy: rx.energy, design: slimDesign(x.design) }, simTable(rx, track)));
+      }
     }
     for (const c of cars) c.sector_line_times_s = track.timing.sectors.map(x => Math.round(tAtS(c, x) * 1000) / 1000);
     const conditions_label = conditionsLabel(cond, S.DEFAULT_CONDITIONS);
@@ -188,11 +241,14 @@
   const BOARD_RANK = { concept: 0, base: 1, real: 2 };
   // the demo leaderboard's order (concept/demo/demo.js renderBoard): real qualifying times + PURPLE (+ the RB22 baseline when it differs),
   // sorted by time, ties: PURPLE, then the baseline, then a real car. The baseline row carries no position.
+  // best: PURPLE's lap, or (several concept cars) a list [{ code, s }] in the given order (ties keep that order)
   function boardRows(q, best, base) {
     const rows = Object.keys(q || {}).filter(c => typeof q[c] === "number" && isFinite(q[c])).map(code => ({ key: code, code, s: q[code], kind: "real" }));
-    rows.push({ key: "PRPL", code: "PRPL", s: best, kind: "concept" });
-    if (base != null && Math.abs(base - best) > 1e-9) rows.push({ key: "BASE", code: "BASE", s: base, kind: "base" });
-    rows.sort((a, b) => a.s - b.s || BOARD_RANK[a.kind] - BOARD_RANK[b.kind]);
+    const many = Array.isArray(best);
+    if (many) best.forEach((b, i) => rows.push({ key: b.code, code: b.code, s: b.s, kind: "concept", k: i }));
+    else rows.push({ key: "PRPL", code: "PRPL", s: best, kind: "concept" });
+    if (base != null && (many ? true : Math.abs(base - best) > 1e-9)) rows.push({ key: "BASE", code: "BASE", s: base, kind: "base" });
+    rows.sort((a, b) => a.s - b.s || BOARD_RANK[a.kind] - BOARD_RANK[b.kind] || (a.k || 0) - (b.k || 0));
     let pos = 0; for (const r of rows) r.pos = r.kind === "base" ? null : ++pos;
     return rows;
   }
@@ -204,12 +260,11 @@
   }
   // qualiPayload(replayPayload, { lap_s, racepace: { q, pole }, season: { teams, drivers }, telemetry: { CODE: lapJson }, deleted: [{code, lap_time_s}] })
   //   -> { ok, errors, notes, payload, order }  (payload.cars[0] = PURPLE, then the RB22 ghost when it differs, then every real driver)
+  //   several concept cars (P.cars with entrant: true, from buildPayload({ cars })): qualiPayloadMany, o.cars / o.field / o.title
   function qualiPayload(P, o) {
     o = o || {};
-    const errors = [], notes = [], q = (o.racepace && o.racepace.q) || {}, tel = o.telemetry || {}, L = P.line.L;
-    const teams = (o.season && o.season.teams) || [], drivers = (o.season && o.season.drivers) || [];
-    const teamOf = code => teams.find(t => (t.drivers || []).includes(code)) || null;
-    const driverOf = code => drivers.find(d => d && d.code === code) || null;
+    if (P.cars.some(c => c.entrant)) return qualiPayloadMany(P, o);
+    const errors = [], notes = [], q = (o.racepace && o.racepace.q) || {}, L = P.line.L;
     const src = P.cars.find(c => c.id === "concept"), ref = P.cars.find(c => c.id === "ref");
     if (!src) return { ok: false, errors: ["qualifying lap: no PURPLE lap in the payload"] };
     const pick = (c, keys) => { const x = {}; for (const k of keys) if (c[k] !== undefined) x[k] = c[k]; return x; };
@@ -223,6 +278,60 @@
     const cars = [Object.assign(purple, { id: "concept", kind: "concept", name: "PURPLE · RB22 concept", short: "PURPLE", code: "PRPL", color: "#b26cff", ghost: false, delta: false,
       source: QUALI_SIM + (pscaled ? " · time-scaled to the engine's lap" : ""), lap_s: plap, sectors_s: pscaled ? null : src.sectors_s, time_scaled: pscaled })];
     if (ref && Math.abs(ref.lap_s - plap) > 1e-9) cars.push(Object.assign(pick(ref, CH), { id: "ref", kind: "base", name: "RB22 baseline (sim)", short: "RB22", code: "RB22", color: "#3671c6", ghost: true, delta: true, source: QUALI_SIM, lap_s: ref.lap_s, sectors_s: ref.sectors_s, time_scaled: false }));
+    realCars(q, o, L, cars, errors, notes);
+    const order = boardRows(q, plap, ref ? ref.lap_s : null).map(r => ({ code: r.code === "PRPL" ? "PRPL" : r.code === "BASE" ? "RB22" : r.code, pos: r.pos, s: r.s, kind: r.kind }));
+    for (const c of cars) { const r = order.find(x => x.code === c.code); c.pos = r ? r.pos : null; c.rank = BOARD_RANK[c.kind]; }
+    const payload = Object.assign({}, P, {
+      mode: "quali", label: "Qualifying lap · Silverstone · every car's best lap on one clock",
+      ghost_line: QUALI_GHOST_LINE, foot: QUALI_FOOT, real_label: QUALI_REAL, sim_label_short: QUALI_SIM,
+      car_note: "PURPLE is built from its design parameters (EI.conceptView.buildCar, schematic); the RB22 ghost likewise; real cars are the game's car in team colours, translucent.",
+      order, cars,
+    });
+    return { ok: errors.length === 0, errors, notes, payload, order };
+  }
+  // several concept cars (Model GP): every entrant's car (physics lap sim, ending at its sim lap, or at the lap the URL gives, scaled
+  // and flagged if a re-run differs), the RB22 baseline ghost, and the real pole lap (field "pole", the default) or the whole real field
+  // ("all"). The order is by lap; ties keep the URL's order. Nothing here invents a time.
+  const GP_FOOT = "Model GP: each model's car is the fastest car its engine run found within 150 physics laps (the median seed of its runs) · physics lap sim · Silverstone · model prediction, not a real car's lap. Real pole: OpenF1 2026 (openf1.org, an independent community project, not associated with Formula 1, the FIA or FOM). Ghost laps: " + QUALI_GHOST_LINE + ".";
+  function qualiPayloadMany(P, o) {
+    const errors = [], notes = [], L = P.line.L, rp = o.racepace || {}, poleCode = (rp.pole && rp.pole.code) || "ANT";
+    const qAll = rp.q || {}, q = o.field === "all" ? qAll : (typeof qAll[poleCode] === "number" ? { [poleCode]: qAll[poleCode] } : {});
+    const pick = (c, keys) => { const x = {}; for (const k of keys) if (c[k] !== undefined) x[k] = c[k]; return x; };
+    const CH = ["s", "t", "v", "gear", "rpm", "aero", "ers", "L", "time_method", "design", "energy", "speed_trap_kmh", "vmax_kmh", "num", "team"];
+    const want = {}; for (const c of o.cars || []) if (c && c.code) want[c.code] = c.lap_s;
+    const ents = P.cars.filter(c => c.entrant), ref = P.cars.find(c => c.id === "ref"), cars = [];
+    ents.forEach((src, i) => {
+      let car = pick(src, CH), lap = src.lap_s, scaled = false; const w = want[src.code];
+      if (typeof w === "number" && isFinite(w) && Math.abs(w - src.lap_s) > 0.0005) {
+        car = rescale(car, L, w); lap = w; scaled = true;
+        notes.push(src.code + ": the re-run sim lap " + src.lap_s.toFixed(3) + " s differs from the engine's " + w.toFixed(3) + " s; its trace is time-scaled to the engine's lap");
+      }
+      cars.push(Object.assign(car, { id: src.id, kind: "concept", name: src.name, short: src.short, code: src.code, color: src.color, ghost: i > 0, delta: i > 0, seed: src.seed == null ? null : src.seed, note: src.note || null,
+        source: QUALI_SIM + (src.seed != null ? " · seed " + src.seed : "") + (scaled ? " · time-scaled to the engine's lap" : ""), lap_s: lap, sectors_s: scaled ? null : src.sectors_s, time_scaled: scaled }));
+    });
+    if (ref) cars.push(Object.assign(pick(ref, CH), { id: "ref", kind: "base", name: "RB22 baseline (sim)", short: "RB22", code: "RB22", color: "#3671c6", ghost: true, delta: false, source: QUALI_SIM + " · the start car", lap_s: ref.lap_s, sectors_s: ref.sectors_s, time_scaled: false }));
+    realCars(q, o, L, cars, errors, notes);
+    for (const c of cars) if (c.kind === "real" && c.code === poleCode) c.delta = true;
+    // the first car on the page is the fastest one (it carries the camera and the dash); the rest by lap, then the URL's order
+    const conc = cars.filter(c => c.kind === "concept").map((c, i) => ({ c, i })).sort((a, b) => a.c.lap_s - b.c.lap_s || a.i - b.i).map(x => x.c);
+    conc.forEach((c, i) => { c.ghost = i > 0; });
+    const rest = cars.filter(c => c.kind !== "concept");
+    const all = conc.concat(rest);
+    const order = boardRows(q, conc.map(c => ({ code: c.code, s: c.lap_s })), ref ? ref.lap_s : null).map(r => ({ code: r.code === "BASE" ? "RB22" : r.code, pos: r.pos, s: r.s, kind: r.kind }));
+    for (const c of all) { const r = order.find(x => x.code === c.code); c.pos = r ? r.pos : null; c.rank = BOARD_RANK[c.kind]; }
+    const payload = Object.assign({}, P, {
+      mode: "quali", gp: true, label: (o.title || "Model GP") + " · Silverstone · every model's car on one clock",
+      ghost_line: QUALI_GHOST_LINE, foot: GP_FOOT, real_label: QUALI_REAL, sim_label_short: QUALI_SIM,
+      car_note: "Every model's car is built from its design parameters (EI.conceptView.buildCar, schematic); the RB22 ghost likewise; the real pole car is the game's car in team colours, translucent.",
+      order, cars: all,
+    });
+    return { ok: errors.length === 0, errors, notes, payload, order };
+  }
+  // the real cars of the qualifying lap: their own OpenF1 lap (rescaled onto the line and the classified time), or the pole lap's profile
+  function realCars(q, o, L, cars, errors, notes) {
+    const tel = o.telemetry || {}, teams = (o.season && o.season.teams) || [], drivers = (o.season && o.season.drivers) || [];
+    const teamOf = code => teams.find(t => (t.drivers || []).includes(code)) || null;
+    const driverOf = code => drivers.find(d => d && d.code === code) || null;
     const poleCode = (o.racepace && o.racepace.pole && o.racepace.pole.code) || "ANT", poleJ = tel[poleCode];
     const deleted = {}; for (const x of o.deleted || []) deleted[x.code + ":" + x.lap_time_s] = true;
     for (const code of Object.keys(q)) {
@@ -244,18 +353,9 @@
       cars.push(Object.assign(tab, { id: code.toLowerCase(), kind: "real", code, short: code, name: (dr && (dr.last || dr.name)) || code, team: tm ? tm.id : null, color: (tm && tm.colors && tm.colors.primary) || "#8a8a94",
         num: (dr && (dr.number || dr.num)) || null, ghost: true, delta: code === poleCode, source, lap_s: lap, sectors_s: sectors, time_scaled: scaled, scale_note: why }));
     }
-    const order = boardRows(q, plap, ref ? ref.lap_s : null).map(r => ({ code: r.code === "PRPL" ? "PRPL" : r.code === "BASE" ? "RB22" : r.code, pos: r.pos, s: r.s, kind: r.kind }));
-    for (const c of cars) { const r = order.find(x => x.code === c.code); c.pos = r ? r.pos : null; c.rank = BOARD_RANK[c.kind]; }
-    const payload = Object.assign({}, P, {
-      mode: "quali", label: "Qualifying lap · Silverstone · every car's best lap on one clock",
-      ghost_line: QUALI_GHOST_LINE, foot: QUALI_FOOT, real_label: QUALI_REAL, sim_label_short: QUALI_SIM,
-      car_note: "PURPLE is built from its design parameters (EI.conceptView.buildCar, schematic); the RB22 ghost likewise; real cars are the game's car in team colours, translucent.",
-      order, cars,
-    });
-    return { ok: errors.length === 0, errors, notes, payload, order };
   }
 
-  const api = { TRACK, POLE_SOURCE, QUALI_REAL, QUALI_SIM, QUALI_GHOST_LINE, QUALI_FOOT, qualiFile, boardRows, rescale, qualiPayload, CINEMATIC_LABEL, TELEMETRY_PATH, REF_NAMES, encodeParam, decodeParam, slimDesign, url, parseQuery, conditionsLabel, ersStates, ersNote, simTable, telemetryTable, tAtS, buildPayload, cinematic };
+  const api = { TRACK, POLE_SOURCE, QUALI_REAL, QUALI_SIM, QUALI_GHOST_LINE, QUALI_FOOT, GP_FOOT, MAX_CARS, qualiFile, boardRows, rescale, qualiPayload, CINEMATIC_LABEL, TELEMETRY_PATH, REF_NAMES, encodeParam, decodeParam, slimDesign, url, carsUrl, parseCars, parseQuery, conditionsLabel, ersStates, ersNote, simTable, telemetryTable, tAtS, buildPayload, cinematic };
   C.race = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();
