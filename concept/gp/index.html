@@ -65,14 +65,49 @@
     <p class="gp-sub" id="gpSub"></p>
     <div class="gp-cta">
       <a class="btn primary gp-race-btn" id="gpRace2" href="#" hidden>Race them on Silverstone <span aria-hidden="true">→</span></a>
+      <button class="btn gp-live-btn" id="gpLiveOpen" type="button" aria-controls="gpLive" aria-expanded="false"><span class="gp-live-dot" aria-hidden="true"></span>Run it live</button>
       <a class="btn gp-watch" id="gpWatch" href="#gpReplay">Watch the replay <span aria-hidden="true">↓</span></a>
     </div>
+    <a class="gp-race-alt" id="gpRaceModels" href="#" hidden>Race them: models only + pole <span aria-hidden="true">→</span></a>
     <p class="gp-race-note" id="gpRaceNote"></p>
   </div>
   <div class="gp-board-wrap">
     <table class="gp-board" id="gpBoard" aria-label="final standings"></table>
     <p class="gp-board-src">Every lap: <b>physics lap sim · Silverstone · model prediction</b>. Real pole: <b>OpenF1 2026</b>, a real lap.</p>
   </div>
+</section>
+
+<!-- LIVE mode (concept/gp/live.js): one live engine run per model at once through the site's API (never Mubit from the browser) -->
+<section class="gp-live" id="gpLive" aria-labelledby="gpLiveH" hidden>
+  <div class="gp-live-head">
+    <div class="gp-live-t">
+      <p class="gp-kicker" id="gpLiveKicker">Live · real Mubit calls · untrained</p>
+      <h2 class="gp-live-h" id="gpLiveH">Run it live: who builds the fastest car?</h2>
+      <p class="gp-sub" id="gpLiveSub"></p>
+    </div>
+    <div class="gp-live-ctl">
+      <fieldset class="gp-pick" id="gpPick"><legend>Entrants</legend></fieldset>
+      <div class="gp-live-go">
+        <button class="btn primary" id="gpLiveStart" type="button" disabled>Start the live race</button>
+        <button class="btn danger" id="gpLiveStop" type="button" hidden>Stop all</button>
+        <span class="gp-live-status" id="gpLiveStatus" role="status"></span>
+      </div>
+    </div>
+  </div>
+  <div class="gp-live-top" id="gpLiveTop" hidden>
+    <div class="gp-live-res">
+      <h3 class="gp-live-sh" id="gpLiveStandH">Live standings</h3>
+      <table class="gp-board" id="gpLiveBoard" aria-label="live standings"></table>
+      <p class="gp-board-src">Every lap: <b>physics lap sim · Silverstone · model prediction</b>. Real pole: <b>Antonelli · OpenF1 2026</b>, a real lap.</p>
+    </div>
+    <div class="gp-live-end" id="gpLiveEnd" hidden>
+      <p class="gp-headline" id="gpLiveHeadline"></p>
+      <p class="gp-sub" id="gpLiveEndSub"></p>
+      <div class="gp-cta"><a class="btn primary gp-race-btn" id="gpLiveRace" href="#" hidden>Race them on Silverstone <span aria-hidden="true">→</span></a></div>
+      <p class="gp-race-note" id="gpLiveRaceNote"></p>
+    </div>
+  </div>
+  <div class="gp-live-lanes" id="gpLiveLanes"></div>
 </section>
 
 <div class="gp-replay-h" id="gpReplay">
@@ -118,6 +153,7 @@
 <script src="../race/payload.js"></script>
 <script src="../view/view3d.js" onerror="window.__conceptViewMissing = true"></script>
 <script src="gp.js"></script>
+<script src="live.js"></script>
 <script src="../nav/nav.js"></script>
 </body>
 </html>
