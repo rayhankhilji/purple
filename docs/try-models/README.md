@@ -1,5 +1,7 @@
 # Try models — how to score v1 and v2 by hand (P3.T1)
 
+> Status: the first night's hand-scoring sheet for the research lab task, kept for history. The current product is in [README.md](../../README.md).
+
 One page for Tanuj. The exam's 8 hardest scenarios are in `sheet.md` (regenerate: `npm run exam:sheet`). You paste each scenario into the Mubit console's **Try models**, write down what the adapter answers, and run the scorer. Nothing here trains the task: Try models calls are marked *not stored · trains nothing* and never appear in **Requests**.
 
 ## What is verified against docs.mubit.ai (read 2026-10-24, `/guides/first-adapter` §4 and "What each test result means", `/guides/model-ids`)

@@ -1,5 +1,7 @@
 # PURPLE — Architecture
 
+> Status: describes the first-night research lab (`/lab/`, no longer linked from the site); the current product is in [README.md](../README.md). The §9 list of game files the project may touch still applies.
+
 Version 1.0 · 2026-10-23 · Single source of truth for data shapes, routes, the aero map, the Mubit contract and the game changes. If another doc disagrees with this one, this one wins.
 
 ## 1. Overview

@@ -1,5 +1,7 @@
 # CONCEPT campaign: can a legal 2026 car with the same engine beat the real Silverstone qualifying laps?
 
+> Status: the 24 October optimiser campaign, with no language model in the loop, kept for reference. The Mubit-directed results are in [README.md](../../README.md).
+
 Version 1 · 2026-10-24 · branch `claude/beat-pole` · code `concept/campaign/`, guards in `concept/bench.js` and `concept/optimize.js`.
 Every lap number below is labelled with its source. The source of every final number is **"physics lap sim · quasi-steady-state
 point mass · Silverstone OSM centreline · calibrated to 2026 British GP qualifying"** (`concept/sim/`, docs/concept/SIM.md), run in

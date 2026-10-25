@@ -1,5 +1,7 @@
 # PURPLE — Guardrails and Definition of Done
 
+> Status: §2 to §5 (Mubit task integrity, security, cost, honesty) still apply to the current product; §1 and §8 were the first night's plan. The current product is in [README.md](../README.md).
+
 Version 1.0 · 2026-10-23 · Short, because a hackathon has exactly three ways to lose: break the Mubit task, overclaim, or miss the upload.
 
 ## 1. Definition of done
@@ -18,7 +20,7 @@ A task is done when its verify step in `TESTING_GUIDE.md` passes and `TASK_LOG.m
 | G-MUBIT-02 | Every non-decision call (smoke, exam, debugging) carries `x-middleware-record: metadata` | `calls.jsonl` rows with `kind != plan` have `trained: false` |
 | G-MUBIT-03 | One session ID per experiment (`metadata.user_id = exp-<ulid>`) | ledger `session_id` unique |
 | G-MUBIT-04 | Scenario ≤ 350 tokens; history ≤ 3 items | schema test |
-| G-MUBIT-05 | Concurrency ≤ 100 across processes (owner decisions 2026-10-24: 2 → 10 at 17:30Z → 100 at 19:50Z), ≤ 8 per process (`server/mubit.js` SLOTS; 2 → 8 on 2026-10-24 for the engine's parallel rounds: ≤ 8 calls in flight per engine run, one engine run per process); honour `retry-after`; retry once | collect script code review; `test/server.test.js` audit 7 |
+| G-MUBIT-05 | Concurrency ≤ 100 across processes (owner decisions 2026-10-24: 2 → 10 at 17:30Z → 100 at 19:50Z), ≤ 8 per process (`server/mubit.js` SLOTS; 2 → 8 on 2026-10-24 for the engine's parallel rounds: ≤ 8 calls in flight per engine run, one engine run per process; 40 per Vercel instance on 2026-10-25 for the live Model GP, up to 8 engine runs per instance, owner: no cap); honour `retry-after`; retry once | collect script code review; `test/server.test.js` audit 7 |
 | G-MUBIT-06 | Mubit is called only from `server/mubit.js` | `grep -r "api.mubit.ai" --include=*.js .` returns one file |
 
 ## 3. Security

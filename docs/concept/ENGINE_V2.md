@@ -1,5 +1,7 @@
 # PURPLE · ENGINE v2 — the autonomous engineer
 
+> Status (25 October): engine v2 has since run live through Mubit, and the homepage replay is one of those runs (`docs/concept/loop-runs/trained-corrections-seed12`). The "no live Mubit call" line below is from the first build. The model switch and the Model GP are in [README.md](../../README.md).
+
 Version 1 · 2026-10-24 · branch `claude/engine-v2` · status: **built, tested with a mocked LLM (`test/engineer.test.js`, 8 tests),
 mock runs measured; no live Mubit call has been made by engine v2 yet** (no key in the build environment). The public site
 therefore replays the two recorded live engine-v1 hybrid runs until a live v2 run is recorded (§6).

@@ -29,7 +29,7 @@ test("journey nav: the same steps, in story order, on every page", () => {
   const first = norm(navOf(read(PAGES[0][0])));
   for (const [file] of PAGES.slice(1)) assert.equal(norm(navOf(read(file))), first, file + ": same markup as the lab's");
   const hrefs = [...first.matchAll(/href="([^"]+)"/g)].map(m => m[1]);
-  assert.deepEqual(hrefs, ["../lab/", "../gp/", "../compare/", "../race/?mode=quali", "../../lab/"]);
+  assert.deepEqual(hrefs, ["../lab/", "../gp/", "../compare/", "../race/?mode=quali"]);
   const labels = [...first.matchAll(/<span class="pnav-l">([^<]+)<\/span>/g)].map(m => m[1]);
   assert.deepEqual(labels, ["Mubit engineer", "Which AI is best?", "vs no AI", "Race &amp; drive"]);
   assert.match(first, /<span class="pnav-brand">PURPLE<\/span>/, "the wordmark stays at the left");
