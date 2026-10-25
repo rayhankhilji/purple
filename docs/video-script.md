@@ -24,9 +24,9 @@ The highlight is the exam: the base model against the same model with our harnes
 | 0:43 | Open the model selector next to Go live: Claude Haiku (default), Claude Sonnet, Claude Opus, ChatGPT, No AI. Pick ChatGPT, press Go live, wait for the first card | "It's not hardcoded to Claude. Every call goes through Mubit, so pick ChatGPT and press Go live: same prompt, same physics." |
 | 0:55 | Exam tab: the table, Haiku row highlighted | "The highlight: the same model with and without our harness, on 30 held-out problems. Haiku alone: 9 of 30 legal and faster. With corrections: 10. With a shared memory of approved decisions: 23. Random changes: 3." |
 | 1:10 | Mubit console: the designer task, its examples, the model versions | "Mubit's trained model isn't here yet: its first try scored 5 of 19. We've sent 27,169 approved examples; when Mubit trains, the same exam runs on it in one command." |
-| 1:22 | Step 2, Which AI is best? Press Run it live, then Start the live race: five lanes start | "Which AI is best? Five live runs at once: Haiku, Sonnet, Opus, ChatGPT and no AI, 100 ideas each, on the same harness." |
+| 1:22 | Step 2, Which AI is best? The page opens on the Live race tab: press Start the race; five lanes start | "Which AI is best? Five live runs at once: Haiku, Sonnet, Opus, ChatGPT and no AI, 100 ideas each, on the same harness." |
 | 1:32 | Cut to the final standings (or the recorded race lower on the page) | "The order changes run to run, and no AI is close. The point: Mubit makes the model swappable, and every model is measured the same way." |
-| 1:44 | Race them (models only + pole): the 3D qualifying lap | "Then their best cars race Antonelli's real pole lap." |
+| 1:44 | When the race ends, press Race them on Silverstone: the model cars and Antonelli on one 3D qualifying lap | "Then their best cars race Antonelli's real pole lap." |
 | 1:52 | Close card: purple-wine.vercel.app | "PURPLE: physics decides what Mubit learns. The track runs in our older game; the rest was built this weekend." |
 | 2:00 | End | |
 
