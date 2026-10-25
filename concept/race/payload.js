@@ -15,7 +15,7 @@
   const TELEMETRY_PATH = "concept/data/telemetry/silverstone-2026-q-ant.json";   // repo-relative
   const REF_NAMES = { redbull: { name: "RB22 · Red Bull baseline", short: "RB22", team: "redbull", num: 6 }, generic: { name: "Generic 2026 baseline", short: "BASE", team: "williams", num: 98 } };
 
-  // ---- URL contract: /concept/race/?design=<base64url JSON Design>&ref=redbull[&conditions=<base64url JSON>][&wind_ms=3&wind_from_deg=105][&mode=replay|quali|race|grid][&lap=87.700][&rate=1]
+  // ---- URL contract: /concept/race/?design=<base64url JSON Design>&ref=redbull[&conditions=<base64url JSON>][&wind_ms=3&wind_from_deg=105][&mode=replay|quali|race|grid|drive|racegrid][&lap=87.700][&rate=1]
   function b64encode(str) {
     if (typeof Buffer !== "undefined" && typeof btoa !== "function") return Buffer.from(str, "utf8").toString("base64");
     return btoa(unescape(encodeURIComponent(str)));
@@ -56,7 +56,7 @@
       if (!isFinite(v)) { errors.push("?" + k + " is not a number"); continue; }
       conditions = Object.assign({}, conditions || {}, { [k]: v });
     }
-    const mode = ["replay", "quali", "race", "grid"].includes(q.get("mode")) ? q.get("mode") : "replay";
+    const mode = ["replay", "quali", "race", "grid", "drive", "racegrid"].includes(q.get("mode")) ? q.get("mode") : "replay";
     const rate = Math.min(32, Math.max(0.25, parseFloat(q.get("rate")) || 1));
     let lap_s = null;
     if (q.get("lap") != null) { const v = parseFloat(q.get("lap")); if (isFinite(v) && v > 0) lap_s = v; else errors.push("?lap is not a lap time"); }

@@ -96,3 +96,22 @@ footer.honest { flex: none; padding: 6px 14px 8px; border-top: 1px solid var(--l
   .sub { flex-basis: 100%; order: 9; white-space: normal; }
 }
 @media (prefers-reduced-motion: reduce) { .progress i { transition: none; } }
+
+/* Drive it yourself / Race the grid: the entry button, the result card over the view, the laps panel */
+.btn.go { border-color: var(--purple); color: var(--text); background: var(--purple-dim); }
+.btn.go:hover { background: #4a2e7a; }
+.stage .ph .btn.go { padding: 3px 9px; font-size: 11.5px; flex: none; }
+a.btn { text-decoration: none; display: inline-block; color: var(--text); }
+.card { position: absolute; top: 48px; right: 12px; width: min(380px, calc(100% - 24px)); background: rgba(14, 14, 18, .94); border: 1px solid var(--purple); border-radius: var(--r); padding: 10px 12px 12px; box-shadow: 0 8px 30px rgba(0, 0, 0, .5); z-index: 5; }
+.card-h { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.card .x { border: 0; background: none; color: var(--muted); font: 600 18px/1 var(--sans); padding: 0 2px; }
+.card .x:hover { color: var(--text); }
+.card-line { font: 600 14px/1.45 var(--mono); margin-bottom: 8px; }
+.card-line .you { color: var(--purple); }
+.card .kv .v small { color: var(--muted); font: 400 10.5px/1.2 var(--sans); }
+.card-b { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.keys { font: 400 10.5px/1.45 var(--sans); color: var(--muted); margin-top: 6px; border-top: 1px solid var(--line); padding-top: 6px; }
+.lapsList { display: grid; grid-template-columns: 34px 1fr auto auto; gap: 1px 8px; font-size: 12px; margin-top: 6px; }
+.lapsList .del { color: var(--muted); text-decoration: line-through; }
+.lapsList .pb { color: var(--purple); padding: 0; }
+@media (max-width: 1000px) { .card { top: 44px; } }
