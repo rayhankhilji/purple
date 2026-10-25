@@ -1,0 +1,82 @@
+{
+ "body": {
+  "mode": "engineer",
+  "llm": "live",
+  "model": "no-ai",
+  "memory": true,
+  "ideas": 5,
+  "rounds": 20,
+  "stop_after": 20,
+  "team": "redbull",
+  "seed": 4242,
+  "variants": 600,
+  "confirm_k": 8,
+  "explore": 2
+ },
+ "response": {
+  "ok": true,
+  "data": {
+   "run_id": "eng-01m5rw1bqdtt65x8c3fc6hs5j5",
+   "mode": "engineer",
+   "llm": "live",
+   "trained": false,
+   "record_good": false,
+   "record_rule": null,
+   "status": "running",
+   "stop_reason": null,
+   "started_at": "2026-10-25T06:30:15.535Z",
+   "finished_at": null,
+   "error": null,
+   "dir": "/tmp/purple/data/concept-engine/eng-01m5rw1bqdtt65x8c3fc6hs5j5",
+   "opts": {
+    "llm": "live",
+    "trained": false,
+    "record_good": false,
+    "record_rule": null,
+    "ideas": 5,
+    "rounds": 20,
+    "time_box_s": 260,
+    "team": "redbull",
+    "seed": 4242,
+    "max_calls": 100,
+    "max_decisions": 100,
+    "patience": 3,
+    "stop_after": 20,
+    "variants": 600,
+    "confirm": 8,
+    "explore": 2,
+    "target_lap_s": null,
+    "pace_ms": 0,
+    "workers": 1,
+    "resume_from": null,
+    "memory": true,
+    "entrant": {
+     "id": "no-ai",
+     "name": "No AI (random directions)",
+     "car": "No AI",
+     "code": "NOAI",
+     "color": "#8a8a94",
+     "provider": "none",
+     "model": null,
+     "control": true,
+     "default": false,
+     "trained_allowed": false
+    }
+   },
+   "stream": "/api/concept/engine/run/eng-01m5rw1bqdtt65x8c3fc6hs5j5/stream?t=eyJraW5kIjoiZW5naW5lIiwiaWQiOiJlbmctMDFtNXJ3MWJxZHR0NjV4OGMzZmM2aHM1ajUiLCJiIjp7Im1vZGUiOiJlbmdpbmVlciIsImxsbSI6ImxpdmUiLCJtb2RlbCI6Im5vLWFpIiwibWVtb3J5Ijp0cnVlLCJpZGVhcyI6NSwicm91bmRzIjoyMCwic3RvcF9hZnRlciI6MjAsInRlYW0iOiJyZWRidWxsIiwic2VlZCI6NDI0MiwidmFyaWFudHMiOjYwMCwiY29uZmlybV9rIjo4LCJleHBsb3JlIjoyLCJ3b3JrZXJzIjoxLCJ0aW1lX2JveF9zIjoyNjB9LCJsaXZlIjp0cnVlLCJleHAiOjE3OTI5MDk5MzU1NDB9.TC7jYMzjepoWGT-xr9jihSkzpPVIxEnwOjEF4R6xjEM"
+  },
+  "deploy": {
+   "host": "vercel",
+   "storage": "ephemeral: this server instance's /tmp. The research ledger starts from docs/ledger-snapshot/2026-10-24_02-37-26Z-0530-windcap-exam (a read-only copy in the deploy); everything written here vanishes when Vercel recycles the instance, and other instances do not see it. The real data/ is never touched.",
+   "mubit": "live",
+   "live": {
+    "available": true,
+    "off_reason": null,
+    "unlocked": true,
+    "engine_open": true,
+    "unlock": "/api/unlock"
+   },
+   "note": "engine v2 on one vCPU, time-boxed to 270 s on Vercel: it stops cleanly between rounds (or decisions) before the time limit; the final event carries a resumable state"
+  }
+ }
+}
