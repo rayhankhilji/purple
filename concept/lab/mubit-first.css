@@ -322,3 +322,8 @@ body.clab-page .honest:focus-visible { white-space: normal; }
   body.clab-page .honest { white-space: normal; }
   body.clab-page .mu-chg, body.clab-page .mu-res, body.clab-page .mu-meta { white-space: normal; }
 }
+/* a steady car view (owner, 25 Oct: the car jumped and changed size): #view3d takes what the hero leaves, so the rows under it keep
+   one height whatever they hold. The last kept change: two lines at most (the full list is on the feed card); the best-lap strip:
+   its tallest content */
+body.clab-page .hero > .hero-chg { height: 48px; overflow: hidden; align-content: flex-start; }
+body.clab-page .hero-bl { min-height: 132px; box-sizing: border-box; }
