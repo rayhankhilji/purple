@@ -388,7 +388,7 @@ function createApp(opts) {
   });
   // ---- the concept designer's closed loop with Mubit (server/concept.js, docs/concept/LOOP.md); mock runs never write to data/
   const concept = require("./concept.js").mount(app, { ok, fail, body, ApiError, mock, dataDir: resolved.dir, mockDir: opts.dataDir ? resolved.dir : path.join(headless.ROOT, "data-mock"), mubit: opts.conceptMubit, log });
-  const engine = require("./campaign-route.js").mount(app, { ok, body, ApiError, mock, dataDir: resolved.dir, mubit: opts.conceptMubit, log, root: headless.ROOT, workers: opts.engineWorkers, tmpDir: opts.engineTmpDir });   // the engine dashboard (docs/concept/DASHBOARD.md)
+  const engine = require("./campaign-route.js").mount(app, { ok, body, ApiError, mock, dataDir: resolved.dir, mubit: opts.conceptMubit, log, root: headless.ROOT, workers: opts.engineWorkers, tmpDir: opts.engineTmpDir, maxRuns: opts.engineMaxRuns });   // the engine dashboard (docs/concept/DASHBOARD.md)
   // the designer exam's grader (server/exam-route.js, the concept lab's Exam view): physics-sim grading of pasted console replies, no Mubit call
   const examRoute = require("./exam-route.js").mount(app, { ok, ApiError, root: headless.ROOT, answersDir: opts.examAnswersDir, writable: opts.examWritable, workers: opts.examWorkers, poolFactory: opts.examPoolFactory, log });
   return { app, emit, db, state, setState, runPlan, collect, dryCollect, runExam, statusView, EI, concept, engine, exam: examRoute };

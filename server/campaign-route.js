@@ -105,6 +105,24 @@ function trainedBudget(root, dataDirs) {
 
 // ---- shared helpers
 const teamOf = t => (t === "generic" || t === null ? null : t === undefined ? "redbull" : t);
+// ---------- model switcher (concept/gp/entrants.json, the Model GP's entrants): the frozen designer task with only the model swapped
+// (concept/gp/run.js taskFor), untrained; the default entrant IS the frozen designer task (same model, temperature and max_tokens)
+const ENTRANTS_FILE = path.join(__dirname, "..", "concept", "gp", "entrants.json");
+const DEFAULT_MODEL_ID = "haiku-4-5";
+let entrantCache = null;
+const baselines = () => require("../concept/benchmark/baselines.js");
+function entrantOf(id) {
+  if (id == null || id === "") return null;
+  if (typeof id !== "string") throw new Error("model must be an entrant id from concept/gp/entrants.json");
+  if (!entrantCache) entrantCache = JSON.parse(fs.readFileSync(ENTRANTS_FILE, "utf8")).entrants;
+  const e = entrantCache.find(x => x.id === id);
+  if (!e) throw new Error("model must be one of: " + entrantCache.map(x => x.id).join(", "));
+  const control = e.provider === "none";
+  const isDefault = !control && e.model === designerPrompt.MODEL && e.temperature === designerPrompt.TEMPERATURE && (e.max_tokens || designerPrompt.MAX_TOKENS) === designerPrompt.MAX_TOKENS;
+  const task = control || isDefault ? null : require("../concept/gp/run.js").taskFor(e);
+  const view = { id: e.id, name: e.name, car: e.car || e.name, code: e.code, color: e.color, provider: e.provider, model: e.model, control, default: isDefault, trained_allowed: isDefault };
+  return { id: e.id, control, default: isDefault, task, view };
+}
 function checkTeam(t) { const x = teamOf(t); if (x !== null && !design.TEAMS[x]) throw new Error("team must be \"redbull\" or \"generic\""); return x; }
 function qualiBench() { const { conditions } = run.qualiConditions(); return { circuit: CIRCUIT, sim: "physics", objective: "quali", conditions }; }
 const RP = () => bench.racepace()[CIRCUIT];
@@ -266,7 +284,10 @@ function mount(app, o) {
   const log = o.log || (() => {});
   const timings = o.timings || Timings();
   const runs = new Map();
-  let active = null;
+  // engine runs at once in this process: 1 by default (a laptop's cores); the Vercel layer allows several per instance (Fluid compute
+  // sends concurrent streams to one instance: the live Model GP starts one run per model at once)
+  const activeRuns = new Set(), MAX_RUNS = Math.max(1, o.maxRuns || 1);
+  const firstActive = () => { for (const r of activeRuns) return r; return null; };
   const bad = m => new ApiError("BAD_INPUT", m);
   const int = (b, k, def, [lo, hi]) => { const v = b[k] == null ? def : b[k]; if (!Number.isInteger(v) || v < lo || v > hi) throw bad(k + " must be an integer " + lo + "-" + hi); return v; };
   const budget = () => trainedBudget(root, [o.dataDir, path.join(root, "data")]);
@@ -283,12 +304,12 @@ function mount(app, o) {
       for (const l of r.listeners) l(ev);
       if (keep !== false) try { fs.appendFileSync(path.join(d, "events.jsonl"), JSON.stringify(ev) + "\n"); } catch (e) { /* the run goes on */ }
     };
-    runs.set(id, r); active = r;
+    runs.set(id, r); activeRuns.add(r);
     return r;
   }
   function finish(r, p) {
     return p.then(() => { if (r.status === "running") r.status = r.stopRequested ? "stopped" : "done"; }, e => { r.status = "error"; r.error = String(e && e.message || e); r.push("error", { error: r.error }); log("concept engine " + r.id + " error " + r.error); })
-      .finally(() => { r.finished_at = now(); if (active === r) active = null; try { fs.writeFileSync(path.join(r.dir, "run.json"), JSON.stringify(Object.assign(view(r), { final: r.final || null }), null, 2) + "\n"); } catch (e) { /* fine */ } r.push("end", { status: r.status, stop_reason: r.stop_reason || null }, false); for (const l of r.listeners) l(null); });
+      .finally(() => { r.finished_at = now(); activeRuns.delete(r); try { fs.writeFileSync(path.join(r.dir, "run.json"), JSON.stringify(Object.assign(view(r), { final: r.final || null }), null, 2) + "\n"); } catch (e) { /* fine */ } r.push("end", { status: r.status, stop_reason: r.stop_reason || null }, false); for (const l of r.listeners) l(null); });
   }
   // laps per second over the last ~3 s of the pool's finished laps
   function rateOf(r, pool) {
@@ -456,6 +477,13 @@ function mount(app, o) {
     // idea exactly as written was legal and faster (the harvest's rule)
     const trained = b.trained === true, record_good = !!b.record_good, record_rule = record_good ? (b.record_good === true ? "kept" : b.record_good) : null, team = checkTeam(b.team);
     if (record_good && trained) throw bad("record_good and trained exclude each other: with record_good every designer call is untrained and only physics-approved decisions are re-sent as trained calls");
+    // model switcher: model = an entrant id of concept/gp/entrants.json (the Model GP's list). The default designer model keeps the
+    // frozen task (and its training rules); every other entrant gets the same frozen prompt and scenario with only the model swapped,
+    // always untrained (x-middleware-record: metadata). "no-ai" makes no Mubit call: each decision is the engine's own random direction.
+    let entrant; try { entrant = entrantOf(b.model); } catch (e) { throw bad(e.message); }
+    if (entrant && !entrant.default && (trained || record_good)) throw bad("trained and record_good are only for the default designer model (" + DEFAULT_MODEL_ID + "): " + entrant.id + " runs untrained");
+    if (b.memory !== undefined && typeof b.memory !== "boolean") throw bad("memory must be a boolean");
+    const memory = b.memory === true;
     // parallel rounds (docs/concept/ENGINE_V2.md §9): ideas K per round (1 = one decision at a time), rounds R -> max_calls K × R
     const ideas = int(b, "ideas", 1, [1, engineer.MAX_IDEAS]), rounds = b.rounds == null ? null : int(b, "rounds", 10, LIMITS.rounds);
     const max_calls = int(b, "max_calls", rounds != null ? ideas * rounds : trained || record_good ? 10 : mode === "live" ? 20 : 40, LIMITS.calls);
@@ -465,6 +493,7 @@ function mount(app, o) {
       patience: int(b, "patience", 3, [1, 10]), stop_after: int(b, "stop_after", 15, LIMITS.patience), variants: int(b, "variants", 3000, LIMITS.variants), confirm: int(b, "confirm_k", 24, LIMITS.confirm),
       explore: int(b, "explore", 4, [0, 16]), target_lap_s: b.target_lap_s == null ? null : +b.target_lap_s, pace_ms: int(b, "pace_ms", 0, LIMITS.pace_ms),
       workers: int(b, "workers", o.workers == null ? Math.min(4, os.cpus().length) : o.workers, [0, 16]), resume_from: b.resume_from || null,
+      memory, entrant: entrant ? entrant.view : null,
     };
     if (opts.target_lap_s != null && !(isFinite(opts.target_lap_s) && opts.target_lap_s > 60 && opts.target_lap_s < 120)) throw bad("target_lap_s must be a lap time in s (60-120) or null");
     if (mode === "live" && o.mock) throw bad("live mode is off: this server runs with MUBIT_MOCK=1 (no Mubit calls). Use llm \"mock\".");
@@ -496,7 +525,9 @@ function mount(app, o) {
     const calls = { n: 0, trained_examples: 0 };
     const write = (f, row) => { try { fs.appendFileSync(path.join(r.dir, f), JSON.stringify(row) + "\n"); } catch (e) { /* fine */ } };
     fs.writeFileSync(path.join(r.dir, "calls.jsonl"), "");
-    const caller0 = mode === "mock" ? loop.mockCaller(opts.seed + (resume ? resume.decisions.length : 0)) : conceptRoutes.designerLlm(o.mubit, designerPrompt);   // Mubit only through server/mubit.js
+    const task = entrant && !entrant.default ? entrant.task : designerPrompt;   // null for the no-AI control
+    const caller0 = entrant && entrant.control ? baselines().noAiLlm()
+      : mode === "mock" ? loop.mockCaller(opts.seed + (resume ? resume.decisions.length : 0)) : conceptRoutes.designerLlm(o.mubit, task);   // Mubit only through server/mubit.js
     // parallel rounds: every call of this run (the K designer calls of a round and the trained re-sends) shares RUN_SLOTS slots, FIFO
     // (≤ 8 in flight per run; server/mubit.js also caps the process). One idea at a time keeps the old rule: one call in flight.
     const caller = ideas > 1 ? withSlots(RUN_SLOTS, caller0) : caller0;
@@ -526,7 +557,7 @@ function mount(app, o) {
           ideas, deadline, maxRounds: rounds,
           llm, mock: mode === "mock", trained, team, seed: opts.seed, runId: r.id, maxCalls: (resume ? resume.calls || 0 : 0) + max_calls, maxDecisions: (resume ? resume.decisions.length : 0) + opts.max_decisions, patience: opts.patience, stopAfter: opts.stop_after,
           variants: opts.variants, confirm: opts.confirm, explore: opts.explore, target_lap_s: opts.target_lap_s, pace_ms: opts.pace_ms, pool, screenPool: sp, resume,
-          preview: conceptRoutes.previewer(designerPrompt),
+          preview: task ? conceptRoutes.previewer(task) : undefined, memory: memory || undefined,
           shouldStop: () => (r.stopRequested ? (r.stop_reason = r.stop_reason || "stopped by user") : null),
           onEvent: (type, data) => {
             if (type === "start") { st.baseline.engineer = data.baseline; st.best.engineer = { lap_s: data.baseline.lap_s }; budgetNote(data); }
@@ -567,7 +598,7 @@ function mount(app, o) {
   // ---------- routes
   app.get("/api/concept/engine/info", c => ok(c, {
     mock: !!o.mock, live_available: !o.mock && !!(o.mubit || process.env.MUBIT_API_KEY), cpus: os.cpus().length, workers_default: o.workers == null ? Math.min(4, os.cpus().length) : o.workers,
-    active: active ? view(active) : null, budget: budget(), trained_run_cap: TRAINED_RUN_CAP, limits: LIMITS, prompt_version: designerPrompt.DESIGNER_PROMPT_VERSION, prompt_draft: !!designerPrompt.DRAFT,
+    active: firstActive() ? view(firstActive()) : null, active_runs: activeRuns.size, max_runs: MAX_RUNS, budget: budget(), trained_run_cap: TRAINED_RUN_CAP, limits: LIMITS, prompt_version: designerPrompt.DESIGNER_PROMPT_VERSION, prompt_draft: !!designerPrompt.DRAFT,
     label: SIM_LABEL, real_label: REAL_LABEL, real: { pole: RP().pole, q: RP().q }, stages: STAGES,
   }));
   app.get("/api/concept/engine/budget", c => ok(c, budget()));
@@ -590,7 +621,7 @@ function mount(app, o) {
   });
   app.post("/api/concept/engine/run", async c => {
     const b = await body(c);
-    if (active) throw new ApiError("BAD_INPUT", "an engine run is already running: " + active.id + " (stop it first)", { run_id: active.id });
+    if (activeRuns.size >= MAX_RUNS) { const a = firstActive(); throw new ApiError("BAD_INPUT", MAX_RUNS === 1 ? "an engine run is already running: " + a.id + " (stop it first)" : MAX_RUNS + " engine runs are already running on this server (stop one first)", { run_id: a.id }); }
     const mode = b.mode;
     const r = mode === "speed" ? startSpeed(b) : mode === "auto" ? startAuto(b) : mode === "engineer" ? startEngineer(b) : (() => { throw bad("mode must be \"speed\", \"auto\" or \"engineer\""); })();
     return ok(c, view(r));
@@ -623,7 +654,7 @@ function mount(app, o) {
       } finally { r.listeners.delete(listener); }
     });
   });
-  return { runs, timings, active: () => active, budget, startSpeed, startAuto, startEngineer, garageLap: (team, params) => garageLap(team, params, timings), carSheet, couplingTable };
+  return { runs, timings, active: firstActive, full: () => activeRuns.size >= MAX_RUNS, budget, startSpeed, startAuto, startEngineer, garageLap: (team, params) => garageLap(team, params, timings), carSheet, couplingTable };
 }
 
 module.exports = { mount, trainedBudget, Timings, carSheet, couplingTable, rescore, BUDGET_TOTAL, TRAINED_RUN_CAP, LIMITS, STAGES, RUN_SLOTS, withSlots };
