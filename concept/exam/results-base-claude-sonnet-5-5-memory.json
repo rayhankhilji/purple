@@ -1,0 +1,1338 @@
+{
+ "v": 1,
+ "kind": "purple-designer-exam-results",
+ "column": "base",
+ "label": "base-claude-sonnet-5-5-memory",
+ "what": "B. Sonnet 5.5 (claude-sonnet-5-5) + frozen designer prompt via server/mubit.js, untrained (x-middleware-record: metadata); only the model id swapped; temperature not sent (the model does not accept one: default sampling)",
+ "questions_sha256": "e70bd3b3771d43fa9300e20ea4089d6548dabb871ff1912151f1bde3c2c69947",
+ "questions_variant": "memory",
+ "n": 30,
+ "exam_seed": 2026,
+ "graded_by": "concept/engineer/engine.js one decision from the question's head car (physics lap sim · quasi-steady-state point mass · Silverstone · calibrated to 2026 British GP qualifying); kept = legal && lap < head − 0.1 ms",
+ "meta": {
+  "session_id": "exam-dsg-01m5rgv0847zjkzeep2j755xqq",
+  "mock": false,
+  "trained": false,
+  "model": "claude-sonnet-5-5",
+  "max_tokens": 4000,
+  "temperature": null,
+  "prompt_version": "1",
+  "concurrency": 8,
+  "comparison": true,
+  "model_name": "Sonnet 5.5",
+  "temperature_sent": false,
+  "swapped": [
+   "model",
+   "temperature not sent (the model does not accept a temperature setting)"
+  ],
+  "system_prompt_sha256": "40bd6f55333012e058b53937bfe2b281f0d74d71fc804d97efded96049030956"
+ },
+ "summary": {
+  "N": 30,
+  "parsed": 29,
+  "legal": 29,
+  "direct_kept": 22,
+  "engine_kept": 27,
+  "direct_mean_gain_s": 0.063033,
+  "engine_mean_gain_s": 0.097867,
+  "direct_total_gain_s": 1.891,
+  "engine_total_gain_s": 2.936,
+  "line": "kept 22/30 (direct), 27/30 (engine), mean gain 0.0630 s (direct), 0.0979 s (engine); parsed 29/30, legal as proposed 29/30"
+ },
+ "calls": {
+  "n": 30,
+  "answered": 30,
+  "errors": 0,
+  "error_codes": {},
+  "latency_ms_median": 2203.5,
+  "latency_ms_mean": 2626,
+  "latency_ms_max": 5226,
+  "input_tokens_mean": 2355.9,
+  "output_tokens_mean": 217.1,
+  "stop_reasons": {
+   "end_turn": 30
+  },
+  "served_by": {
+   "provider": 30
+  },
+  "models_returned": {
+   "claude-sonnet-5-5": 30
+  }
+ },
+ "grade_ms": 36566,
+ "grade_ms_per_question": 1219,
+ "total_ms": 49412,
+ "rows": [
+  {
+   "phase": "early",
+   "id": "q01",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.105,
+    "d_lap_s": -0.105,
+    "lap_s": 88.387,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.109,
+    "d_lap_s": -0.109,
+    "lap_s": 88.383,
+    "from": "candidate",
+    "best_change": "sidepods.undercut_mm 100->140; floor.width_mm 1450->1480",
+    "screened": 2508,
+    "physics_laps": 26
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 140
+    }
+   ],
+   "head_lap_s": 88.492,
+   "ms": 6469,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":140}],\"hypothesis\":\"Precedent shows a larger sidepod undercut cleans airflow to the floor and rear, gaining about 0.095 s. It is within the legal range and untested on this car.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710d81cc76219127bff9d6a37871",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 2249,
+   "output_tokens": 120,
+   "latency_ms": 2337,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q02",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.04,
+    "lap_s": 88.274,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.062,
+    "d_lap_s": -0.062,
+    "lap_s": 88.172,
+    "from": "candidate",
+    "best_change": "rear_wing.aoa_deg 18.5->19.5; front_wing.sm_delta_deg 4->5; floor.ride_height_mm 29->28.5; rear_wing.span_mm 1100->1080; rear_wing.chord_mm 385->370",
+    "screened": 2952,
+    "physics_laps": 32
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 18.5,
+     "to": 18
+    },
+    {
+     "part": "front_wing",
+     "param": "sm_delta_deg",
+     "from": 4,
+     "to": 5
+    }
+   ],
+   "head_lap_s": 88.234,
+   "ms": 4989,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"aoa_deg\",\"to\":18},{\"part\":\"front_wing\",\"param\":\"sm_delta_deg\",\"to\":5}],\"hypothesis\":\"Precedents show lower rear wing AoA cuts drag (-0.033 s) and front sm_delta 5 helps (-0.006 s). Both are legal and not at a limit.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":3}}",
+   "mubit_request_id": "mreq_01a1710d81dc7b20836d51e167def1ff",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 2457,
+   "output_tokens": 542,
+   "latency_ms": 5226,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q03",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.048,
+    "lap_s": 87.649,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.001,
+    "lap_s": 87.602,
+    "from": "candidate",
+    "best_change": "rear_wing.endplate_top_mm 870->865",
+    "screened": 2908,
+    "physics_laps": 28
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "chord_mm",
+     "from": 395,
+     "to": 405
+    }
+   ],
+   "head_lap_s": 87.601,
+   "ms": 1434,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"chord_mm\",\"to\":405}],\"hypothesis\":\"Rear chord has room (max 465) and a similar car gained 0.034 s from 395->405. More rear downforce should help the high-load corners.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":3}}",
+   "mubit_request_id": "mreq_01a1710d81d27671be8f1bc99d416425",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 2368,
+   "output_tokens": 215,
+   "latency_ms": 2254,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "early",
+   "id": "q04",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.018,
+    "d_lap_s": -0.018,
+    "lap_s": 88.524,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.05,
+    "d_lap_s": -0.05,
+    "lap_s": 88.492,
+    "from": "candidate",
+    "best_change": "rear_wing.chord_mm 420->405; diffuser.expansion_deg 15.5->16.5; rear_wing.span_mm 1120->1130; rear_wing.endplate_top_mm 850->865; rear_wing.sm_delta_deg 17->19",
+    "screened": 2925,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "chord_mm",
+     "from": 420,
+     "to": 410
+    }
+   ],
+   "head_lap_s": 88.542,
+   "ms": 1283,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"chord_mm\",\"to\":410}],\"hypothesis\":\"Trimming rear wing chord cuts drag on Silverstone's long fast sections; a similar car gained 0.035 s from the same step.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":3}}",
+   "mubit_request_id": "mreq_01a1710d81e870228b327bee5092235c",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 2213,
+   "output_tokens": 110,
+   "latency_ms": 1698,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q05",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.097,
+    "d_lap_s": -0.097,
+    "lap_s": 88.1,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.11,
+    "d_lap_s": -0.11,
+    "lap_s": 88.087,
+    "from": "candidate",
+    "best_change": "sidepods.undercut_mm 100->140; floor.width_mm 1520->1540",
+    "screened": 2481,
+    "physics_laps": 26
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 140
+    }
+   ],
+   "head_lap_s": 88.197,
+   "ms": 1140,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":140}],\"hypothesis\":\"Precedent from similar cars shows undercut 100->140 gained ~0.094 s; it is within the legal range (0-140) and not near a limit, so it should improve floor flow.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710d81e67b108ec5e021bf3c2af3",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 2313,
+   "output_tokens": 123,
+   "latency_ms": 3102,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q06",
+   "parsed": false,
+   "legal": false,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": null,
+    "from": null
+   },
+   "engine": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": null,
+    "from": null
+   },
+   "parse_error": "json: output must start with '{' (prose before JSON)",
+   "ms": 0,
+   "answer": "The strongest lead is the precedent sidepods.undercut_mm 100->140, which gained -0.094 s on a similar car. The sidepods have never been tried on this car, and 140 is the legal maximum for undercut, so the change is legal. It should mainly improve airflow to the rear and floor, which helps the high-speed sectors.\n\n{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":140}],\"hypothesis\":\"Max sidepod undercut (precedent -0.094 s on a similar car) improves floor and rear flow; the sidepods are untried on this car and 140 is within the legal range.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710d81e97fc0a56dc54839e23bd2",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 2465,
+   "output_tokens": 232,
+   "latency_ms": 2617,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "early",
+   "id": "q07",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.099,
+    "d_lap_s": -0.099,
+    "lap_s": 88.428,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.102,
+    "d_lap_s": -0.102,
+    "lap_s": 88.425,
+    "from": "candidate",
+    "best_change": "sidepods.undercut_mm 100->140; floor.width_mm 1470->1500",
+    "screened": 2508,
+    "physics_laps": 26
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 140
+    }
+   ],
+   "head_lap_s": 88.527,
+   "ms": 1000,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":140}],\"hypothesis\":\"Larger sidepod undercut improved airflow to the floor/rear in similar cars (-0.094 s); legal up to 140 and not near a limit.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710d81e47ba1a14410f6eb1136ee",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 2238,
+   "output_tokens": 114,
+   "latency_ms": 2192,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q08",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.151,
+    "d_lap_s": -0.151,
+    "lap_s": 88.116,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.212,
+    "d_lap_s": -0.212,
+    "lap_s": 88.055,
+    "from": "candidate",
+    "best_change": "sidepods.undercut_mm 100->140; survival_cell.front_axle_offset_mm 75->50",
+    "screened": 2973,
+    "physics_laps": 26
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 140
+    },
+    {
+     "part": "survival_cell",
+     "param": "front_axle_offset_mm",
+     "from": 75,
+     "to": 65
+    }
+   ],
+   "head_lap_s": 88.267,
+   "ms": 1303,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":140},{\"part\":\"survival_cell\",\"param\":\"front_axle_offset_mm\",\"to\":65}],\"hypothesis\":\"Sidepod undercut is untested and gave -0.084 s on a similar car; a smaller front axle offset gave -0.027 s. Both are legal and could improve floor flow and balance.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710d81ee7852860328fffd08dd27",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 2465,
+   "output_tokens": 463,
+   "latency_ms": 4306,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q09",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.118,
+    "d_lap_s": -0.118,
+    "lap_s": 87.701,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.118,
+    "d_lap_s": -0.118,
+    "lap_s": 87.701,
+    "from": "proposal",
+    "best_change": "sidepods.undercut_mm 100->140",
+    "screened": 2445,
+    "physics_laps": 24
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 140
+    }
+   ],
+   "head_lap_s": 87.819,
+   "ms": 778,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":140}],\"hypothesis\":\"Sidepods are untried. A similar car gained 0.084 s from undercut 100->140, which should give cleaner floor flow and more downforce, and 140 is within the legal range.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710d882b79a287c6e2e4b82adb96",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 2434,
+   "output_tokens": 223,
+   "latency_ms": 2712,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "early",
+   "id": "q10",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.01,
+    "d_lap_s": -0.01,
+    "lap_s": 88.525,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.064,
+    "d_lap_s": -0.064,
+    "lap_s": 88.471,
+    "from": "candidate",
+    "best_change": "diffuser.expansion_deg 15->16; rear_wing.span_mm 1100->1090; floor.throat_mm 60->62.5; floor.ride_height_mm 35->33.5",
+    "screened": 2976,
+    "physics_laps": 28
+   },
+   "proposal": [
+    {
+     "part": "diffuser",
+     "param": "expansion_deg",
+     "from": 15,
+     "to": 17
+    },
+    {
+     "part": "rear_wing",
+     "param": "span_mm",
+     "from": 1100,
+     "to": 1150
+    }
+   ],
+   "head_lap_s": 88.535,
+   "ms": 992,
+   "answer": "{\"changes\":[{\"part\":\"diffuser\",\"param\":\"expansion_deg\",\"to\":17},{\"part\":\"rear_wing\",\"param\":\"span_mm\",\"to\":1150}],\"hypothesis\":\"Precedents show diffuser expansion 15->17 (-0.028s) and rear wing span 1100->1150 (-0.023s) both legal and faster; combined should add downforce for the corners.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710d89fd74e1bd305e51c198be6f",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 2208,
+   "output_tokens": 152,
+   "latency_ms": 1993,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q11",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.045,
+    "d_lap_s": -0.045,
+    "lap_s": 88.18,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.177,
+    "d_lap_s": -0.177,
+    "lap_s": 88.048,
+    "from": "candidate",
+    "best_change": "floor.width_mm 1450->1540; rear_wing.aoa_deg 20.5->19.5; floor.ride_height_mm 35->32.5; floor.edge 0->1; diffuser.expansion_deg 17->15.5; suspension.front 0->1",
+    "screened": 2745,
+    "physics_laps": 33
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "width_mm",
+     "from": 1450,
+     "to": 1540
+    }
+   ],
+   "head_lap_s": 88.225,
+   "ms": 819,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"width_mm\",\"to\":1540}],\"hypothesis\":\"Wider floor adds underbody downforce; a similar car gained 0.038 s from 1450->1540 and this parameter has never been tried on this car.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710d8a3a7fa28b90dcc7954401b7",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 2302,
+   "output_tokens": 110,
+   "latency_ms": 1484,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q12",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.111,
+    "d_lap_s": -0.111,
+    "lap_s": 87.635,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.111,
+    "d_lap_s": -0.111,
+    "lap_s": 87.635,
+    "from": "proposal",
+    "best_change": "sidepods.undercut_mm 100->140",
+    "screened": 2445,
+    "physics_laps": 24
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 140
+    }
+   ],
+   "head_lap_s": 87.746,
+   "ms": 752,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":140}],\"hypothesis\":\"Sidepods are untested. A similar car gained 0.094 s from a deeper undercut (100->140), which should feed the floor better and add downforce in the fast corners.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710d8a6a7e9184be34f02c3aad9e",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 2464,
+   "output_tokens": 252,
+   "latency_ms": 2766,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "early",
+   "id": "q13",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.097,
+    "d_lap_s": -0.097,
+    "lap_s": 88.56,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.191,
+    "d_lap_s": -0.191,
+    "lap_s": 88.466,
+    "from": "candidate",
+    "best_change": "rear_wing.aoa_deg 20->18.5; diffuser.expansion_deg 15.5->17; rear_wing.chord_mm 420->410",
+    "screened": 2923,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 20,
+     "to": 19
+    }
+   ],
+   "head_lap_s": 88.657,
+   "ms": 1188,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"aoa_deg\",\"to\":19}],\"hypothesis\":\"Precedent from a near-identical car shows a rear wing AoA of 19 cuts drag at Silverstone's fast sectors for -0.095 s; the legal range is wide and no limit is near.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":1}}",
+   "mubit_request_id": "mreq_01a1710d8ba475b3a36f0ece7e646e97",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 2294,
+   "output_tokens": 130,
+   "latency_ms": 1710,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q14",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.114,
+    "lap_s": 88.399,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.18,
+    "d_lap_s": -0.18,
+    "lap_s": 88.105,
+    "from": "candidate",
+    "best_change": "rear_wing.aoa_deg 20->21; front_wing.aoa_deg 27->29; rear_wing.span_mm 1110->1130; rear_wing.elements 2->3; rear_wing.endplate_top_mm 860->875; rear_wing.sm_delta_deg 16->18.5",
+    "screened": 2951,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 20,
+     "to": 19
+    },
+    {
+     "part": "diffuser",
+     "param": "expansion_deg",
+     "from": 16,
+     "to": 17
+    }
+   ],
+   "head_lap_s": 88.285,
+   "ms": 679,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"aoa_deg\",\"to\":19},{\"part\":\"diffuser\",\"param\":\"expansion_deg\",\"to\":17}],\"hypothesis\":\"Less rear wing AoA cuts drag on the straights, which precedents show as the biggest gain. A slightly larger diffuser angle adds a little downforce at low cost.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":3}}",
+   "mubit_request_id": "mreq_01a1710d8d897bc1a33f643d265d5c88",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 2397,
+   "output_tokens": 525,
+   "latency_ms": 4556,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q15",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.004,
+    "d_lap_s": -0.004,
+    "lap_s": 87.643,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.024,
+    "d_lap_s": -0.024,
+    "lap_s": 87.623,
+    "from": "candidate",
+    "best_change": "rear_wing.chord_mm 390->385; gearbox.step 1.156->1.154",
+    "screened": 2972,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "chord_mm",
+     "from": 390,
+     "to": 380
+    },
+    {
+     "part": "gearbox",
+     "param": "step",
+     "from": 1.156,
+     "to": 1.08
+    }
+   ],
+   "head_lap_s": 87.647,
+   "ms": 1171,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"chord_mm\",\"to\":380},{\"part\":\"gearbox\",\"param\":\"step\",\"to\":1.08}],\"hypothesis\":\"A smaller rear wing chord cuts drag (-0.034 s in a similar car). A tighter gear step keeps revs closer to the power peak (-0.019 s in a similar car).\",\"expected\":{\"lap_delta_s\":-1,\"sector\":3}}",
+   "mubit_request_id": "mreq_01a1710d900672b0a3f77ca2945bc7f1",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 2430,
+   "output_tokens": 488,
+   "latency_ms": 4241,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "early",
+   "id": "q16",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.047,
+    "d_lap_s": -0.047,
+    "lap_s": 88.465,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.135,
+    "d_lap_s": -0.135,
+    "lap_s": 88.377,
+    "from": "candidate",
+    "best_change": "floor.ride_height_mm 35->32.5; rear_wing.aoa_deg 19->18; floor.width_mm 1450->1470; floor.edge 0->1; suspension.front 0->1",
+    "screened": 2743,
+    "physics_laps": 32
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "ride_height_mm",
+     "from": 35,
+     "to": 33.5
+    }
+   ],
+   "head_lap_s": 88.512,
+   "ms": 768,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"ride_height_mm\",\"to\":33.5}],\"hypothesis\":\"Lowering ride height to the legal minimum 33.5 mm adds floor downforce; precedent showed -0.062 s on a similar car with no limit violation.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710d91cc74e387e207f58becb856",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 2212,
+   "output_tokens": 118,
+   "latency_ms": 1424,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q17",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.115,
+    "d_lap_s": -0.115,
+    "lap_s": 88.076,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.141,
+    "d_lap_s": -0.141,
+    "lap_s": 88.05,
+    "from": "candidate",
+    "best_change": "sidepods.undercut_mm 100->140; floor.width_mm 1450->1480",
+    "screened": 2508,
+    "physics_laps": 26
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 140
+    }
+   ],
+   "head_lap_s": 88.191,
+   "ms": 766,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":140}],\"hypothesis\":\"Precedent from similar cars shows the largest gain (-0.095 s) from a deeper sidepod undercut, which should improve floor flow and downforce. It is within the 0-140 legal range.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710d924c792096ddecf2141971f8",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 2265,
+   "output_tokens": 128,
+   "latency_ms": 1941,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q18",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.112,
+    "d_lap_s": -0.112,
+    "lap_s": 87.683,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.112,
+    "d_lap_s": -0.112,
+    "lap_s": 87.683,
+    "from": "proposal",
+    "best_change": "sidepods.undercut_mm 100->140",
+    "screened": 2508,
+    "physics_laps": 24
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 140
+    }
+   ],
+   "head_lap_s": 87.795,
+   "ms": 697,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":140}],\"hypothesis\":\"Sidepods are untested on this car. A similar car gained 0.095 s from undercut 100->140, which is legal, so more floor airflow should add downforce.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710d925478e082cd0adc2f7dd2f4",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 2437,
+   "output_tokens": 201,
+   "latency_ms": 2389,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "early",
+   "id": "q19",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.067,
+    "d_lap_s": -0.067,
+    "lap_s": 88.524,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.152,
+    "d_lap_s": -0.152,
+    "lap_s": 88.439,
+    "from": "candidate",
+    "best_change": "rear_wing.aoa_deg 20->19.5; diffuser.expansion_deg 14->16; rear_wing.chord_mm 420->415; rear_wing.endplate_top_mm 860->850; rear_wing.sm_delta_deg 15->16",
+    "screened": 2951,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "aoa_deg",
+     "from": 20,
+     "to": 19
+    },
+    {
+     "part": "diffuser",
+     "param": "expansion_deg",
+     "from": 14,
+     "to": 15
+    }
+   ],
+   "head_lap_s": 88.591,
+   "ms": 852,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"aoa_deg\",\"to\":19},{\"part\":\"diffuser\",\"param\":\"expansion_deg\",\"to\":15}],\"hypothesis\":\"Precedents show rear wing AoA 19 gave -0.086s and diffuser 15 gave -0.040s on similar cars; less rear drag plus more underbody suction should help.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":1}}",
+   "mubit_request_id": "mreq_01a1710d92aa78d387ca103f07ee7ede",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 2293,
+   "output_tokens": 149,
+   "latency_ms": 2215,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q20",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.104,
+    "d_lap_s": -0.104,
+    "lap_s": 88.12,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.115,
+    "d_lap_s": -0.115,
+    "lap_s": 88.109,
+    "from": "candidate",
+    "best_change": "sidepods.undercut_mm 100->140; floor.width_mm 1440->1470",
+    "screened": 2508,
+    "physics_laps": 26
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 140
+    }
+   ],
+   "head_lap_s": 88.224,
+   "ms": 1045,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":140}],\"hypothesis\":\"Precedent shows a larger sidepod undercut gave -0.094 s on a similar car. It is within the legal 0-140 range and not near a limit, so it should improve airflow to the rear.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710d95387640800c38972c559c22",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 2452,
+   "output_tokens": 127,
+   "latency_ms": 1821,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q21",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.043,
+    "lap_s": 87.694,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.01,
+    "d_lap_s": -0.01,
+    "lap_s": 87.641,
+    "from": "alone",
+    "best_change": "gearbox.step 1.156->1.152",
+    "screened": 2979,
+    "physics_laps": 30
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "chord_mm",
+     "from": 410,
+     "to": 405
+    },
+    {
+     "part": "gearbox",
+     "param": "step",
+     "from": 1.156,
+     "to": 1.12
+    }
+   ],
+   "head_lap_s": 87.651,
+   "ms": 1011,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"chord_mm\",\"to\":405},{\"part\":\"gearbox\",\"param\":\"step\",\"to\":1.12}],\"hypothesis\":\"Precedents show smaller rear chord (-0.018s) and tighter gear step (-0.019s) are legal and faster; less drag and better acceleration on Silverstone's fast sectors.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":3}}",
+   "mubit_request_id": "mreq_01a1710d95d476a0b7b8146e761e4de3",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 2435,
+   "output_tokens": 148,
+   "latency_ms": 2117,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "early",
+   "id": "q22",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.105,
+    "d_lap_s": -0.105,
+    "lap_s": 88.386,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.109,
+    "d_lap_s": -0.109,
+    "lap_s": 88.382,
+    "from": "candidate",
+    "best_change": "sidepods.undercut_mm 100->140; floor.width_mm 1460->1490",
+    "screened": 2508,
+    "physics_laps": 26
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 140
+    }
+   ],
+   "head_lap_s": 88.491,
+   "ms": 667,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":140}],\"hypothesis\":\"Precedent shows undercut 100->140 gained 0.095s on a similar car; it improves floor flow and is within the legal range and not at a limit.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710d98817270849fa25de4456566",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 2261,
+   "output_tokens": 113,
+   "latency_ms": 2027,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q23",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.014,
+    "lap_s": 88.161,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.128,
+    "d_lap_s": -0.128,
+    "lap_s": 88.019,
+    "from": "candidate",
+    "best_change": "floor.width_mm 1450->1540; rear_wing.span_mm 1100->1060; rear_wing.aoa_deg 18.5->20; front_wing.aoa_deg 27->28.5; floor.throat_mm 62->63.5",
+    "screened": 2969,
+    "physics_laps": 32
+   },
+   "proposal": [
+    {
+     "part": "floor",
+     "param": "width_mm",
+     "from": 1450,
+     "to": 1540
+    },
+    {
+     "part": "rear_wing",
+     "param": "span_mm",
+     "from": 1100,
+     "to": 1150
+    }
+   ],
+   "head_lap_s": 88.147,
+   "ms": 793,
+   "answer": "{\"changes\":[{\"part\":\"floor\",\"param\":\"width_mm\",\"to\":1540},{\"part\":\"rear_wing\",\"param\":\"span_mm\",\"to\":1150}],\"hypothesis\":\"A wider floor adds underbody downforce, and a wider rear wing adds a little more. Both had small gains on similar cars, and neither is at a legal limit.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710d99e27923a193dea90a2aa62f",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 2444,
+   "output_tokens": 472,
+   "latency_ms": 4600,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q24",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.044,
+    "lap_s": 87.677,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.001,
+    "lap_s": 87.634,
+    "from": "candidate",
+    "best_change": "rear_wing.endplate_top_mm 880->875",
+    "screened": 2900,
+    "physics_laps": 28
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "chord_mm",
+     "from": 400,
+     "to": 410
+    }
+   ],
+   "head_lap_s": 87.633,
+   "ms": 965,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"chord_mm\",\"to\":410}],\"hypothesis\":\"Precedent from similar cars shows rear_wing.chord 400->410 gave -0.013 s; chord max is 465 so it is legal and adds rear downforce without touching limits.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":3}}",
+   "mubit_request_id": "mreq_01a1710d9b5071a2af81dd556eeaed06",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 2407,
+   "output_tokens": 124,
+   "latency_ms": 1736,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "early",
+   "id": "q25",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.084,
+    "d_lap_s": -0.084,
+    "lap_s": 88.42,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.094,
+    "d_lap_s": -0.094,
+    "lap_s": 88.41,
+    "from": "candidate",
+    "best_change": "sidepods.undercut_mm 100->150; floor.width_mm 1450->1440; sidepods.inlet_cm2 650->600; cooling.layout 0->1",
+    "screened": 2508,
+    "physics_laps": 27
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 140
+    }
+   ],
+   "head_lap_s": 88.504,
+   "ms": 902,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":140}],\"hypothesis\":\"Max sidepod undercut feeds the floor and rear flow; precedent shows -0.095 s on a similar car, with no limit flagged as near.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":3}}",
+   "mubit_request_id": "mreq_01a1710d9ba87460885ff2e2112f5810",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 2238,
+   "output_tokens": 113,
+   "latency_ms": 2033,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q26",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.102,
+    "d_lap_s": -0.102,
+    "lap_s": 88.225,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.102,
+    "d_lap_s": -0.102,
+    "lap_s": 88.225,
+    "from": "proposal",
+    "best_change": "sidepods.undercut_mm 100->140",
+    "screened": 2508,
+    "physics_laps": 24
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 140
+    }
+   ],
+   "head_lap_s": 88.327,
+   "ms": 762,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":140}],\"hypothesis\":\"Precedent shows sidepod undercut 100->140 gave -0.095 s on a similar car; more undercut feeds floor/rear flow, likely helping the high-speed corners of sector 1.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":1}}",
+   "mubit_request_id": "mreq_01a1710d9d807dc0b5b8a6173f052d50",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 2368,
+   "output_tokens": 129,
+   "latency_ms": 2028,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q27",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.107,
+    "d_lap_s": -0.107,
+    "lap_s": 87.649,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.109,
+    "d_lap_s": -0.109,
+    "lap_s": 87.647,
+    "from": "candidate",
+    "best_change": "sidepods.undercut_mm 100->140; floor.width_mm 1510->1480",
+    "screened": 2508,
+    "physics_laps": 26
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 140
+    }
+   ],
+   "head_lap_s": 87.756,
+   "ms": 973,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":140}],\"hypothesis\":\"Precedent shows sidepod undercut 100->140 gave -0.094 s on a similar car; undercut is legal up to 140 and never tried here, improves floor flow.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710d9e1972b2b045f0eb2673d8dd",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 2458,
+   "output_tokens": 121,
+   "latency_ms": 1829,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "early",
+   "id": "q28",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.085,
+    "d_lap_s": -0.085,
+    "lap_s": 88.45,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.087,
+    "d_lap_s": -0.087,
+    "lap_s": 88.448,
+    "from": "candidate",
+    "best_change": "sidepods.undercut_mm 100->140; floor.width_mm 1450->1470",
+    "screened": 2508,
+    "physics_laps": 26
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 140
+    }
+   ],
+   "head_lap_s": 88.535,
+   "ms": 921,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":140}],\"hypothesis\":\"Precedent shows a larger sidepod undercut gives -0.104 s on a similar car; it should improve floor flow and rear-wing feed with no limit reached (max 140).\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710d9f3f7df0bbabf13fc8ff1f51",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 2210,
+   "output_tokens": 122,
+   "latency_ms": 2648,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "mid",
+   "id": "q29",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": true,
+    "gain_s": 0.108,
+    "d_lap_s": -0.108,
+    "lap_s": 88.116,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.111,
+    "d_lap_s": -0.111,
+    "lap_s": 88.113,
+    "from": "candidate",
+    "best_change": "sidepods.undercut_mm 100->140; floor.width_mm 1470->1500",
+    "screened": 2508,
+    "physics_laps": 26
+   },
+   "proposal": [
+    {
+     "part": "sidepods",
+     "param": "undercut_mm",
+     "from": 100,
+     "to": 140
+    }
+   ],
+   "head_lap_s": 88.224,
+   "ms": 727,
+   "answer": "{\"changes\":[{\"part\":\"sidepods\",\"param\":\"undercut_mm\",\"to\":140}],\"hypothesis\":\"A larger sidepod undercut should feed more flow to the floor and rear. A similar car gained 0.094 s from this change, and it is untested on this car.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710d9f5578b3a961efa8734b0f75",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 2419,
+   "output_tokens": 210,
+   "latency_ms": 2103,
+   "stop_reason": "end_turn"
+  },
+  {
+   "phase": "late",
+   "id": "q30",
+   "parsed": true,
+   "legal": true,
+   "direct": {
+    "kept": false,
+    "gain_s": 0,
+    "d_lap_s": 0.058,
+    "lap_s": 87.719,
+    "from": "as_proposed"
+   },
+   "engine": {
+    "kept": true,
+    "gain_s": 0.021,
+    "d_lap_s": -0.021,
+    "lap_s": 87.64,
+    "from": "candidate",
+    "best_change": "rear_wing.chord_mm 390->395; survival_cell.front_axle_offset_mm 75->60",
+    "screened": 2968,
+    "physics_laps": 31
+   },
+   "proposal": [
+    {
+     "part": "rear_wing",
+     "param": "chord_mm",
+     "from": 390,
+     "to": 380
+    },
+    {
+     "part": "survival_cell",
+     "param": "front_axle_offset_mm",
+     "from": 75,
+     "to": 65
+    }
+   ],
+   "head_lap_s": 87.661,
+   "ms": 647,
+   "answer": "{\"changes\":[{\"part\":\"rear_wing\",\"param\":\"chord_mm\",\"to\":380},{\"part\":\"survival_cell\",\"param\":\"front_axle_offset_mm\",\"to\":65}],\"hypothesis\":\"Similar cars gained 0.034 s from a 380 mm rear chord (less drag) and 0.027 s from a 65 mm front axle offset (balance). Both are legal and not at a limit.\",\"expected\":{\"lap_delta_s\":-1,\"sector\":2}}",
+   "mubit_request_id": "mreq_01a1710da09571b3a796559e1efae23c",
+   "model": "claude-sonnet-5-5",
+   "served_by": "provider",
+   "input_tokens": 2481,
+   "output_tokens": 439,
+   "latency_ms": 4675,
+   "stop_reason": "end_turn"
+  }
+ ]
+}
