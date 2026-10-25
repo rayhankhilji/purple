@@ -5,7 +5,7 @@
 // side-by-side page's approach, concept/compare/compare.js: EI.conceptView, staggered builds, one rebuild per frame), best lap, curve
 // and "beat the pole at N" on one clock of physics simulations (0 -> 150); with the final standings (and the race link) at the top; then the results table, every curve on shared
 // axes, the harness, and "Race them" (concept/race/ Qualifying lap mode with every entrant's final car of its median seed on one
-// clock). This page never runs the sim and never calls Mubit. Nothing here is tuned or picked: every seed is in the table.
+// clock). The replay never runs the sim and never calls Mubit; "Run it live" (concept/gp/live.js) starts engine runs on the site API. Nothing here is tuned or picked: every seed is in the table.
 // URL: ?seed=median|1|2|3 &t=<simulations> &speed=1|4 &play=0
 (function () {
   "use strict";
@@ -73,15 +73,17 @@
     if (can) (async () => { for (const ln of S.lanes) { if (gen !== S.mountGen) return; await mountOne(ln, gen); } })();
   }
   function disposeViews() { S.mountGen++; for (const ln of S.lanes) if (ln.view) { try { ln.view.dispose(); } catch (e) { /* gone */ } ln.view = null; } }
-  function mountOne(ln, gen) {
+  // cur: the generation counter a mount belongs to (the replay's S.mountGen by default; the live lanes, concept/gp/live.js, keep their own)
+  function mountOne(ln, gen, cur) {
+    const stale = () => gen !== (cur ? cur() : S.mountGen);
     return new Promise(resolve => {
       const host = ln.els.car, j = ln.wantDesign, pane = el("div", { class: "cmp-car-view" });
       let settled = false; const next = () => { if (!settled) { settled = true; resolve(); } };
       const clearWait = () => { for (const w of host.querySelectorAll(".cmp-car-wait")) w.remove(); };
       pane.addEventListener("conceptview:ready", () => {
-        if (gen !== S.mountGen) return next();
+        if (stale()) return next();
         ln.ready = true;
-        requestAnimationFrame(() => { if (gen === S.mountGen) clearWait(); requestAnimationFrame(next); });
+        requestAnimationFrame(() => { if (!stale()) clearWait(); requestAnimationFrame(next); });
       }, { once: true });
       host.prepend(pane);
       // exactly one loading line per card: ours, covering the blank canvas until the view is ready; the view's own line is hidden (gp.css)
@@ -90,7 +92,7 @@
       catch (e) { pane.remove(); clearWait(); host.prepend(waitNote("3D view unavailable here (" + e.message + "); the numbers still update.")); return next(); }
       ln.shownDesign = j; ln.setAt = performance.now(); tagFor(ln, j);
       const watch = () => {
-        if (settled) return; if (gen !== S.mountGen) return next();
+        if (settled) return; if (stale()) return next();
         const st = ln.view && ln.view.state();
         if (st && st.error) { try { ln.view.dispose(); } catch (e) { /* gone */ } ln.view = null; pane.remove(); clearWait(); host.prepend(waitNote("3D view unavailable here; the numbers still update.")); return next(); }
         setTimeout(watch, 250);
@@ -98,10 +100,10 @@
       setTimeout(watch, 250);
     });
   }
-  function tagFor(ln, j) { ln.els.tag.textContent = j === 0 ? "RB22 baseline" : "Best car so far · found at simulation " + ln.L.designs[j].laps; }
-  function pumpBuild(now) {
+  function tagFor(ln, j) { ln.els.tag.textContent = j === 0 ? "RB22 baseline" : "Best car so far · found at " + (ln.unit || "simulation") + " " + ln.L.designs[j].laps; }
+  function pumpBuild(now, lanes) {
     let pick = null;
-    for (const ln of S.lanes) if (ln.ready && ln.view && ln.wantDesign !== ln.shownDesign && now - ln.setAt >= REBUILD_MS && (!pick || ln.setAt < pick.setAt)) pick = ln;
+    for (const ln of lanes || S.lanes) if (ln.ready && ln.view && ln.wantDesign !== ln.shownDesign && now - ln.setAt >= REBUILD_MS && (!pick || ln.setAt < pick.setAt)) pick = ln;
     if (!pick) return;
     const j = pick.wantDesign; pick.shownDesign = j; pick.setAt = now; tagFor(pick, j);
     try { pick.view.setDesign(designAt(pick, j), { baseline: S.base, animate: false, livery: S.base.livery }); } catch (e) { /* view optional */ }
@@ -119,17 +121,19 @@
     if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
     return { g: c.getContext("2d"), dpr, W: r.width, H: r.height };
   }
-  function axes(cv, pad) {
-    const { g, dpr, W, H } = cv, pw = W - pad.l - pad.r, ph = H - pad.t - pad.b;
-    const X = n => pad.l + pw * n / S.budget, Y = s => pad.t + ph * (S.y.hi - s) / (S.y.hi - S.y.lo);
+  // o (optional, the live lanes): { xmax, xstep, base, y } instead of the replay's budget, start-car lap and y range
+  function axes(cv, pad, o) {
+    o = o || {};
+    const { g, dpr, W, H } = cv, pw = W - pad.l - pad.r, ph = H - pad.t - pad.b, XM = o.xmax || S.budget, YR = o.y || S.y, XS = o.xstep || 25, BASE_S = o.base != null ? o.base : S.sum.baseline_s;
+    const X = n => pad.l + pw * n / XM, Y = s => pad.t + ph * (YR.hi - s) / (YR.hi - YR.lo);
     g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
     g.font = "500 11px Inter, system-ui, sans-serif"; g.textBaseline = "middle"; g.strokeStyle = "#202027"; g.lineWidth = 1; g.fillStyle = "#8a8a94";
-    const step = (S.y.hi - S.y.lo) > 1.6 ? 0.5 : (S.y.hi - S.y.lo) > 0.6 ? 0.25 : 0.1;
-    for (let v = Math.ceil(S.y.lo / step) * step; v <= S.y.hi + 1e-9; v += step) { const y = Math.round(Y(v)) + .5; g.beginPath(); g.moveTo(pad.l, y); g.lineTo(W - pad.r, y); g.stroke(); g.textAlign = "right"; g.fillText(v.toFixed(2), pad.l - 5, y); }
+    const step = (YR.hi - YR.lo) > 1.6 ? 0.5 : (YR.hi - YR.lo) > 0.6 ? 0.25 : 0.1;
+    for (let v = Math.ceil(YR.lo / step) * step; v <= YR.hi + 1e-9; v += step) { const y = Math.round(Y(v)) + .5; g.beginPath(); g.moveTo(pad.l, y); g.lineTo(W - pad.r, y); g.stroke(); g.textAlign = "right"; g.fillText(v.toFixed(2), pad.l - 5, y); }
     g.textAlign = "center"; g.textBaseline = "top";
-    for (let x = 0; x <= S.budget; x += 25) { const px = Math.round(X(x)) + .5; g.beginPath(); g.moveTo(px, pad.t); g.lineTo(px, pad.t + ph); g.stroke(); if (x % 50 === 0 || W > 420) g.fillText(String(x), Math.min(px, W - pad.r - 8), pad.t + ph + 5); }
+    for (let x = 0; x <= XM; x += XS) { const px = Math.round(X(x)) + .5; g.beginPath(); g.moveTo(px, pad.t); g.lineTo(px, pad.t + ph); g.stroke(); if (x % (2 * XS) === 0 || W > 420) g.fillText(String(x), Math.min(px, W - pad.r - 8), pad.t + ph + 5); }
     const ref = (s, color, text) => { const y = Math.round(Y(s)) + .5; g.save(); g.setLineDash([5, 4]); g.strokeStyle = color; g.lineWidth = 1.3; g.beginPath(); g.moveTo(pad.l, y); g.lineTo(W - pad.r, y); g.stroke(); g.restore(); g.fillStyle = color; g.textAlign = "right"; g.textBaseline = "bottom"; g.fillText(text, W - pad.r - 2, y - 2); };
-    ref(S.sum.baseline_s, BASE_C, "RB22 start car " + f3(S.sum.baseline_s));
+    if (BASE_S != null) ref(BASE_S, BASE_C, "RB22 start car " + f3(BASE_S));
     ref(S.pole, POLE_C, "Real pole " + f3(S.pole) + " (OpenF1 2026)");
     return { g, X, Y, W, H, pad, ph };
   }
@@ -234,17 +238,6 @@
         el("td", { class: "n opt muted", text: e.beat_pole_n + " of " + e.complete + " seeds" })));
     }
     T.append(tb);
-    // the headline, from the numbers: who was fastest, by how much against the real pole, and where the No-AI control finished
-    const w = r[0], wg = w.gap_to_pole_s_median;
-    $("gpHeadline").replaceChildren(el("span", { class: "who", style: "color:" + w.color, text: w.name }), " set the fastest lap: ", el("span", { class: "t", text: f3(w.best_s_median) }), " s",
-      ", " + (wg < 0 ? Math.abs(wg).toFixed(3) + " s under" : "+" + wg.toFixed(3) + " s over") + " the real pole.");
-    const ci = r.findIndex(e => e.control), sub = [];
-    if (ci >= 0) {
-      const ahead = r.slice(0, ci).map(shortName), behind = r.slice(ci + 1).map(shortName);
-      sub.push("The No-AI control (random directions, same engine) placed P" + (ci + 1) + (ahead.length ? ": " + listAnd(ahead) + " beat it" + (behind.length ? ", " + listAnd(behind) + " did not." : ".") : ": no model beat it."));
-    }
-    sub.push("Same harness" + (S.sum.memory && S.sum.memory.on ? " and shared memory" : "") + ", " + S.budget + " simulations each, untrained calls. One circuit and " + (S.sum.seeds || []).length + " seeds, so results vary: every seed is in the table below.");
-    $("gpSub").textContent = sub.join(" ");
     $("gpResult").hidden = false;
   }
   function table() {
@@ -280,8 +273,20 @@
     $("gpHarnessSrc").textContent = "recorded in every run file (concept/gp/data/)";
   }
   // every entrant's final car of its median seed, ordered by sim lap, on one Qualifying-lap clock (concept/race/payload.js carsUrl)
-  function raceLink() {
+  // modelsOnly: the providers only (no No-AI control) and, on the race page, no RB22 baseline: only these cars plus the real pole lap
+  // (&only=cars&real=ANT, the race page's multi-car option)
+  const MODELS_ONLY = "&only=cars&real=ANT";
+  function carsLink(cars, modelsOnly, title) {
     const RP = C.race; if (!RP || !RP.carsUrl) return null;
+    const list = cars.filter(c => !modelsOnly || !c.control).sort((a, b) => a.lap_s - b.lap_s).slice(0, RP.MAX_CARS || 8);
+    if (!list.length) return null;
+    return { url: RP.carsUrl(list, { base: "../race/", title: title || "Model GP" }) + (modelsOnly ? MODELS_ONLY : ""), n: list.length };
+  }
+  // the car's own name (concept/gp/entrants.json "car", e.g. "ChatGPT"), else the entrant's name
+  const carName = e => { const x = (S.entrants || []).find(y => y.id === e.entrant); return (x && x.car) || e.car || e.name; };
+  function raceLink(modelsOnly) {
+    const RP = C.race; if (!RP || !RP.carsUrl) return null;
+    if (modelsOnly) return carsLink(S.sum.entrants.filter(e => e.race_car && e.race_car.design).map(e => ({ name: carName(e), code: e.code, color: e.color, lap_s: e.race_car.lap_s, seed: e.race_car.seed, design: e.race_car.design, note: "median seed " + e.race_car.seed, control: !!e.control })), true, "Model GP · models only");
     const cars = S.sum.entrants.filter(e => e.race_car && e.race_car.design).map(e => ({ name: e.name, code: e.code, color: e.color, lap_s: e.race_car.lap_s, seed: e.race_car.seed, design: e.race_car.design, note: "median seed " + e.race_car.seed }))
       .sort((a, b) => a.lap_s - b.lap_s);
     if (!cars.length) return null;
@@ -289,10 +294,8 @@
   }
   function footer() {
     const f = $("gpFoot"); f.replaceChildren();
-    const line = (...k) => f.append(el("span", {}, ...k)), b = t => el("b", { text: t });
-    line("Every lap: ", b(LABEL), ". Dashed lines: the ", b(POLE_LABEL + " " + f3(S.pole) + " s"), " (Antonelli, 2026 British GP) and the RB22 start car on the same sim.");
-    line("A single circuit (Silverstone), ", b("150 simulations"), " per run, seeds 1, 2, 3: results vary between seeds, so every seed is in the table. The ", b("No-AI control"), " (random directions, same engine) is included on purpose: a model has to beat it to show its ideas helped. An answer that does not parse takes the same random step and is counted as such, never credited to the model.");
-    line("Recorded " + (S.sum.generated_at || "").slice(0, 10) + " by concept/gp/run.js · " + (S.sum.memory && S.sum.memory.on ? "shared memory on" : "shared memory off") + " · played back here: no new call.");
+    const b = t => el("b", { text: t });
+    f.append(el("span", {}, "lap: ", b(LABEL), " · ", b(POLE_LABEL + " " + f3(S.pole) + " s"), " · recorded " + (S.sum.generated_at || "").slice(0, 10) + " by concept/gp/run.js · " + (S.sum.memory && S.sum.memory.on ? "shared memory on" : "shared memory off") + " · replay, no new call"));
   }
   function emptyState(why) {
     $("gpLanes").replaceChildren(el("div", { class: "panel gp-empty" }, el("p", { text: "No Model GP results yet (" + why + "). Nothing is shown until the live run is recorded: no placeholder numbers." }),
@@ -318,6 +321,7 @@
   }
   async function init() {
     S.base = baseDesign();
+    S.entrants = await getJson("entrants.json").then(j => j.entrants || [], () => []);
     try { S.sum = await getJson("data/summary.json"); } catch (e) { return emptyState(e.message); }
     if (!S.sum.entrants || !S.sum.entrants.length) return emptyState("summary.json lists no entrant");
     S.budget = (S.sum.settings && S.sum.settings.budget_physics_laps) || 150; S.pole = S.sum.pole_s || 88.111;
@@ -332,20 +336,37 @@
     setSpeed(S.speed);
     $("gpBelow").hidden = false;
     board(); table(); harness(); footer();
-    const race = raceLink();
-    if (race) { for (const id of ["gpRace", "gpRace2"]) { $(id).href = race.url; $(id).hidden = false; } $("gpRaceNote").textContent = "A qualifying lap in 3D: all " + race.n + " cars and the real pole lap (OpenF1 2026) start together on one clock. Each car is its entrant's median-seed car; its lap time comes from the physics lap sim."; }
-    else { $("gpRace2").hidden = true; $("gpRaceNote").textContent = "No race: no entrant has a complete run yet."; }
+    const race = raceLink(true);
+    if (race) { $("gpRaceModels").href = race.url; $("gpRaceModels").hidden = false; }
+    S.ready = true;
+    if (S.wantOpen) openRecorded();
+    window.__gp = S;
+  }
+  // the last recorded race is its own tab: its lanes, 3D cars and curves are built the first time it is opened (the live race is the page)
+  async function openRecorded() {
+    S.wantOpen = true;
+    if (!S.ready || S.opened) return;
+    S.opened = true;
     await show();
     drawCurves();
-    window.addEventListener("resize", () => { for (const ln of S.lanes) { ln.cv = null; ln.k = -2; } update(performance.now(), true); drawCurves(); });
-    // the replay starts by itself once its cards are on screen and their cars are built (or after a short wait), so it is not over
-    // before anyone sees it; "Watch the replay" scrolls to it and plays it from the start
-    $("gpWatch").addEventListener("click", ev => { ev.preventDefault(); S.auto = false; $("gpReplay").scrollIntoView({ behavior: "smooth", block: "start" }); restart(); S.playing = true; S.last = 0; playBtn(); });
+    window.addEventListener("resize", () => { if ($("gpRec").hidden) return; for (const ln of S.lanes) { ln.cv = null; ln.k = -2; } update(performance.now(), true); drawCurves(); });
     $("gpPlay").addEventListener("click", () => { S.auto = false; });
     S.auto = q.get("play") !== "0" && S.t < S.budget; playBtn();
     if (S.auto) autoStart();
-    window.__gp = S;
     requestAnimationFrame(frame);
   }
+  function tab(which) {
+    const rec = which === "rec";
+    $("gpLive").hidden = rec; $("gpRec").hidden = !rec;
+    $("gpTabLive").classList.toggle("on", !rec); $("gpTabRec").classList.toggle("on", rec);
+    $("gpTabLive").setAttribute("aria-selected", String(!rec)); $("gpTabRec").setAttribute("aria-selected", String(rec));
+    try { const u = new URL(location.href); if (rec) u.searchParams.set("tab", "recorded"); else u.searchParams.delete("tab"); history.replaceState(null, "", u); } catch (e) { /* file:// */ }
+    if (rec) openRecorded(); else window.dispatchEvent(new Event("resize"));
+  }
+  $("gpTabLive").addEventListener("click", () => tab("live"));
+  $("gpTabRec").addEventListener("click", () => tab("rec"));
+  if (q.get("tab") === "recorded" || q.get("t")) tab("rec");
+  // the pieces concept/gp/live.js (the live mode) reuses: one card / chart / 3D code for the replay and the live lanes
+  (window.EI = window.EI || {}).gp = { S, el, f3, sg, hexA, sizeCanvas, axes, stepLine, mountOne, pumpBuild, designFrom, waitNote, carsLink, getJson, LABEL, POLE_LABEL, POLE_C, BASE_C, ILLEGAL_C };
   init().catch(e => { $("gpLanes").replaceChildren(el("div", { class: "panel gp-empty", text: "Model GP failed to start: " + e.message })); });
 })();

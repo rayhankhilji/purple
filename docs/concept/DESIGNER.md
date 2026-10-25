@@ -1,5 +1,7 @@
 # PURPLE · CONCEPT DESIGNER (LLM proposer, second Mubit task)
 
+> Status: written before the designer's first live call. The prompt was frozen later (`concept/designer/prompt.js`), the designer has since run live through Mubit (`docs/concept/loop-runs/`), and the engine in [ENGINE_V2.md](ENGINE_V2.md) now drives it. The current product is in [README.md](../../README.md).
+
 Version 0-draft · 2026-10-24 · branch `claude/concept-designer` · owner Tanuj (approved an LLM steering the shape) · status:
 **built and tested with a mock LLM only; no Mubit or Anthropic call has been made; the prompt is a DRAFT and is not frozen.**
 **Update 2026-10-24 (branch `claude/mubit-loop`): the closed loop with Mubit is built on top of this module — see

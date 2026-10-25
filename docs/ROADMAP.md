@@ -1,5 +1,7 @@
 # PURPLE — Roadmap
 
+> Status: the first night's plan, for the first-night research lab (`/lab/`, no longer linked from the site); the current product is in [README.md](../README.md).
+
 Version 1.0 · 2026-10-23 · Times are London. Every task is one agent session or less. Phases are vertical slices: each ends with something a judge could see.
 
 Deadlines that do not move: `/checkin` #1 by Sat 12:00 · `/checkin` #2 Sat 12:00–18:00 · `/submit` (MP4 ≤ 3 min + PDF) by Sat 23:59 · hard freeze Sun 05:00 · live expo Sun 10:30, finals 12:30.

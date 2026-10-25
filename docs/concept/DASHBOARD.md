@@ -1,5 +1,7 @@
 # PURPLE · ENGINE DASHBOARD (run the whole concept engine from the concept lab)
 
+> Status: written before the first live engine run; the engine has since run live through Mubit (`docs/concept/loop-runs/`). The current product is in [README.md](../../README.md).
+
 Version 1 · 2026-10-24 · branch `claude/engine-dashboard` · status: **built, tested with the scripted mock and an injected stand-in
 for `server/mubit.js`; no live Mubit call was made by this work.**
 Label on every lap: **"physics lap sim · quasi-steady-state point mass · Silverstone · 2026 British GP qualifying conditions"**;

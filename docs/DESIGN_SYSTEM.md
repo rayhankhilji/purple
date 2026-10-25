@@ -1,5 +1,7 @@
 # PURPLE — Design System
 
+> Status: describes the first-night research lab (`/lab/`, no longer linked from the site); the current product is in [README.md](../README.md).
+
 Version 1.0 · 2026-10-23 · For the lab page only (`lab/`). The game keeps its own look.
 
 ## 1. Direction

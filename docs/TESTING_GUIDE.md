@@ -1,5 +1,7 @@
 # PURPLE — Testing Guide
 
+> Status: describes the first-night research lab (`/lab/`, no longer linked from the site); the current product is in [README.md](../README.md). `npm test` runs every suite, old and new.
+
 Version 1.0 · 2026-10-23 · Tests exist to answer one question per feature: is the number real?
 
 ## 1. Strategy

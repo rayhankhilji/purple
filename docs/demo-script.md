@@ -1,5 +1,7 @@
 # PURPLE: live demo script (3 minutes)
 
+> Status: the 24 October live demo plan, kept for history. The submission is the video: [video-script.md](video-script.md). The current product is in [README.md](../README.md).
+
 Version 3 · 2026-10-24 · replaces v2.1 (the 5-knob research-lab demo; its beats are kept in the appendix). The story now leads with
 the **concept lab**: an AI race engineer redesigns the 2026 Red Bull RB22 (same Red Bull Ford DM01, FIA 2026 Section C legal) to
 beat the real 2026 Silverstone qualifying lap, with Mubit in the loop. The research lab is the first proof that Mubit learns from a

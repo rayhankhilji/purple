@@ -16,7 +16,8 @@ if (!ph.ok) console.error("PURPLE: WARNING prompt change allowed by PURPLE_ALLOW
 const { serve } = require("@hono/node-server");
 const { createApp } = require("./app.js");
 const port = parseInt(process.env.PURPLE_PORT || "8787", 10);
-const { app, db } = createApp();
+// PURPLE_ENGINE_RUNS: engine runs at once (default 1; the live Model GP page starts one per model, so set e.g. 5 to try it locally)
+const { app, db } = createApp({ engineMaxRuns: parseInt(process.env.PURPLE_ENGINE_RUNS || "1", 10) || 1 });
 serve({ fetch: app.fetch, port, hostname: "127.0.0.1" }, info => {
   console.log(`PURPLE server http://127.0.0.1:${info.port}  model ${prompt.MODEL}  prompt v${prompt.PROMPT_VERSION}  data ${db.dir}${mock ? "  [MUBIT_MOCK]" : ""}`);
 });
