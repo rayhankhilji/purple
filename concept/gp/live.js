@@ -104,7 +104,7 @@
     const who = list.map(shortOf).join(", ") + " · " + liveGens + " generations each";
     go.textContent = running && !L.replay ? "Racing…" : (L.status === "done" && !L.replay ? "Race again: " : mock ? "Start the offline demo: " : "Start the race: ") + who;
     go.title = !L.mode ? "not available here: " + L.why : mock ? "the engine with the scripted stand-in (not a model); no Mubit call" : list.length + " live engine runs at once, untrained Mubit calls (No AI makes none)";
-    $("gpLiveStop").hidden = !running;
+    $("gpLiveStop").hidden = !running; $("gpLiveStop").textContent = L.replay ? "Stop the replay" : "Stop all";
     for (const b of document.querySelectorAll("#gpPick input")) b.disabled = running;
     status();
   }
@@ -543,7 +543,7 @@
       const d = K.designFrom(x.bestParams || base.params); d.id = "gp-live-" + x.e.id; d.label = carOf(x.e) + " · Model GP live"; d.team = "redbull";
       return { name: carOf(x.e), code: x.e.code, color: x.e.color, lap_s: x.best, seed: L.seed, design: d, note: (mock() ? "mock, not a model · " : "live · ") + x.gens + "/" + B + " generations" };
     });
-    const link = K.carsLink(cars, true, mock() ? "Model GP · offline demo" : "Model GP · live");
+    const link = K.carsLink(cars, true, mock() ? "Model GP · offline demo" : L.replay ? "Model GP · live race recorded " + when(L.replay.meta.recorded_at) : "Model GP · live");
     const a = $("gpLiveRace");
     if (link) { a.href = link.url; a.hidden = false; a.title = link.n + " model cars + the real pole lap (Antonelli, OpenF1 2026); laps: physics lap sim"; }
     else a.hidden = true;
