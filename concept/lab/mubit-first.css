@@ -1,136 +1,314 @@
-/* PURPLE concept lab - the Mubit-first view (mubit-first.js): the Mubit strip under the title bar, the run controls in the header, the
-   Mubit feed cards (lineage card style) and the timing line under the car. On top of lab/lab.css + concept-lab.css. Dark only. */
+/* PURPLE concept lab - the Mubit-first view (mubit-first.js) and the page's clean layer. On top of lab/lab.css + concept-lab.css (both
+   shared with other pages, so everything here is scoped to body.clab-page, which only concept/lab has). Dark only.
+   System: 8 px grid (4 for hairline gaps) · 16 px gutters and gaps · panel header 32 px, panel content inset 16 px.
+   Type: Inter for words, JetBrains Mono for numbers; five sizes: 11 (captions, sources) · 12 (body, rows, controls) · 13 (titles,
+   Claude's idea) · 16 (brand) · 28 (big numbers, 24 under 1366 px). Sentence case; no uppercase micro-labels.
+   Colour: purple = our car and the primary action · Mubit orange = Mubit things only · green / red = verdicts only (amber stays only as
+   the 3D view's "part just changed" highlight key). Quiet panel borders, no glows. */
+body.clab-page {
+  --rule: #1f1f25;                       /* panel outlines and separators */
+  --field: #17171c;                      /* inputs, tab and segment wells */
+  --cols: minmax(0, 25fr) minmax(0, 43fr) minmax(0, 32fr);   /* the three columns; the Mubit strip uses the same edges */
+  --gap: 16px;
+  --big: 28px;
+}
+
+/* ---- view visibility (behaviour, unchanged) */
 body.mubit-on .noai-only, body.mubit-on #genBadge { display: none !important; }
 body:not(.mubit-on) .mubit-only { display: none !important; }
 body.exam-on .mubit-only, body.eng2-on .mubit-only { display: none !important; }
-
-/* header controls */
-.mctl { flex: none; display: flex; align-items: center; gap: 6px; font-size: 12px; }
-.mctl .btn { min-width: 0; }
-.mctl #muPlay { min-width: 70px; }
-.mctl .mu-run { background: #1a1a20; border: 1px solid var(--line); border-radius: var(--r); padding: 3px 6px; font: 500 11.5px/1.2 var(--mono); color: var(--text); max-width: 210px; }
-.mu-seg { display: inline-flex; }
-.mu-seg .btn { border-radius: 0; padding-left: 7px; padding-right: 7px; }
-.mu-seg .btn:first-child { border-radius: var(--r) 0 0 var(--r); }
-.mu-seg .btn:last-child { border-radius: 0 var(--r) var(--r) 0; }
-.mu-seg .btn + .btn { border-left: none; }
-.mu-seg .btn.on { border-color: var(--mubit); background: rgba(255, 69, 0, .14); color: var(--text); }
-.mu-golive-g { display: inline-flex; align-items: center; gap: 4px; padding-left: 6px; border-left: 1px solid var(--line); }
-.mu-golive { border-color: var(--mubit); color: var(--text); }
-.mu-golive:hover:not(:disabled) { background: rgba(255, 69, 0, .14); border-color: var(--mubit); }
-.mu-golive.off { color: var(--muted); border-color: var(--line); }
-.mu-demo { color: var(--amber); }
-.viewsw #btnViewMubit.on { border-color: var(--mubit); background: rgba(255, 69, 0, .16); }
-
 /* the leaderboard keeps our row in view: offsetTop must be measured inside the scrolling list (both views) */
 .board .rows { position: relative; }
+/* the floating part tag repeats the "last kept change" callout and collided with the 3D view caption: hidden in the Mubit view */
+body.mubit-on .cv-tags { display: none !important; }
 
-/* the Mubit strip */
-.mustrip { flex: none; display: grid; grid-template-columns: minmax(0, 16fr) minmax(0, 17fr) minmax(0, 35fr) minmax(0, 32fr); gap: 12px; padding: 10px 12px 0; }
-.mu-mark { display: flex; flex-direction: column; justify-content: center; gap: 5px; padding: 6px 12px; min-width: 0; border: 1px solid rgba(255, 69, 0, .5); border-radius: var(--r); background: linear-gradient(110deg, rgba(255, 69, 0, .16), var(--panel) 75%); }
-.mu-logo { font: 700 22px/1 var(--sans); letter-spacing: -.01em; color: var(--mubit); }
-.mu-logo::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 7px; border-radius: 2px; background: var(--mubit); vertical-align: 2px; }
-.mu-mode { display: flex; align-items: center; gap: 6px; min-width: 0; }
-.mu-badge { flex: none; font-size: 10.5px; padding: 1px 6px; }
-.mu-badge.replay { border-color: var(--mubit); color: var(--mubit); }
+/* =============================================================== header: two calm rows
+   row 1: brand · tagline · tools (Mubit loop, Engine) · links      row 2: view tabs · the view's run controls */
+:root body.clab-page .top { height: auto; min-height: 0; flex-wrap: wrap; align-items: center; gap: 0 12px; padding: 8px 16px; background: var(--bg); border-bottom: 1px solid var(--rule); }
+body.clab-page .top .brand { flex: none; font: 700 16px/1 var(--sans); letter-spacing: .16em; color: var(--purple); }
+body.clab-page .top .sub { font: 400 12px/1.3 var(--sans); color: var(--muted); }
+body.clab-page .top .hbreak { flex: 0 0 100%; height: 8px; }   /* its own flex line: the 8 px between the two rows */
+body.clab-page .top .back { flex: none; font: 500 12px/1 var(--sans); color: var(--muted); padding: 0 4px; }
+body.clab-page .top .back:hover { color: var(--text); }
+/* every header control is 28 px tall, 12 px type */
+body.clab-page .top .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 28px; min-width: 0; padding: 0 12px; font: 600 12px/1 var(--sans); white-space: nowrap; }
+body.clab-page .top select, body.clab-page .top input { height: 28px; padding: 0 8px; background: var(--field); border: 1px solid var(--line); border-radius: var(--r); font: 500 12px/1 var(--mono); color: var(--text); }
+/* tools: quiet buttons; the Mubit one carries the Mubit mark */
+body.clab-page .top .mubit-btn, body.clab-page .top .engine-btn { background: transparent; border-color: var(--line); color: var(--text); font-weight: 500; }
+body.clab-page .top .mubit-btn::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--mubit); }
+body.clab-page .top .mubit-btn.on { background: rgba(255, 69, 0, .12); border-color: var(--mubit); }
+body.clab-page .top .engine-btn.on { background: var(--purple-dim); border-color: var(--purple); }
+/* view tabs: one well, the active tab filled */
+body.clab-page .viewsw { flex: none; display: inline-flex; gap: 2px; padding: 2px; background: var(--field); border: 1px solid var(--line); border-radius: 8px; }
+body.clab-page .viewsw .btn { height: 24px; padding: 0 10px; border: none; border-radius: var(--r); background: transparent; color: var(--muted); font-weight: 500; }
+body.clab-page .viewsw .btn:hover:not(:disabled) { color: var(--text); }
+body.clab-page .viewsw .btn.on, body.clab-page .viewsw #btnViewMubit.on, body.clab-page .viewsw #btnViewExam.on { background: var(--purple-dim); color: var(--text); font-weight: 600; }
+/* the no-AI optimiser's controls (Compare: no AI) in the same row and size */
+body.clab-page .ctl { gap: 8px; }
+body.clab-page .ctl .f { gap: 6px; font: 500 12px/1 var(--sans); letter-spacing: 0; color: var(--muted); }
+body.clab-page .ctl input[type=number] { width: 72px; }
+body.clab-page #genBadge { min-width: 0; padding: 0 8px; height: 28px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
+
+/* the Mubit run controls: two labelled groups, Replay | Live run */
+.mctl { flex: none; display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; }
+.mu-grp { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.mu-golive-g { padding-left: 16px; border-left: 1px solid var(--rule); }
+.mu-gl, .mu-seg-l { font: 500 12px/1 var(--sans); color: var(--muted); white-space: nowrap; }
+.mctl .mu-run { max-width: 200px; font-family: var(--sans); }
+.mctl #muPlay { min-width: 76px; }
+body.clab-page .mu-seg { display: inline-flex; gap: 2px; padding: 2px; background: var(--field); border: 1px solid var(--line); border-radius: var(--r); }
+body.clab-page .mu-seg .btn { height: 22px; padding: 0 8px; border: none; border-radius: 4px; background: transparent; color: var(--muted); font-family: var(--mono); font-weight: 500; }
+body.clab-page .mu-seg .btn:hover:not(:disabled) { color: var(--text); }
+body.clab-page .mu-seg .btn.on { background: #2a2a33; color: var(--text); }
+body.clab-page .mu-golive { border-color: var(--mubit); color: var(--text); }
+body.clab-page .mu-golive:hover:not(:disabled) { background: rgba(255, 69, 0, .12); border-color: var(--mubit); }
+body.clab-page .mu-golive.off { color: var(--muted); border-color: var(--line); }
+body.clab-page .mu-demo { background: transparent; color: var(--text); font-weight: 500; }
+
+/* the Engine and Mubit loop overlays open under the (now two-row) header */
+body.clab-page .engine, body.clab-page .loopd { top: var(--hdr-h, 40px); }
+
+/* =============================================================== the Mubit strip (hero row): three panels on the column edges */
+.mustrip { flex: none; display: grid; grid-template-columns: var(--cols); gap: var(--gap); padding: var(--gap) var(--gap) 0; }
+.mu-cell { min-width: 0; background: var(--panel); border: 1px solid var(--rule); border-radius: var(--r); }
+.mu-mark { display: flex; flex-direction: column; justify-content: center; gap: 8px; padding: 12px 16px; }
+.mu-mark-top { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.mu-logo { flex: none; display: inline-flex; align-items: center; gap: 8px; font: 700 var(--big)/1 var(--sans); letter-spacing: -.01em; color: var(--mubit); }
+.mu-logo::before { content: ""; width: 12px; height: 12px; border-radius: 3px; background: var(--mubit); }
+.mu-badge { flex: none; padding: 0 8px; border: 1px solid var(--line); border-radius: 4px; font: 600 11px/18px var(--sans); color: var(--text); white-space: nowrap; cursor: help; }
+.mu-badge.replay { border-color: rgba(255, 69, 0, .6); color: var(--mubit); }
 .mu-badge.live { border-color: var(--mubit); background: var(--mubit); color: #fff; animation: mu-pulse 1.6s ease-in-out infinite; }
 @keyframes mu-pulse { 50% { opacity: .65; } }
 @media (prefers-reduced-motion: reduce) { .mu-badge.live { animation: none; } }
-.mu-line { min-width: 0; font: 500 11px/1.3 var(--sans); color: var(--muted); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-.mu-ctr { display: flex; flex-direction: column; justify-content: center; gap: 3px; padding: 7px 12px 8px; min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); }
-.mu-ctr-top { display: flex; align-items: baseline; gap: 9px; min-width: 0; }
-.mu-ctr-v { flex: none; font: 600 26px/1 var(--mono); color: var(--text); }
-.mu-ctr-l { min-width: 0; font: 600 12.5px/1.25 var(--sans); color: var(--text); }
-.mu-ctr-s { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 10.5px; }
+.mu-line { min-width: 0; font: 400 12px/1.4 var(--sans); color: var(--muted); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.mu-mid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.mu-ctr { display: flex; flex-direction: column; justify-content: center; gap: 4px; min-width: 0; padding: 12px 16px; }
+.mu-ctr + .mu-ctr { border-left: 1px solid var(--rule); }
+.mu-ctr-top { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.mu-ctr-v { flex: none; font: 600 var(--big)/1 var(--mono); color: var(--text); white-space: nowrap; }
 .mu-ctr.mubit .mu-ctr-v { color: var(--mubit); }
 .mu-ctr.good .mu-ctr-v { color: var(--green); }
-.mu-ctr-tot { font: 500 11.5px/1.3 var(--sans); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mu-ctr-tot b { color: var(--green); font: 600 13px/1 var(--mono); }
-.mu-model { border-color: rgba(255, 69, 0, .4); }
-.mu-model .mu-ctr-l { color: var(--mubit); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
-.mu-model-l { font: 500 13px/1.35 var(--sans); color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mu-model-l b { display: inline-block; min-width: 20px; color: var(--mubit); font: 600 12px/1 var(--mono); }
-.mu-prog { flex: none; margin: 8px 12px 0; padding: 5px 10px; border: 1px solid rgba(255, 69, 0, .4); border-radius: var(--r); background: rgba(255, 69, 0, .06); font: 500 12px/1.3 var(--sans); color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mu-ctr-l { min-width: 0; font: 600 13px/1.3 var(--sans); color: var(--text); }
+.mu-ctr-s, .mu-ctr-tot { min-width: 0; font: 400 11px/1.4 var(--sans); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mu-ctr.mubit .mu-ctr-s { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.mu-of { font-size: 16px; font-weight: 500; color: var(--muted); }
+.mu-ctr-tot b { color: var(--green); font: 600 12px/1 var(--mono); }
+.mu-model { display: flex; flex-direction: column; justify-content: center; gap: 6px; padding: 12px 16px; }
+.mu-model-h { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; min-width: 0; font: 600 13px/1.3 var(--sans); color: var(--text); }
+.mu-model-src { min-width: 0; font: 400 11px/1.3 var(--sans); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mu-model-l { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 8px; align-items: baseline; font: 400 13px/1.4 var(--sans); color: var(--text); }
+.mu-model-l span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mu-model-l b { color: var(--mubit); font: 600 12px/1 var(--mono); }
+
+/* a live / offline round in progress: asking → testing → driving → kept, then one chip per idea */
+.mu-prog { flex: none; margin: var(--gap) var(--gap) 0; padding: 8px 16px; background: var(--panel); border: 1px solid var(--rule); border-radius: var(--r); font: 500 12px/1.4 var(--sans); color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mu-prog[hidden] { display: none; }
-.mu-prog b { color: var(--mubit); font-weight: 600; }
-/* a parallel round: the stage strip (asking → testing → driving → kept) and one chip per idea */
-.mu-prog.rounds { white-space: normal; padding: 6px 10px 7px; }
-.mu-st-l { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 6px; white-space: nowrap; }
+.mu-prog b { font-weight: 600; }
+.mu-prog.rounds { white-space: normal; }
+.mu-st-l { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; white-space: nowrap; }
 .mu-st { color: var(--muted); }
 .mu-st.done { color: var(--text); }
 .mu-st.now { color: var(--text); font-weight: 600; }
-.mu-st.now:not(.good):not(.bad)::after { content: ""; display: inline-block; width: 6px; height: 6px; margin-left: 5px; border-radius: 50%; background: var(--mubit); vertical-align: 1px; animation: mu-pulse 1s ease-in-out infinite; }
+.mu-st.now:not(.good):not(.bad)::after { content: ""; display: inline-block; width: 6px; height: 6px; margin-left: 6px; border-radius: 50%; background: var(--mubit); vertical-align: 1px; animation: mu-pulse 1s ease-in-out infinite; }
 .mu-st.good { color: var(--green); font-weight: 600; }
 .mu-st.bad { color: var(--muted); font-weight: 600; }
 .mu-st-arr { color: var(--muted); }
-.mu-ideas { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
-.mu-idea { min-width: 0; max-width: 100%; padding: 1px 8px; border: 1px dashed var(--line); border-radius: 999px; font: 500 11px/1.4 var(--sans); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mu-idea.in { border-style: solid; border-color: rgba(255, 69, 0, .45); color: var(--text); }
-.mu-idea.good { border-color: rgba(74, 222, 128, .55); }
-.mu-idea.bad { border-color: var(--line); color: var(--muted); }
-.mu-idea.win { background: rgba(74, 222, 128, .12); border-color: var(--green); }
-.mu-idea-f { color: var(--mubit); font-weight: 600; }
+.mu-ideas { display: flex; gap: 8px; margin-top: 8px; }   /* one row: four equal chips, each idea in full on hover */
+.mu-idea { flex: 1 1 0; min-width: 0; max-width: max-content; padding: 2px 8px; background: var(--field); border: 1px solid var(--rule); border-radius: 4px; font: 400 12px/1.4 var(--sans); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mu-idea.in { color: #c9c9d2; }
+.mu-idea.good { border-color: rgba(74, 222, 128, .45); }
+.mu-idea.win { border-color: var(--green); background: rgba(74, 222, 128, .08); }
+.mu-idea-f { color: var(--text); font-weight: 600; }
 @media (prefers-reduced-motion: reduce) { .mu-st.now::after { animation: none; } }
-.mu-seg-l { font: 500 11px/1 var(--sans); color: var(--muted); }
 
-/* hero: the timing line under the car, the decision badge */
-.hero-bl .mu-time { font: 500 12px/1.35 var(--mono); color: var(--text); pointer-events: auto; }
+/* =============================================================== the three columns */
+body.clab-page .clab { grid-template-columns: var(--cols); gap: var(--gap); padding: var(--gap) var(--gap) 8px; }
+body.clab-page .clab .col { gap: var(--gap); }
+body.clab-page main.clab .panel { border-color: var(--rule); }
+/* panel header: 32 px, the title in sentence case, its source on the right (it wraps under the title rather than being cut) */
+body.clab-page main.clab .ph { min-height: 32px; align-items: center; flex-wrap: wrap; gap: 2px 12px; padding: 6px 16px; border-bottom: 1px solid var(--rule); }
+body.clab-page main.clab .ph .label { font: 600 13px/1.3 var(--sans); letter-spacing: 0; text-transform: none; color: var(--text); }
+body.clab-page main.clab .ph .src { margin-left: auto; font-size: 11px; }
+body.clab-page main.clab .label { letter-spacing: 0; text-transform: none; font-size: 11px; }
+body.clab-page main.clab .kpi .label::first-letter, body.clab-page main.clab .hero-chg .label::first-letter, body.clab-page main.clab .mass .sub::first-letter { text-transform: uppercase; }
+#feedLabel.mu-t { display: inline-flex; align-items: center; gap: 8px; color: var(--text); }
+#feedLabel.mu-t::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--mubit); }
+body.clab-page main.clab .pf { padding: 8px 16px; border-top: 1px solid var(--rule); font-size: 11px; line-height: 1.5; }
+body.clab-page main.clab .empty { padding: 16px; font-size: 13px; line-height: 1.5; }
+body.clab-page .tag { padding: 0 4px; border-radius: 4px; font: 600 11px/16px var(--sans); letter-spacing: 0; text-transform: none; border-color: var(--line); }
+body.clab-page .flag { padding: 0 5px; border-radius: 4px; font: 600 11px/16px var(--sans); letter-spacing: 0; text-transform: none; }
+
+/* ---- leaderboard */
+body.clab-page .board .rows { padding: 4px 0; }
+body.clab-page .brow { grid-template-columns: 20px 4px 40px minmax(0, 1fr) 56px 56px; gap: 0 8px; height: 20px; padding: 0 16px 0 14px; font-size: 12px; }
+body.clab-page .brow .team { font: 400 12px/1.2 var(--sans); }
+body.clab-page .brow.concept { background: rgba(178, 108, 255, .12); }
+
+/* ---- how different is it? */
+body.clab-page .dist-head { gap: 16px; padding: 12px 16px 8px; }
+body.clab-page .dist-head .big { font-size: var(--big); }
+body.clab-page .dist-head .dh-t { font: 500 12px/1.4 var(--sans); }
+body.clab-page .dist-head .dh-t > div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }   /* the whole definition is the tooltip */
+body.clab-page .dist-head .dh-t .src { font-size: 11px; }
+body.clab-page .dist-rows { padding: 0 0 8px; }
+body.clab-page .drow { grid-template-columns: 88px minmax(24px, 1fr) 40px 28px minmax(0, 1.25fr); gap: 0 8px; height: 18px; padding: 0 16px; font-size: 12px; }
+body.clab-page .drow .dn { font: 400 12px/1 var(--sans); }
+body.clab-page .drow .dc, body.clab-page .drow .dt { font-size: 11px; }
+body.clab-page .drow .dbar { background: var(--field); }
+
+/* ---- the car: 3D view on top, the best-lap strip as its own band underneath (numbers never sit on the car) */
+body.clab-page .hero { display: flex; flex-direction: column; background: var(--panel); }
+body.clab-page #view3d { position: relative; inset: auto; flex: 1 1 auto; min-height: 0; }
+body.clab-page .plan { position: relative; inset: auto; flex: 1 1 auto; min-height: 0; margin: 48px 16px 8px; }
+body.clab-page .hero-tl { top: 12px; left: 16px; gap: 8px; }
+body.clab-page .hero-tr { top: 12px; right: 16px; gap: 8px; }
+body.clab-page .hero-tr .vlabel, body.clab-page .hero-tr .warn { max-width: 380px; font-size: 11px; line-height: 1.4; }
+/* the last kept change: its own row under the best-lap strip (mubit-first.js moves #heroBR there), one line that wraps if it must */
+body.clab-page .hero > .hero-chg { flex: none; display: flex; flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: 2px 16px; max-width: none; padding: 0 16px 12px; background: none; border: none; border-radius: 0; }
+body.clab-page .hero > .hero-chg .label { font-size: 11px; color: var(--muted); }
+body.clab-page .hero > .hero-chg .chg { max-width: 100%; font: 500 12px/1.4 var(--sans); color: var(--text); }
+body.clab-page .hero > .hero-chg .chg.muted { color: var(--muted); }
+body.clab-page .hero > .hero-chg .dotp { width: 6px; height: 6px; margin-right: 6px; }
+body.clab-page .hero > .hero-chg .delta { font: 600 12px/1.4 var(--mono); }
+body.clab-page .hero-bl { padding-bottom: 8px; }
+body.clab-page .hero-bl { position: static; flex: none; max-width: none; gap: 4px; padding: 12px 16px; border-top: 1px solid var(--rule); pointer-events: auto; }
+body.clab-page .kpis { gap: 8px 32px; }
+body.clab-page .kpi { gap: 4px; }
+body.clab-page .kpi .label { font-size: 11px; }
+body.clab-page .kpi .big { font-size: var(--big); }
+body.clab-page .kpi .of { font-size: 13px; }
+body.clab-page .kpi-sub { font: 500 12px/1.4 var(--mono); color: var(--muted); }
+body.clab-page .hero-bl .src { font-size: 11px; }
+.hero-bl .mu-time { font: 500 11px/1.4 var(--mono); color: var(--text); pointer-events: auto; }
 .hero-bl .mu-time .mu-w { color: var(--mubit); }
 .hero-bl .mu-time .sep { color: var(--muted); }
 .badge.mubit-b { border-color: var(--mubit); color: var(--mubit); }
+
+/* ---- progress chart */
+body.clab-page .chart { flex-basis: 208px; }
+body.clab-page .chart .legend { gap: 12px; font: 500 11px/1.3 var(--sans); margin-left: auto; }
+body.clab-page .chart .legend .src { font-size: 11px; }
+body.clab-page .svgwrap .ax, body.clab-page .svgwrap .reft { font-size: 11px; }
 .svgwrap .ax.mu-ax { fill: var(--mubit); }
 
-/* the Mubit feed (cards in the lineage card style) */
-#feedLabel.mu-t { color: var(--mubit); }
-.ln.mu-card { padding: 6px 12px 7px; }
-.ln.mu-card.ok { border-left-color: var(--green); }
-.ln.mu-card.kept:not(.ok) { border-left-color: var(--purple); }
-.ln.mu-card .l1 .spacer { flex: 1 1 auto; }
-.ln.mu-card .g { width: auto; min-width: 30px; }
-.mu-rid { font: 500 10.5px/1 var(--mono); color: var(--muted); cursor: help; }
-.mu-hyp { margin-top: 3px; font: 400 12px/1.38 var(--sans); color: var(--text); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.mu-chg { margin-top: 2px; font: 500 11.5px/1.4 var(--sans); color: #c9c9d2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mu-chg .k { color: var(--muted); }
-.mu-asw { margin-top: 1px; font: 400 11px/1.3 var(--sans); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mu-focus { color: #8f8fa0; }
-/* a round's header on top of its cards (the feed is newest first) */
-.mu-rwrap { border-top: 1px solid rgba(255, 69, 0, .35); }
-.mu-round { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; padding: 5px 12px 3px; font: 500 11.5px/1.3 var(--sans); color: var(--muted); background: rgba(255, 69, 0, .05); }
-.mu-round-t { white-space: nowrap; }
-.mu-round b { color: var(--mubit); font-weight: 600; }
-.mu-round .spacer { flex: 1 1 auto; }
-.mu-round-r { white-space: nowrap; }
-.mu-round-r.good { color: var(--green); font-weight: 600; }
-.mu-l3 { margin-top: 4px; display: flex; align-items: center; gap: 8px; min-width: 0; }
-.mu-eng { min-width: 0; font: 500 11px/1.3 var(--sans); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mu-eng.kept { color: var(--purple); }
-.mu-v { flex: none; padding: 1px 7px; border: 1px solid var(--line); border-radius: 999px; font: 600 11.5px/1.3 var(--sans); white-space: nowrap; cursor: help; }
-.mu-v.good { color: var(--green); border-color: rgba(74, 222, 128, .55); background: rgba(74, 222, 128, .08); }
-.mu-v.bad { color: var(--red); border-color: rgba(240, 80, 110, .5); background: rgba(240, 80, 110, .07); }
-.mu-chip { flex: none; display: inline-block; padding: 1px 7px; border: 1px solid var(--line); border-radius: 999px; font: 600 11px/1.3 var(--sans); white-space: nowrap; }
-.mu-chip.sm { font-size: 10px; padding: 0 6px; }
-.mu-chip.mubit { color: var(--mubit); border-color: rgba(255, 69, 0, .5); }
+/* ---- the Mubit feed: one card per call. Verdict + training first, Claude's idea, the change in plain words, what physics measured,
+   then a quiet meta line (who answered · request id · latency · focus) */
+body.clab-page .ln { padding: 12px 16px 12px 14px; border-bottom-color: var(--rule); }
+body.clab-page .ln.kept { background: none; border-left-color: transparent; }
+body.clab-page .ln.illegal { border-left-color: transparent; }
+body.clab-page .ln.mu-card.ok { border-left-color: var(--green); }
+.ln.mu-card .l1 { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ln.mu-card .g { flex: none; width: auto; min-width: 36px; font: 500 12px/1 var(--mono); color: var(--muted); }
+.mu-v, .mu-chip { flex: none; display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border: 1px solid var(--line); border-radius: 4px; font: 600 12px/1 var(--sans); white-space: nowrap; cursor: help; }
+.mu-v.good { color: var(--green); border-color: rgba(74, 222, 128, .5); background: rgba(74, 222, 128, .08); }
+.mu-v.bad { color: var(--red); border-color: rgba(240, 80, 110, .45); background: rgba(240, 80, 110, .06); }
+.mu-chip { font-weight: 500; cursor: default; }
+.mu-chip[title] { cursor: help; }
+.mu-chip.mubit { color: var(--mubit); border-color: rgba(255, 69, 0, .45); }
 .mu-chip.mubit.on { color: #fff; background: var(--mubit); border-color: var(--mubit); }
 .mu-chip.mubit.pend { opacity: .7; }
 .mu-chip.muted { color: var(--muted); }
-.mu-chip.bad { color: var(--red); border-color: rgba(240, 80, 110, .5); }
+.mu-chip.bad { color: var(--red); border-color: rgba(240, 80, 110, .45); }
+.mu-hyp { margin-top: 8px; font: 400 13px/1.45 var(--sans); color: var(--text); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.mu-chg { margin-top: 4px; font: 500 12px/1.4 var(--sans); color: #c9c9d2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mu-chg .k { color: var(--muted); font-weight: 400; }
+.mu-res { margin-top: 2px; font: 400 12px/1.4 var(--sans); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mu-res .mu-eng.kept { color: var(--text); }
+.mu-meta { margin-top: 4px; font: 400 11px/1.4 var(--sans); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mu-meta .num { font-family: var(--mono); }
+.mu-rid { font: 500 11px/1 var(--mono); color: var(--muted); cursor: help; }
+.mu-focus { cursor: help; }
+/* a round's header on top of its cards (the feed is newest first) */
+.mu-rwrap { border-top: 1px solid var(--line); }
+.mu-round { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; padding: 8px 16px; font: 400 12px/1.4 var(--sans); color: var(--muted); background: var(--field); border-bottom: 1px solid var(--rule); }
+.mu-round b { color: var(--text); font-weight: 600; }
+.mu-round .spacer { flex: 1 1 auto; }
+.mu-round-r { white-space: nowrap; }
+.mu-round-r .good { color: var(--green); font-weight: 600; }
 
+/* ---- car sheet */
+body.clab-page .sheet .ph .src { gap: 4px; }
+body.clab-page .sheet-body { gap: 0 16px; padding: 8px 16px 12px; }
+body.clab-page .mass .sub { margin-bottom: 4px; font-size: 11px; }
+body.clab-page .mrow { grid-template-columns: 60px minmax(16px, 1fr) 36px 32px; gap: 0 4px; height: 18px; font-size: 11px; }
+body.clab-page .mrow .mn { font: 400 11px/1 var(--sans); }
+body.clab-page .mrow .md { font-size: 11px; }
+body.clab-page .mbar { background: var(--field); }
+body.clab-page .mtot { margin-top: 8px; gap: 4px; }
+body.clab-page .mtot .src { font-size: 11px; }
+body.clab-page .kvs { gap: 2px 6px; font-size: 11px; }
+body.clab-page .kvs .k { font: 400 11px/1.55 var(--sans); }
+body.clab-page .kvs .u { font-size: 11px; }
+
+/* ---- honest limits: one line, the whole text on hover / focus (mubit-first.js sets the tooltip) */
+body.clab-page .honest { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 16px 8px; font: 400 11px/1.6 var(--sans); color: var(--muted); cursor: help; }
+body.clab-page .honest .label { margin-right: 8px; font: 600 11px/1.6 var(--sans); letter-spacing: 0; text-transform: none; color: var(--text); }
+body.clab-page .honest .sim { margin-left: .3em; color: var(--muted); }
+body.clab-page .honest:focus-visible { white-space: normal; }
+
+/* =============================================================== laptop screens (1440 × 900): one row of controls, a little more car */
+@media (max-width: 1600px) {
+  .mctl > .mu-grp:first-child > .mu-gl { display: none; }   /* the run picker, Play and Skip to end say it; the select keeps its label */
+  body.clab-page .chart { flex-basis: 184px; }
+  body.mubit-on:has(#muProg:not([hidden])) .chart { flex-basis: 160px; }   /* a run in progress adds the round strip: keep the car's room */
+  body.clab-page .brow { height: 18px; }
+  body.clab-page .drow { height: 17px; }
+  body.clab-page .dist-head { padding: 8px 16px 4px; }
+}
+@media (max-width: 1100px) {
+  :root body.clab-page .top { row-gap: 8px; }
+  body.clab-page .top .hbreak { height: 0; }
+}
+/* =============================================================== 1280-class screens */
 @media (max-width: 1365px) {
-  .mustrip { gap: 10px; padding: 8px 10px 0; }
-  .mu-ctr-v { font-size: 22px; }
-  .mu-model-l { font-size: 12px; }
-  .mctl .mu-run { max-width: 150px; }
+  body.clab-page { --cols: minmax(0, 25fr) minmax(0, 42fr) minmax(0, 33fr); --big: 24px; }
+  :root body.clab-page .top .sub { display: block; }
+  body.clab-page .brow { height: 18px; grid-template-columns: 20px 4px 38px minmax(0, 1fr) 52px 52px; gap: 0 6px; }
+  body.clab-page .drow { height: 17px; grid-template-columns: 80px minmax(24px, 1fr) 36px 26px minmax(0, 1.1fr); gap: 0 6px; }
+  body.clab-page .kpis { gap: 8px 20px; }
+  body.clab-page .chart { flex-basis: 184px; }
+  body.clab-page .mrow { grid-template-columns: 60px minmax(16px, 1fr) 36px; height: 17px; }
+  body.clab-page .sheet-body { gap: 0 12px; }
+  .mctl .mu-run { max-width: 160px; }
 }
+@media (max-width: 1100px) { :root body.clab-page .top .sub { display: none; } }
+/* stacked under 1200 px (the page scrolls) */
 @media (max-width: 1199px) {
-  .mustrip { grid-template-columns: 1fr 1fr; }
-  .mctl { flex-wrap: wrap; }
+  .mustrip { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .mu-mid { grid-column: 1 / -1; order: 3; }
+  body.clab-page .clab { grid-template-columns: minmax(0, 1fr); }
+  body.clab-page .hero { min-height: 520px; }
+  body.clab-page .feed { max-height: 720px; }   /* the feed scrolls inside its panel instead of making the page 100+ cards long */
 }
+@media (max-width: 760px) { body.clab-page .loopd { top: 0; } }
+/* phone: one column, 16 px gutters, controls wrap and stay reachable */
 @media (max-width: 560px) {
-  .mustrip { grid-template-columns: 1fr; padding: 8px 16px 0; }
-  .mctl { flex: 1 1 100%; min-width: 0; flex-wrap: wrap; }
-  .mu-golive-g { flex-wrap: wrap; padding-left: 0; border-left: none; }
-  .mu-ctr-s, .mu-ctr-tot, .mu-model-l { white-space: normal; }
+  :root body.clab-page .top { padding: 12px 16px; gap: 8px; }
+  body.clab-page .top .brand { flex: 1 0 100%; }
+  body.clab-page .top .spacer { display: none; }
+  body.clab-page .top .back { padding: 4px 0; }
+  body.clab-page .viewsw { flex: 1 1 100%; display: grid; grid-template-columns: 1fr 1fr; }
+  body.clab-page .viewsw .btn { height: 28px; }
+  .mctl { flex: 1 1 100%; min-width: 0; gap: 12px; }
+  .mu-grp { flex-wrap: wrap; }
+  .mu-golive-g { padding-left: 0; border-left: none; padding-top: 12px; border-top: 1px solid var(--rule); flex: 1 1 100%; }
+  .mctl .mu-run { max-width: none; flex: 1 1 160px; }
+  .mustrip, .mu-mid { grid-template-columns: minmax(0, 1fr); }
+  .mu-mid { order: 0; }
+  .mu-ctr + .mu-ctr { border-left: none; border-top: 1px solid var(--rule); }
+  .mu-ctr-s, .mu-ctr-tot, .mu-model-l span, .mu-model-src { white-space: normal; }
+  .mu-model-h { flex-wrap: wrap; }
+  .mu-prog { white-space: normal; }
+  .mu-ideas { flex-direction: column; align-items: stretch; }
+  .mu-idea { flex: none; max-width: 100%; }
+  body.clab-page .hero { min-height: 0; }
+  body.clab-page .hero-tl { position: static; order: 0; flex-wrap: wrap; padding: 12px 16px 0; }
+  body.clab-page .hero-tr { position: static; order: 1; max-width: none; align-items: flex-start; text-align: left; padding: 8px 16px 0; }
+  body.clab-page .hero-tr #heroModes { align-items: flex-start; }
+  body.clab-page #view3d, body.clab-page .plan { order: 2; flex: 0 0 300px; top: auto; bottom: auto; }
+  body.clab-page .hero-bl { order: 3; }
+  body.clab-page .hero > .hero-chg { order: 4; }
+  body.clab-page .kpis { gap: 12px 24px; }
+  body.clab-page .honest { white-space: normal; }
+  body.clab-page .mu-chg, body.clab-page .mu-res, body.clab-page .mu-meta { white-space: normal; }
 }
-
-/* the floating part tag repeats the "last kept change" callout and collided with the 3D view caption: hidden in the Mubit view */
-body.mubit-on .cv-tags { display: none !important; }

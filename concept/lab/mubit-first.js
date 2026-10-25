@@ -281,9 +281,15 @@
 
   // ---------------------------------------------------------------- render
   function renderAll() { renderStrip(); renderCtl(); renderProgress(); const lab = L(); if (lab) lab.set({ feedNote: feedNote(), emptyText: emptyText() }); setLabStatus(); }
-  function counter(cls, value, label, sub, title) {
-    return el("div", { class: "mu-ctr " + (cls || ""), title: title || null }, el("div", { class: "mu-ctr-top" }, el("span", { class: "mu-ctr-v num" }, value), el("span", { class: "mu-ctr-l" }, label)), sub ? el("div", { class: "src mu-ctr-s" }, sub) : null);
+  // a strip counter: the number and what it counts on one line, one short caption under it (the full sentence is the tooltip)
+  // "54 / 117": the count big, its denominator quieter
+  const bigNum = v => { const m = /^(.+?)( \/ .+)$/.exec(String(v)); return el("span", { class: "mu-ctr-v num" }, m ? [m[1], el("span", { class: "mu-of" }, m[2])] : String(v)); };
+  function counter(cls, value, label, sub, title, subTitle) {
+    return el("div", { class: "mu-ctr " + (cls || ""), title: title || null },
+      el("div", { class: "mu-ctr-top" }, bigNum(value), el("span", { class: "mu-ctr-l" }, label)),
+      sub ? el("div", { class: "mu-ctr-s", title: subTitle || sub }, sub) : null);
   }
+  // the Mubit strip: three panels on the column edges below (Mubit and the run | calls and approved ideas | the Mubit model)
   function renderStrip() {
     const host = $("#muStrip"); if (!host) return;
     const n = S.cards.length, ok = S.cards.filter(approved).length;
@@ -292,40 +298,44 @@
     let modeBadge, modeLine;
     if (S.mode === "replay") {
       const ids = R ? R.request_ids || [] : [];
-      modeBadge = el("span", { class: "badge mu-badge replay", title: "a recorded LIVE run: every call has a real Mubit x-middleware-request-id; played back here, nothing is re-run" }, "REPLAY");
+      modeBadge = el("span", { class: "mu-badge replay", title: "a recorded LIVE run: every call has a real Mubit x-middleware-request-id; played back here, nothing is re-run" }, "Replay");
       modeLine = el("span", { class: "mu-line", title: R ? R.calls + " Mubit calls · " + (R.model || "") + " · request ids " + ids[0] + " … " + ids[ids.length - 1] : "" }, R ? "recorded live run" + (R.recorded_at ? " · " + when(R.recorded_at) : "") : S.error || "loading the recorded run…");
     } else if (S.mode === "live") {
-      modeBadge = el("span", { class: "badge mu-badge live" }, "LIVE");
+      modeBadge = el("span", { class: "mu-badge live" }, "Live");
       modeLine = el("span", { class: "mu-line", title: S.run ? S.run.run_id : "" }, S.status === "error" ? "" : "live run · " + (S.rounds ? S.rounds + " rounds × " + IDEAS + " ideas" : S.total + " Mubit calls"));
     } else {
-      modeBadge = el("span", { class: "badge amber mu-badge" }, "OFFLINE DEMO");
-      modeLine = el("span", { class: "mu-line warn" }, "scripted stand-in, not a model · no Mubit call");
+      modeBadge = el("span", { class: "mu-badge demo" }, "Offline demo");
+      modeLine = el("span", { class: "mu-line" }, "scripted stand-in, not a model · no Mubit call");
     }
     const total = S.mode === "replay" && R ? R.decisions.length : S.total;
     const callsSub = S.mode === "mock" ? "offline demo: nothing is sent to Mubit"
       : S.mode === "live" ? MODEL_NAME + " · " + IDEAS + " at once per round" + (S.examples ? " + " + S.examples + " trained re-send" + (S.examples === 1 ? "" : "s") : "") + " · of " + S.total
-      : MODEL_NAME + " · one per decision · " + n + " / " + total + " played";
+      : n + " / " + total + " played · " + MODEL_NAME + " · one per decision";
     // the second counter says what it counts, per mode: live = trained re-sends (kept rule); a replayed record_good run = its trained
     // re-sends; a replayed all-trained run = every call was recorded, so it counts the ideas physics kept a faster car from
     const allTrained = S.mode === "replay" && !!R && (R.trained === true || (S.cards.length > 0 && S.cards.every(c => c.train === "recorded")));
     const sent = S.cards.filter(c => c.train === "trained").length;
     const exV = S.mode === "live" ? String(S.examples) : S.mode === "mock" ? "0" : R && R.record_good ? sent + " / " + n : ok + " / " + n;
     const exL = S.mode === "replay" && !(R && R.record_good) ? "ideas physics kept a faster car from" : "physics-approved → Mubit training examples";
-    const exSub = S.mode === "live" ? "this run: of " + ok + " ideas physics kept a faster car from, re-sent by the server as trained calls"
-      : S.mode === "mock" ? "offline demo: nothing is sent to Mubit"
-      : R && R.record_good ? "replayed run: ideas physics kept a faster car from were re-sent as trained calls"
-      : allTrained ? "replayed run: every call was recorded in Mubit; " + ok + " of its " + n + " ideas were kept by physics"
-      : "replayed run: " + ok + " of its " + n + " ideas were kept by physics";
+    // short caption on screen, the full sentence as its tooltip
+    const exSub = S.mode === "live" ? ["this run · " + ok + " approved, re-sent as trained calls", "this run: of " + ok + " ideas physics kept a faster car from, re-sent by the server as trained calls"]
+      : S.mode === "mock" ? ["offline demo: nothing is sent to Mubit"]
+      : R && R.record_good ? ["replayed run · approved ideas were re-sent as trained calls", "replayed run: ideas physics kept a faster car from were re-sent as trained calls"]
+      : allTrained ? ["replayed run · every call was recorded in Mubit", "replayed run: every call was recorded in Mubit; " + ok + " of its " + n + " ideas were kept by physics"]
+      : ["replayed run · kept by physics", "replayed run: " + ok + " of its " + n + " ideas were kept by physics"];
+    const exTitle = "an idea counts as approved when physics kept a faster legal car from it: the engine's best version of the idea (as written, made legal, or a tested variant) beat the car it started from on the physics lap sim. In a live run only those are re-sent as trained calls, Mubit training examples";
     host.replaceChildren(
-      el("div", { class: "mu-mark", title: "Mubit: the gateway every designer call goes through; it records calls and trains on the kept examples" }, el("span", { class: "mu-logo" }, "Mubit"), el("span", { class: "mu-mode" }, modeBadge, modeLine)),
-      counter("mubit", int(calls), "Mubit calls · this run", callsSub, "designer calls sent through Mubit in this run (live: plus the trained re-sends)"),
-      el("div", { class: "mu-ctr good", title: "an idea counts as approved when physics kept a faster legal car from it: the engine's best version of the idea (as written, made legal, or a tested variant) beat the car it started from on the physics lap sim. In a live run only those are re-sent as trained calls, Mubit training examples" },
-        el("div", { class: "mu-ctr-top" }, el("span", { class: "mu-ctr-v num" }, exV), el("span", { class: "mu-ctr-l" }, exL)),
-        el("div", { class: "src mu-ctr-s" }, exSub),
-        el("div", { class: "mu-ctr-tot", title: "source: " + MUBIT.harvest.source }, el("b", { class: "num" }, int(MUBIT.harvest.examples)), " in total · from " + int(MUBIT.harvest.decisions) + " Claude ideas · " + "harvest runs, 24 Oct")),
-      el("div", { class: "mu-ctr mu-model", title: "source: " + MUBIT.model_source }, el("span", { class: "mu-ctr-l" }, "Mubit model status"),
-        MUBIT.model.map(([v, t]) => el("div", { class: "mu-model-l" }, el("b", null, v), " " + t)),
-        el("div", { class: "src mu-ctr-s" }, "source: " + MUBIT.model_source)),
+      el("div", { class: "mu-cell mu-mark", title: "Mubit: the gateway every designer call goes through; it records calls and trains on the kept examples" },
+        el("div", { class: "mu-mark-top" }, el("span", { class: "mu-logo" }, "Mubit"), modeBadge), modeLine),
+      el("div", { class: "mu-cell mu-mid" },
+        counter("mubit", int(calls), "Mubit calls · this run", callsSub, "designer calls sent through Mubit in this run (live: plus the trained re-sends)"),
+        el("div", { class: "mu-ctr good", title: exTitle },
+          el("div", { class: "mu-ctr-top" }, bigNum(exV), el("span", { class: "mu-ctr-l" }, exL)),
+          el("div", { class: "mu-ctr-s", title: exSub[1] || exSub[0] }, exSub[0]),
+          el("div", { class: "mu-ctr-tot", title: int(MUBIT.harvest.examples) + " physics-approved examples in total, from " + int(MUBIT.harvest.decisions) + " Claude ideas · harvest runs, 24 Oct · source: " + MUBIT.harvest.source }, el("b", { class: "num" }, int(MUBIT.harvest.examples)), " in total, from " + int(MUBIT.harvest.decisions) + " Claude ideas"))),
+      el("div", { class: "mu-cell mu-model", title: "source: " + MUBIT.model_source },
+        el("div", { class: "mu-model-h" }, el("span", null, "Mubit model status"), el("span", { class: "mu-model-src" }, "source: " + MUBIT.model_source)),
+        MUBIT.model.map(([v, t]) => el("div", { class: "mu-model-l" }, el("b", { class: "num" }, v), el("span", null, t)))),
     );
   }
   function renderProgress() {
@@ -359,28 +369,30 @@
   }
   function renderCtl() {
     const host = $("#muCtl"); if (!host) return;
-    const kids = [];
+    // two groups, each with its label: the recorded run (run · play · speed · skip) and a live run (rounds · Go live · offline demo)
+    const rep = S.mode === "replay" ? [el("span", { class: "mu-gl" }, "Recorded run")] : [];
     if (S.mode === "replay") {
       const playing = S.playing;
-      kids.push(el("select", { class: "mu-run", "aria-label": "recorded run", title: "recorded live Mubit runs bundled with the site", onchange: e => loadReplay(e.target.value).then(play) },
+      rep.push(el("select", { class: "mu-run", "aria-label": "recorded run", title: "recorded live Mubit runs bundled with the site", onchange: e => loadReplay(e.target.value).then(play) },
         S.runs.map(r => el("option", { value: r.name, selected: S.meta && r.name === S.meta.name ? true : null, title: r.name + " · " + r.calls + " Mubit calls · recorded " + when(r.recorded_at) }, runLabel(r)))));
-      kids.push(el("button", { type: "button", class: "btn primary", id: "muPlay", onclick: () => (playing ? pause() : play()) }, playing ? "Pause" : S.status === "done" ? "Replay" : S.shown ? "Resume" : "Play"),
-        el("div", { class: "mu-seg", role: "group", "aria-label": "replay speed" }, [[1000, "1×"], [250, "4×"]].map(([v, t]) => el("button", { type: "button", class: "btn small" + (S.pace === v ? " on" : ""), "aria-pressed": S.pace === v ? "true" : "false", onclick: () => { S.pace = v; renderCtl(); } }, t))),
-        el("button", { type: "button", class: "btn small", title: "show every decision now", onclick: skipToEnd }, "End"));
+      rep.push(el("button", { type: "button", class: "btn primary", id: "muPlay", onclick: () => (playing ? pause() : play()) }, playing ? "Pause" : S.status === "done" ? "Play again" : S.shown ? "Resume" : "Play"),
+        el("div", { class: "mu-seg", role: "group", "aria-label": "replay speed", title: "replay speed" }, [[1000, "1×"], [250, "4×"]].map(([v, t]) => el("button", { type: "button", class: "btn" + (S.pace === v ? " on" : ""), "aria-pressed": S.pace === v ? "true" : "false", onclick: () => { S.pace = v; renderCtl(); } }, t))),
+        el("button", { type: "button", class: "btn", title: "show every decision now", onclick: skipToEnd }, "Skip to end"));
     } else {
-      kids.push(el("button", { type: "button", class: "btn", onclick: () => loadReplay(S.meta && S.meta.name) }, "Replay"));
-      if (S.status === "running") kids.push(el("button", { type: "button", class: "btn danger", onclick: stopRun }, "Stop"));
+      rep.push(el("button", { type: "button", class: "btn", title: "back to the recorded live Mubit run", onclick: () => loadReplay(S.meta && S.meta.name) }, "Back to replay"));
+      if (S.status === "running") rep.push(el("button", { type: "button", class: "btn danger", onclick: stopRun }, "Stop run"));
     }
     const running = S.status === "running" || S.status === "starting";
-    kids.push(el("span", { class: "mu-golive-g" },
+    const live = el("div", { class: "mu-grp mu-golive-g", role: "group", "aria-label": "live run" },
+      el("span", { class: "mu-gl", title: "rounds in a live run; each round asks Mubit for " + IDEAS + " ideas at once" }, "Live run"),
       el("div", { class: "mu-seg", role: "group", "aria-label": "rounds in a live run", title: "rounds in a live run: each round asks Mubit for " + IDEAS + " ideas at once (" + IDEAS + " Mubit calls), the engine tests all of them and keeps the fastest legal car. The public site reserves " + IDEAS + " calls per round of its hourly limit; a run is time-boxed to about 4 minutes there and stops cleanly at the limit" },
-        LIVE_CHOICES.map(v => el("button", { type: "button", class: "btn small" + (S.liveN === v ? " on" : ""), "aria-pressed": S.liveN === v ? "true" : "false", disabled: running ? true : null, title: v + " rounds × " + IDEAS + " ideas = " + v * IDEAS + " Mubit calls", onclick: () => { S.liveN = v; renderCtl(); } }, String(v)))),
+        LIVE_CHOICES.map(v => el("button", { type: "button", class: "btn" + (S.liveN === v ? " on" : ""), "aria-pressed": S.liveN === v ? "true" : "false", disabled: running ? true : null, title: v + " rounds × " + IDEAS + " ideas = " + v * IDEAS + " Mubit calls", onclick: () => { S.liveN = v; renderCtl(); } }, String(v)))),
       el("span", { class: "mu-seg-l", title: "rounds in a live run; each round asks Mubit for " + IDEAS + " ideas at once" }, "rounds × " + IDEAS + " ideas"),
       S.liveOk
         ? el("button", { type: "button", class: "btn mu-golive", id: "muGoLive", disabled: running ? true : null, title: "start the engine now: " + S.liveN + " rounds × " + IDEAS + " ideas = " + S.liveN * IDEAS + " Mubit calls (" + MODEL_NAME + ", untrained, " + IDEAS + " at once); every idea from which physics keeps a faster legal car is re-sent by the server as a trained call, a Mubit training example", onclick: () => startRun("live") }, "Go live")
-        : el("button", { type: "button", class: "btn mu-golive off", id: "muGoLive", disabled: true, title: "live is not available here: " + (S.liveWhy || "checking…") }, "Go live")));
-    if (S.apiOk && !S.liveOk) kids.push(el("button", { type: "button", class: "btn small mu-demo", title: "run the real engine with a scripted stand-in instead of the model (labelled offline demo, no Mubit call)", disabled: running ? true : null, onclick: () => startRun("mock") }, "Offline demo"));
-    host.replaceChildren(...kids);
+        : el("button", { type: "button", class: "btn mu-golive off", id: "muGoLive", disabled: true, title: "live is not available here: " + (S.liveWhy || "checking…") }, "Go live"),
+      S.apiOk && !S.liveOk ? el("button", { type: "button", class: "btn mu-demo", title: "run the real engine with a scripted stand-in instead of the model (labelled offline demo, no Mubit call)", disabled: running ? true : null, onclick: () => startRun("mock") }, "Offline demo") : null);
+    host.replaceChildren(el("div", { class: "mu-grp", role: "group", "aria-label": "recorded run" }, rep), live);
   }
 
   // ---------------------------------------------------------------- the Mubit feed card (lineage card style; drawn by concept-lab.js renderFeed)
@@ -391,7 +403,7 @@
   const dp = v => (isNum(v) && Math.abs(v) >= 0.01 ? 2 : 3);
   function roundBest(c) { return c.round == null ? null : S.cards.find(x => x.round === c.round && x.kept) || null; }
   function verdict(c) {
-    if (c.by !== "mubit" && c.by !== "mock") return el("span", { class: "verdict sm reject", title: c.fallback || "" }, "no usable answer");
+    if (c.by !== "mubit" && c.by !== "mock") return el("span", { class: "mu-v bad", title: c.fallback || "" }, "✗ no usable answer");
     const why = "physics lap sim · Silverstone · the engine's best legal version of this idea vs the car it started from";
     if (c.kept && isNum(c.d_head)) return el("span", { class: "mu-v good", title: why + " · this car was kept" }, "✓ kept " + sg(c.d_head, dp(c.d_head)) + " s");
     if (fasterCar(c)) { const w = roundBest(c); return el("span", { class: "mu-v good", title: why + (w ? " · the round kept idea " + w.slot + " (#" + w.n + "), faster still" : "") }, "✓ faster car " + sg(c.best_d, dp(c.best_d)) + " s"); }
@@ -403,7 +415,7 @@
   function asWritten(c) {
     const a = c.as; if (!a || (c.by !== "mubit" && c.by !== "mock")) return null;
     const t = a.legal === false ? "illegal (" + ruleWords(a) + ")" : isNum(a.d_lap_s) ? sg(a.d_lap_s, dp(a.d_lap_s)) + " s" : a.note || "—";
-    return el("div", { class: "mu-asw", title: "the change exactly as the model wrote it, one physics lap vs the car it started from" + (c.focus ? " · focus line of this call (round " + c.round + ", idea " + c.slot + " of " + c.of + "): the only difference between the calls of a round" : "") }, "as written: " + t, c.focus ? el("span", { class: "mu-focus" }, " · focus: " + c.focus) : null);
+    return el("span", { class: "mu-asw", title: "the change exactly as the model wrote it, one physics lap vs the car it started from" }, "as written: " + t);
   }
   function trainChip(c) {
     switch (c.train) {
@@ -419,6 +431,7 @@
   function engineLine(c) {
     const tried = (isNum(c.versions) ? int(c.versions) + " versions" : "") + (isNum(c.laps) ? (isNum(c.versions) ? " · " : "") + int(c.laps) + " physics laps" : "");
     const best = (c.kept || fasterCar(c)) && c.bestChange ? plainChange(c.bestChange, 1) : null;
+    if (!tried && !best) return null;
     return el("span", { class: "mu-eng" + (c.kept ? " kept" : ""), title: "the engine tested versions of the idea around the proposal (quick screen, then full physics laps on the best)" + (c.bestChange ? " · best version: " + plainChange(c.bestChange, 9) : "") }, tried + (best ? " · best: " + best : ""));
   }
   // a round's header sits on top of its newest card (the feed is newest first)
@@ -427,23 +440,26 @@
     return el("div", { class: "mu-round" },
       el("span", { class: "mu-round-t" }, el("b", null, "Round " + c.round), " · " + c.of + " idea" + (c.of === 1 ? "" : "s") + " from " + (c.by === "mock" ? "the stand-in" : "Mubit") + " at once"),
       el("span", { class: "spacer" }),
-      el("span", { class: "mu-round-r" + (w ? " good" : "") }, w ? "kept " + sg(w.d_head, dp(w.d_head)) + " s (idea " + w.slot + ")" : "no faster car", ff ? " · " + ff + "/" + rc.length + " found a faster car" : ""));
+      el("span", { class: "mu-round-r" }, el("span", { class: w ? "good" : "" }, w ? "kept " + sg(w.d_head, dp(w.d_head)) + " s (idea " + w.slot + ")" : "no faster car"), ff ? " · " + ff + "/" + rc.length + " found a faster car" : ""));
   }
+  // card hierarchy: verdict + training first, then Claude's idea, the change in plain words, what physics measured, and a quiet meta
+  // line with who answered, the request id and the latency
   function card(row, inner) {
     const c = row.mubit; if (!c) return el("div", { class: "ln" });
     const ok = approved(c);
+    const res = [c.change ? asWritten(c) : null, engineLine(c)].filter(Boolean);
+    const meta = [
+      el("span", { class: "mu-who", title: c.by === "mock" ? "scripted stand-in, not a model" : "one Mubit call (" + MODEL_NAME + ")" }, c.by === "mock" ? "stand-in (not a model)" : "Mubit"),
+      c.id ? el("code", { class: "mu-rid", title: "x-middleware-request-id " + c.id + (c.trained ? " (trained call)" : " (untrained call)") }, shortId(c.id)) : null,
+      isNum(c.latency_ms) ? el("span", { class: "num" }, secs(c.latency_ms)) : null,
+      c.focus ? el("span", { class: "mu-focus", title: "focus line of this call (round " + c.round + ", idea " + c.slot + " of " + c.of + "): the only difference between the calls of a round" }, "focus: " + c.focus) : null,
+    ].filter(Boolean);
     const n = el("div", { class: "ln mu-card" + (c.kept ? " kept" : "") + (ok ? " ok" : "") + (!isNum(c.best_d) && c.as && c.as.legal === false ? " illegal" : ""), "data-n": c.n },
-      el("div", { class: "l1" },
-        el("span", { class: "g num", text: "#" + c.n }),
-        el("span", { class: "mu-chip mubit sm", title: c.by === "mock" ? "scripted stand-in, not a model" : "one Mubit call (" + MODEL_NAME + ")" }, c.by === "mock" ? "mock" : "Mubit"),
-        c.id ? el("code", { class: "mu-rid", title: "x-middleware-request-id " + c.id + (c.trained ? " (trained call)" : " (untrained call)") }, shortId(c.id)) : null,
-        isNum(c.latency_ms) ? el("span", { class: "src num" }, secs(c.latency_ms)) : null,
-        el("span", { class: "spacer" }),
-        verdict(c)),
+      el("div", { class: "l1" }, el("span", { class: "g num", text: "#" + c.n }), verdict(c), trainChip(c)),
       el("div", { class: "mu-hyp", title: c.hypothesis || c.fallback || "" }, c.hypothesis ? "“" + trim(c.hypothesis, 150) + "”" : "the model's answer could not be used"),
-      c.change ? el("div", { class: "mu-chg", title: plainChange(c.change, 99) }, el("span", { class: "k" }, "proposed "), plainChange(c.change, 2)) : null,
-      c.change ? asWritten(c) : null,
-      el("div", { class: "mu-l3" }, trainChip(c), engineLine(c)));
+      c.change ? el("div", { class: "mu-chg", title: plainChange(c.change, 99) }, el("span", { class: "k" }, "Proposed "), plainChange(c.change, 2)) : null,
+      res.length ? el("div", { class: "mu-res" }, res.reduce((a, x, i) => (i ? a.concat([el("span", { class: "sep", "aria-hidden": "true" }, " · "), x]) : [x]), [])) : null,
+      el("div", { class: "mu-meta" }, meta.reduce((a, x, i) => (i ? a.concat([el("span", { class: "sep", "aria-hidden": "true" }, " · "), x]) : [x]), [])));
     c.el = n;
     if (!inner && c.round != null && c.slot === c.of) return el("div", { class: "mu-rwrap" }, roundHead(c), n);
     return n;
@@ -468,12 +484,26 @@
     const v0 = qs.get("view");
     setView(v0 === "noai" ? "noai" : v0 === "tree" ? "tree" : v0 === "exam" ? "exam" : "mubit");
     $("#muStrip").after(el("div", { class: "mu-prog mubit-only", id: "muProg", hidden: true }));
+    tidy();
     document.addEventListener("keydown", e => { if (S.view !== "mubit" || S.mode !== "replay") return; if (e.target.closest && e.target.closest("input,select,textarea,button,a")) return; if (e.key === " ") { e.preventDefault(); S.playing ? pause() : play(); } });
     renderAll();
     await listRuns();
     await loadReplay(qs.get("replay"));
     probeLive();
     if (S.view === "mubit") { if (qs.get("autoplay") === "end") skipToEnd(); else if (qs.get("autoplay") !== "0") play(); }
+  }
+  // layout helpers: the header's height as --hdr-h (the Engine and Mubit loop overlays open under it), and the one-line honest-limits
+  // footer keeps its whole text as a tooltip (concept-lab.js redraws it)
+  function tidy() {
+    // the last kept change leaves the top corner of the car for its own row under the best-lap strip (concept-lab.js fills it by id)
+    const br = $("#heroBR"), hero = $("#hero"); if (br && hero) hero.appendChild(br);
+    const top = $("header.top"), root = document.documentElement;
+    const setH = () => { if (top) root.style.setProperty("--hdr-h", Math.round(top.getBoundingClientRect().height) + "px"); };
+    setH(); if (top && window.ResizeObserver) new ResizeObserver(setH).observe(top); else window.addEventListener("resize", setH);
+    const f = $("#honest"); if (!f) return;
+    const tip = () => { const t = f.textContent.replace(/\s+/g, " ").trim(); if (f.title !== t) f.title = t; };
+    tip(); if (window.MutationObserver) new MutationObserver(tip).observe(f, { childList: true, subtree: true, characterData: true });
+    f.tabIndex = 0;
   }
   // test / screenshot hook
   EI.mubitFirst = { state: () => ({ view: S.view, mode: S.mode, status: S.status, shown: S.shown, cards: S.cards.length, calls: S.calls, examples: S.examples, best: S.best, liveOk: S.liveOk, liveN: S.liveN, run: S.meta && S.meta.name, round: S.stage ? S.stage.round : null, step: S.stage ? S.stage.step : null, versions: S.stage ? S.stage.versions : 0, laps: S.stage ? S.stage.laps : 0, stopNote: S.stopNote }), play, pause, skipToEnd, startRun, loadReplay, setView, MUBIT,
