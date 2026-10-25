@@ -38,7 +38,7 @@ test("mubit-first: the browser never calls Mubit; Go live is a record_good (kept
 
 test("mubit-first: the Mubit numbers match their sources (harvest count, model status), scores as n/N", () => {
   const js = read("concept/lab/mubit-first.js");
-  const dirs = ["trained-harvest", "trained-harvest-2"];
+  const dirs = ["trained-harvest", "trained-harvest-2", "trained-harvest-3"];
   const good = dirs.map(d => read("docs/concept/loop-runs/" + d + "/good.jsonl").split("\n").filter(l => l.trim()).length).reduce((a, b) => a + b, 0);
   const decisions = dirs.map(d => +(/([\d,]+) Claude decisions/.exec(read("docs/concept/loop-runs/" + d + "/README.md"))[1].replace(/,/g, ""))).reduce((a, b) => a + b, 0);
   const m = /harvest: \{ examples: (\d+), decisions: (\d+)/.exec(js);

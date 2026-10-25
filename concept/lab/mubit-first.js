@@ -18,11 +18,11 @@
   const MUBIT = {
     model: [
       ["v1", "98 examples · Mubit test 5/19, not passed"],
-      ["v2", "2,609 physics-approved examples sent"],
+      ["v2", "4,115 physics-approved examples sent"],
     ],
     model_source: "Mubit console, 24 Oct",
     // docs/concept/loop-runs/trained-harvest: good.jsonl rows (test/mubit-first.test.js checks the count)
-    harvest: { examples: 2609, decisions: 31285, source: "harvest runs, 24 Oct (docs/concept/loop-runs/trained-harvest, trained-harvest-2)" },
+    harvest: { examples: 4115, decisions: 48250, source: "harvest runs, 24–25 Oct (docs/concept/loop-runs/trained-harvest, -2, -3)" },
   };
   const LIVE_CHOICES = [5, 10, 20];   // rounds of a live run
   const IDEAS = 4;                    // ideas from Mubit at once per round (Mubit calls per round)
