@@ -1,9 +1,9 @@
 // PURPLE Model GP LIVE (/concept/gp/, "Run it live"): the recorded result stays the default view; this adds a live race of the models.
 // One live engine run PER ENTRANT, all started at once, through the site's API (never Mubit from the browser):
-//   POST {API}/api/concept/engine/run { mode: "engineer", llm: "live", model: <entrant id>, memory: true, ideas: 4, rounds: 25,
+//   POST {API}/api/concept/engine/run { mode: "engineer", llm: "live", model: <entrant id>, memory: true, ideas: 5, rounds: 20,
 //        team: "redbull", seed, variants: 600, confirm_k: 8, explore: 2 }   (never record_good / trained: every call is untrained)
 // then each run's SSE stream (the same stream the homepage's Go live follows, concept/lab/mubit-first.js). Every entrant gets the same
-// budget: 100 generations (25 rounds of 4 ideas; one generation = one idea, one designer call, tested on the physics lap sim), the
+// budget: 100 generations (20 rounds of 5 ideas; one generation = one idea, one designer call, tested on the physics lap sim), the
 // same seed, the same start car and the same shared memory. Each lane shows its ideas as they arrive (the model's own words, the
 // change, the physics verdict, the Mubit request id), n/100 generations, the best lap so far, the gap to the real pole and a lap chart;
 // the standings re-rank as laps improve, with the real pole (Antonelli, OpenF1 2026) as a reference row. At the end: "Race them on
@@ -22,8 +22,10 @@
   const isNum = v => typeof v === "number" && Number.isFinite(v);
   const LOCAL = /^(127\.0\.0\.1|localhost)$/.test(location.hostname);
   const API = (q.get("api") != null ? q.get("api") : LOCAL && location.port !== "8787" ? "http://127.0.0.1:8787" : "").replace(/\/$/, "");
-  const POLE = 88.111, IDEAS = 4, ROUNDS_LIVE = 25;
-  const RUN = { mode: "engineer", memory: true, ideas: IDEAS, team: "redbull", variants: 600, confirm_k: 8, explore: 2 };
+  const POLE = 88.111, IDEAS = 5, ROUNDS_LIVE = 20;   // 5 ideas × 20 rounds = 100 generations (wider rounds fit the time box better)
+  // stop_after = the round count: the engine's "no new best car for N rounds" stop never cuts a run short, so every entrant gets the
+  // whole budget (only the site's time box can end a run early, and its lane says so)
+  const RUN = { mode: "engineer", memory: true, ideas: IDEAS, team: "redbull", variants: 600, confirm_k: 8, explore: 2, stop_after: ROUNDS_LIVE };
   const TIME_BOX = "about 4 minutes";
 
   const L = { entrants: [], lanes: [], status: "idle", mode: null, apiOk: false, liveOk: false, why: "checking the engine API…", seed: null, gen: 0, t0: 0, t1: 0, y: null, dirty: new Set(), boardDirty: false, mountGen: 0, ended: false };
@@ -112,7 +114,7 @@
         gens: el("span", { class: "gp-ll-gv" }), note: el("div", { class: "gp-ll-note" }), canvas: el("canvas", { role: "img", "aria-label": carOf(e) + ": lap of every generation and the best so far" }),
         feed: el("ol", { class: "gp-feed", "aria-label": carOf(e) + ": ideas, newest first" }), car: three ? el("div", { class: "cmp-car" }) : null, tag: el("div", { class: "cmp-car-tag" }),
       };
-      els.who.append(el("code", { text: e.control ? "no model" : e.model || e.id }), " · ", el("span", { class: "gp-ll-lab" + (mock ? " mock" : e.control ? "" : " live"), text: mock ? "mock, not a model" : e.control ? "control · no language model" : "live · real Mubit calls · untrained" }));
+      els.who.append(el("code", { text: e.control ? "no model" : e.model || e.id }), " · ", el("span", { class: "gp-ll-lab" + (e.control ? "" : mock ? " mock" : " live"), text: e.control ? "control · no language model" : mock ? "mock, not a model" : "live · real Mubit calls · untrained" }));
       const lane = el("section", { class: "panel gp-ll" + (e.control ? " ctrl" : ""), "aria-label": carOf(e), style: "--gp-c:" + e.color },
         el("div", { class: "gp-ll-h" }, el("div", { class: "cmp-lt" }, el("i"), el("span", { text: carOf(e) })), els.chip),
         els.who, els.car,
@@ -132,8 +134,8 @@
   }
   function laneSource(e) {
     const lap = "Every lap: physics lap sim · Silverstone · model prediction.";
-    if (L.mode === "mock") return "Scripted stand-in (concept/designer/loop.js), not a model; no Mubit call. " + lap;
     if (e.control) return "Control: every idea is the engine's own seeded random step; no language model, no Mubit call. " + lap;
+    if (L.mode === "mock") return "Scripted stand-in (concept/designer/loop.js), not a model; no Mubit call. " + lap;
     return e.model + " through Mubit (" + (e.provider === "openai" ? "OpenAI route" : "Anthropic route") + "), untrained calls. An answer that does not parse takes a random step, counted on this lane. " + lap;
   }
   // the cars build one lane after another (gp.js mountOne), then follow each lane's best car (gp.js pumpBuild: one rebuild per frame)
@@ -147,8 +149,8 @@
   function renderLane(ln) {
     const E = ln.els; if (!E) return;
     const B = budget();
-    if (isNum(ln.best)) { E.best.replaceChildren(f3(ln.best), el("small", { text: " s" })); const g = ln.best - POLE; E.gap.className = "cmp-gap " + (g < 0 ? "under" : "over"); E.gap.textContent = g < 0 ? (-g).toFixed(3) + " s under the real pole" : "+" + g.toFixed(3) + " s to the real pole (88.111)"; }
-    else { E.best.replaceChildren("—"); E.gap.className = "cmp-gap over"; E.gap.textContent = "gap to the real pole (88.111): waiting for the first lap"; }
+    if (isNum(ln.best)) { E.best.replaceChildren(f3(ln.best), el("small", { text: " s" })); const g = ln.best - POLE; E.gap.className = "cmp-gap " + (g < 0 ? "under" : "over"); E.gap.textContent = g < 0 ? (-g).toFixed(3) + " s under the real pole" : "+" + g.toFixed(3) + " s to the real pole"; }
+    else { E.best.replaceChildren("—"); E.gap.className = "cmp-gap over"; E.gap.textContent = "waiting for the first lap"; }
     E.gens.replaceChildren(el("b", { text: String(ln.gens) }), "/" + B);
     const chip = ln.err && !ln.gens ? ["bad", "error"] : ln.done ? (ln.err ? ["bad", "ended"] : ["end", "finished"]) : ln.status === "waiting" ? ["wait", "waiting"] : ln.status === "queued" || ln.status === "starting" ? ["wait", "starting"] : ["on", "racing " + clock(Date.now() - ln.t0)];
     E.chip.className = "gp-ll-chip " + chip[0]; E.chip.textContent = chip[1];
@@ -202,8 +204,8 @@
     else if (d.hypothesis) { c.hyp.textContent = "“" + trim(d.hypothesis, 220) + "”"; c.hyp.title = d.hypothesis; }
     const change = d.change || d.proposal_change;
     if (change) c.chg.replaceChildren(el("span", { class: "k", text: "Proposed " }), plainChange(change, 2));
-    const rid = call.mubit_request_id || d.mubit_request_id || null, model = call.model || null, ms = isNum(call.latency_ms) ? call.latency_ms : d.latency_ms;
-    if (model) ln.model = model;
+    const rid = call.mubit_request_id || d.mubit_request_id || null, model = call.model || d.model || null, ms = isNum(call.latency_ms) ? call.latency_ms : d.latency_ms;
+    if (model && L.mode === "live") ln.model = model;
     const meta = [];
     if (ln.e.control) meta.push(el("span", { text: "no call" }));
     else meta.push(el("span", { text: mock ? "stand-in, not a model" : (model || ln.model || ln.e.model || "") }));
@@ -216,7 +218,7 @@
   function verdict(row) {
     const why = "physics lap sim · Silverstone · the engine's best legal version of this idea vs the car it started from";
     if (row.kept && isNum(row.d_head_s)) return ["good", "✓ kept " + sg(row.d_head_s).slice(0, dp(row.d_head_s) + 3) + " s", why + " · this car was kept"];
-    if (isNum(row.best_d_s) && row.best_d_s < -0.0005) return ["good soft", "✓ faster car " + sg(row.best_d_s).slice(0, dp(row.best_d_s) + 3) + " s (another idea won the round)", why];
+    if (isNum(row.best_d_s) && row.best_d_s < -0.0005) return ["good soft", "✓ faster car " + sg(row.best_d_s).slice(0, dp(row.best_d_s) + 3) + " s, not kept", why + " · another idea of the same round was faster still"];
     if (!isNum(row.best_d_s) && row.as_proposed && row.as_proposed.legal === false) return ["bad", "✗ illegal: " + ruleWords(row.as_proposed), "rules broken as written: " + (row.as_proposed.articles || []).join(", ") + " · " + why];
     return ["bad", "✗ no faster car", why + (isNum(row.best_d_s) ? " · best version " + sg(row.best_d_s) + " s" : "")];
   }
@@ -309,6 +311,7 @@
     if (/time limit|time box|deadline/.test(why)) return "stopped at the time limit";
     if (/stopped by user/.test(why)) return "stopped by you";
     if (/all \d+ rounds done|rounds done|decision cap|call budget/.test(why)) return "full budget used";
+    if (/no new peak/.test(why)) return "stopped: no new best car for " + (why.match(/\d+/) || ["several"])[0] + " rounds";
     return why ? trim(why, 80) : "done";
   }
   function endLane(ln, err) {
@@ -358,7 +361,7 @@
       const ln = x.ln, e = ln.e, has = isNum(ln.best), g = has ? ln.best - POLE : null;
       if (ln.pos != null && ln.pos !== x.pos && has) ln.movedAt = performance.now();
       ln.pos = x.pos; const moved = ln.movedAt && performance.now() - ln.movedAt < 1600;
-      const sub = e.control ? "control · no language model" : (ln.model || e.model) + (L.mode === "mock" ? " · mock, not a model" : "");
+      const sub = e.control ? "control · no language model" : (L.mode === "mock" ? e.model + " · mock, not a model" : ln.model || e.model);
       const st = ln.done ? (ln.err && !ln.gens ? "error" : ln.stop || "") : ln.status === "running" ? "racing" : ln.status;
       tb.append(el("tr", { class: (x.pos === 1 && has ? "p1" : "") + (e.control ? " ctrl" : "") + (moved ? " moved" : ""), style: "--rc:" + e.color },
         el("td", { class: "pos", text: "P" + x.pos }),

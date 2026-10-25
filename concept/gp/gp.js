@@ -5,7 +5,7 @@
 // side-by-side page's approach, concept/compare/compare.js: EI.conceptView, staggered builds, one rebuild per frame), best lap, curve
 // and "beat the pole at N" on one clock of physics simulations (0 -> 150); with the final standings (and the race link) at the top; then the results table, every curve on shared
 // axes, the harness, and "Race them" (concept/race/ Qualifying lap mode with every entrant's final car of its median seed on one
-// clock). This page never runs the sim and never calls Mubit. Nothing here is tuned or picked: every seed is in the table.
+// clock). The replay never runs the sim and never calls Mubit; "Run it live" (concept/gp/live.js) starts engine runs on the site API. Nothing here is tuned or picked: every seed is in the table.
 // URL: ?seed=median|1|2|3 &t=<simulations> &speed=1|4 &play=0
 (function () {
   "use strict";
