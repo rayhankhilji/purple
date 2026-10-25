@@ -95,6 +95,12 @@ footer.honest { flex: none; padding: 6px 14px 8px; border-top: 1px solid var(--l
   .top { flex-wrap: wrap; height: auto; padding: 8px 12px; row-gap: 8px; }
   .sub { flex-basis: 100%; order: 9; white-space: normal; }
 }
+/* phones: the six mode tabs scroll sideways inside their own box instead of widening the page */
+@media (max-width: 640px) {
+  .tabs { flex: 0 1 auto; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { flex: none; white-space: nowrap; }
+}
 @media (prefers-reduced-motion: reduce) { .progress i { transition: none; } }
 
 /* Drive it yourself / Race the grid: the entry button, the result card over the view, the laps panel */

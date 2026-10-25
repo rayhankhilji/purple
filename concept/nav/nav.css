@@ -1,0 +1,43 @@
+/* PURPLE journey nav (concept/nav): the PURPLE wordmark, then the four main pages as numbered steps in story order, then a quiet link to
+   the research lab. The same markup on concept/lab, concept/gp, concept/compare and concept/race (test/journey-nav.test.js); the current
+   page carries aria-current="page". Tokens are the pages' own (lab/lab.css, concept/race/race.css), with fallbacks so it stands alone.
+   Wide: one row of labelled steps. Under 760 px: short labels in one row that scrolls sideways inside itself, never the page. */
+.pnav { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 0 1 auto; font: 500 12px/1 var(--sans, "Inter", system-ui, sans-serif); }
+.pnav-row { flex: 0 0 100%; }   /* gp / compare / race: the nav is the header's first row */
+.pnav .pnav-brand { flex: none; font: 700 14px/1 var(--sans, "Inter", system-ui, sans-serif); letter-spacing: .18em; color: var(--purple, #b26cff); }
+.pnav-steps { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.pnav-steps::-webkit-scrollbar { display: none; }
+.pnav-steps li { flex: none; display: flex; align-items: center; }
+.pnav-steps li + li:not(.pnav-labi)::before { content: ""; width: 10px; height: 1px; margin: 0 2px; background: var(--line, #26262c); }   /* the thread between steps */
+.pnav a { display: inline-flex; align-items: center; gap: 7px; height: 28px; padding: 0 10px 0 6px; border-radius: var(--r, 6px); border: 1px solid transparent;
+  color: var(--muted, #8a8a94); text-decoration: none; white-space: nowrap; font: 500 12px/1 var(--sans, "Inter", system-ui, sans-serif); }
+.pnav a:hover { color: var(--text, #e8e8ec); background: rgba(255, 255, 255, .04); }
+.pnav-n { flex: none; display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--line, #26262c);
+  font: 600 10px/1 var(--mono, "JetBrains Mono", ui-monospace, monospace); color: var(--muted, #8a8a94); }
+.pnav a:hover .pnav-n { border-color: var(--muted, #8a8a94); color: var(--text, #e8e8ec); }
+.pnav a[aria-current="page"] { color: var(--text, #e8e8ec); background: rgba(178, 108, 255, .12); border-color: rgba(178, 108, 255, .45); font-weight: 600; }
+.pnav a[aria-current="page"] .pnav-n { background: var(--purple, #b26cff); border-color: var(--purple, #b26cff); color: #0a0a0c; }
+.pnav-labi { margin-left: 10px; padding-left: 4px; border-left: 1px solid var(--line, #26262c); }
+.pnav .pnav-lab { padding: 0 6px 0 8px; font-size: 11px; }
+.pnav-s { display: none; }
+
+/* the hosts: the header grows to hold the nav row (gp / compare / race), or the nav sits in the lab header's first row */
+header.pnav-host { height: auto; flex-wrap: wrap; row-gap: 10px; }
+header.top.pnav-host { padding-top: 8px; padding-bottom: 8px; }
+header.cmp-top.pnav-host { padding-top: 10px; }
+header.pnav-host .pnav + .sub { margin-left: 8px; }
+/* the tagline after the nav takes what is left of its row (and ellipsis) instead of pushing the page's controls to a new row */
+@media (min-width: 1001px) { header.pnav-host > .sub { flex: 1 1 0; } }
+
+@media (max-width: 760px) {
+  .pnav { gap: 8px; width: 100%; flex: 0 0 100%; }
+  .pnav .pnav-brand { font-size: 12px; letter-spacing: .12em; }
+  .pnav-l { display: none; }
+  .pnav-s { display: inline; }
+  .pnav a { height: 26px; padding: 0 6px 0 3px; gap: 4px; font-size: 11px; }
+  .pnav-n { width: 16px; height: 16px; font-size: 9px; }
+  .pnav-steps li + li:not(.pnav-labi)::before { width: 2px; margin: 0; }
+  .pnav-labi { margin-left: 6px; }
+  /* a soft edge on the right while more of the row is off screen (nav.js sets data-more) */
+  .pnav-steps[data-more] { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 12px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 12px), transparent); }
+}

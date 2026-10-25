@@ -10,11 +10,21 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="race.css">
+<link rel="stylesheet" href="../nav/nav.css">
 <!-- URL contract (docs/concept/RACE.md): ?design=<base64url JSON Design>&ref=redbull[&conditions=<base64url JSON>][&wind_ms=..&wind_from_deg=..][&mode=replay|quali|race|grid|drive|racegrid][&lap=87.700][&rate=1] -->
 </head>
 <body>
-<header class="top">
-  <span class="brand">PURPLE</span>
+<header class="top pnav-host">
+  <nav class="pnav pnav-row" aria-label="PURPLE in four steps">
+    <span class="pnav-brand">PURPLE</span>
+    <ol class="pnav-steps">
+      <li><a data-step="1" href="../lab/" title="Step 1: the autonomous engineer. Each idea is one Mubit call; the physics lap sim keeps only what is legal and faster (replay of a recorded live run)"><span class="pnav-n">1</span><span class="pnav-l">Mubit engineer</span><span class="pnav-s">Engineer</span></a></li>
+      <li><a data-step="2" id="gpLink" href="../gp/" title="Step 2: Model GP. Each model gets the same harness, the same shared memory and 150 physics laps, then the best cars race (recorded runs, physics lap sim)"><span class="pnav-n">2</span><span class="pnav-l">Which AI is best?</span><span class="pnav-s">Best AI</span></a></li>
+      <li><a data-step="3" id="compareLink" href="../compare/" title="Step 3: PURPLE (Claude through Mubit) against a standard optimiser and random parts, on one clock of test laps (recorded runs, physics lap sim)"><span class="pnav-n">3</span><span class="pnav-l">vs no AI</span><span class="pnav-s">vs no AI</span></a></li>
+      <li><a data-step="4" aria-current="page" id="raceLink" href="../race/?mode=quali" title="Step 4: the best car's physics-sim lap against every real 2026 qualifying lap (OpenF1) on the game's 3D Silverstone, then drive it yourself"><span class="pnav-n">4</span><span class="pnav-l">Race &amp; drive</span><span class="pnav-s">Race</span></a></li>
+      <li class="pnav-labi"><a class="pnav-lab" href="../../lab/" title="the setup research lab, where PURPLE started">Research lab</a></li>
+    </ol>
+  </nav>
   <span class="sub" id="sub">concept race · the concept car on the game's 3D Silverstone</span>
   <span class="spacer"></span>
   <div class="tabs" role="tablist" aria-label="what drives the cars">
@@ -31,7 +41,6 @@
     <select id="rate" aria-label="playback speed" title="playback speed (the clock stays in sim seconds)"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option><option value="8">8×</option></select>
     <select id="cam" aria-label="camera" title="camera (C)"><option value="auto" selected>director</option><option value="tv">TV</option><option value="chase">chase</option><option value="tcam">T-cam</option></select>
   </div>
-  <a class="back" href="../lab/" title="the concept lab">concept lab →</a>
 </header>
 <div id="banner" hidden></div>
 
@@ -116,5 +125,6 @@
 <script src="payload.js"></script>
 <script src="drive.js"></script>
 <script src="race.js"></script>
+<script src="../nav/nav.js"></script>
 </body>
 </html>

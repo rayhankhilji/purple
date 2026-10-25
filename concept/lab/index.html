@@ -16,19 +16,26 @@
 <link rel="stylesheet" href="engineer-panel.css">
 <link rel="stylesheet" href="exam-panel.css">
 <link rel="stylesheet" href="mubit-first.css">
+<link rel="stylesheet" href="../nav/nav.css">
 </head>
 <body class="clab-page mubit-on">
 <!-- two rows: brand · tagline · tools and links (loop-panel.js / engine-panel.js insert their buttons before the first link), then
      the view tabs · the run controls of the view -->
-<header class="top">
-  <span class="brand">PURPLE</span>
+<header class="top pnav-host">
+  <!-- the journey nav (concept/nav): the same markup on the four main pages; step 4 (#raceLink) gets the current best car on click (concept-lab.js) -->
+  <nav class="pnav" aria-label="PURPLE in four steps">
+    <span class="pnav-brand">PURPLE</span>
+    <ol class="pnav-steps">
+      <li><a data-step="1" href="../lab/" aria-current="page" title="Step 1: the autonomous engineer. Each idea is one Mubit call; the physics lap sim keeps only what is legal and faster (replay of a recorded live run)"><span class="pnav-n">1</span><span class="pnav-l">Mubit engineer</span><span class="pnav-s">Engineer</span></a></li>
+      <li><a data-step="2" id="gpLink" href="../gp/" title="Step 2: Model GP. Each model gets the same harness, the same shared memory and 150 physics laps, then the best cars race (recorded runs, physics lap sim)"><span class="pnav-n">2</span><span class="pnav-l">Which AI is best?</span><span class="pnav-s">Best AI</span></a></li>
+      <li><a data-step="3" id="compareLink" href="../compare/" title="Step 3: PURPLE (Claude through Mubit) against a standard optimiser and random parts, on one clock of test laps (recorded runs, physics lap sim)"><span class="pnav-n">3</span><span class="pnav-l">vs no AI</span><span class="pnav-s">vs no AI</span></a></li>
+      <li><a data-step="4" id="raceLink" href="../race/?mode=quali" title="Step 4: the best car's physics-sim lap against every real 2026 qualifying lap (OpenF1) on the game's 3D Silverstone, then drive it yourself"><span class="pnav-n">4</span><span class="pnav-l">Race &amp; drive</span><span class="pnav-s">Race</span></a></li>
+      <li class="pnav-labi"><a class="pnav-lab" href="../../lab/" title="the setup research lab, where PURPLE started">Research lab</a></li>
+    </ol>
+  </nav>
   <span class="sub" id="sub">Mubit proposes, physics decides: the RB22 against the real 2026 grid at Silverstone</span>
   <div id="banner" role="alert" hidden></div>
   <span class="spacer"></span>
-  <a class="src back" id="compareLink" href="../compare/" title="PURPLE (Claude through Mubit) against a standard optimiser and random parts, on one clock of test laps (recorded runs, physics lap sim)">PURPLE vs no AI →</a>
-  <a class="src back" id="gpLink" href="../gp/" title="Model GP: each model gets the same harness, the same shared memory and 150 physics laps, then the best cars race (recorded runs, physics lap sim)">Model GP →</a>
-  <a class="src back" id="raceLink" href="../race/?mode=quali" title="Qualifying lap: the current best car's physics-sim lap against every real 2026 qualifying lap (OpenF1), on one clock on the game's 3D Silverstone">Watch on Silverstone →</a>
-  <a class="src back" href="../../lab/" title="the setup research lab">Research lab →</a>
   <span class="hbreak" aria-hidden="true"></span>
   <div class="viewsw" role="group" aria-label="view">
     <button type="button" class="btn small on" id="btnViewMubit" aria-pressed="true" title="the autonomous engineer driven by Mubit: each decision is one Mubit call; thousands of versions of the idea are tested and the physics lap sim keeps only what is faster">Mubit engineer</button>
@@ -142,5 +149,6 @@
 <script src="mubit-first.js"></script>
 <!-- the designer exam (concept/exam/): paste the Mubit-trained adapter's Try-models replies, graded on the physics sim by POST /api/concept/exam/grade (no Mubit call) -->
 <script src="exam-panel.js"></script>
+<script src="../nav/nav.js"></script>
 </body>
 </html>
