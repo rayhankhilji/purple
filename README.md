@@ -11,7 +11,7 @@ A language model proposes a change to the 2026 Red Bull RB22. The FIA 2026 rules
 | Step | Page | What it shows |
 |---|---|---|
 | 1 Mubit engineer | `/concept/lab/` | The engine redesigning the RB22. A replay of a recorded live run opens first; **Go live** starts a new run (open to anyone, no passcode). Pick the model next to Go live. The **Exam** tab holds the 30-problem exam. |
-| 2 Which AI is best? | `/concept/gp/` | The Model GP: Claude Haiku, Claude Sonnet, Claude Opus, ChatGPT and No AI on the same harness. Press **Start the race** to run all five live at once (100 generations each, about 4 minutes), then **Race them** on Silverstone. Last night's recorded race is the second tab. |
+| 2 Which AI is best? | `/concept/gp/` | The Model GP: Claude Haiku, Claude Sonnet, Claude Opus, ChatGPT and No AI on the same harness. Press **Start the race** to run all five live at once: Full (100 generations each, about 4.5 minutes) or Quick (20 each, about 1.5 minutes). Or watch a race recorded live this morning at 8× (`/concept/gp/?replay=race1&speed=8`, labelled as a replay). Then **Race them** on Silverstone. Last night's recorded race is the second tab. |
 | 3 vs no AI | `/concept/compare/` | The engine with the model against a standard optimiser and random changes, on one clock of physics laps. |
 | 4 Race & drive | `/concept/race/` | The best cars on a qualifying lap of Silverstone in 3D against the real 2026 grid; then drive one yourself. |
 

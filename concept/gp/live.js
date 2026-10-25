@@ -532,7 +532,7 @@
     T.append(tb);
     const S = $("gpStrip");
     S.hidden = !(L.status === "running" || L.status === "done");
-    S.replaceChildren(el("span", { class: "gp-strip-t" }), L.replay ? el("span", { class: "gp-strip-r gp-replay-chip" }) : null, ...strip);
+    S.replaceChildren(...[el("span", { class: "gp-strip-t" }), L.replay ? el("span", { class: "gp-strip-r gp-replay-chip" }) : null, ...strip].filter(Boolean));
     status();
   }
 
