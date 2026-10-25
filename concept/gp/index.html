@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Model GP · which AI is the best race engineer?</title>
+<meta name="color-scheme" content="dark">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+<link rel="icon" href="data:,">
+<!-- the research lab's tokens / buttons, the concept lab's panels, the side-by-side page's lanes (reused), then this page -->
+<link rel="stylesheet" href="../../lab/lab.css">
+<link rel="stylesheet" href="../lab/concept-lab.css">
+<link rel="stylesheet" href="../compare/compare.css">
+<link rel="stylesheet" href="gp.css">
+<link rel="preload" as="script" href="../../js/data/season2026.js">
+<link rel="preload" as="script" href="../../js/ads.js">
+<link rel="preload" as="script" href="../../js/teams.js">
+<link rel="preload" as="script" href="../../js/liveries.js">
+<link rel="preload" as="script" href="../../js/liveries/redbull.js">
+<link rel="preload" as="script" href="../../concept/view/mesh3d.js">
+<link rel="preload" as="script" href="../../concept/view/car3d.js">
+<link rel="preload" as="script" href="../../concept/view/livery-rb22.js">
+<link rel="preload" as="script" href="../../concept/view/parts3d.js">
+</head>
+<body class="cmp-page gp-page">
+<header class="cmp-top">
+  <div class="cmp-brand">
+    <span class="brand">PURPLE</span>
+    <div class="cmp-titles">
+      <h1 class="cmp-h">Model GP · which AI is the best race engineer?</h1>
+      <p class="cmp-cap">150 simulations each, same harness, same data, physics decides</p>
+    </div>
+  </div>
+  <div class="cmp-ctl" role="group" aria-label="playback">
+    <button class="btn primary" id="gpPlay" type="button">Play</button>
+    <span class="cmp-speed" role="group" aria-label="speed">
+      <button class="btn" data-speed="1" type="button">1×</button>
+      <button class="btn" data-speed="4" type="button">4×</button>
+    </span>
+    <button class="btn" id="gpRestart" type="button">Restart</button>
+    <label class="cmp-seed">Run <select id="gpSeed" aria-label="which seed each lane shows"></select></label>
+    <a class="btn" id="gpRace" href="#" hidden>Race them</a>
+  </div>
+</header>
+
+<div class="gp-banner" id="gpBanner" hidden></div>
+
+<section class="cmp-clock" aria-label="physics simulations used">
+  <div class="cmp-clock-l"><span class="cmp-clock-v" id="gpLaps">0</span><span class="cmp-clock-of" id="gpOf">of 150 physics simulations</span></div>
+  <div class="cmp-bar" aria-hidden="true"><div class="cmp-bar-fill" id="gpBar"></div><div class="cmp-bar-marks" id="gpMarks"></div></div>
+  <div class="cmp-clock-r">One simulation = one car driven once on the <b>physics lap sim · Silverstone · model prediction</b></div>
+</section>
+
+<main class="cmp-lanes gp-lanes" id="gpLanes" aria-live="off"></main>
+
+<section class="gp-below" id="gpBelow" hidden>
+  <div class="panel gp-podium-panel">
+    <div class="ph"><h2>Podium</h2><span class="src" id="gpPodiumSrc">median seed per entrant · physics lap sim · Silverstone · model prediction</span></div>
+    <div class="gp-podium" id="gpPodium"></div>
+    <div class="gp-race-row"><a class="btn primary" id="gpRace2" href="#">Race them · Qualifying lap</a><span class="gp-race-note" id="gpRaceNote"></span></div>
+  </div>
+  <div class="panel gp-table-panel">
+    <div class="ph"><h2>Results</h2><span class="src">median seed per entrant, then each seed · real pole · OpenF1 2026</span></div>
+    <div class="gp-table-wrap"><table class="gp-table" id="gpTable"></table></div>
+  </div>
+  <div class="panel gp-curves-panel">
+    <div class="ph"><h2>Best lap so far, every entrant on shared axes</h2><span class="src">median seed bold, other seeds faint</span></div>
+    <div class="gp-curves"><canvas id="gpCurves" role="img" aria-label="best lap so far against physics simulations used, every entrant"></canvas></div>
+    <div class="gp-legend" id="gpLegend"></div>
+  </div>
+  <div class="panel gp-harness-panel">
+    <div class="ph"><h2>The harness every entrant shared</h2><span class="src" id="gpHarnessSrc"></span></div>
+    <div class="kv gp-harness" id="gpHarness"></div>
+  </div>
+</section>
+
+<footer class="cmp-foot" id="gpFoot"></footer>
+
+<!-- the scripts the concept lab loads for the design and the 3D car; this page never runs the sim and never calls Mubit -->
+<script src="../../vendor/three.min.js"></script>
+<script src="../../js/util.js"></script>
+<script src="../regs.js"></script>
+<script src="../materials.js"></script>
+<script src="../parts.js"></script>
+<script src="../aeromap.js"></script>
+<script src="../design.js"></script>
+<script src="../race/payload.js"></script>
+<script src="../view/view3d.js" onerror="window.__conceptViewMissing = true"></script>
+<script src="gp.js"></script>
+</body>
+</html>

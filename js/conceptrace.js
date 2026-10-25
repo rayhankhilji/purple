@@ -320,7 +320,9 @@
 
   // ---------------------------------------------------------------- HUD (broadcast style; every number names its source)
   const COL0 = { concept: '#b26cff', ref: '#3671c6', pole: '#27f4d2' };
-  const COL = new Proxy(COL0, { get: (o, id) => o[id] || ((st.cars.find((k) => k.spec.id === id) || {}).spec || {}).color });
+  // several concept cars (Model GP, payload.gp): every car carries its own colour, which wins over the fixed ones
+  const specColor = (id) => ((st.cars.find((k) => k.spec.id === id) || {}).spec || {}).color;
+  const COL = new Proxy(COL0, { get: (o, id) => (st.P && st.P.gp && specColor(id)) || o[id] || specColor(id) });
   function el(tag, cls, html, parent) { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; if (parent) parent.appendChild(e); return e; }
   const esc = (x) => String(x == null ? '' : x).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   function buildHud() {
@@ -341,7 +343,7 @@
     U.lbl.innerHTML = '<b>' + esc(P.label) + '</b><br>' + esc(cond) + '<br><span class="cr-mu">the sim\'s own trace, replayed: no game AI, no game lap model · drawn ' + st.map.stats.position_rms_m + ' m RMS from the sim\'s line</span>';
     if (st.quali) {
       U.tw.style.display = 'none'; U.lbl.style.top = '14px';
-      U.lbl.innerHTML = '<b>' + esc(P.label) + '</b><br>real laps: ' + esc(P.real_label) + ' · PURPLE / RB22: ' + esc(P.sim_label_short) + '<br><span class="cr-mu">' + esc(P.ghost_line) + '</span>';
+      U.lbl.innerHTML = '<b>' + esc(P.label) + '</b><br>real laps: ' + esc(P.real_label) + (P.gp ? ' · model cars / RB22: ' : ' · PURPLE / RB22: ') + esc(P.sim_label_short) + '<br><span class="cr-mu">' + esc(P.ghost_line) + '</span>';
     }
     st.cars.forEach((k) => { k.tag = el('div', 'cr-tag', esc(k.spec.short || k.spec.name), U.tags); k.tag.style.color = COL[k.spec.id] || '#fff'; });
   }
