@@ -1,0 +1,276 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+:root{--off:#F6F2EA;--forest:#0F3D2E;--bot:#2E8B57;--lime:#C8F060;--sky:#9ED5F0;--orange:#F2994A;--ink:#0b2a20}
+html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:var(--forest);font-family:Inter,sans-serif;color:var(--off)}
+#stage{position:absolute;inset:0;width:1920px;height:1080px;overflow:hidden}
+.layer{position:absolute;inset:0;display:none}
+.img{position:absolute;left:0;top:0;width:1920px;height:1080px;object-fit:cover;transform-origin:50% 50%;will-change:transform}
+#fx{position:absolute;inset:0;pointer-events:none}
+.h{font-family:"Inter Display",Inter,sans-serif;font-weight:600;letter-spacing:-0.02em;line-height:1.05}
+.w{display:inline-block;opacity:0;transform:translateY(30px);margin-right:0.26em}
+.eyebrow{font-size:22px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--lime);opacity:.95}
+.card{position:absolute;background:rgba(246,242,234,.92);color:var(--ink);border-radius:22px;padding:22px 28px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.pin{position:absolute;transform:translate(-50%,-50%);opacity:0}
+.pin .dot{width:18px;height:18px;border-radius:50%;background:var(--lime);box-shadow:0 0 0 8px rgba(200,240,96,.25);margin:0 auto}
+.pin .lab{margin-top:10px;background:rgba(15,61,46,.85);backdrop-filter:blur(6px);padding:10px 16px;border-radius:999px;font-size:24px;font-weight:600;white-space:nowrap;color:var(--off)}
+.chip{position:absolute;background:rgba(15,61,46,.82);border:1.5px solid rgba(200,240,96,.6);color:var(--off);padding:12px 22px;border-radius:999px;font-size:26px;font-weight:600;opacity:0;white-space:nowrap}
+#sub{position:absolute;left:0;right:0;bottom:44px;text-align:center;pointer-events:none}
+#sub span{display:inline-block;background:rgba(8,30,22,.72);color:#fff;font-size:36px;font-weight:500;padding:12px 28px;border-radius:14px;line-height:1.3;max-width:1500px}
+.vig{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 55%,rgba(0,0,0,.45) 100%)}
+.rack{position:absolute;width:56px;height:26px;border-radius:5px;background:#153f32;border:1px solid #1f5a47}
+.rack i{position:absolute;right:7px;top:9px;width:8px;height:8px;border-radius:50%;background:var(--lime);opacity:0}
+.gcard{position:absolute;width:380px;height:420px;border-radius:28px;background:rgba(246,242,234,.94);color:var(--ink);padding:34px;box-sizing:border-box;opacity:0}
+.gcard svg{width:120px;height:120px;stroke:var(--forest);stroke-width:4;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.gcard h3{font-family:"Inter Display";font-size:34px;margin:26px 0 10px;letter-spacing:-0.02em}
+.gcard p{font-size:22px;line-height:1.35;color:#2b4a3f;margin:0}
+</style></head><body><div id="stage">
+
+<!-- S0 note -->
+<div class="layer" id="L0" style="background:var(--off);color:var(--ink)">
+  <div style="position:absolute;left:160px;top:250px;width:1500px">
+    <div class="eyebrow" style="color:var(--bot)" id="n0a">A quick note before we start</div>
+    <div class="h" id="n0b" style="font-size:78px;margin-top:28px;color:var(--ink)">My microphone broke, so I couldn't record the narration from my laptop.</div>
+    <div id="n0c" style="font-size:36px;margin-top:34px;color:#3a5a4e;line-height:1.4;max-width:1300px">The voice you're about to hear is an AI voice reading my own script, word for word. Everything else, the idea, the research and the visuals, is mine.</div>
+  </div>
+  <svg id="mic" style="position:absolute;right:170px;top:300px" width="260" height="400" viewBox="0 0 130 200" fill="none" stroke="#0F3D2E" stroke-width="5" stroke-linecap="round"><rect x="40" y="20" width="50" height="95" rx="25"/><path d="M20 95c0 25 20 45 45 45s45-20 45-45M65 140v35M40 175h50"/><path id="crack" d="M55 40l12 18-10 14 12 20" stroke="#F2994A" stroke-width="6"/></svg>
+</div>
+
+<!-- S1 problem -->
+<div class="layer" id="L1" style="background:radial-gradient(ellipse at 30% 40%,#164a39 0%,#0b2d22 60%,#07201a 100%)">
+  <div id="bubble" class="card" style="left:150px;top:380px;font-size:38px;font-weight:500;border-radius:30px 30px 30px 8px;padding:28px 36px;opacity:0"><span id="btxt"></span><span id="caret" style="border-left:3px solid #0F3D2E;margin-left:3px"></span></div>
+  <div id="racks" style="position:absolute;left:1040px;top:260px"></div>
+  <div id="heat" style="position:absolute;left:900px;top:300px;width:900px;height:700px;background:radial-gradient(ellipse at 50% 90%,rgba(242,153,74,.75),rgba(242,153,74,0) 60%);opacity:0"></div>
+  <div class="chip" id="c1a" style="left:1060px;top:760px">electricity</div>
+  <div class="chip" id="c1b" style="left:1270px;top:760px">cooling</div>
+  <div class="chip" id="c1c" style="left:1440px;top:760px">water</div>
+  <div class="chip" id="c1d" style="left:1600px;top:760px">land</div>
+  <div id="q" class="h" style="position:absolute;left:150px;top:330px;width:1650px;font-size:92px;opacity:1"></div>
+</div>
+
+<!-- S2 vision -->
+<div class="layer" id="L2" style="background:#07201a">
+  <img class="img" id="im1" src="1.webp">
+  <div class="vig"></div>
+  <div id="v2t" style="position:absolute;left:120px;top:110px">
+    <div class="eyebrow" id="v2e">Concept · Southeast England</div>
+    <div class="h" id="v2h" style="font-size:84px;margin-top:16px;width:900px;text-shadow:0 6px 30px rgba(0,0,0,.4)">A data centre designed with the landscape, not against it.</div>
+  </div>
+  <div class="chip" id="loc" style="left:120px;top:460px;font-size:30px"><span style="color:var(--lime)">◉</span>&nbsp; Didcot, Oxfordshire &nbsp;·&nbsp; proposed site</div>
+  <div class="pin" id="p1" style="left:1050px;top:470px"><div class="dot"></div><div class="lab">Green roofs</div></div>
+  <div class="pin" id="p2" style="left:1420px;top:310px"><div class="dot"></div><div class="lab">Solar field</div></div>
+  <div class="pin" id="p3" style="left:1660px;top:220px"><div class="dot"></div><div class="lab">Wind</div></div>
+  <div class="pin" id="p4" style="left:330px;top:700px"><div class="dot"></div><div class="lab">Wetlands &amp; habitat</div></div>
+  <div class="pin" id="p5" style="left:1680px;top:690px"><div class="dot"></div><div class="lab">Battery storage</div></div>
+</div>
+
+<!-- S3 energy -->
+<div class="layer" id="L3" style="background:#07201a">
+  <img class="img" id="im1b" src="1.webp">
+  <div class="vig"></div>
+  <div style="position:absolute;left:120px;top:110px">
+    <div class="eyebrow">Clean energy</div>
+    <div class="h" id="v3h" style="font-size:72px;margin-top:14px;width:760px;text-shadow:0 6px 30px rgba(0,0,0,.4)">Powered by new solar and wind, steadied by batteries.</div>
+  </div>
+  <div class="chip" id="c3a" style="left:120px;top:430px">☀ Additional solar</div>
+  <div class="chip" id="c3b" style="left:120px;top:500px">⟳ Wind</div>
+  <div class="chip" id="c3c" style="left:120px;top:570px">▮ Large-scale battery storage</div>
+  <div class="chip" id="c3d" style="left:120px;top:640px">⇄ Grid flexibility</div>
+  <div class="card" id="bat" style="left:120px;top:760px;width:420px;height:150px;padding:22px 26px;opacity:0">
+    <div style="font-size:20px;letter-spacing:.1em;text-transform:uppercase;color:#2E8B57;font-weight:600">Battery · charging</div>
+    <div style="margin-top:14px;height:52px;border:3px solid #0F3D2E;border-radius:12px;position:relative;padding:5px;box-sizing:border-box"><div id="batfill" style="height:100%;width:30%;background:linear-gradient(90deg,#2E8B57,#C8F060);border-radius:6px"></div><div style="position:absolute;right:-14px;top:14px;width:10px;height:18px;background:#0F3D2E;border-radius:0 4px 4px 0"></div></div>
+    <div id="batmsg" style="margin-top:10px;font-size:20px;color:#2b4a3f">stores surplus for calm, dark hours</div>
+  </div>
+</div>
+
+<!-- S4 engine -->
+<div class="layer" id="L4" style="background:#07201a">
+  <img class="img" id="im2" src="2.webp">
+  <div class="vig"></div>
+  <div style="position:absolute;left:120px;top:90px">
+    <div class="eyebrow">The green engine</div>
+    <div class="h" id="v4h" style="font-size:66px;margin-top:14px;width:900px;text-shadow:0 6px 30px rgba(0,0,0,.5)">Liquid carries the heat away, in a closed loop.</div>
+  </div>
+  <div class="card" id="diag" style="left:120px;top:400px;width:860px;height:430px;padding:0;overflow:hidden;opacity:0">
+    <svg width="860" height="430" viewBox="0 0 860 430" font-family="Inter" font-weight="600">
+      <text x="34" y="44" font-size="19" fill="#2E8B57" letter-spacing="2">CLOSED-LOOP LIQUID COOLING</text>
+      <rect x="40" y="110" width="200" height="200" rx="16" fill="#0F3D2E"/>
+      <rect x="75" y="145" width="130" height="130" rx="10" fill="#1f6b50" id="chip"/>
+      <rect x="95" y="165" width="90" height="90" rx="6" fill="#F2994A" id="chipcore"/>
+      <text x="140" y="340" font-size="20" fill="#0b2a20" text-anchor="middle">AI servers</text>
+      <text x="140" y="364" font-size="17" fill="#2b4a3f" text-anchor="middle">cold plate on the chip</text>
+      <rect x="520" y="110" width="200" height="200" rx="16" fill="#0F3D2E"/>
+      <g stroke="#9ED5F0" stroke-width="5" fill="none"><path d="M545 140h150M545 170h150M545 200h150M545 230h150M545 260h150M545 290h150"/></g>
+      <text x="620" y="340" font-size="20" fill="#0b2a20" text-anchor="middle">Heat exchanger</text>
+      <text x="620" y="364" font-size="17" fill="#2b4a3f" text-anchor="middle">no evaporative water loss</text>
+      <path d="M240 150 H520" stroke="#F2994A" stroke-width="10" fill="none" opacity=".35"/>
+      <path d="M520 270 H240" stroke="#9ED5F0" stroke-width="10" fill="none" opacity=".35"/>
+      <path d="M720 210 H830" stroke="#F2994A" stroke-width="10" fill="none" opacity=".35"/>
+      <text x="770" y="192" font-size="16" fill="#2b4a3f" text-anchor="middle">to heat pump →</text>
+      <text x="380" y="128" font-size="17" fill="#c2651a" text-anchor="middle">warm out</text>
+      <text x="380" y="300" font-size="17" fill="#2a7fa8" text-anchor="middle">cool back</text>
+    </svg>
+  </div>
+  <div class="chip" id="c4a" style="left:1040px;top:860px">Closed-loop cooling</div>
+  <div class="chip" id="c4b" style="left:1360px;top:860px">Minimal water use</div>
+</div>
+
+<!-- S5 heat -->
+<div class="layer" id="L5" style="background:#07201a">
+  <img class="img" id="im3" src="3.webp">
+  <div class="vig"></div>
+  <div style="position:absolute;left:120px;top:90px">
+    <div class="eyebrow">Turning waste into value</div>
+    <div class="h" id="v5h" style="font-size:66px;margin-top:14px;width:880px;text-shadow:0 6px 30px rgba(0,0,0,.5)">Heat from computing, piped to the people next door.</div>
+  </div>
+  <div class="card" id="hp" style="left:120px;top:760px;width:560px;padding:22px 26px;opacity:0">
+    <div style="font-size:20px;letter-spacing:.1em;text-transform:uppercase;color:#2E8B57;font-weight:600">Heat pump · upgrading</div>
+    <div style="display:flex;align-items:center;gap:18px;margin-top:12px;font-size:28px;font-weight:600"><span style="color:#2a7fa8">warm ≈ 40 °C</span><span id="hparrow" style="color:#2E8B57">→</span><span style="color:#c2651a">useful ≈ 70 °C</span></div>
+    <div style="margin-top:8px;font-size:20px;color:#2b4a3f">into a local heat network for homes, offices and community buildings</div>
+  </div>
+  <div class="chip" id="c5a" style="left:1280px;top:300px">Homes &amp; businesses</div>
+  <div class="chip" id="c5b" style="left:1420px;top:860px">Underground heat network</div>
+</div>
+
+<!-- S6 beyond -->
+<div class="layer" id="L6" style="background:#07201a">
+  <img class="img" id="im1c" src="1.webp" style="filter:saturate(1.1)">
+  <div style="position:absolute;inset:0;background:rgba(7,32,26,.62)"></div>
+  <div style="position:absolute;left:120px;top:90px">
+    <div class="eyebrow">Beyond the building</div>
+    <div class="h" id="v6h" style="font-size:66px;margin-top:14px;width:1200px">Sustainable across the whole lifecycle.</div>
+  </div>
+  <div class="gcard" id="g1" style="left:120px;top:330px"><svg viewBox="0 0 100 100"><path d="M15 85V45l35-25 35 25v40z"/><path d="M35 85V60h30v25"/></svg><h3>Low-carbon materials</h3><p>Timber, low-clinker concrete and recycled steel where it counts.</p></div>
+  <div class="gcard" id="g2" style="left:540px;top:330px"><svg viewBox="0 0 100 100"><rect x="15" y="15" width="30" height="30" rx="4"/><rect x="55" y="15" width="30" height="30" rx="4"/><rect x="15" y="55" width="30" height="30" rx="4"/><rect x="55" y="55" width="30" height="30" rx="4" stroke-dasharray="6 6"/></svg><h3>Modular design</h3><p>Build what's needed, when it's needed. Grow in steps, not leaps.</p></div>
+  <div class="gcard" id="g3" style="left:960px;top:330px"><svg viewBox="0 0 100 100"><path d="M10 70h80M20 70V40h60v30"/><path d="M30 40c0-15 10-15 10-25M50 40c0-12 8-12 8-22M70 40c0-15-10-15-10-25"/></svg><h3>Green roofs</h3><p>Cooler buildings, slower rainwater, more room for insects and birds.</p></div>
+  <div class="gcard" id="g4" style="left:1380px;top:330px"><svg viewBox="0 0 100 100"><path d="M10 80c15-10 30-10 45 0s30 10 35 0"/><path d="M50 75V35M50 50c0-15 15-20 25-20 0 15-10 22-25 20M50 60c0-12-12-18-22-18 0 12 8 20 22 18"/></svg><h3>Native planting &amp; wetlands</h3><p>Restore habitat so the site gives back more than it takes.</p></div>
+  <div id="life" style="position:absolute;left:120px;top:830px;width:1640px;font-size:30px;font-weight:600;display:flex;justify-content:space-between;opacity:0"><span>Design</span><span>Build</span><span>Operate</span><span>Restore</span></div>
+</div>
+
+<!-- S7 ambition -->
+<div class="layer" id="L7" style="background:#07201a">
+  <img class="img" id="im1d" src="1.webp">
+  <div class="vig"></div>
+  <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,32,26,.1),rgba(7,32,26,.55))"></div>
+  <div id="f1" class="h" style="position:absolute;left:160px;top:300px;width:1600px;font-size:88px;text-align:center;text-shadow:0 8px 40px rgba(0,0,0,.5)"></div>
+  <div id="f2" class="h" style="position:absolute;left:160px;top:560px;width:1600px;font-size:72px;text-align:center;color:var(--lime);text-shadow:0 8px 40px rgba(0,0,0,.5)"></div>
+  <div id="f3" style="position:absolute;left:0;right:0;top:780px;text-align:center;font-size:28px;opacity:0;letter-spacing:.04em">An early-stage concept &nbsp;·&nbsp; Didcot, Oxfordshire &nbsp;·&nbsp; Southeast England</div>
+  <div id="fade" style="position:absolute;inset:0;background:#07201a;opacity:0"></div>
+</div>
+
+<canvas id="fx" width="1920" height="1080"></canvas>
+<div id="sub"><span id="subt"></span></div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const lerp=(a,b,x)=>a+(b-a)*x;
+const eo=x=>1-Math.pow(1-clamp(x),3);
+const ei=x=>{x=clamp(x);return x*x*(3-2*x)};
+const fi=(lt,s,d=0.6)=>eo((lt-s)/d);
+window.TL={sections:[],subs:[]};
+const ctx=$('fx').getContext('2d');
+
+// words helper
+function words(el,text){el.innerHTML='';text.split(' ').forEach(w=>{const s=document.createElement('span');s.className='w';s.textContent=w;if(w.startsWith('*')){s.textContent=w.slice(1);s.style.color='#C8F060'}el.appendChild(s)})}
+function showWords(el,lt,s,stag=0.08,d=0.5){[...el.children].forEach((c,i)=>{const p=eo((lt-s-i*stag)/d);c.style.opacity=p;c.style.transform=`translateY(${(1-p)*30}px)`})}
+function xf(el,s,tx=0,ty=0){el.style.transform=`translate(${tx}px,${ty}px) scale(${s})`}
+function imgPt(fx,fy,s,tx,ty){return [ (fx*1920-960)*s+960+tx, (fy*1080-540)*s+540+ty ]}
+function pathPts(fr,s,tx,ty){return fr.map(([x,y])=>imgPt(x,y,s,tx,ty))}
+function segs(pts){let L=[0];for(let i=1;i<pts.length;i++){L.push(L[i-1]+Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]))}return L}
+function pointAt(pts,u){const L=segs(pts),T=L[L.length-1]*clamp(u);for(let i=1;i<pts.length;i++){if(T<=L[i]){const k=(T-L[i-1])/(L[i]-L[i-1]||1);return [lerp(pts[i-1][0],pts[i][0],k),lerp(pts[i-1][1],pts[i][1],k)]}}return pts[pts.length-1]}
+function drawPath(pts,color,alpha,w=3,dash=[10,14]){ctx.save();ctx.globalAlpha=alpha;ctx.strokeStyle=color;ctx.lineWidth=w;ctx.setLineDash(dash);ctx.lineCap='round';ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke();ctx.restore()}
+function particles(pts,n,t,speed,color,size,alpha=1,reveal=1){ctx.save();for(let i=0;i<n;i++){let u=((t*speed+i/n)%1+1)%1;if(u>reveal)continue;const [x,y]=pointAt(pts,u);ctx.globalAlpha=alpha*(0.5+0.5*Math.sin((u+i)*6.28));ctx.fillStyle=color;ctx.shadowColor=color;ctx.shadowBlur=18;ctx.beginPath();ctx.arc(x,y,size,0,6.28);ctx.fill()}ctx.restore()}
+function spark(x,y,r,t,blink=true){ctx.save();ctx.shadowColor='#C8F060';ctx.shadowBlur=30;ctx.fillStyle='#C8F060';ctx.beginPath();ctx.arc(x,y,r,0,6.28);ctx.fill();ctx.shadowBlur=0;ctx.fillStyle='#0F3D2E';const b=blink&&(t%3.1)<0.12?0.15:1;ctx.beginPath();ctx.ellipse(x-r*.3,y-r*.15,r*.13,r*.22*b,0,0,6.28);ctx.ellipse(x+r*.3,y-r*.15,r*.13,r*.22*b,0,0,6.28);ctx.fill();ctx.strokeStyle='#0F3D2E';ctx.lineWidth=r*.1;ctx.beginPath();ctx.arc(x,y+r*.15,r*.3,0.2,2.9);ctx.stroke();ctx.restore()}
+function glowDot(x,y,r,color,a){ctx.save();ctx.globalAlpha=a;ctx.fillStyle=color;ctx.shadowColor=color;ctx.shadowBlur=40;ctx.beginPath();ctx.arc(x,y,r,0,6.28);ctx.fill();ctx.restore()}
+
+// build racks
+(function(){const r=$('racks');for(let j=0;j<9;j++)for(let i=0;i<12;i++){const d=document.createElement('div');d.className='rack';d.style.left=(i*64)+'px';d.style.top=(j*34)+'px';d.innerHTML='<i></i>';r.appendChild(d)}})();
+words($('q'),'Can we build the infrastructure of the AI revolution without compromising the *planet?');
+words($('v2h'),'A data centre designed with the landscape, not against it.');
+words($('v3h'),'Powered by new solar and wind, steadied by batteries.');
+words($('v4h'),'Liquid carries the heat away, in a closed loop.');
+words($('v5h'),'Heat from computing, piped to the people next door.');
+words($('v6h'),'Sustainable across the whole lifecycle.');
+words($('f1'),'The future of AI shouldn\'t come at the expense of the planet.');
+words($('f2'),'We have a chance to build something *better.');
+const BUB='Plan me a weekend in the Lake District';
+
+const S={};
+S[0]=(lt,d)=>{ $('n0a').style.opacity=fi(lt,0.2); $('n0b').style.opacity=fi(lt,0.6,0.8); $('n0b').style.transform=`translateY(${(1-fi(lt,0.6,0.8))*20}px)`; $('n0c').style.opacity=fi(lt,1.4,0.8);
+  const m=$('mic');m.style.opacity=fi(lt,0.3);m.style.transform=`rotate(${Math.sin(lt*3)*2}deg)`;$('crack').style.opacity=lt>1.1?1:0; };
+S[1]=(lt,d)=>{ const b=$('bubble');b.style.opacity=fi(lt,0.1);const n=Math.floor(clamp((lt-0.3)/1.6)*BUB.length);$('btxt').textContent=BUB.slice(0,n);$('caret').style.opacity=lt<2.2&&Math.floor(lt*4)%2?1:0;
+  const hid=lt>8.8; b.style.opacity=hid?clamp(1-(lt-8.8)/0.5):fi(lt,0.1);
+  // racks wave
+  const racks=$('racks');racks.style.opacity=hid?clamp(1-(lt-8.8)/0.5):fi(lt,1.8,0.4);racks.style.transform=`scale(${lerp(.9,1,fi(lt,1.8,1))})`;
+  [...racks.children].forEach((r,k)=>{const i=k%12,j=Math.floor(k/12);const on=clamp((lt-2.4-(i*0.09+j*0.05)+Math.sin(k*7)*0.1)/0.3);r.firstChild.style.opacity=on*(0.6+0.4*Math.sin(lt*6+k));r.style.background=on>0.5?'#1b5a45':'#153f32'});
+  $('heat').style.opacity=hid?clamp(1-(lt-8.8)/0.5):clamp((lt-4.5)/3)*0.9;
+  ['c1a','c1b','c1c','c1d'].forEach((id,i)=>{const e=$(id);const p=fi(lt,5.2+i*0.35);e.style.opacity=hid?clamp(1-(lt-8.8)/0.5):p;e.style.transform=`translateY(${(1-p)*20}px)`});
+  // pulse line + spark travelling
+  if(lt>2 && !hid){const pts=[[560,440],[760,440],[900,420],[1040,400]];drawPath(pts,'#C8F060',0.5*fi(lt,2,.5),3);const u=clamp((lt-2)/1.2);const [x,y]=pointAt(pts,u);if(lt<9)spark(x,y,22,lt);}
+  if(lt>9.2){showWords($('q'),lt,9.2,0.11,0.5)}else{[...$('q').children].forEach(c=>c.style.opacity=0)} };
+S[2]=(lt,d)=>{ const s=lerp(1.28,1.06,ei(lt/d)),tx=lerp(-60,40,lt/d),ty=lerp(30,-10,lt/d);xf($('im1'),s,tx,ty);
+  const r=lerp(0,1500,eo(lt/1.4));$('L2').style.clipPath=`circle(${r}px at 960px 540px)`;
+  $('v2e').style.opacity=fi(lt,1.2);showWords($('v2h'),lt,1.6,0.09);const l=$('loc');const lp=fi(lt,3.6);l.style.opacity=lp;l.style.transform=`translateY(${(1-lp)*16}px)`;
+  const pins=[['p1',.49,.42,5.5],['p2',.70,.27,7],['p3',.865,.17,8.2],['p4',.17,.66,9.6],['p5',.88,.63,11.2]];
+  pins.forEach(([id,fx,fy,t0])=>{const e=$(id);const [x,y]=imgPt(fx,fy,s,tx,ty);e.style.left=x+'px';e.style.top=y+'px';const p=fi(lt,t0,.5);e.style.opacity=p;e.style.transform=`translate(-50%,-50%) scale(${lerp(.6,1,p)})`;if(p>0&&p<1)glowDot(x,y,lerp(10,60,p),'#C8F060',1-p)}); };
+S[3]=(lt,d)=>{ const s=lerp(1.5,1.62,lt/d),tx=lerp(-520,-600,lt/d),ty=lerp(160,200,lt/d);xf($('im1b'),s,tx,ty);
+  showWords($('v3h'),lt,0.4,0.09);['c3a','c3b','c3c','c3d'].forEach((id,i)=>{const e=$(id);const p=fi(lt,2+i*1.6);e.style.opacity=p;e.style.transform=`translateX(${(1-p)*-30}px)`});
+  const b=$('bat');b.style.opacity=fi(lt,7.5);const ch=clamp((lt-7.5)/5);$('batfill').style.width=lerp(25,96,ch)+'%';$('batmsg').textContent=lt>13?'… and discharges to the grid when demand peaks':'stores surplus for calm, dark hours';
+  const P=p=>pathPts(p,s,tx,ty);
+  const wind=[P([[.60,.19],[.66,.27],[.78,.33],[.86,.6]]),P([[.72,.16],[.76,.26],[.78,.33]]),P([[.865,.15],[.83,.27],[.78,.33]])];
+  const solar=P([[.64,.29],[.72,.34],[.78,.33]]);const toB=P([[.78,.33],[.86,.6]]);const toDC=P([[.86,.6],[.75,.55],[.55,.46]]);const grid=P([[.86,.6],[.95,.42]]);
+  const rv=clamp((lt-1.5)/3);
+  [...wind,solar].forEach(p=>drawPath(p,'#C8F060',0.35*fi(lt,1.5),3));drawPath(toDC,'#C8F060',0.35*fi(lt,6),3);drawPath(grid,'#9ED5F0',0.35*fi(lt,12),3);
+  wind.forEach((p,i)=>particles(p,i?6:10,lt,0.35,'#C8F060',6,fi(lt,2+i*.6),rv));particles(solar,8,lt,0.4,'#FFE27A',6,fi(lt,2.5),rv);
+  if(lt>6)particles(toDC,12,lt,0.35,'#C8F060',7,fi(lt,6));
+  if(lt>12)particles(grid,8,lt,0.5,'#9ED5F0',6,fi(lt,12));
+  // sun + battery glow
+  const [bx,by]=imgPt(.86,.6,s,tx,ty);glowDot(bx,by,34,'#C8F060',0.25+0.2*Math.sin(lt*4));
+  const [sx,sy]=pointAt(toDC,((lt*0.35)%1));if(lt>6)spark(sx,sy,20,lt); };
+S[4]=(lt,d)=>{ const s=lerp(1.0,1.12,ei(lt/d)),tx=lerp(0,-60,lt/d);xf($('im2'),s,tx,0);
+  showWords($('v4h'),lt,0.5,0.09);const g=$('diag');const gp=fi(lt,3,.7);g.style.opacity=gp;g.style.transform=`translateY(${(1-gp)*40}px)`;
+  $('chipcore').style.fill=`rgb(242,${Math.round(153+30*Math.sin(lt*5))},74)`;
+  ['c4a','c4b'].forEach((id,i)=>{const e=$(id);const p=fi(lt,9+i*1.3);e.style.opacity=p;e.style.transform=`translateY(${(1-p)*20}px)`});
+  if(gp>0.5){const ox=120,oy=400+(1-gp)*40;const hot=[[ox+240,oy+150],[ox+520,oy+150]],cold=[[ox+520,oy+270],[ox+240,oy+270]],out=[[ox+720,oy+210],[ox+830,oy+210]];
+    particles(hot,8,lt,0.5,'#F2994A',6);particles(cold,8,lt,0.5,'#9ED5F0',6);particles(out,4,lt,0.5,'#F2994A',6);
+    const [px,py]=pointAt(hot,(lt*0.5)%1);spark(px,py-24,16,lt)}
+  // rack sparkles on image (right side)
+  ctx.save();for(let i=0;i<70;i++){const sx=1240+((i*373)%640),sy=120+((i*911)%800);const a=0.4+0.6*Math.abs(Math.sin(lt*3+i));ctx.globalAlpha=a*fi(lt,0.5);ctx.fillStyle=i%4?'#9ED5F0':'#C8F060';ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=12;ctx.beginPath();ctx.arc((sx-960)*s+960+tx,(sy-540)*s+540,3,0,6.28);ctx.fill()}ctx.restore();
+  // liquid flow on image pipes (left)
+  const loop=pathPts([[.08,.52],[.2,.44],[.33,.40],[.42,.47],[.28,.62],[.12,.6]],s,tx,0);particles(loop,16,lt,0.25,'#7fe3c8',5,0.9*fi(lt,1)); };
+S[5]=(lt,d)=>{ const s=lerp(1.12,1.22,ei(lt/d)),tx=lerp(60,-120,lt/d),ty=lerp(0,-40,lt/d);xf($('im3'),s,tx,ty);
+  showWords($('v5h'),lt,0.5,0.09);const P=p=>pathPts(p,s,tx,ty);
+  const heat=P([[.50,.60],[.58,.66],[.60,.80],[.88,.80],[.92,.70],[.93,.56],[.95,.46]]);const cool=P([[.12,.72],[.20,.64],[.30,.58],[.40,.56]]);const power=P([[.20,.16],[.44,.30],[.46,.46]]);
+  const rv=clamp((lt-3)/5);drawPath(heat,'#F2994A',0.45*fi(lt,3),4,[2,16]);drawPath(cool,'#9ED5F0',0.4*fi(lt,1),4,[2,16]);drawPath(power,'#C8F060',0.35*fi(lt,0.5),3);
+  particles(power,10,lt,0.4,'#C8F060',6,fi(lt,0.5));particles(cool,8,lt,0.4,'#9ED5F0',6,fi(lt,1));particles(heat,24,lt,0.22,'#F2994A',7,fi(lt,3),rv);
+  const [hx,hy]=pointAt(heat,clamp((lt*0.22)%1,0,rv));if(lt>3)spark(hx,hy,20,lt);
+  const hp=$('hp');hp.style.opacity=fi(lt,5);$('hparrow').style.transform=`translateX(${6*Math.sin(lt*5)}px)`;$('hparrow').style.display='inline-block';
+  ['c5a','c5b'].forEach((id,i)=>{const e=$(id);const p=fi(lt,8+i*2);e.style.opacity=p;e.style.transform=`translateY(${(1-p)*20}px)`});
+  // houses glow when heat arrives
+  if(lt>8){[[.91,.52],[.94,.42],[.88,.44],[.96,.57]].forEach(([fx,fy],i)=>{const [x,y]=imgPt(fx,fy,s,tx,ty);glowDot(x,y,30,'#F2994A',0.25*fi(lt,8+i*.5)*(0.7+0.3*Math.sin(lt*3+i)))})} };
+S[6]=(lt,d)=>{ xf($('im1c'),lerp(1.7,1.8,lt/d),lerp(500,540,lt/d),lerp(-300,-320,lt/d));showWords($('v6h'),lt,0.3,0.09);
+  ['g1','g2','g3','g4'].forEach((id,i)=>{const e=$(id);const p=fi(lt,1.4+i*0.9,.7);e.style.opacity=p;e.style.transform=`translateY(${(1-p)*60}px)`;const paths=e.querySelectorAll('path,rect');paths.forEach(pa=>{const L=400;pa.style.strokeDasharray=L;pa.style.strokeDashoffset=L*(1-eo((lt-1.6-i*0.9)/1.2))})});
+  const lf=$('life');lf.style.opacity=fi(lt,6);if(lt>6){const y=870;ctx.save();ctx.strokeStyle='rgba(246,242,234,.35)';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(120,y+50);ctx.lineTo(1760,y+50);ctx.stroke();ctx.restore();const u=((lt-6)*0.18)%1;spark(120+1640*u,y+50,16,lt)} };
+S[7]=(lt,d)=>{ xf($('im1d'),lerp(1.18,1.0,ei(lt/(d-1))),lerp(-60,0,lt/d),0);showWords($('f1'),lt,0.8,0.1,0.6);showWords($('f2'),lt,5.5,0.12,0.6);$('f3').style.opacity=fi(lt,9.5,1);
+  $('fade').style.opacity=clamp((lt-(d-1.2))/1.2);
+  ctx.save();for(let i=0;i<40;i++){const x=(i*487)%1920,y=((i*263)%1080)-((lt*20+i*30)%1200)+1080;ctx.globalAlpha=0.35*fi(lt,1);ctx.fillStyle='#C8F060';ctx.shadowColor='#C8F060';ctx.shadowBlur=14;ctx.beginPath();ctx.arc(x,y,2.5,0,6.28);ctx.fill()}ctx.restore(); };
+
+function wipe(q){ // q 0..1 over boundary
+  const W=1920,H=1080;ctx.save();
+  if(q<0.5){const x=lerp(-500,W+300,eo(q/0.5));ctx.fillStyle='#0F3D2E';ctx.beginPath();ctx.moveTo(-10,0);ctx.lineTo(x,0);ctx.quadraticCurveTo(x+220,H/2,x,H);ctx.lineTo(-10,H);ctx.closePath();ctx.fill();ctx.strokeStyle='#C8F060';ctx.lineWidth=16;ctx.beginPath();ctx.moveTo(x,0);ctx.quadraticCurveTo(x+220,H/2,x,H);ctx.stroke()}
+  else{const x=lerp(-500,W+300,ei((q-0.5)/0.5));ctx.fillStyle='#0F3D2E';ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(W+10,0);ctx.lineTo(W+10,H);ctx.lineTo(x,H);ctx.quadraticCurveTo(x+220,H/2,x,0);ctx.closePath();ctx.fill();ctx.strokeStyle='#C8F060';ctx.lineWidth=16;ctx.beginPath();ctx.moveTo(x,0);ctx.quadraticCurveTo(x+220,H/2,x,H);ctx.stroke()}
+  ctx.restore()}
+
+window.render=function(t){
+  ctx.clearRect(0,0,1920,1080);
+  const secs=TL.sections;let idx=0;for(let i=0;i<secs.length;i++)if(t>=secs[i].start)idx=i;
+  const sec=secs[idx];const lt=t-sec.start;
+  secs.forEach((s,i)=>{$('L'+i).style.display=i===idx?'block':'none'});
+  if(idx!==2)$('L2').style.clipPath='none';
+  S[idx](lt,sec.dur);
+  // wipes
+  for(let i=1;i<secs.length;i++){const b=secs[i].start;if(Math.abs(t-b)<0.4){wipe((t-b+0.4)/0.8)}}
+  // subtitles
+  const sub=TL.subs.find(s=>t>=s.s&&t<s.e);const se=$('subt');if(sub){se.textContent=sub.text;se.style.opacity=Math.min(1,(t-sub.s)/0.15,(sub.e-t)/0.15)}else se.style.opacity=0;
+  if(idx===0)se.style.opacity=0;
+};
+</script></body></html>

@@ -1,0 +1,9 @@
+[
+{"id":"01_problem","text":"Every time you ask an AI a question, something physical happens. Somewhere, thousands of servers light up, draw electricity, and get hot. AI is changing the world. But can we build its infrastructure without compromising the future of our planet?"},
+{"id":"02_vision","text":"I'm exploring an answer in Southeast England, starting with Didcot, in Oxfordshire. Not a windowless box that consumes power and dumps heat, but a clean-energy campus, where advanced computing and the natural landscape are designed together, from day one."},
+{"id":"03_energy","text":"It starts with the electricity. New solar and wind, built alongside the campus, feed the servers directly. Large battery storage smooths the gaps: charging when the wind blows, and giving power back to the grid when it's needed most."},
+{"id":"04_engine","text":"Inside is the engine. Rows of servers running AI models, each one producing heat. Instead of blowing cold air around, liquid flows in a closed loop right past the chips, carrying heat to exchangers, and using a fraction of the water of a conventional data centre."},
+{"id":"05_heat","text":"And that heat doesn't have to be wasted. Heat pumps can upgrade it, and underground pipes carry it into a local heat network, warming nearby homes, offices and community buildings. The by-product of computing becomes something a town actually needs."},
+{"id":"06_beyond","text":"Sustainability has to run through the whole project: low-carbon materials, modular construction, green roofs, native planting and restored wetlands, so the site gives back more habitat than it takes."},
+{"id":"07_ambition","text":"This is an early concept, and there's serious engineering and feasibility work ahead. But I believe the future of artificial intelligence shouldn't come at the expense of the planet. We have a chance to build something better. Let's build it together."}
+]

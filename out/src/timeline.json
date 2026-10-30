@@ -1,0 +1,271 @@
+{
+ "sections": [
+  {
+   "id": "note",
+   "start": 0,
+   "dur": 5
+  },
+  {
+   "id": "01_problem",
+   "start": 5,
+   "dur": 17.848000000000003,
+   "vo": 5.5,
+   "voDur": 16.248
+  },
+  {
+   "id": "02_vision",
+   "start": 22.848000000000003,
+   "dur": 18,
+   "vo": 23.348000000000003,
+   "voDur": 15.144
+  },
+  {
+   "id": "03_energy",
+   "start": 40.848,
+   "dur": 16.36,
+   "vo": 41.348,
+   "voDur": 14.76
+  },
+  {
+   "id": "04_engine",
+   "start": 57.208,
+   "dur": 18.28,
+   "vo": 57.708,
+   "voDur": 16.68
+  },
+  {
+   "id": "05_heat",
+   "start": 75.488,
+   "dur": 18,
+   "vo": 75.988,
+   "voDur": 15.672
+  },
+  {
+   "id": "06_beyond",
+   "start": 93.488,
+   "dur": 13.456,
+   "vo": 93.988,
+   "voDur": 11.856
+  },
+  {
+   "id": "07_ambition",
+   "start": 106.944,
+   "dur": 16.624,
+   "vo": 107.444,
+   "voDur": 15.024
+  }
+ ],
+ "subs": [
+  {
+   "s": 5.5,
+   "e": 8.6142,
+   "text": "Every time you ask an AI a question, something"
+  },
+  {
+   "s": 8.6142,
+   "e": 9.7651,
+   "text": "physical happens."
+  },
+  {
+   "s": 9.7651,
+   "e": 12.8793,
+   "text": "Somewhere, thousands of servers light up, draw"
+  },
+  {
+   "s": 12.8793,
+   "e": 14.571800000000001,
+   "text": "electricity, and get hot."
+  },
+  {
+   "s": 14.571800000000001,
+   "e": 16.264300000000002,
+   "text": "AI is changing the world."
+  },
+  {
+   "s": 16.264300000000002,
+   "e": 20.055500000000002,
+   "text": "But can we build its infrastructure without compromising"
+  },
+  {
+   "s": 20.055500000000002,
+   "e": 21.748,
+   "text": "the future of our planet?"
+  },
+  {
+   "s": 23.348000000000003,
+   "e": 26.07392,
+   "text": "I'm exploring an answer in Southeast England,"
+  },
+  {
+   "s": 26.07392,
+   "e": 28.315232,
+   "text": "starting with Didcot, in Oxfordshire."
+  },
+  {
+   "s": 28.315232,
+   "e": 31.344032000000002,
+   "text": "Not a windowless box that consumes power and dumps"
+  },
+  {
+   "s": 31.344032000000002,
+   "e": 34.191104,
+   "text": "heat, but a clean-energy campus, where advanced"
+  },
+  {
+   "s": 34.191104,
+   "e": 37.098752000000005,
+   "text": "computing and the natural landscape are designed"
+  },
+  {
+   "s": 37.098752000000005,
+   "e": 38.492000000000004,
+   "text": "together, from day one."
+  },
+  {
+   "s": 41.348,
+   "e": 43.35484210526316,
+   "text": "It starts with the electricity."
+  },
+  {
+   "s": 43.35484210526316,
+   "e": 46.397473684210524,
+   "text": "New solar and wind, built alongside the campus,"
+  },
+  {
+   "s": 46.397473684210524,
+   "e": 48.08063157894737,
+   "text": "feed the servers directly."
+  },
+  {
+   "s": 48.08063157894737,
+   "e": 50.60536842105263,
+   "text": "Large battery storage smooths the gaps:"
+  },
+  {
+   "s": 50.60536842105263,
+   "e": 53.583263157894734,
+   "text": "charging when the wind blows, and giving power"
+  },
+  {
+   "s": 53.583263157894734,
+   "e": 56.108,
+   "text": "back to the grid when it's needed most."
+  },
+  {
+   "s": 57.708,
+   "e": 59.07095719844358,
+   "text": "Inside is the engine."
+  },
+  {
+   "s": 59.07095719844358,
+   "e": 62.51080155642023,
+   "text": "Rows of servers running AI models, each one producing"
+  },
+  {
+   "s": 62.51080155642023,
+   "e": 62.83531517509728,
+   "text": "heat."
+  },
+  {
+   "s": 62.83531517509728,
+   "e": 65.95064591439689,
+   "text": "Instead of blowing cold air around, liquid flows"
+  },
+  {
+   "s": 65.95064591439689,
+   "e": 69.0010739299611,
+   "text": "in a closed loop right past the chips, carrying"
+  },
+  {
+   "s": 69.0010739299611,
+   "e": 72.0515019455253,
+   "text": "heat to exchangers, and using a fraction of the"
+  },
+  {
+   "s": 72.0515019455253,
+   "e": 74.388,
+   "text": "water of a conventional data centre."
+  },
+  {
+   "s": 75.988,
+   "e": 78.55718032786885,
+   "text": "And that heat doesn't have to be wasted."
+  },
+  {
+   "s": 78.55718032786885,
+   "e": 81.64019672131147,
+   "text": "Heat pumps can upgrade it, and underground pipes"
+  },
+  {
+   "s": 81.64019672131147,
+   "e": 84.85167213114754,
+   "text": "carry it into a local heat network, warming nearby"
+  },
+  {
+   "s": 84.85167213114754,
+   "e": 87.35662295081967,
+   "text": "homes, offices and community buildings."
+  },
+  {
+   "s": 87.35662295081967,
+   "e": 90.24695081967212,
+   "text": "The by-product of computing becomes something"
+  },
+  {
+   "s": 90.24695081967212,
+   "e": 91.66,
+   "text": "a town actually needs."
+  },
+  {
+   "s": 93.988,
+   "e": 97.1334693877551,
+   "text": "Sustainability has to run through the whole project:"
+  },
+  {
+   "s": 97.1334693877551,
+   "e": 100.0974693877551,
+   "text": "low-carbon materials, modular construction, green"
+  },
+  {
+   "s": 100.0974693877551,
+   "e": 102.81951020408162,
+   "text": "roofs, native planting and restored wetlands,"
+  },
+  {
+   "s": 102.81951020408162,
+   "e": 105.844,
+   "text": "so the site gives back more habitat than it takes."
+  },
+  {
+   "s": 107.444,
+   "e": 110.19229268292683,
+   "text": "This is an early concept, and there's serious"
+  },
+  {
+   "s": 110.19229268292683,
+   "e": 112.57414634146342,
+   "text": "engineering and feasibility work ahead."
+  },
+  {
+   "s": 112.57414634146342,
+   "e": 115.6888780487805,
+   "text": "But I believe the future of artificial intelligence"
+  },
+  {
+   "s": 115.6888780487805,
+   "e": 118.37609756097562,
+   "text": "shouldn't come at the expense of the planet."
+  },
+  {
+   "s": 118.37609756097562,
+   "e": 121.00224390243903,
+   "text": "We have a chance to build something better."
+  },
+  {
+   "s": 121.00224390243903,
+   "e": 122.468,
+   "text": "Let's build it together."
+  }
+ ],
+ "total": 123.568
+}

@@ -1,0 +1,168 @@
+1
+00:00:05,500 --> 00:00:08,614
+Every time you ask an AI a question, something
+
+2
+00:00:08,614 --> 00:00:09,765
+physical happens.
+
+3
+00:00:09,765 --> 00:00:12,879
+Somewhere, thousands of servers light up, draw
+
+4
+00:00:12,879 --> 00:00:14,572
+electricity, and get hot.
+
+5
+00:00:14,572 --> 00:00:16,264
+AI is changing the world.
+
+6
+00:00:16,264 --> 00:00:20,056
+But can we build its infrastructure without compromising
+
+7
+00:00:20,056 --> 00:00:21,748
+the future of our planet?
+
+8
+00:00:23,348 --> 00:00:26,074
+I'm exploring an answer in Southeast England,
+
+9
+00:00:26,074 --> 00:00:28,315
+starting with Didcot, in Oxfordshire.
+
+10
+00:00:28,315 --> 00:00:31,344
+Not a windowless box that consumes power and dumps
+
+11
+00:00:31,344 --> 00:00:34,191
+heat, but a clean-energy campus, where advanced
+
+12
+00:00:34,191 --> 00:00:37,099
+computing and the natural landscape are designed
+
+13
+00:00:37,099 --> 00:00:38,492
+together, from day one.
+
+14
+00:00:41,348 --> 00:00:43,355
+It starts with the electricity.
+
+15
+00:00:43,355 --> 00:00:46,397
+New solar and wind, built alongside the campus,
+
+16
+00:00:46,397 --> 00:00:48,081
+feed the servers directly.
+
+17
+00:00:48,081 --> 00:00:50,605
+Large battery storage smooths the gaps:
+
+18
+00:00:50,605 --> 00:00:53,583
+charging when the wind blows, and giving power
+
+19
+00:00:53,583 --> 00:00:56,108
+back to the grid when it's needed most.
+
+20
+00:00:57,708 --> 00:00:59,071
+Inside is the engine.
+
+21
+00:00:59,071 --> 00:01:02,511
+Rows of servers running AI models, each one producing
+
+22
+00:01:02,511 --> 00:01:02,835
+heat.
+
+23
+00:01:02,835 --> 00:01:05,951
+Instead of blowing cold air around, liquid flows
+
+24
+00:01:05,951 --> 00:01:09,001
+in a closed loop right past the chips, carrying
+
+25
+00:01:09,001 --> 00:01:12,052
+heat to exchangers, and using a fraction of the
+
+26
+00:01:12,052 --> 00:01:14,388
+water of a conventional data centre.
+
+27
+00:01:15,988 --> 00:01:18,557
+And that heat doesn't have to be wasted.
+
+28
+00:01:18,557 --> 00:01:21,640
+Heat pumps can upgrade it, and underground pipes
+
+29
+00:01:21,640 --> 00:01:24,852
+carry it into a local heat network, warming nearby
+
+30
+00:01:24,852 --> 00:01:27,357
+homes, offices and community buildings.
+
+31
+00:01:27,357 --> 00:01:30,247
+The by-product of computing becomes something
+
+32
+00:01:30,247 --> 00:01:31,660
+a town actually needs.
+
+33
+00:01:33,988 --> 00:01:37,133
+Sustainability has to run through the whole project:
+
+34
+00:01:37,133 --> 00:01:40,097
+low-carbon materials, modular construction, green
+
+35
+00:01:40,097 --> 00:01:42,820
+roofs, native planting and restored wetlands,
+
+36
+00:01:42,820 --> 00:01:45,844
+so the site gives back more habitat than it takes.
+
+37
+00:01:47,444 --> 00:01:50,192
+This is an early concept, and there's serious
+
+38
+00:01:50,192 --> 00:01:52,574
+engineering and feasibility work ahead.
+
+39
+00:01:52,574 --> 00:01:55,689
+But I believe the future of artificial intelligence
+
+40
+00:01:55,689 --> 00:01:58,376
+shouldn't come at the expense of the planet.
+
+41
+00:01:58,376 --> 00:02:01,002
+We have a chance to build something better.
+
+42
+00:02:01,002 --> 00:02:02,468
+Let's build it together.
+
